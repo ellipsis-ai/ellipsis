@@ -6,7 +6,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
+import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext, MessageUserData}
 import models.team.Team
 import play.api.Configuration
 import services.{AWSLambdaConstants, DataService, DefaultServices}
@@ -33,6 +33,8 @@ case class RunEvent(
 
   val messageText: String = ""
   val includesBotMention: Boolean = false
+  def messageUserDataList: Set[MessageUserData] = Set.empty
+
   val isResponseExpected: Boolean = false
   val invocationLogText: String = s"Running behavior ${behaviorVersion.id}"
 

@@ -143,6 +143,7 @@ class EventHandler @Inject() (
 
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     (maybeConversation.map { conversation =>
+      cacheService.cacheMessageUserDataList(event.messageUserDataList.toSeq, conversation.id)
       dataService.run(dataService.parentConversations.rootForAction(conversation)).flatMap { root =>
         val isUninterrupted = event.maybeThreadId.isDefined || cacheService.eventHasLastConversationId(event, root.id)
         if (event.maybeThreadId.isEmpty) {

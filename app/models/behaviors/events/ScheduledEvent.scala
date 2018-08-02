@@ -1,7 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import models.behaviors.{ActionChoice, DeveloperContext}
+import models.behaviors.{ActionChoice, DeveloperContext, MessageUserData}
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
@@ -66,6 +66,7 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
   lazy val messageRecipientPrefix: String = underlying.messageRecipientPrefix
   override val maybeScheduled: Option[Scheduled] = Some(scheduled)
   lazy val isPublicChannel: Boolean = underlying.isPublicChannel
+  def messageUserDataList: Set[MessageUserData] = underlying.messageUserDataList
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],

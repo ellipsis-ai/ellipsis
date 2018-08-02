@@ -2,7 +2,7 @@ package services.caching
 
 import com.amazonaws.services.lambda.model.InvokeResult
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, MessageUserData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.{Event, SlackMessageEvent}
@@ -76,4 +76,8 @@ trait CacheService {
       cacheLastConversationId(event.teamId, channel, conversationId)
     }
   }
+
+  def cacheMessageUserDataList(messageUserDataList: Seq[MessageUserData], conversationId: String): Unit
+
+  def getMessageUserDataList(conversationId: String): Option[Seq[MessageUserData]]
 }

@@ -71,13 +71,15 @@ trait Event {
     dataService.run(ensureUserAction(dataService))
   }
 
-  def userInfoAction(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
-    UserInfo.buildForAction(this, teamId, services)
+  def userInfoAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
+    UserInfo.buildForAction(this, maybeConversation, teamId, services)
   }
 
-  def messageInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
-    MessageInfo.buildFor(this, services)
+  def messageInfo(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
+    MessageInfo.buildFor(this, maybeConversation, services)
   }
+
+  def messageUserDataList: Set[MessageUserData]
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 

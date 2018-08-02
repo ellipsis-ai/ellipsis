@@ -11,13 +11,13 @@ import json.Formatting._
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, MessageUserData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events._
 import play.api.Logger
 import play.api.cache.SyncCacheApi
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import play.api.libs.json._
 import sangria.schema.Schema
 import services.slack.SlackEventService
 
@@ -235,6 +235,24 @@ class CacheServiceImpl @Inject() (
 
   def getLastConversationId(teamId: String, channelId: String): Option[String] = {
     get(lastConversationIdKey(teamId, channelId))
+  }
+
+  private def cacheKeyForMessageUserDataList(conversationId: String): String = {
+    s"conversation-${conversationId}-messageUserDataList-v1"
+  }
+
+  def cacheMessageUserDataList(messageUserDataList: Seq[MessageUserData], conversationId: String): Unit = {
+    val maybeExisting = getMessageUserDataList(conversationId)
+    set(cacheKeyForMessageUserDataList(conversationId), Json.toJson(maybeExisting.getOrElse(Seq()) ++ messageUserDataList), Duration.Inf)
+  }
+
+  def getMessageUserDataList(conversationId: String): Option[Seq[MessageUserData]] = {
+    get[JsValue](cacheKeyForMessageUserDataList(conversationId)).flatMap { json =>
+      json.validate[Seq[MessageUserData]] match {
+        case JsSuccess(data, _) => Some(data)
+        case JsError(_) => None
+      }
+    }
   }
 
 }

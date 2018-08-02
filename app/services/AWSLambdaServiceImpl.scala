@@ -247,7 +247,7 @@ class AWSLambdaServiceImpl @Inject() (
                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
-      userInfo <- event.userInfoAction(defaultServices)
+      userInfo <- event.userInfoAction(maybeConversation, defaultServices)
       botName <- DBIO.from(event.botName(defaultServices))
       token <- dataService.invocationTokens.createForAction(userInfo.user, behaviorVersion, event.maybeScheduled)
       teamInfo <- teamInfoFor(behaviorVersion, userInfo, BotInfo(botName, event.botUserIdForContext))

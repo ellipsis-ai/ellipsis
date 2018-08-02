@@ -206,5 +206,9 @@ object Formatting {
   lazy implicit val behaviorTestResultsDataFormat: Format[BehaviorTestResultsData] = Json.format[BehaviorTestResultsData]
 
   lazy implicit val adminTeamDataWrites = Json.writes[AdminTeamData]
+
+  implicit val messageUserDataWrites = Json.format[MessageUserData]
+  implicit val messageInfoWrites = Json.format[MessageInfo]
+
 }
 

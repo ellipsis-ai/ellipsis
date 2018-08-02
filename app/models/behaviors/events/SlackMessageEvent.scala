@@ -3,7 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.{ActionChoice, BotResult, DeveloperContext}
+import models.behaviors.{ActionChoice, BotResult, DeveloperContext, MessageUserData}
 import play.api.Configuration
 import services.{DataService, DefaultServices}
 import utils.{SlackMessageReactionHandler, SlackMessageSender, UploadFileSpec}
@@ -59,6 +59,10 @@ case class SlackMessageEvent(
   }
 
   lazy val includesBotMention: Boolean = isDirectMessage || profile.includesBotMention(message)
+
+  def messageUserDataList: Set[MessageUserData] = {
+    message.userList.map(MessageUserData.fromSlackUserData)
+  }
 
   override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId
