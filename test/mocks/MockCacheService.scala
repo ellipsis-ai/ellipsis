@@ -3,7 +3,7 @@ package mocks
 import com.amazonaws.services.lambda.model.InvokeResult
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.IDs
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, MessageUserData}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.{Event, SlackMessageEvent}
@@ -70,4 +70,8 @@ class MockCacheService extends CacheService with MockitoSugar {
   def clearLastConversationId(teamId: String, channelId: String): Unit = {}
 
   def getLastConversationId(teamId: String, channelId: String): Option[String] = None
+
+  def cacheMessageUserDataList(messageUserDataList: Seq[MessageUserData], conversationId: String): Unit = {}
+
+  def getMessageUserDataList(conversationId: String): Option[Seq[MessageUserData]] = None
 }

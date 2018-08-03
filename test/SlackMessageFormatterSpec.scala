@@ -49,6 +49,7 @@ class SlackMessageFormatterSpec extends PlaySpec {
       format("[This is a <special> link](http://special.com)") mustBe "<http://special.com|This is a &lt;special&gt; link>"
       format("[This is a \\<special\\> link](http://special.com)") mustBe "<http://special.com|This is a &lt;special&gt; link>"
       format("1 < 2 but this is a <@U1234> link to a “<#channel>”!") mustBe "1 &lt; 2 but this is a <@U1234> link to a “<#channel>”!"
+      format("Hello there, <@Joe User>") mustBe "Hello there, <@Joe User>"
     }
 
     "handle formatting inside links" in {
