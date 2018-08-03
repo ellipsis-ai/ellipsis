@@ -65,12 +65,6 @@ case class SlackMessageEvent(
     message.userList.map(MessageUserData.fromSlackUserData)
   }
 
-  def conversationUserDataList(maybeConversation: Option[Conversation], services: DefaultServices): Set[MessageUserData] = {
-    maybeConversation.flatMap { conversation =>
-      services.cacheService.getMessageUserDataList(conversation.id)
-    }.getOrElse(Seq.empty).toSet[MessageUserData] ++ messageUserDataList
-  }
-
   override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId
   val userIdForContext: String = user
@@ -126,7 +120,7 @@ case class SlackMessageEvent(
         choices,
         configuration,
         botName,
-        conversationUserDataList(maybeConversation, services),
+        messageUserDataList(maybeConversation, services),
         services
       ).send
     } yield maybeTs
