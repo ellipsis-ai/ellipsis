@@ -2,7 +2,6 @@ package utils
 
 import akka.actor.ActorSystem
 import json.Formatting._
-import json.SlackUserData
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
@@ -45,7 +44,7 @@ case class SlackMessageSender(
                                choices: Seq[ActionChoice],
                                configuration: Configuration,
                                botName: String,
-                               slackUserList: Set[SlackUserData],
+                               userDataList: Set[MessageUserData],
                                services: DefaultServices
                              ) {
 
@@ -228,7 +227,7 @@ case class SlackMessageSender(
   }
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, slackUserList)
+    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, userDataList)
     val attachments = attachmentGroupsToUse.flatMap {
       case a: SlackMessageAttachmentGroup => a.attachments.map(_.underlying)
       case _ => Seq()

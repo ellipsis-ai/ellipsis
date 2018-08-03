@@ -207,6 +207,7 @@ object InvokeBehaviorConversation {
       maybeChannel.foreach { channel =>
         cacheService.cacheLastConversationId(event.teamId, channel, newInstance.id)
       }
+      cacheService.cacheMessageUserDataList(event.messageUserDataList.toSeq, newInstance.id)
       newInstance
     }
     dataService.run(action.transactionally)

@@ -1,7 +1,6 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -33,6 +32,8 @@ case class RunEvent(
 
   val messageText: String = ""
   val includesBotMention: Boolean = false
+  def messageUserDataList: Set[MessageUserData] = Set.empty
+
   val isResponseExpected: Boolean = false
   val invocationLogText: String = s"Running behavior ${behaviorVersion.id}"
 
@@ -78,7 +79,7 @@ case class RunEvent(
         choices,
         configuration,
         botName,
-        Set.empty[SlackUserData],
+        Set.empty[MessageUserData],
         services
       ).send
     } yield maybeTs

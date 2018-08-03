@@ -36,6 +36,7 @@ case class TestEvent(
     Future.successful(s"${team.name} TestBot")
   }
   val botUserIdForContext: String = "TEST_BOT_ID"
+  def messageUserDataList: Set[MessageUserData] = Set.empty
 
   lazy val name = "test"
   lazy val maybeChannel = Some("C123456")
@@ -68,9 +69,10 @@ case class TestEvent(
   }
 
   override def userInfoAction(
+                               maybeConversation: Option[Conversation],
                                services: DefaultServices
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
-    UserInfo.buildForAction(user, this, services)
+    UserInfo.buildForAction(user, this, maybeConversation, services)
   }
 
   override def ensureUserAction(dataService: DataService): DBIO[User] = {

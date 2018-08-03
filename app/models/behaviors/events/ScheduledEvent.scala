@@ -66,6 +66,7 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
   lazy val messageRecipientPrefix: String = underlying.messageRecipientPrefix
   override val maybeScheduled: Option[Scheduled] = Some(scheduled)
   lazy val isPublicChannel: Boolean = underlying.isPublicChannel
+  def messageUserDataList: Set[MessageUserData] = underlying.messageUserDataList
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],

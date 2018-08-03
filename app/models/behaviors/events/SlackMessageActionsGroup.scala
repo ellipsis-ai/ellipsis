@@ -1,16 +1,15 @@
 package models.behaviors.events
 
-import json.SlackUserData
 import utils.SlackMessageSender
 
 case class SlackMessageActionsGroup(
-                                id: String,
-                                actions: Seq[SlackMessageAction],
-                                maybeText: Option[String],
-                                maybeSlackUserList: Option[Set[SlackUserData]],
-                                maybeColor: Option[String],
-                                maybeTitle: Option[String] = None,
-                                maybeTitleLink: Option[String] = None
+                                     id: String,
+                                     actions: Seq[SlackMessageAction],
+                                     maybeText: Option[String],
+                                     maybeUserDataList: Option[Set[MessageUserData]],
+                                     maybeColor: Option[String],
+                                     maybeTitle: Option[String] = None,
+                                     maybeTitleLink: Option[String] = None
                               ) extends SlackMessageAttachmentGroup {
 
   val attachments: Seq[SlackMessageAttachment] = {
@@ -23,7 +22,7 @@ case class SlackMessageActionsGroup(
       if (index == 0) {
         SlackMessageAttachment(
           maybeText,
-          maybeSlackUserList,
+          maybeUserDataList,
           maybeTitle,
           maybeTitleLink,
           maybeColor,

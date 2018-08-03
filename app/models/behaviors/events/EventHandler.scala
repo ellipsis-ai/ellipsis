@@ -96,11 +96,14 @@ class EventHandler @Inject() (
             }.getOrElse {
               s"It’s been a while since I asked you the question above."
             } + s"\n\nJust so I’m sure, is this an answer?"
-            val maybeSlackUserList = event match {
-              case slackMessageEvent: SlackMessageEvent => Some(slackMessageEvent.message.userList)
-              case _ => None
-            }
-            val actions = SlackMessageActionsGroup(callbackId, actionList, Some(event.relevantMessageTextWithFormatting), maybeSlackUserList, Some(Color.PINK))
+
+            val actions = SlackMessageActionsGroup(
+              callbackId,
+              actionList,
+              Some(event.relevantMessageTextWithFormatting),
+              Some(event.messageUserDataList(Some(updatedConvo), services)),
+              Some(Color.PINK)
+            )
             TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actions))
           }
         } else {
@@ -143,6 +146,7 @@ class EventHandler @Inject() (
 
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     (maybeConversation.map { conversation =>
+      cacheService.cacheMessageUserDataList(event.messageUserDataList.toSeq, conversation.id)
       dataService.run(dataService.parentConversations.rootForAction(conversation)).flatMap { root =>
         val isUninterrupted = event.maybeThreadId.isDefined || cacheService.eventHasLastConversationId(event, root.id)
         if (event.maybeThreadId.isEmpty) {
