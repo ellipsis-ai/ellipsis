@@ -1,18 +1,18 @@
 package models.behaviors.events
 
-import json.SlackUserData
+import models.behaviors.MessageUserData
 import utils.Color
 
 case class SlackMessageTextAttachmentGroup(
                                           text: String,
-                                          maybeSlackUserList: Option[Set[SlackUserData]],
+                                          maybeUserDataList: Option[Set[MessageUserData]],
                                           maybeTitle: Option[String] = None
                                         ) extends SlackMessageAttachmentGroup {
 
   val attachments: Seq[SlackMessageAttachment] = {
     Seq(SlackMessageAttachment(
       Some(text),
-      maybeSlackUserList,
+      maybeUserDataList,
       maybeTitle,
       None,
       Some(Color.BLUE_LIGHT)

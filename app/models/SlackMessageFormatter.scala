@@ -4,6 +4,7 @@ import java.util
 import java.util.regex.Matcher
 
 import json.SlackUserData
+import models.behaviors.MessageUserData
 import models.behaviors.templates.SlackRenderer
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
@@ -30,13 +31,19 @@ object SlackMessageFormatter {
     node
   }
 
-  def convertUsernamesToLinks(formattedText: String, userList: Set[SlackUserData]): String = {
+  def convertUsernamesToLinks(formattedText: String, userList: Set[MessageUserData]): String = {
     userList.toSeq.foldLeft(formattedText) { (text, user) =>
-      raw"""(^|\s|\W)@\Q${user.getDisplayName}\E($$|\s|\W)""".r.replaceAllIn(text, s"$$1${Matcher.quoteReplacement(s"<@${user.accountId}>")}$$2")
+      val userNameLinkRegex = raw"""(^|\s|\W)<?@\Q${user.userName}\E>?($$|\s|\W)""".r
+      val replacement = user.userIdForContext.map { userId =>
+        s"<@${userId}>"
+      }.getOrElse {
+        s"@${user.userName}"
+      }
+      userNameLinkRegex.replaceAllIn(text, s"$$1${Matcher.quoteReplacement(replacement)}$$2")
     }
   }
 
-  def bodyTextFor(text: String, userList: Set[SlackUserData]): String = {
+  def bodyTextFor(text: String, userList: Set[MessageUserData]): String = {
     val builder = StringBuilder.newBuilder
     val slack = new SlackRenderer(builder)
     commonmarkNodeFor(text).accept(slack)

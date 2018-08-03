@@ -7,7 +7,7 @@ import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.{ActionChoice, DeveloperContext}
+import models.behaviors.{ActionChoice, DeveloperContext, MessageUserData}
 import play.api.Configuration
 import play.api.libs.json.Json
 import services.DefaultServices
@@ -45,7 +45,7 @@ case class SlackMessageSender(
                                choices: Seq[ActionChoice],
                                configuration: Configuration,
                                botName: String,
-                               slackUserList: Set[SlackUserData],
+                               userDataList: Set[MessageUserData],
                                services: DefaultServices
                              ) {
 
@@ -228,7 +228,7 @@ case class SlackMessageSender(
   }
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, slackUserList)
+    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, userDataList)
     val attachments = attachmentGroupsToUse.flatMap {
       case a: SlackMessageAttachmentGroup => a.attachments.map(_.underlying)
       case _ => Seq()

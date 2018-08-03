@@ -81,6 +81,12 @@ trait Event {
 
   def messageUserDataList: Set[MessageUserData]
 
+  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices): Set[MessageUserData] = {
+    messageUserDataList ++ maybeConversation.flatMap { conversation =>
+      services.cacheService.getMessageUserDataList(conversation.id)
+    }.getOrElse(Seq.empty)
+  }
+
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 
   def navLinkList(lambdaService: AWSLambdaService): Seq[(String, String)] = {

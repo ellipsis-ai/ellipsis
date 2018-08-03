@@ -1,6 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.{ActionChoice, BotResult, DeveloperContext, MessageUserData}
@@ -64,6 +65,12 @@ case class SlackMessageEvent(
     message.userList.map(MessageUserData.fromSlackUserData)
   }
 
+  def conversationUserDataList(maybeConversation: Option[Conversation], services: DefaultServices): Set[MessageUserData] = {
+    maybeConversation.flatMap { conversation =>
+      services.cacheService.getMessageUserDataList(conversation.id)
+    }.getOrElse(Seq.empty).toSet[MessageUserData] ++ messageUserDataList
+  }
+
   override val isResponseExpected: Boolean = includesBotMention
   val teamId: String = profile.teamId
   val userIdForContext: String = user
@@ -119,7 +126,7 @@ case class SlackMessageEvent(
         choices,
         configuration,
         botName,
-        message.userList,
+        conversationUserDataList(maybeConversation, services),
         services
       ).send
     } yield maybeTs

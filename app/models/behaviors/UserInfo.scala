@@ -70,11 +70,7 @@ object MessageInfo {
                 services: DefaultServices
               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
     event.detailsFor(services).map { details =>
-      val maybeConversationUserDataList = maybeConversation.flatMap { conversation =>
-        services.cacheService.getMessageUserDataList(conversation.id)
-      }
-      val userDataList = maybeConversationUserDataList.getOrElse(Seq()) ++ event.messageUserDataList
-      MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details, userDataList.toSet)
+      MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details, event.messageUserDataList(maybeConversation, services))
     }
   }
 
