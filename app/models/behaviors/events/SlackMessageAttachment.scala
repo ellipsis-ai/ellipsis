@@ -1,8 +1,6 @@
 package models.behaviors.events
 
-import json.SlackUserData
 import models.SlackMessageFormatter
-import models.behaviors.MessageUserData
 import services.slack.apiModels.{ActionField, Attachment}
 
 case class SlackMessageAttachment(

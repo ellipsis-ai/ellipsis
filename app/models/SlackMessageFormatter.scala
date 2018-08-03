@@ -3,8 +3,7 @@ package models
 import java.util
 import java.util.regex.Matcher
 
-import json.SlackUserData
-import models.behaviors.MessageUserData
+import models.behaviors.events.MessageUserData
 import models.behaviors.templates.SlackRenderer
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension

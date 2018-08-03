@@ -2,12 +2,11 @@ package utils
 
 import akka.actor.ActorSystem
 import json.Formatting._
-import json.SlackUserData
 import models.SlackMessageFormatter
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.{ActionChoice, DeveloperContext, MessageUserData}
+import models.behaviors.{ActionChoice, DeveloperContext}
 import play.api.Configuration
 import play.api.libs.json.Json
 import services.DefaultServices

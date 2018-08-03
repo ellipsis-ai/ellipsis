@@ -1,18 +1,18 @@
 package models.behaviors
 
 import akka.actor.ActorSystem
-import json.{SlackUserData, UserData}
+import json.Formatting._
+import json.UserData
 import models.accounts.user.User
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, MessageUserData}
 import models.team.Team
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import services.{ApiConfigInfo, DefaultServices}
 import slick.dbio.DBIO
-import json.Formatting._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,32 +24,6 @@ case class LinkedInfo(externalSystem: String, accessToken: String) {
       "token" -> JsString(accessToken),
       "oauthToken" -> JsString(accessToken)
     ))
-  }
-
-}
-
-case class MessageUserData(
-                            context: String,
-                            userName: String,
-                            ellipsisUserId: Option[String],
-                            userIdForContext: Option[String],
-                            fullName: Option[String],
-                            email: Option[String],
-                            timeZone: Option[String]
-                          )
-
-object MessageUserData {
-
-  def fromSlackUserData(slackUserData: SlackUserData): MessageUserData = {
-    MessageUserData(
-      Conversation.SLACK_CONTEXT,
-      userName = slackUserData.getDisplayName,
-      ellipsisUserId = None,
-      userIdForContext = Some(slackUserData.accountId),
-      fullName = slackUserData.profile.flatMap(_.realName),
-      email = slackUserData.profile.flatMap(_.email),
-      timeZone = slackUserData.tz
-    )
   }
 
 }

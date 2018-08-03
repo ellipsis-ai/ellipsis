@@ -1,7 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import models.behaviors.{ActionChoice, DeveloperContext, MessageUserData}
+import models.behaviors.{ActionChoice, DeveloperContext}
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled

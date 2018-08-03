@@ -6,8 +6,6 @@ import org.commonmark.ext.gfm.strikethrough.Strikethrough
 import org.commonmark.node._
 import play.api.Logger
 
-import scala.util.matching.Regex
-
 class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   def escapeControlEntities(text: String): String = {
     val ampersandsEscaped = text.replaceAll("&", "&amp;")
@@ -21,7 +19,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
         } else {
           str.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
         }
-        Regex.quoteReplacement(replacement)
+        Matcher.quoteReplacement(replacement)
       })
     } catch {
       case e: Throwable => {

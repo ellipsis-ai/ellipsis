@@ -2,7 +2,7 @@ package models.behaviors.testing
 
 import akka.actor.ActorSystem
 import models.accounts.user.User
-import models.behaviors.{ActionChoice, DeveloperContext, MessageUserData, UserInfo}
+import models.behaviors.{ActionChoice, DeveloperContext, UserInfo}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.team.Team

@@ -1,6 +1,5 @@
-import json.{SlackUserData, SlackUserProfileData}
 import models.SlackMessageFormatter
-import models.behaviors.MessageUserData
+import models.behaviors.events.MessageUserData
 import org.scalatestplus.play.PlaySpec
 
 class SlackMessageFormatterSpec extends PlaySpec {

@@ -1,12 +1,11 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext, MessageUserData}
+import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.team.Team
 import play.api.Configuration
 import services.{AWSLambdaConstants, DataService, DefaultServices}

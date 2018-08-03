@@ -2,10 +2,10 @@ package services.caching
 
 import com.amazonaws.services.lambda.model.InvokeResult
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
-import models.behaviors.{BotResult, MessageUserData}
+import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
-import models.behaviors.events.{Event, SlackMessageEvent}
+import models.behaviors.events.{Event, MessageUserData, SlackMessageEvent}
 import sangria.schema.Schema
 
 import scala.concurrent.Future
