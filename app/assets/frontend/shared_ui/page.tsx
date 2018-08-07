@@ -69,7 +69,7 @@ class Page extends React.Component<Props, State> {
         activePanelIsModal: false,
         previousPanelName: "",
         previousPanelIsModal: false,
-        footerHeight: 0
+        footerHeight: this.state ? this.state.footerHeight : 0
       };
     }
 
