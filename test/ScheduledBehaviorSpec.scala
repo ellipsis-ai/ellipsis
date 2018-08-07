@@ -46,7 +46,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
 
   def newBehavior(team: Team): Behavior = {
     val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
-    Behavior(IDs.next, team, Some(group), None, false, OffsetDateTime.now)
+    Behavior(IDs.next, team, group, None, false, OffsetDateTime.now)
   }
 
   def newScheduledBehavior(

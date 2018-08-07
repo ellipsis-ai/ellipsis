@@ -1,27 +1,26 @@
 package models.behaviors.behavior
 
+import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorgroup.BehaviorGroupQueries
 import models.team.{Team, TeamQueries, TeamsTable}
-import drivers.SlickPostgresDriver.api._
-import models.behaviors.behaviorgroupversion.BehaviorGroupVersionQueries
 
 object BehaviorQueries {
 
   def all = TableQuery[BehaviorsTable]
   def allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
-  def allWithGroup = allWithTeam.joinLeft(BehaviorGroupQueries.allWithTeam).on(_._1.groupId === _._1.id)
+  def allWithGroup = allWithTeam.join(BehaviorGroupQueries.allWithTeam).on(_._1.groupId === _._1.id)
 
-  type TupleType = ((RawBehavior, Team), Option[BehaviorGroupQueries.TupleType])
-  type TableTupleType = ((BehaviorsTable, TeamsTable), Rep[Option[BehaviorGroupQueries.TableTupleType]])
+  type TupleType = ((RawBehavior, Team), BehaviorGroupQueries.TupleType)
+  type TableTupleType = ((BehaviorsTable, TeamsTable), Rep[BehaviorGroupQueries.TableTupleType])
 
   def tuple2Behavior(tuple: TupleType): Behavior = {
     val raw = tuple._1._1
     val team = tuple._1._2
-    val maybeGroup = tuple._2.map(BehaviorGroupQueries.tuple2Group)
+    val group = BehaviorGroupQueries.tuple2Group(tuple._2)
     Behavior(
       raw.id,
       team,
-      maybeGroup,
+      group,
       raw.maybeExportId,
       raw.isDataType,
       raw.createdAt

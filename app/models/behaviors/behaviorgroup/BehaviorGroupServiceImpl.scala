@@ -135,7 +135,7 @@ class BehaviorGroupServiceImpl @Inject() (
       mergedData <- Future.successful({
         val actionInputs = groupsData.flatMap(_.actionInputs)
         val dataTypeInputs = groupsData.flatMap(_.dataTypeInputs)
-        val behaviorVersions = groupsData.flatMap(_.behaviorVersions)
+        val behaviorVersions = groupsData.flatMap(_.behaviorVersions).map(_.copy(behaviorId = Some(IDs.next)))
         val libraryVersions = groupsData.flatMap(_.libraryVersions)
         val requiredAWSConfigs = groupsData.flatMap(_.requiredAWSConfigs)
         val requiredOAuth2ApiConfigs = groupsData.flatMap(_.requiredOAuth2ApiConfigs)
