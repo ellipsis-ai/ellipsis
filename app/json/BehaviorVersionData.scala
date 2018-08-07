@@ -91,6 +91,8 @@ case class BehaviorVersionData(
     copy(config = config.copy(dataTypeConfig = maybeNewDataTypeConfig))
   }
 
+  def copyWithNewBehaviorIdForMerge: BehaviorVersionData = copy(behaviorId = Some(IDs.next))
+
   lazy val isDataType: Boolean = config.isDataType
 
   lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption
