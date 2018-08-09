@@ -307,7 +307,7 @@ class Setter extends React.Component<Props, State> {
             {this.getVars().map((v, index) => {
               return (
                 <div className="column-row" key={`envVar${index}`}>
-                  <div className="column column-page-sidebar type-monospace pvxs mobile-pbn">
+                  <div className="column column-one-quarter mobile-column-one-half type-monospace pvxs mobile-pbn">
                     <div className={
                       "type-monospace type-wrap-words " +
                       (v.isAlreadySavedWithValue ? "" : "align-button")
@@ -315,7 +315,7 @@ class Setter extends React.Component<Props, State> {
                       {v.name}
                     </div>
                   </div>
-                  <div className="column column-page-main pvxs mobile-ptn">
+                  <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
                     {this.getValueInputForVar(v, index)}
                   </div>
                 </div>
