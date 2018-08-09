@@ -5,6 +5,9 @@ interface JsRoute {
 
 declare var jsRoutes: {
   controllers: {
+    APITokenController: {
+      listTokens: (tokenId: Option<string>, teamId?: Option<string>) => JsRoute
+    },
     ApplicationController: {
       deleteBehaviorGroups: () => JsRoute,
       findBehaviorGroupsMatching: (queryString: string, branch: Option<string>, teamId: string) => JsRoute,
@@ -54,6 +57,21 @@ declare var jsRoutes: {
     SupportController: {
       sendRequest: () => JsRoute
     },
+
+    web: {
+      settings: {
+        EnvironmentVariablesController: {
+          list: (teamId?: Option<String>) => JsRoute,
+          submit: () => JsRoute
+        },
+        IntegrationsController: {
+          list: (teamId?: Option<String>) => JsRoute
+        }
+        RegionalSettingsController: {
+          index: (teamId?: Option<string>) => JsRoute
+        }
+      }
+    }
 
     admin: {
       UserInfoController: {

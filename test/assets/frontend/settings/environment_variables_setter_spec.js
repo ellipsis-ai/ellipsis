@@ -102,13 +102,13 @@ describe('EnvironmentVariableSetter', () => {
   });
 
   describe('getRowCountForTextareaValue', () => {
-    it('returns an integer string equal to the number of lines of text, min 1, max 5', () => {
+    it('returns an integer equal to the number of lines of text, min 1, max 5', () => {
       var setter = createSetter(config);
-      expect(setter.getRowCountForTextareaValue(null)).toBe("1");
-      expect(setter.getRowCountForTextareaValue("foo")).toBe("1");
-      expect(setter.getRowCountForTextareaValue("foo\n")).toBe("2");
-      expect(setter.getRowCountForTextareaValue("foo\nbar\nbaz")).toBe("3");
-      expect(setter.getRowCountForTextareaValue("a\nb\nc\nd\ne\nf\ng\n")).toBe("5");
+      expect(setter.getRowCountForTextareaValue(null)).toBe(1);
+      expect(setter.getRowCountForTextareaValue("foo")).toBe(1);
+      expect(setter.getRowCountForTextareaValue("foo\n")).toBe(2);
+      expect(setter.getRowCountForTextareaValue("foo\nbar\nbaz")).toBe(3);
+      expect(setter.getRowCountForTextareaValue("a\nb\nc\nd\ne\nf\ng\n")).toBe(5);
     });
   });
 });
