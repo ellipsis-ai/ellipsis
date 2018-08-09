@@ -309,7 +309,7 @@ class Setter extends React.Component<Props, State> {
                 <div className="column-row" key={`envVar${index}`}>
                   <div className="column column-page-sidebar type-monospace pvxs mobile-pbn">
                     <div className={
-                      "type-monospace display-ellipsis " +
+                      "type-monospace type-wrap-words " +
                       (v.isAlreadySavedWithValue ? "" : "align-button")
                     }>
                       {v.name}
