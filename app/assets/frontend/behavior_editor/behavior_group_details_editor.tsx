@@ -64,7 +64,7 @@ class BehaviorGroupDetailsEditor extends React.PureComponent<Props> {
               placeholder="Describe the general purpose of this skill. The description is displayed in help."
               onChange={this.props.onBehaviorGroupDescriptionChange}
               value={this.props.group.description || ""}
-              rows={"3"}
+              rows={3}
             />
           </div>
         </div>
