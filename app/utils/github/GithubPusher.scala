@@ -9,7 +9,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import org.apache.commons.io.FileUtils
 import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.api.errors.{GitAPIException, InvalidRefNameException, RefAlreadyExistsException}
+import org.eclipse.jgit.api.errors._
 import org.eclipse.jgit.lib.Constants
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.transport.{RefSpec, UsernamePasswordCredentialsProvider}
@@ -91,6 +91,8 @@ case class GithubPusher(
 
   val remoteUrl: String = s"https://github.com/$owner/$repoName.git"
 
+  private val credentialsProvider = new UsernamePasswordCredentialsProvider(repoAccessToken, "")
+
   private def parentDir: File = new File(parentPath)
   private def repoDir: File = new File(parentDir, exportName)
 
@@ -98,12 +100,12 @@ case class GithubPusher(
     parentDir.mkdir()
     FileUtils.deleteDirectory(repoDir)
     try {
-      Git.cloneRepository()
-        .setURI(remoteUrl)
-        .setCloneAllBranches(true)
-        .setDirectory(repoDir)
-        .setCredentialsProvider(new UsernamePasswordCredentialsProvider(repoAccessToken, ""))
-        .call()
+      Git.cloneRepository.
+        setURI(remoteUrl).
+        setCloneAllBranches(true).
+        setDirectory(repoDir).
+        setCredentialsProvider(credentialsProvider).
+        call
     } catch {
       case e: GitAPIException => {
         val err = e
@@ -114,34 +116,42 @@ case class GithubPusher(
 
   private def ensureBranch(git: Git): Unit = {
     try {
-      git.branchCreate().setName(branch).call()
+      git.branchCreate.
+        setName(branch).
+        call
     } catch {
-      case e: RefAlreadyExistsException => {}
+      case _: RefAlreadyExistsException => {}
+      case _: RefNotFoundException => {}
       case e: InvalidRefNameException => throw InvalidBranchNameException(e.getMessage)
     }
   }
 
   private def ensureBranchCheckedOut(git: Git): Unit = {
     try {
-      git.checkout().setName(branch).call()
+      git.checkout.
+        setName(branch).
+        call
     } catch {
       case e: InvalidRefNameException => throw InvalidBranchNameException(e.getMessage)
       case e: GitAPIException => {}
     }
   }
 
-  private val newEmptyRepoRegex = """Couldn't find remote ref master""".r
-
   private def pullLatest(git: Git): Unit = {
     try {
-      git.pull().setRemote("origin").setRemoteBranchName(branch).call
+      git.pull().
+        setCredentialsProvider(credentialsProvider).
+        setRemote("origin").
+        setRemoteBranchName(branch).
+        call
     } catch {
+      case _: RefNotAdvertisedException => {}
       case e: GitAPIException => throw GitPullException(e.getMessage)
     }
   }
 
   private def deleteFiles: Unit = {
-    FileUtils.cleanDirectory(repoDir)
+    FileUtils.deleteQuietly(new File(repoDir, "./*"))
   }
 
   private def export: Future[Unit] = {
@@ -158,18 +168,27 @@ case class GithubPusher(
 
   private def push(git: Git): Unit = {
     try {
-      git.add().addFilepattern(".").call()
-      git.commit().setAuthor(committerInfo.name, committerInfo.email).setMessage(commitMessage).call()
-      git.push().setRemote("origin").setRefSpecs(new RefSpec( s"$branch:$branch" ) ).call()
+      git.add.
+        addFilepattern(".").
+        call
+      git.commit.
+        setAuthor(committerInfo.name, committerInfo.email).
+        setMessage(commitMessage).
+        call
+      git.push.
+        setCredentialsProvider(credentialsProvider).
+        setRemote("origin").
+        setRefSpecs(new RefSpec( s"$branch:$branch" ) ).
+        call
     } catch {
       case e: GitAPIException => throw GitPushException.fromMessage(branch, e.getMessage)
     }
   }
 
   private def setGitSHA(git: Git): Future[Unit] = {
-    val head = git.getRepository().resolve(Constants.HEAD)
+    val head = git.getRepository.resolve(Constants.HEAD)
     val commits = new util.ArrayList[RevCommit]()
-    val iterator = git.log().add(head).setMaxCount(1).call().iterator()
+    val iterator = git.log.add(head).setMaxCount(1).call.iterator
 
     while ( {
       iterator.hasNext
