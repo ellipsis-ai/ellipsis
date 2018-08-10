@@ -1,5 +1,4 @@
 import 'core-js';
-import 'whatwg-fetch';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import EnvironmentVariableList from './index';

@@ -5,6 +5,7 @@ import Sort from '../../lib/sort';
 import {PageRequiredProps} from '../../shared_ui/page';
 import {EnvironmentVariableData, EnvironmentVariableListConfig} from "./loader";
 import autobind from "../../lib/autobind";
+import {DataRequest} from "../../lib/data_request";
 
 type Props = EnvironmentVariableListConfig & PageRequiredProps
 
@@ -37,24 +38,17 @@ class EnvironmentVariableList extends React.Component<Props, State> {
       teamId: this.props.data.teamId,
       variables: envVars
     };
-    fetch(url, {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Csrf-Token': this.props.csrfToken
-      },
-      body: JSON.stringify({teamId: this.props.data.teamId, dataJson: JSON.stringify(data)})
-    }).then((response) => response.json())
-      .then((json) => {
-        this.setState({
-          environmentVariables: json.variables
-        }, () => {
-          if (this.setterComponent) {
-            this.setterComponent.onSaveComplete();
-          }
-        });
+    DataRequest.jsonPost(url, {
+      teamId: this.props.data.teamId,
+      dataJson: JSON.stringify(data)
+    }, this.props.csrfToken).then((json) => {
+      this.setState({
+        environmentVariables: json.variables
+      }, () => {
+        if (this.setterComponent) {
+          this.setterComponent.onSaveComplete();
+        }
+      });
     }).catch(() => {
       if (this.setterComponent) {
         this.setterComponent.onSaveError();
