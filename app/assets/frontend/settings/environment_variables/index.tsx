@@ -56,6 +56,12 @@ class EnvironmentVariableList extends React.Component<Props, State> {
     });
   }
 
+  onDelete(name: string) {
+    this.setState({
+      environmentVariables: this.state.environmentVariables.filter((ea) => ea.name !== name)
+    });
+  }
+
   loadAdminValue(name: string, value: string): void {
     this.setState({
       environmentVariables: this.state.environmentVariables.map((ea) => {
@@ -89,11 +95,13 @@ class EnvironmentVariableList extends React.Component<Props, State> {
       <Setter
         ref={(el) => this.setterComponent = el}
         onSave={this.onSave}
+        onDelete={this.onDelete}
         vars={this.getVars()}
         focus={this.props.focus}
         onRenderFooter={this.props.onRenderFooter}
         activePanelIsModal={this.props.activePanelIsModal}
         teamId={this.props.data.teamId}
+        csrfToken={this.props.csrfToken}
         isAdmin={this.props.isAdmin}
         onAdminLoadedValue={this.loadAdminValue}
       />

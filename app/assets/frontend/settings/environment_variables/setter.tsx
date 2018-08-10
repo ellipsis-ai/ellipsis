@@ -15,12 +15,14 @@ const formatEnvVarName = Formatter.formatEnvironmentVariableName;
 interface Props {
   onCancelClick?: Option<() => void>,
   onSave: (vars: Array<EnvironmentVariableData>) => void,
+  onDelete: (name: string) => void,
   vars: Array<EnvironmentVariableData>,
   errorMessage?: Option<string>,
   focus?: Option<string>,
   onRenderFooter?: Option<(content?, footerClassName?: string) => void>,
   activePanelIsModal: boolean,
   teamId: string,
+  csrfToken: string,
   isAdmin: boolean,
   onAdminLoadedValue: (name: string, value: string) => void
 }
@@ -31,6 +33,7 @@ interface State {
   requestError: Option<string>,
   justSaved: boolean,
   isSaving: boolean,
+  isDeleting: boolean,
   adminValuesLoading: Array<string>
 }
 
@@ -63,6 +66,7 @@ class Setter extends React.Component<Props, State> {
       requestError: null,
       justSaved: false,
       isSaving: false,
+      isDeleting: false,
       adminValuesLoading: []
     };
   }
@@ -180,6 +184,25 @@ class Setter extends React.Component<Props, State> {
     });
   }
 
+  onDelete(name: string): void {
+    this.setState({
+      isDeleting: true,
+      requestError: null
+    }, () => {
+      DataRequest.jsonPost(jsRoutes.controllers.web.settings.EnvironmentVariablesController.delete().url, {
+        teamId: this.props.teamId,
+        name: name
+      }, this.props.csrfToken).then(() => {
+        this.setState({
+          isDeleting: false,
+          vars: this.state.vars.filter((ea) => ea.name !== name)
+        }, () => {
+          this.props.onDelete(name);
+        })
+      })
+    })
+  }
+
   resetVar(index: number): void {
     var vars = this.getVars();
     var newVar = Object.assign({}, vars[index], {
@@ -237,6 +260,12 @@ class Setter extends React.Component<Props, State> {
     return this.state.adminValuesLoading.includes(v.name);
   }
 
+  deleteHandlerFor(v: EnvironmentVariableData): () => void {
+    return (() => {
+      this.onDelete(v.name);
+    });
+  }
+
   getValueInputForVar(v: EnvironmentVariableData, index: number) {
     const isLoadingAdminValue = this.isLoadingAdminValueFor(v);
     if (v.isAlreadySavedWithValue) {
@@ -258,9 +287,21 @@ class Setter extends React.Component<Props, State> {
               disabledWhen={this.state.adminValuesLoading.length > 0}
             />
           ) : null}
-          <Button className="button-s button-shrink" onClick={this.resetVar.bind(this, index)}>
+          <Button className="button-s button-shrink mrs" onClick={this.resetVar.bind(this, index)}>
             Reset
           </Button>
+          <DynamicLabelButton
+            className="button-s button-shrink"
+            onClick={this.deleteHandlerFor(v)}
+            labels={[{
+              text: "Delete…",
+              displayWhen: !this.state.isDeleting
+            }, {
+              text: "Deleting",
+              displayWhen: this.state.isDeleting
+            }]}
+            disabledWhen={this.state.isDeleting}
+          />
         </div>
       );
     } else {

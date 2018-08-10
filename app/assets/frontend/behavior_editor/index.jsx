@@ -1293,6 +1293,12 @@ const BehaviorEditor = React.createClass({
       });
   },
 
+  deleteEnvVariable: function(name) {
+    this.setState({
+      envVariables: this.state.envVariables.filter((ea) => ea.name !== name)
+    });
+  },
+
   loadAdminEnvVariableValue: function(name, value) {
     this.setState({
       envVariables: this.state.envVariables.map((ea) => {
@@ -2081,8 +2087,10 @@ const BehaviorEditor = React.createClass({
                       vars={this.getEnvVariables()}
                       onCancelClick={this.props.onClearActivePanel}
                       onSave={this.updateEnvVariables}
+                      onDelete={this.deleteEnvVariable}
                       activePanelIsModal={false}
                       teamId={this.getBehaviorGroup().teamId}
+                      csrfToken={this.props.csrfToken}
                       isAdmin={this.props.isAdmin}
                       onAdminLoadedValue={this.loadAdminEnvVariableValue}
                     />
