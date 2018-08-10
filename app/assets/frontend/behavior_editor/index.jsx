@@ -2088,11 +2088,14 @@ const BehaviorEditor = React.createClass({
                       onCancelClick={this.props.onClearActivePanel}
                       onSave={this.updateEnvVariables}
                       onDelete={this.deleteEnvVariable}
+                      activePanelName={this.props.activePanelName}
                       activePanelIsModal={false}
                       teamId={this.getBehaviorGroup().teamId}
                       csrfToken={this.props.csrfToken}
                       isAdmin={this.props.isAdmin}
                       onAdminLoadedValue={this.loadAdminEnvVariableValue}
+                      onToggleActivePanel={this.props.onToggleActivePanel}
+                      onClearActivePanel={this.props.onClearActivePanel}
                     />
                   </div>
                 </div>

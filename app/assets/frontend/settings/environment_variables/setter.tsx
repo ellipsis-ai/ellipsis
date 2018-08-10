@@ -9,6 +9,7 @@ import {EnvironmentVariableData, EnvironmentVariablesData} from "./loader";
 import Button from "../../form/button";
 import {DataRequest, ResponseError} from "../../lib/data_request";
 import DynamicLabelButton from "../../form/dynamic_label_button";
+import ConfirmActionPanel from "../../panels/confirm_action";
 
 const formatEnvVarName = Formatter.formatEnvironmentVariableName;
 
@@ -20,7 +21,10 @@ interface Props {
   errorMessage?: Option<string>,
   focus?: Option<string>,
   onRenderFooter?: Option<(content?, footerClassName?: string) => void>,
+  activePanelName: string,
   activePanelIsModal: boolean,
+  onToggleActivePanel: (panelName: string, beModal?: boolean, callback?: () => void) => void,
+  onClearActivePanel: () => void,
   teamId: string,
   csrfToken: string,
   isAdmin: boolean,
@@ -34,6 +38,7 @@ interface State {
   justSaved: boolean,
   isSaving: boolean,
   isDeleting: boolean,
+  deleteVarName: Option<string>,
   adminValuesLoading: Array<string>
 }
 
@@ -67,6 +72,7 @@ class Setter extends React.Component<Props, State> {
       justSaved: false,
       isSaving: false,
       isDeleting: false,
+      deleteVarName: null,
       adminValuesLoading: []
     };
   }
@@ -194,10 +200,12 @@ class Setter extends React.Component<Props, State> {
         name: name
       }, this.props.csrfToken).then(() => {
         this.setState({
+          deleteVarName: null,
           isDeleting: false,
           vars: this.state.vars.filter((ea) => ea.name !== name)
         }, () => {
           this.props.onDelete(name);
+          this.props.onClearActivePanel()
         })
       })
     })
@@ -262,7 +270,24 @@ class Setter extends React.Component<Props, State> {
 
   deleteHandlerFor(v: EnvironmentVariableData): () => void {
     return (() => {
-      this.onDelete(v.name);
+      this.setState({
+        deleteVarName: v.name
+      }, () => {
+        this.props.onToggleActivePanel("confirmDeleteEnvVar", true)
+      });
+    });
+  }
+
+  confirmDeleteHandlerFor(name: string): () => void {
+    return (() => {
+      this.onDelete(name);
+    })
+  }
+
+  cancelDelete(): void {
+    this.props.onClearActivePanel();
+    this.setState({
+      deleteVarName: null
     });
   }
 
@@ -287,21 +312,9 @@ class Setter extends React.Component<Props, State> {
               disabledWhen={this.state.adminValuesLoading.length > 0}
             />
           ) : null}
-          <Button className="button-s button-shrink mrs" onClick={this.resetVar.bind(this, index)}>
+          <Button className="button-s button-shrink" onClick={this.resetVar.bind(this, index)}>
             Reset
           </Button>
-          <DynamicLabelButton
-            className="button-s button-shrink"
-            onClick={this.deleteHandlerFor(v)}
-            labels={[{
-              text: "Delete…",
-              displayWhen: !this.state.isDeleting
-            }, {
-              text: "Deleting",
-              displayWhen: this.state.isDeleting
-            }]}
-            disabledWhen={this.state.isDeleting}
-          />
         </div>
       );
     } else {
@@ -390,16 +403,21 @@ class Setter extends React.Component<Props, State> {
   renderFooter() {
     if (this.props.onRenderFooter) {
       return this.props.onRenderFooter((
-        <Collapsible revealWhen={!this.props.activePanelIsModal}>
-          <div className="container pts border-top">
-            <div className="columns">
-              <div className="column column-one-quarter" />
-              <div className="column column-three-quarters plxxxxl">
-                {this.renderSetterActions()}
+        <div>
+          <Collapsible revealWhen={!this.props.activePanelIsModal}>
+            <div className="container pts border-top">
+              <div className="columns">
+                <div className="column column-one-quarter" />
+                <div className="column column-three-quarters plxxxxl">
+                  {this.renderSetterActions()}
+                </div>
               </div>
             </div>
-          </div>
-        </Collapsible>
+          </Collapsible>
+          {this.state.deleteVarName ? (
+            this.renderConfirmDeletePanel(this.state.deleteVarName)
+          ) : null}
+        </div>
       ));
     } else {
       return (
@@ -408,6 +426,26 @@ class Setter extends React.Component<Props, State> {
         </div>
       );
     }
+  }
+
+  renderConfirmDeletePanel(name: string) {
+    return (
+      <Collapsible revealWhen={this.props.activePanelName === "confirmDeleteEnvVar"}>
+        <ConfirmActionPanel
+          confirmText={"Delete"}
+          confirmingText={"Deleting"}
+          onConfirmClick={this.confirmDeleteHandlerFor(name)}
+          onCancelClick={this.cancelDelete}
+          isConfirming={this.state.isDeleting}
+        >
+          <div>
+            <span>Are you sure you want to delete the environment variable named </span>
+            <b className="type-monospace">{name}</b>
+            <span>?</span>
+          </div>
+        </ConfirmActionPanel>
+      </Collapsible>
+    );
   }
 
   render() {
@@ -432,7 +470,19 @@ class Setter extends React.Component<Props, State> {
                     </div>
                   </div>
                   <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
-                    {this.getValueInputForVar(v, index)}
+                    <div className="columns columns-elastic">
+                      <div className="column column-expand">
+                        {this.getValueInputForVar(v, index)}
+                      </div>
+                      <div className="column column-shrink">
+                        {this.props.onRenderFooter ? (
+                          <Button
+                            className="button-s button-shrink"
+                            onClick={this.deleteHandlerFor(v)}
+                          >Delete…</Button>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
                 </div>
               );

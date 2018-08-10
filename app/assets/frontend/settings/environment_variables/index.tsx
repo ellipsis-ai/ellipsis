@@ -99,7 +99,10 @@ class EnvironmentVariableList extends React.Component<Props, State> {
         vars={this.getVars()}
         focus={this.props.focus}
         onRenderFooter={this.props.onRenderFooter}
+        activePanelName={this.props.activePanelName}
         activePanelIsModal={this.props.activePanelIsModal}
+        onToggleActivePanel={this.props.onToggleActivePanel}
+        onClearActivePanel={this.props.onClearActivePanel}
         teamId={this.props.data.teamId}
         csrfToken={this.props.csrfToken}
         isAdmin={this.props.isAdmin}
