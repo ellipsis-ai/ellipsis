@@ -1,5 +1,4 @@
 import 'core-js';
-import 'whatwg-fetch';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import EnvironmentVariableList from './index';
@@ -13,7 +12,8 @@ export interface EnvironmentVariableData {
 
 export interface EnvironmentVariablesData {
   teamId: string,
-  variables: Array<EnvironmentVariableData>
+  variables: Array<EnvironmentVariableData>,
+  error?: Option<string>
 }
 
 export interface EnvironmentVariableListConfig {

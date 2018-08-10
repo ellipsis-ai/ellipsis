@@ -61,11 +61,12 @@ declare var jsRoutes: {
     web: {
       settings: {
         EnvironmentVariablesController: {
-          list: (teamId?: Option<String>) => JsRoute,
-          submit: () => JsRoute
+          list: (teamId?: Option<string>) => JsRoute,
+          submit: () => JsRoute,
+          adminLoadValue: (teamId: string, name: string) => JsRoute
         },
         IntegrationsController: {
-          list: (teamId?: Option<String>) => JsRoute
+          list: (teamId?: Option<string>) => JsRoute
         }
         RegionalSettingsController: {
           index: (teamId?: Option<string>) => JsRoute

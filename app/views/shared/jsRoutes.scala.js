@@ -52,6 +52,7 @@
 
   web.settings.routes.javascript.EnvironmentVariablesController.list,
   web.settings.routes.javascript.EnvironmentVariablesController.submit,
+  web.settings.routes.javascript.EnvironmentVariablesController.adminLoadValue,
   web.settings.routes.javascript.RegionalSettingsController.index,
   web.settings.routes.javascript.IntegrationsController.list,
   web.settings.routes.javascript.AWSConfigController.add,
