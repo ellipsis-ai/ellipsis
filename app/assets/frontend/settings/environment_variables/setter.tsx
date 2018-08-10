@@ -5,7 +5,10 @@ import Input from '../../form/input';
 import Textarea from '../../form/textarea';
 import Formatter from '../../lib/formatter';
 import autobind from "../../lib/autobind";
-import {EnvironmentVariableData} from "./loader";
+import {EnvironmentVariableData, EnvironmentVariablesData} from "./loader";
+import Button from "../../form/button";
+import {DataRequest, ResponseError} from "../../lib/data_request";
+import DynamicLabelButton from "../../form/dynamic_label_button";
 
 const formatEnvVarName = Formatter.formatEnvironmentVariableName;
 
@@ -16,15 +19,19 @@ interface Props {
   errorMessage?: Option<string>,
   focus?: Option<string>,
   onRenderFooter?: Option<(content?, footerClassName?: string) => void>,
-  activePanelIsModal: boolean
+  activePanelIsModal: boolean,
+  teamId: string,
+  isAdmin: boolean,
+  onAdminLoadedValue: (name: string, value: string) => void
 }
 
 interface State {
   vars: Array<EnvironmentVariableData>,
   newVars: Array<EnvironmentVariableData>,
-  saveError: boolean,
+  requestError: Option<string>,
   justSaved: boolean,
-  isSaving: boolean
+  isSaving: boolean,
+  adminValuesLoading: Array<string>
 }
 
 class Setter extends React.Component<Props, State> {
@@ -53,15 +60,31 @@ class Setter extends React.Component<Props, State> {
     return {
       vars: this.props.vars,
       newVars: [this.createNewVar()],
-      saveError: false,
+      requestError: null,
       justSaved: false,
-      isSaving: false
+      isSaving: false,
+      adminValuesLoading: []
     };
   }
 
   componentDidMount(): void {
     if (this.props.focus) {
       this.focusOnVarName(this.props.focus);
+    }
+  }
+
+  componentWillReceiveProps(newProps: Props): void {
+    if (newProps.vars !== this.props.vars) {
+      this.setState({
+        vars: this.state.vars.map((oldVar) => {
+          const newVar = newProps.vars.find((ea) => ea.name === oldVar.name);
+          if (newVar && newVar.value !== oldVar.value) {
+            return newVar;
+          } else {
+            return oldVar;
+          }
+        })
+      });
     }
   }
 
@@ -78,12 +101,12 @@ class Setter extends React.Component<Props, State> {
   }
 
   hasChangesComparedTo(oldVars: Array<EnvironmentVariableData>): boolean {
-    return !this.getVars().every((v, index) => {
-      var theVar = oldVars[index];
-      return theVar &&
-        v.name === theVar.name &&
-        v.value === theVar.value &&
-        v.isAlreadySavedWithValue === theVar.isAlreadySavedWithValue;
+    return !this.getVars().every((currentVar, index) => {
+      var oldVar = oldVars[index];
+      return oldVar &&
+        currentVar.name === oldVar.name &&
+        currentVar.value === oldVar.value &&
+        currentVar.isAlreadySavedWithValue === oldVar.isAlreadySavedWithValue;
     });
   }
 
@@ -149,7 +172,7 @@ class Setter extends React.Component<Props, State> {
     this.setState({
       vars: this.getVars().concat(namedNewVars),
       newVars: [this.createNewVar()],
-      saveError: false,
+      requestError: null,
       justSaved: false,
       isSaving: true
     }, () => {
@@ -173,17 +196,71 @@ class Setter extends React.Component<Props, State> {
     });
   }
 
+  adminLoadValueFor(v: EnvironmentVariableData): void {
+    if (this.props.isAdmin) {
+      const url = jsRoutes.controllers.web.settings.EnvironmentVariablesController.adminLoadValue(this.props.teamId, v.name).url;
+      this.setState({
+        requestError: null,
+        adminValuesLoading: this.state.adminValuesLoading.concat(v.name)
+      }, () => {
+        const newAdminValuesLoading = this.state.adminValuesLoading.filter((ea) => ea !== v.name);
+        const newState = {
+          adminValuesLoading: newAdminValuesLoading
+        };
+        DataRequest.jsonGet(url).then((json: EnvironmentVariablesData) => {
+          const newVar = json.variables ? json.variables[0] : null;
+          if (json.error || !newVar) {
+            this.setState(Object.assign(newState, {
+              requestError: "No variable found with that name. The page may need to be reloaded."
+            }));
+          } else {
+            this.setState(newState, () => {
+              this.props.onAdminLoadedValue(newVar.name, newVar.value || "")
+            });
+          }
+        }).catch((err: ResponseError) => {
+          this.setState(Object.assign(newState, {
+            requestError: `An error occurred while trying to load the variable: ${err.statusText}`
+          }));
+        });
+      });
+    }
+  }
+
+  adminLoadHandlerFor(v: EnvironmentVariableData): () => void {
+    return (() => {
+      this.adminLoadValueFor(v);
+    });
+  }
+
+  isLoadingAdminValueFor(v: EnvironmentVariableData): boolean {
+    return this.state.adminValuesLoading.includes(v.name);
+  }
+
   getValueInputForVar(v: EnvironmentVariableData, index: number) {
+    const isLoadingAdminValue = this.isLoadingAdminValueFor(v);
     if (v.isAlreadySavedWithValue) {
+      const value = this.props.isAdmin && v.value || "••••••••";
       return (
         <div className="position-relative">
-            <span className="type-monospace type-weak mrm">
-              ••••••••
-            </span>
-          <span className="type-s">
-              <button type="button" className="button-raw"
-                onClick={this.resetVar.bind(this, index)}>Clear team-wide value</button>
-            </span>
+          <div className="display-inline-block type-wrap-words type-monospace type-weak type-xs mrm">{value}</div>
+          {this.props.isAdmin && !v.value ? (
+            <DynamicLabelButton
+              className="button-s button-shrink mrs"
+              onClick={this.adminLoadHandlerFor(v)}
+              labels={[{
+                text: "Load…",
+                displayWhen: !isLoadingAdminValue
+              }, {
+                text: "Loading",
+                displayWhen: isLoadingAdminValue
+              }]}
+              disabledWhen={this.state.adminValuesLoading.length > 0}
+            />
+          ) : null}
+          <Button className="button-s button-shrink" onClick={this.resetVar.bind(this, index)}>
+            Reset
+          </Button>
         </div>
       );
     } else {
@@ -191,7 +268,7 @@ class Setter extends React.Component<Props, State> {
         <Textarea
           ref={(el) => this.envVarValueInputs[index] = el}
           className="type-monospace form-input-borderless form-input-height-auto"
-          placeholder="Set team-wide value (optional)"
+          placeholder="Set value"
           value={v.value || ""}
           onChange={this.onChangeVarValue.bind(this, index)}
           rows={this.getRowCountForTextareaValue(v.value)}
@@ -206,7 +283,7 @@ class Setter extends React.Component<Props, State> {
 
   onSaveError(): void {
     this.setState({
-      saveError: true,
+      requestError: "An error occured while saving. Please try again.",
       isSaving: false
     });
   }
@@ -231,11 +308,9 @@ class Setter extends React.Component<Props, State> {
   }
 
   renderSaveStatus() {
-    if (this.state.saveError) {
+    if (this.state.requestError) {
       return (
-        <span className="mbs type-pink type-bold align-button fade-in">
-            An error occurred while saving. Please try again.
-          </span>
+        <span className="mbs type-pink type-bold align-button fade-in">{this.state.requestError}</span>
       );
     } else if (this.state.justSaved) {
       return (
@@ -309,7 +384,7 @@ class Setter extends React.Component<Props, State> {
                 <div className="column-row" key={`envVar${index}`}>
                   <div className="column column-one-quarter mobile-column-one-half type-monospace pvxs mobile-pbn">
                     <div className={
-                      "type-monospace type-wrap-words " +
+                      "type-monospace type-xs type-wrap-words " +
                       (v.isAlreadySavedWithValue ? "" : "align-button")
                     }>
                       {v.name}

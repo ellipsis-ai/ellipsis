@@ -1,12 +1,13 @@
 package controllers.web.settings
 
 import javax.inject.Inject
-
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.admin.AdminAuth
 import controllers.{ReAuthable, RemoteAssets}
 import json._
 import json.Formatting._
+import models.environmentvariable.TeamEnvironmentVariable
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
@@ -23,7 +24,7 @@ class EnvironmentVariablesController @Inject() (
                                                  val configuration: Configuration,
                                                  val assetsProvider: Provider[RemoteAssets],
                                                  implicit val ec: ExecutionContext
-                                               ) extends ReAuthable {
+                                               ) extends ReAuthable with AdminAuth {
 
   case class EnvironmentVariablesInfo(teamId: String, dataJson: String)
 
@@ -44,6 +45,7 @@ class EnvironmentVariablesController @Inject() (
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          isAdmin <- dataService.users.isAdmin(user)
           environmentVariables <- teamAccess.maybeTargetTeam.map { team =>
             dataService.teamEnvironmentVariables.allFor(team)
           }.getOrElse(Future.successful(Seq()))
@@ -66,8 +68,8 @@ class EnvironmentVariablesController @Inject() (
             val config = EnvironmentVariablesListConfig(
               containerId = "environmentVariableList",
               csrfToken = CSRF.getToken(request).map(_.value),
-              teamAccess.isAdminAccess,
-              data = EnvironmentVariablesData(team.id, varsData ++ newVarsData),
+              isAdmin,
+              data = EnvironmentVariablesData(team.id, varsData ++ newVarsData, None),
               focus = maybeNewVars.flatMap(_.headOption)
             )
             Ok(views.js.shared.webpackLoader(
@@ -117,7 +119,8 @@ class EnvironmentVariablesController @Inject() (
                   Json.toJson(
                     EnvironmentVariablesData(
                       data.teamId,
-                      envVars.map( ea => EnvironmentVariableData.withoutValueFor(ea) )
+                      envVars.map(EnvironmentVariableData.withoutValueFor),
+                      None
                     )
                   )
                 )
@@ -153,6 +156,31 @@ class EnvironmentVariablesController @Inject() (
         }
       }
     )
+  }
+
+  def adminLoadValue(teamId: String, envVarName: String) = silhouette.SecuredAction.async { implicit request =>
+    withIsAdminCheck { () =>
+      for {
+        maybeTeam <- dataService.teams.find(teamId)
+        maybeEnvVar <- maybeTeam.map { team =>
+          dataService.teamEnvironmentVariables.find(envVarName, team)
+        }.getOrElse(Future.successful(None))
+      } yield {
+        maybeTeam.map { team =>
+          val envVars = Seq(maybeEnvVar.map { v =>
+            EnvironmentVariableData(v.name, v.value.nonEmpty, Option(v.value).filter(_.nonEmpty))
+          }).flatten
+          val maybeError = if (envVars.isEmpty) {
+            Some(s"Environment variable `${envVarName}` not found")
+          } else {
+            None
+          }
+          Ok(Json.toJson(EnvironmentVariablesData(team.id, envVars, maybeError)))
+        }.getOrElse {
+          NotFound("Team not found")
+        }
+      }
+    }
   }
 
 

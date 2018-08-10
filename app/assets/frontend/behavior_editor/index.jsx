@@ -1293,6 +1293,22 @@ const BehaviorEditor = React.createClass({
       });
   },
 
+  loadAdminEnvVariableValue: function(name, value) {
+    this.setState({
+      envVariables: this.state.envVariables.map((ea) => {
+        if (ea.name === name) {
+          return {
+            name: name,
+            value: value,
+            isAlreadySavedWithValue: Boolean(value)
+          };
+        } else {
+          return ea;
+        }
+      })
+    });
+  },
+
   forgetSavedAnswerRequest: function(url, inputId) {
     var data = {
       inputId: inputId
@@ -2065,6 +2081,10 @@ const BehaviorEditor = React.createClass({
                       vars={this.getEnvVariables()}
                       onCancelClick={this.props.onClearActivePanel}
                       onSave={this.updateEnvVariables}
+                      activePanelIsModal={false}
+                      teamId={this.getBehaviorGroup().teamId}
+                      isAdmin={this.props.isAdmin}
+                      onAdminLoadedValue={this.loadAdminEnvVariableValue}
                     />
                   </div>
                 </div>

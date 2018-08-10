@@ -13,7 +13,8 @@ export interface EnvironmentVariableData {
 
 export interface EnvironmentVariablesData {
   teamId: string,
-  variables: Array<EnvironmentVariableData>
+  variables: Array<EnvironmentVariableData>,
+  error?: Option<string>
 }
 
 export interface EnvironmentVariableListConfig {

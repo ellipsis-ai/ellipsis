@@ -62,6 +62,22 @@ class EnvironmentVariableList extends React.Component<Props, State> {
     });
   }
 
+  loadAdminValue(name: string, value: string): void {
+    this.setState({
+      environmentVariables: this.state.environmentVariables.map((ea) => {
+        if (ea.name === name) {
+          return {
+            name: name,
+            value: value,
+            isAlreadySavedWithValue: Boolean(value)
+          };
+        } else {
+          return ea;
+        }
+      })
+    });
+  }
+
   getVars(): Array<EnvironmentVariableData> {
     return this.state.environmentVariables;
   }
@@ -83,6 +99,9 @@ class EnvironmentVariableList extends React.Component<Props, State> {
         focus={this.props.focus}
         onRenderFooter={this.props.onRenderFooter}
         activePanelIsModal={this.props.activePanelIsModal}
+        teamId={this.props.data.teamId}
+        isAdmin={this.props.isAdmin}
+        onAdminLoadedValue={this.loadAdminValue}
       />
     );
   }
