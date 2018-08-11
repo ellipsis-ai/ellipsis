@@ -48,6 +48,9 @@ case class GitPullException(message: String) extends GitCommandException {
 case class ExportForPushException(message: String) extends GitCommandException {
   override def getMessage: String = s"Error exporting skill: $message"
 }
+case object NoMasterBranchException extends GitCommandException {
+  override def getMessage: String = "No master branch yet. Try pushing to master first."
+}
 case class InvalidBranchNameException(message: String) extends GitCommandException {
   override def getMessage: String = message
 }
@@ -121,7 +124,9 @@ case class GithubPusher(
         call
     } catch {
       case _: RefAlreadyExistsException => {}
-      case _: RefNotFoundException => {}
+      case _: RefNotFoundException => {
+        if (branch != "master") throw NoMasterBranchException
+      }
       case e: InvalidRefNameException => throw InvalidBranchNameException(e.getMessage)
     }
   }
@@ -132,8 +137,7 @@ case class GithubPusher(
         setName(branch).
         call
     } catch {
-      case e: InvalidRefNameException => throw InvalidBranchNameException(e.getMessage)
-      case e: GitAPIException => {}
+      case e: RefNotFoundException => {}
     }
   }
 
@@ -145,7 +149,7 @@ case class GithubPusher(
         setRemoteBranchName(branch).
         call
     } catch {
-      case _: RefNotAdvertisedException => {}
+      case _: RefNotAdvertisedException => {} // brand new repo with no master branch pushed yet
       case e: GitAPIException => throw GitPullException(e.getMessage)
     }
   }
