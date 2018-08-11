@@ -1,17 +1,24 @@
 package utils.github
 
+import java.io.File
+import java.util
+
 import export.BehaviorGroupExporter
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
+import org.apache.commons.io.FileUtils
+import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.errors._
+import org.eclipse.jgit.lib.Constants
+import org.eclipse.jgit.revwalk.RevCommit
+import org.eclipse.jgit.transport.{RefSpec, UsernamePasswordCredentialsProvider}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import services._
 import services.caching.CacheService
-import utils.ShellEscaping
 
-import scala.concurrent.{ExecutionContext, Future, blocking}
-import scala.sys.process.{Process, ProcessLogger}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 sealed trait GitCommandException extends Exception
@@ -41,7 +48,12 @@ case class GitPullException(message: String) extends GitCommandException {
 case class ExportForPushException(message: String) extends GitCommandException {
   override def getMessage: String = s"Error exporting skill: $message"
 }
-
+case object NoMasterBranchException extends GitCommandException {
+  override def getMessage: String = "No master branch yet. Try pushing to master first."
+}
+case class InvalidBranchNameException(message: String) extends GitCommandException {
+  override def getMessage: String = message
+}
 case class GitPushException(exceptionType: GitPushExceptionType.Value, message: String, branch: String) extends GitCommandException {
   val details: JsObject = Json.obj("branch" -> branch)
   override def getMessage: String = message
@@ -71,72 +83,76 @@ case class GithubPusher(
                        services: DefaultServices,
                        implicit val ec: ExecutionContext
                        ) {
-
   val team: Team = behaviorGroup.team
+  val exportName: String = behaviorGroup.id
+  val parentPath: String = s"/tmp/ellipsis-git/${team.id}/${user.id}"
+  val dirName: String = s"$parentPath/$exportName"
+
   val config: Configuration = services.configuration
   val dataService: DataService = services.dataService
   val cacheService: CacheService = services.cacheService
 
-  val parentPath: String = s"/tmp/ellipsis-git/${team.id}/${user.id}"
-  val exportName: String = behaviorGroup.id
-  val dirName: String = s"$parentPath/$exportName"
+  val remoteUrl: String = s"https://github.com/$owner/$repoName.git"
 
-  val remoteUrl: String = ShellEscaping.escapeWithSingleQuotes(s"https://$repoAccessToken@github.com/$owner/$repoName.git")
+  private val credentialsProvider = new UsernamePasswordCredentialsProvider(repoAccessToken, "")
 
-  val escapedBranch: String = ShellEscaping.escapeWithSingleQuotes(branch)
-  val escapedCommitMessage: String = ShellEscaping.escapeWithSingleQuotes(commitMessage)
-  val escapedCommitterName: String = ShellEscaping.escapeWithSingleQuotes(committerInfo.name)
-  val escapedCommitterEmail: String = ShellEscaping.escapeWithSingleQuotes(committerInfo.email)
+  private def parentDir: File = new File(parentPath)
+  private def repoDir: File = new File(parentDir, exportName)
 
-  private def runCommand(cmd: String, maybeCreateException: Option[String => Option[Exception]]): Future[String] = {
-    println(cmd)
-    Future {
-      blocking {
-        val buffer = new StringBuilder()
-        val processLogger = ProcessLogger(
-          logText => buffer.append(s"$logText\n")
-        )
-        val exitValue = Process(Seq("bash", "-c", cmd)).!(processLogger)
-        val output = buffer.mkString
-        if (exitValue != 0) {
-          maybeCreateException.foreach { createException =>
-            createException(output).foreach(throw _)
-          }
-        }
-        output
-      }
+  private def cloneRepo: Git = {
+    parentDir.mkdir()
+    FileUtils.deleteDirectory(repoDir)
+    try {
+      Git.cloneRepository.
+        setURI(remoteUrl).
+        setCloneAllBranches(true).
+        setDirectory(repoDir).
+        setCredentialsProvider(credentialsProvider).
+        call
+    } catch {
+      case e: GitAPIException => throw GitCloneException(owner, repoName, e.getMessage)
     }
   }
 
-  private def cloneRepo: Future[String] = {
-    runCommand(
-      s"mkdir -p $parentPath && cd $parentPath && rm -rf $exportName && git clone $remoteUrl $exportName",
-      Some(message => Some(GitCloneException(owner, repoName, message)))
-    )
-  }
-
-  private def ensureBranch: Future[String] = {
-    runCommand(s"cd $dirName && git checkout -b $escapedBranch && git push origin $escapedBranch", None)
-  }
-
-  private def ensureBranchCheckedOut: Future[String] = {
-    runCommand(s"cd $dirName && git checkout $escapedBranch", None)
-  }
-
-  private val newEmptyRepoRegex = """Couldn't find remote ref master""".r
-
-  private def pullLatest: Future[String] = {
-    runCommand(s"cd $dirName && git pull origin $escapedBranch", Some((str: String) => {
-      if (newEmptyRepoRegex.findFirstIn(str).isDefined) {
-        None
-      } else {
-        Some(GitPullException(str))
+  private def ensureBranch(git: Git): Unit = {
+    try {
+      git.branchCreate.
+        setName(branch).
+        call
+    } catch {
+      case _: RefAlreadyExistsException => {}
+      case _: RefNotFoundException => {
+        if (branch != "master") throw NoMasterBranchException
       }
-    }))
+      case e: InvalidRefNameException => throw InvalidBranchNameException(e.getMessage)
+    }
   }
 
-  private def deleteFiles: Future[String] = {
-    runCommand(s"cd $dirName && rm -rf ./*", None)
+  private def ensureBranchCheckedOut(git: Git): Unit = {
+    try {
+      git.checkout.
+        setName(branch).
+        call
+    } catch {
+      case e: RefNotFoundException => {}
+    }
+  }
+
+  private def pullLatest(git: Git): Unit = {
+    try {
+      git.pull.
+        setCredentialsProvider(credentialsProvider).
+        setRemote("origin").
+        setRemoteBranchName(branch).
+        call
+    } catch {
+      case _: RefNotAdvertisedException => {} // brand new repo with no master branch pushed yet
+      case e: GitAPIException => throw GitPullException(e.getMessage)
+    }
+  }
+
+  private def deleteFiles: Unit = {
+    FileUtils.deleteQuietly(new File(repoDir, "./*"))
   }
 
   private def export: Future[Unit] = {
@@ -151,38 +167,53 @@ case class GithubPusher(
     }
   }
 
-  private def push: Future[String] = {
-    runCommand(
-      raw"""cd $dirName && git add . && git -c user.name=$escapedCommitterName -c user.email=$escapedCommitterEmail commit -a -m $escapedCommitMessage && git push origin $escapedBranch""",
-      Some((message) => Some(GitPushException.fromMessage(escapedBranch, message)))
-    )
+  private def push(git: Git): Unit = {
+    try {
+      git.add.
+        addFilepattern(".").
+        call
+      git.commit.
+        setAuthor(committerInfo.name, committerInfo.email).
+        setMessage(commitMessage).
+        call
+      git.push.
+        setCredentialsProvider(credentialsProvider).
+        setRemote("origin").
+        setRefSpecs(new RefSpec( s"$branch:$branch" ) ).
+        call
+    } catch {
+      case e: GitAPIException => throw GitPushException.fromMessage(branch, e.getMessage)
+    }
   }
 
-  private def setGitSHA: Future[Unit] = {
-    for {
-      sha <- runCommand(
-        raw"""cd $dirName && git rev-parse HEAD""",
-        None
-      )
-      _ <- dataService.behaviorGroupVersionSHAs.maybeCreateFor(behaviorGroup, sha.trim)
-    } yield {}
+  private def setGitSHA(git: Git): Future[Unit] = {
+    val head = git.getRepository.resolve(Constants.HEAD)
+    val commits = new util.ArrayList[RevCommit]()
+    val iterator = git.log.add(head).setMaxCount(1).call.iterator
+
+    while ( {
+      iterator.hasNext
+    }) commits.add(iterator.next)
+
+    val sha = commits.get(0).toString
+    dataService.behaviorGroupVersionSHAs.maybeCreateFor(behaviorGroup, sha.trim).map(_ => {})
   }
 
-  private def cleanUp: Future[String] = {
-    runCommand(s"rm -rf $dirName", None)
+  private def cleanUp: Unit = {
+    FileUtils.deleteDirectory(repoDir)
   }
 
   def run: Future[Unit] = {
     for {
-      _ <- cloneRepo
-      _ <- ensureBranch
-      _ <- ensureBranchCheckedOut
-      _ <- pullLatest
-      _ <- deleteFiles
+      git <- Future.successful(cloneRepo)
+      _ <- Future.successful(ensureBranch(git))
+      _ <- Future.successful(ensureBranchCheckedOut(git))
+      _ <- Future.successful(pullLatest(git))
+      _ <- Future.successful(deleteFiles)
       _ <- export
-      _ <- push
-      _ <- setGitSHA
-      _ <- cleanUp
+      _ <- Future.successful(push(git))
+      _ <- setGitSHA(git)
+      _ <- Future.successful(cleanUp)
     } yield {}
   }
 

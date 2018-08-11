@@ -63,7 +63,9 @@ libraryDependencies ++= Seq(
   "net.logstash.logback" % "logstash-logback-encoder" % "4.11",
   "io.sentry" % "sentry-logback" % "1.5.6",
   "com.chargebee" % "chargebee-java" % "2.3.8",
-  "com.typesafe.akka" %% "akka-http-caching" % "10.1.0-RC2"
+  "com.typesafe.akka" %% "akka-http-caching" % "10.1.0-RC2",
+  "org.eclipse.jgit" % "org.eclipse.jgit" % "5.0.2.201807311906-r",
+  "commons-io" % "commons-io" % "2.6"
 )
 
 // JavaScript configuration begins
