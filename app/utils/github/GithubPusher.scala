@@ -110,10 +110,7 @@ case class GithubPusher(
         setCredentialsProvider(credentialsProvider).
         call
     } catch {
-      case e: GitAPIException => {
-        val err = e
-        throw GitCloneException(owner, repoName, err.getMessage)
-      }
+      case e: GitAPIException => throw GitCloneException(owner, repoName, e.getMessage)
     }
   }
 
