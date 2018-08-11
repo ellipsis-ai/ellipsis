@@ -140,7 +140,7 @@ case class GithubPusher(
 
   private def pullLatest(git: Git): Unit = {
     try {
-      git.pull().
+      git.pull.
         setCredentialsProvider(credentialsProvider).
         setRemote("origin").
         setRemoteBranchName(branch).
