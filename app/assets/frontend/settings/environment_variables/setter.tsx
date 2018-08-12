@@ -44,12 +44,14 @@ interface State {
 
 class Setter extends React.Component<Props, State> {
   envVarValueInputs: Array<Option<Textarea>>;
+  newVarNameInputs: Array<Option<Input>>;
 
   constructor(props: Props) {
     super(props);
     autobind(this);
     this.state = this.defaultState();
     this.envVarValueInputs = [];
+    this.newVarNameInputs = [];
   }
 
   getVars(): Array<EnvironmentVariableData> {
@@ -67,7 +69,7 @@ class Setter extends React.Component<Props, State> {
   defaultState(): State {
     return {
       vars: this.props.vars,
-      newVars: [this.createNewVar()],
+      newVars: [],
       requestError: null,
       justSaved: false,
       isSaving: false,
@@ -147,6 +149,11 @@ class Setter extends React.Component<Props, State> {
   addNewVar(): void {
     this.setState({
       newVars: this.state.newVars.concat(this.createNewVar())
+    }, () => {
+      const newVarNameInput = this.newVarNameInputs[this.state.newVars.length - 1];
+      if (newVarNameInput) {
+        newVarNameInput.focus();
+      }
     });
   }
 
@@ -291,19 +298,22 @@ class Setter extends React.Component<Props, State> {
     });
   }
 
-  getValueInputForVar(v: EnvironmentVariableData, index: number) {
-    const isLoadingAdminValue = this.isLoadingAdminValueFor(v);
-    if (v.isAlreadySavedWithValue) {
-      const value = this.props.isAdmin && v.value || "••••••••";
+  getValueInputForVar(envVar: EnvironmentVariableData, index: number) {
+    const isLoadingAdminValue = this.isLoadingAdminValueFor(envVar);
+    if (envVar.isAlreadySavedWithValue) {
+      const value = this.props.isAdmin && envVar.value || "••••••••";
       return (
         <div className="position-relative">
-          <div className="display-inline-block type-wrap-words type-monospace type-weak type-xs mrm">{value}</div>
-          {this.props.isAdmin && !v.value ? (
+          <div
+            className="align-button type-wrap-words type-monospace type-weak type-s mrm"
+            title={this.props.isAdmin && envVar.value ? envVar.value : "(Value hidden)"}
+          >{value}</div>
+          {this.props.isAdmin && !envVar.value ? (
             <DynamicLabelButton
-              className="button-s button-shrink mrs"
-              onClick={this.adminLoadHandlerFor(v)}
+              className="button-s button-shrink mrs mbs"
+              onClick={this.adminLoadHandlerFor(envVar)}
               labels={[{
-                text: "Load…",
+                text: "Reveal…",
                 displayWhen: !isLoadingAdminValue
               }, {
                 text: "Loading",
@@ -312,9 +322,6 @@ class Setter extends React.Component<Props, State> {
               disabledWhen={this.state.adminValuesLoading.length > 0}
             />
           ) : null}
-          <Button className="button-s button-shrink" onClick={this.resetVar.bind(this, index)}>
-            Reset
-          </Button>
         </div>
       );
     } else {
@@ -323,9 +330,10 @@ class Setter extends React.Component<Props, State> {
           ref={(el) => this.envVarValueInputs[index] = el}
           className="type-monospace form-input-borderless form-input-height-auto"
           placeholder="Set value"
-          value={v.value || ""}
+          value={envVar.value || ""}
           onChange={this.onChangeVarValue.bind(this, index)}
-          rows={this.getRowCountForTextareaValue(v.value)}
+          rows={this.getRowCountForTextareaValue(envVar.value)}
+          title={envVar.value ? "" : "No value set"}
         />
       );
     }
@@ -405,7 +413,7 @@ class Setter extends React.Component<Props, State> {
       return this.props.onRenderFooter((
         <div>
           <Collapsible revealWhen={!this.props.activePanelIsModal}>
-            <div className="container pts border-top">
+            <div className="container container-wide pts border-top">
               <div className="columns">
                 <div className="column column-one-quarter" />
                 <div className="column column-three-quarters plxxxxl">
@@ -456,29 +464,29 @@ class Setter extends React.Component<Props, State> {
           <span>that may be used by multiple skills.</span>
         </p>
 
-        <div className="columns">
+        <div>
           <div>
-            {this.getVars().map((v, index) => {
+            {this.getVars().map((ea, index) => {
               return (
-                <div className="column-row" key={`envVar${index}`}>
-                  <div className="column column-one-quarter mobile-column-one-half type-monospace pvxs mobile-pbn">
-                    <div className={
-                      "type-monospace type-xs type-wrap-words " +
-                      (v.isAlreadySavedWithValue ? "" : "align-button")
-                    }>
-                      {v.name}
+                <div className="border bg-white phs mbm columns" key={`envVar${index}`}>
+                  <div className="column column-one-quarter mobile-column-one-half">
+                    <div className="align-button type-monospace type-s type-wrap-words" title={ea.name}>
+                      {ea.name}
                     </div>
                   </div>
-                  <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
+                  <div className="column column-three-quarters mobile-column-full">
                     <div className="columns columns-elastic">
                       <div className="column column-expand">
-                        {this.getValueInputForVar(v, index)}
+                        {this.getValueInputForVar(ea, index)}
                       </div>
-                      <div className="column column-shrink">
+                      <div className="column column-shrink display-nowrap">
+                        {ea.isAlreadySavedWithValue ? (
+                          <Button className="button-s button-shrink mrs mvs" onClick={this.resetVar.bind(this, index)}>Reset</Button>
+                        ) : null}
                         {this.props.onRenderFooter ? (
                           <Button
-                            className="button-s button-shrink"
-                            onClick={this.deleteHandlerFor(v)}
+                            className="button-s button-shrink mvs"
+                            onClick={this.deleteHandlerFor(ea)}
                           >Delete…</Button>
                         ) : null}
                       </div>
@@ -490,25 +498,24 @@ class Setter extends React.Component<Props, State> {
           </div>
         </div>
 
-        <hr />
-
-        <div className="columns">
+        <div className="mtxl">
           <div>
             {this.getNewVars().map((v, index) => {
               return (
-                <div className="column-row" key={`newEnvVar${index}`}>
-                  <div className="column column-one-quarter mobile-column-one-half pvxs mobile-phn">
+                <div className="border bg-white phs mbm columns" key={`newEnvVar${index}`}>
+                  <div className="column column-one-quarter mobile-column-one-half">
                     <Input
+                      ref={(el) => this.newVarNameInputs[index] = el}
                       className="form-input-borderless type-monospace"
                       placeholder="New variable name"
                       value={v.name}
                       onChange={this.setNewVarIndexName.bind(this, index)}
                     />
                   </div>
-                  <div className="column column-three-quarters mobile-column-full pvxs mobile-ptn">
+                  <div className="column column-three-quarters mobile-column-full">
                     <Textarea
                       className="type-monospace form-input-borderless form-input-height-auto"
-                      placeholder="Set team-wide value (optional)"
+                      placeholder="Set value (optional)"
                       value={v.value || ""}
                       onChange={this.setNewVarIndexValue.bind(this, index)}
                       rows={this.getRowCountForTextareaValue(v.value)}
@@ -520,12 +527,12 @@ class Setter extends React.Component<Props, State> {
           </div>
         </div>
 
-        <div className="align-r mts">
+        <div className="mts">
           <button type="button"
             className="button-s"
             onClick={this.addNewVar}
           >
-            Add another
+            Add new environment variable
           </button>
         </div>
 
