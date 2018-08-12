@@ -63,6 +63,7 @@ declare var jsRoutes: {
         EnvironmentVariablesController: {
           list: (teamId?: Option<string>) => JsRoute,
           submit: () => JsRoute,
+          delete: () => JsRoute,
           adminLoadValue: (teamId: string, name: string) => JsRoute
         },
         IntegrationsController: {

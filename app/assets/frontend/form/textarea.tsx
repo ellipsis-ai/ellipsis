@@ -10,7 +10,8 @@ interface Props {
   onFocus?: Option<(value: string) => void>,
   placeholder?: string,
   rows?: number,
-  value: string
+  value: string,
+  title?: string
 }
 
 class Textarea extends React.Component<Props> {
@@ -68,6 +69,7 @@ class Textarea extends React.Component<Props> {
           onBlur={this.onBlur}
           onFocus={this.onFocus}
           rows={this.props.rows}
+          title={this.props.title}
         />
       );
     }
