@@ -498,7 +498,7 @@ class Setter extends React.Component<Props, State> {
           </div>
         </div>
 
-        <div className="mtxl">
+        <div>
           <div>
             {this.getNewVars().map((v, index) => {
               return (
@@ -527,7 +527,7 @@ class Setter extends React.Component<Props, State> {
           </div>
         </div>
 
-        <div className="mts">
+        <div className="mtxl">
           <button type="button"
             className="button-s"
             onClick={this.addNewVar}
