@@ -7,6 +7,7 @@ import controllers.admin.AdminAuth
 import controllers.{ReAuthable, RemoteAssets}
 import json._
 import json.Formatting._
+import models.accounts.user.{User, UserTeamAccess}
 import models.environmentvariable.TeamEnvironmentVariable
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -36,6 +37,10 @@ class EnvironmentVariablesController @Inject() (
   )
 
   case class EnvironmentVariablesDeleteInfo(teamId: String, name: String)
+
+  private val legacyDeleteForm = Form(
+    "name" -> nonEmptyText
+  )
 
   private val deleteForm = Form(
     mapping(
@@ -140,26 +145,31 @@ class EnvironmentVariablesController @Inject() (
     )
   }
 
+  private def deleteFor(user: User, maybeTeamId: Option[String], name: String) = {
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      isDeleted <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.teamEnvironmentVariables.deleteFor(name, team)
+      }.getOrElse(Future.successful(false))
+    } yield {
+      if (isDeleted) {
+        Ok(Json.toJson("Deleted"))
+      } else {
+        NotFound("Couldn't find env var to delete for this team")
+      }
+    }
+  }
+
   def delete = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     deleteForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+        legacyDeleteForm.bindFromRequest.fold(
+          _ => Future.successful(BadRequest(formWithErrors.errorsAsJson)),
+          name => deleteFor(user, None, name)
+        )
       },
-      info => {
-        for {
-          teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
-          isDeleted <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.teamEnvironmentVariables.deleteFor(info.name, team)
-          }.getOrElse(Future.successful(false))
-        } yield {
-          if (isDeleted) {
-            Ok(Json.toJson("Deleted"))
-          } else {
-            NotFound("Couldn't find env var to delete for this team")
-          }
-        }
-      }
+      info => deleteFor(user, Some(info.teamId), info.name)
     )
   }
 
