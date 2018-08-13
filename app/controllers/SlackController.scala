@@ -11,7 +11,7 @@ import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.{ActionChoice, SimpleTextResult}
+import models.behaviors.{ActionChoice, BotResult, SimpleTextResult}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.Logger
@@ -19,6 +19,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
+import play.api.libs.ws.WSResponse
 import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
 import services._
@@ -350,6 +351,77 @@ class SlackController @Inject() (
 
   def event = Action { implicit request =>
     (maybeChallengeResult orElse maybeEventResult).getOrElse {
+      Ok("I don't know what to do with this request but I'm not concerned")
+    }
+  }
+
+  case class SlashCommandInfo(
+                               command: String,
+                               commandText: String,
+                               responseUrl: String,
+                               userId: String,
+                               teamId: String,
+                               channelId: String
+                             )
+
+  private val slashCommandForm = Form(
+    mapping(
+      "command" -> nonEmptyText,
+      "text" -> nonEmptyText,
+      "response_url" -> nonEmptyText,
+      "user_id" -> nonEmptyText,
+      "team_id" -> nonEmptyText,
+      "channel_id" -> nonEmptyText
+    )(SlashCommandInfo.apply)(SlashCommandInfo.unapply)
+  )
+
+  private def respondToCommandFor(info: SlashCommandInfo, result: BotResult): Future[WSResponse] = {
+    val prefix = s"<@${info.userId}> triggered the command `${info.command} ${info.commandText}`:"
+    val payload = Json.obj(
+      "response_type" -> JsString("in_channel"),
+      "text" -> JsString(s"$prefix\n\n${result.fullText}")
+    )
+    ws.
+      url(info.responseUrl).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      post(payload)
+  }
+
+  private def processCommandFor(info: SlashCommandInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
+    val event = SlashCommandEvent(
+      botProfile,
+      info.teamId,
+      info.channelId,
+      info.userId,
+      info.commandText
+    )
+    eventHandler.handle(event, maybeConversation = None).flatMap { results =>
+      Future.sequence(
+        results.map(result => respondToCommandFor(info, result).map { r =>
+          println(r.body)
+          Logger.info(event.logTextFor(result, None))
+        })
+      )
+    }.map(_ => {})
+  }
+
+
+  private def slashCommandResult(info: SlashCommandInfo)(implicit request: Request[AnyContent]): Result = {
+    for {
+      profiles <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId)
+      _ <- Future.sequence(
+        profiles.map { profile =>
+          processCommandFor(info, profile)
+        }
+      )
+    } yield {}
+
+    // respond immediately with an empty message
+    Ok("")
+  }
+
+  def command = Action { implicit request =>
+    maybeResultFor(slashCommandForm, slashCommandResult).getOrElse {
       Ok("I don't know what to do with this request but I'm not concerned")
     }
   }
