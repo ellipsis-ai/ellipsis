@@ -376,7 +376,7 @@ class SlackController @Inject() (
   )
 
   private def respondToCommandFor(info: SlashCommandInfo, result: BotResult): Future[WSResponse] = {
-    val prefix = s"<@${info.userId}> triggered the command `${info.command} ${info.text}`:"
+    val prefix = s"<@${info.userId}> triggered the command `${info.command} ${info.text}`"
     val payload = Json.obj(
       "response_type" -> JsString("in_channel"),
       "text" -> JsString(s"$prefix\n\n${result.fullText}")
@@ -388,21 +388,23 @@ class SlackController @Inject() (
   }
 
   private def processCommandFor(info: SlashCommandInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
-    val event = SlashCommandEvent(
-      botProfile,
-      info.teamId,
-      info.channelId,
-      info.userId,
-      info.text
-    )
-    eventHandler.handle(event, maybeConversation = None).flatMap { results =>
-      Future.sequence(
-        results.map(result => respondToCommandFor(info, result).map { r =>
-          println(r.body)
-          Logger.info(event.logTextFor(result, None))
-        })
+    SlackMessage.fromFormattedText(info.text, botProfile, slackEventService).flatMap { slackMessage =>
+      val event = SlashCommandEvent(
+        botProfile,
+        info.teamId,
+        info.channelId,
+        info.userId,
+        slackMessage
       )
-    }.map(_ => {})
+      eventHandler.handle(event, maybeConversation = None).flatMap { results =>
+        Future.sequence(
+          results.map(result => respondToCommandFor(info, result).map { r =>
+            println(r.body)
+            Logger.info(event.logTextFor(result, None))
+          })
+        )
+      }.map(_ => {})
+    }
   }
 
 

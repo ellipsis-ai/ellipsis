@@ -17,7 +17,7 @@ case class SlashCommandEvent(
                               userSlackTeamId: String,
                               channel: String,
                               user: String,
-                              text: String
+                              message: SlackMessage
                             ) extends Event with SlackEvent {
 
   val eventType: EventType = EventType.chat
@@ -28,7 +28,7 @@ case class SlashCommandEvent(
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
 
-  lazy val messageText: String = text
+  lazy val messageText: String = message.originalText
   lazy val invocationLogText: String = relevantMessageText
 
   val maybeThreadId: Option[String] = None
@@ -52,38 +52,7 @@ case class SlashCommandEvent(
                              )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
-      triggers <- (for {
-        team <- maybeTeam
-        channel <- maybeChannel
-      } yield {
-        dataService.behaviorGroupDeployments.allActiveTriggersFor(context, channel, team)
-      }).getOrElse(Future.successful(Seq()))
-      activatedTriggerLists <- Future.successful {
-        triggers.
-          filter(_.isActivatedBy(this)).
-          groupBy(_.behaviorVersion).
-          values.
-          toSeq
-      }
-      activatedTriggerListsWithParamCounts <- Future.sequence(
-        activatedTriggerLists.map { list =>
-          Future.sequence(list.map { trigger =>
-            for {
-              params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
-            } yield {
-              (trigger, trigger.invocationParamsFor(this, params).size)
-            }
-          })
-        }
-      )
-      // we want to chose activated triggers with more params first
-      activatedTriggers <- Future.successful(activatedTriggerListsWithParamCounts.flatMap { list =>
-        list.
-          sortBy { case(_, paramCount) => paramCount }.
-          map { case(trigger, _) => trigger }.
-          reverse.
-          headOption
-      })
+      activatedTriggers <- dataService.behaviorGroupDeployments.activatedTriggersFor(this, maybeTeam, maybeChannel, context, None)
       responses <- Future.sequence(activatedTriggers.map { trigger =>
         for {
           params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
@@ -101,9 +70,12 @@ case class SlashCommandEvent(
   }
 
 
-  def messageUserDataList: Set[MessageUserData] = Set() // TODO: hm
+  def messageUserDataList: Set[MessageUserData] = {
+    message.userList.map(MessageUserData.fromSlackUserData)
+  }
 
-  def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this // TODO: hm
+  // never happens in conversation
+  def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
 
   def sendMessage(
                    unformattedText: String,

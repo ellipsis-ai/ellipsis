@@ -1,14 +1,16 @@
 package models.behaviors.behaviorgroupdeployment
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.IDs
 import models.accounts.user.User
+import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.events.Event
 import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
 import services.{AWSLambdaService, DataService}
@@ -89,6 +91,56 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
         } yield triggers
       }
     } yield triggers
+  }
+
+  def activatedTriggersFor(
+                                     event: Event,
+                                     maybeTeam: Option[Team],
+                                     maybeChannel: Option[String],
+                                     context: String,
+                                     maybeLimitToBehavior: Option[Behavior]
+                                   ): Future[Seq[MessageTrigger]] = {
+    for {
+      maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
+        dataService.behaviors.maybeCurrentVersionFor(limitToBehavior)
+      }.getOrElse(Future.successful(None))
+      triggers <- maybeLimitToBehaviorVersion.map { limitToBehaviorVersion =>
+        dataService.messageTriggers.allFor(limitToBehaviorVersion)
+      }.getOrElse {
+        (for {
+          team <- maybeTeam
+          channel <- maybeChannel
+        } yield {
+          dataService.behaviorGroupDeployments.allActiveTriggersFor(context, channel, team)
+        }).getOrElse(Future.successful(Seq()))
+      }
+      activatedTriggerLists <- Future.successful {
+        triggers.
+          filter(_.isActivatedBy(event)).
+          groupBy(_.behaviorVersion).
+          values.
+          toSeq
+      }
+      activatedTriggerListsWithParamCounts <- Future.sequence(
+        activatedTriggerLists.map { list =>
+          Future.sequence(list.map { trigger =>
+            for {
+              params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
+            } yield {
+              (trigger, trigger.invocationParamsFor(event, params).size)
+            }
+          })
+        }
+      )
+      // we want to chose activated triggers with more params first
+      activatedTriggers <- Future.successful(activatedTriggerListsWithParamCounts.flatMap { list =>
+        list.
+          sortBy { case(_, paramCount) => paramCount }.
+          map { case(trigger, _) => trigger }.
+          reverse.
+          headOption
+      })
+    } yield activatedTriggers
   }
 
   def maybeMostRecentFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]] = {
