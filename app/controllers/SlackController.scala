@@ -357,7 +357,7 @@ class SlackController @Inject() (
 
   case class SlashCommandInfo(
                                command: String,
-                               commandText: String,
+                               text: String,
                                responseUrl: String,
                                userId: String,
                                teamId: String,
@@ -376,7 +376,7 @@ class SlackController @Inject() (
   )
 
   private def respondToCommandFor(info: SlashCommandInfo, result: BotResult): Future[WSResponse] = {
-    val prefix = s"<@${info.userId}> triggered the command `${info.command} ${info.commandText}`:"
+    val prefix = s"<@${info.userId}> triggered the command `${info.command} ${info.text}`:"
     val payload = Json.obj(
       "response_type" -> JsString("in_channel"),
       "text" -> JsString(s"$prefix\n\n${result.fullText}")
@@ -393,7 +393,7 @@ class SlackController @Inject() (
       info.teamId,
       info.channelId,
       info.userId,
-      info.commandText
+      info.text
     )
     eventHandler.handle(event, maybeConversation = None).flatMap { results =>
       Future.sequence(
