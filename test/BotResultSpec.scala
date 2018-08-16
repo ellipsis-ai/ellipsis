@@ -45,7 +45,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
       None,
       SlackTimestamp.now,
       None,
-      isUninterruptedConversation = false
+      isUninterruptedConversation = false,
+      isEphemeral = false
     )
   }
 

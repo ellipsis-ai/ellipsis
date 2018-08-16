@@ -33,7 +33,8 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
       None,
       OffsetDateTime.now.toString,
       None,
-      isUninterruptedConversation = false
+      isUninterruptedConversation = false,
+      isEphemeral = false
     )
   }
 
