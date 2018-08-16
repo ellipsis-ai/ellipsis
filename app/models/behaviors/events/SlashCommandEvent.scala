@@ -8,7 +8,7 @@ import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.team.Team
 import play.api.Configuration
 import services.{DataService, DefaultServices}
-import utils.UploadFileSpec
+import utils.{SlackMessageSender, UploadFileSpec}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,6 +21,8 @@ case class SlashCommandEvent(
                             ) extends Event with SlackEvent {
 
   val eventType: EventType = EventType.chat
+
+  override val isEphemeral: Boolean = true
 
   val teamId: String = profile.teamId
   val userIdForContext: String = user
@@ -91,8 +93,31 @@ case class SlashCommandEvent(
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
 
-    // No-op; we use the response_url instead
-    Future.successful(None)
+    for {
+      channelToUse <- channelForSend(forcePrivate, maybeConversation, services)
+      botName <- botName(services)
+      maybeTs <- SlackMessageSender(
+        services.slackApiService.clientFor(profile),
+        user,
+        profile.slackTeamId,
+        unformattedText,
+        forcePrivate = forcePrivate,
+        developerContext,
+        channel,
+        channelToUse,
+        maybeThreadId,
+        maybeShouldUnfurl,
+        maybeConversation,
+        attachmentGroups,
+        files,
+        choices,
+        configuration,
+        botName,
+        messageUserDataList(maybeConversation, services),
+        services,
+        isEphemeral
+      ).send
+    } yield maybeTs
   }
 
 }

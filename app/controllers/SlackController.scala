@@ -367,35 +367,6 @@ class SlackController @Inject() (
     )(SlashCommandInfo.apply)(SlashCommandInfo.unapply)
   )
 
-  private def respondToCommandFor(profile: SlackBotProfile, info: SlashCommandInfo, result: BotResult): Future[Unit] = {
-    val maybeConvoChannel = result.maybeConversation.flatMap(_.maybeChannel)
-    for {
-      maybeChoices <- dataService.run(result.maybeChoicesAction(dataService))
-      botName <- result.event.botName(services)
-      _ <- SlackMessageSender(
-        services.slackApiService.clientFor(profile),
-        info.userId,
-        profile.slackTeamId,
-        result.fullText,
-        forcePrivate = result.forcePrivateResponse,
-        result.developerContext,
-        info.channelId,
-        maybeConvoChannel.getOrElse(info.channelId),
-        maybeThreadId = None,
-        maybeShouldUnfurl = None,
-        maybeConversation = None,
-        result.attachmentGroups,
-        result.files,
-        maybeChoices.getOrElse(Seq()),
-        configuration,
-        botName,
-        result.event.messageUserDataList(maybeConversation = None, services),
-        services,
-        isEphemeral = true
-      ).send
-    } yield {}
-  }
-
   private def processCommandFor(info: SlashCommandInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
       slackMessage <- SlackMessage.fromFormattedText(info.text, botProfile, slackEventService)
@@ -415,7 +386,7 @@ class SlackController @Inject() (
       ).map(_.headOption)
       results <- eventHandler.handle(event, maybeConversation)
       _ <- Future.sequence(
-        results.map(result => respondToCommandFor(botProfile, info, result).map { _ =>
+        results.map(result => botResultService.sendIn(result, None).map { _ =>
           Logger.info(event.logTextFor(result, None))
         })
       )

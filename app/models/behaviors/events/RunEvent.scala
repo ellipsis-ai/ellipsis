@@ -22,7 +22,8 @@ case class RunEvent(
                      maybeThreadId: Option[String],
                      user: String,
                      ts: String,
-                     maybeOriginalEventType: Option[EventType]
+                     maybeOriginalEventType: Option[EventType],
+                     override val isEphemeral: Boolean
                   ) extends Event with SlackEvent {
 
   val eventType: EventType = EventType.api
@@ -81,7 +82,7 @@ case class RunEvent(
         botName,
         Set.empty[MessageUserData],
         services,
-        isEphemeral = false
+        isEphemeral
       ).send
     } yield maybeTs
   }

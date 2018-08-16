@@ -326,7 +326,8 @@ class APIController @Inject() (
           None,
           slackProfile.loginInfo.providerKey,
           SlackTimestamp.now,
-          info.originalEventType.flatMap(EventType.find)
+          info.originalEventType.flatMap(EventType.find),
+          isEphemeral = false
         )
       )
       result <- if (maybeBehaviorVersion.isDefined) {

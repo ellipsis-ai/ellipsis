@@ -72,7 +72,8 @@ class BotResultServiceImpl @Inject() (
           None,
           linkedAccount.loginInfo.providerKey,
           SlackTimestamp.now,
-          Some(botResult.event.eventType)
+          Some(botResult.event.eventType),
+          botResult.event.isEphemeral
         )
       )
       _ <- if (maybeBehaviorVersion.isDefined) {
