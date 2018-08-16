@@ -1005,7 +1005,9 @@ class SlackController @Inject() (
       } else {
         info.original_message
       }
-      Ok(updated.map(u => Json.toJson(u).toString).getOrElse("")) // TODO: check this
+      updated.map { u =>
+        Ok(Json.toJson(u))
+      }.getOrElse(Ok(""))
     }
 
   }
