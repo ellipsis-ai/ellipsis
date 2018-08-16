@@ -141,14 +141,22 @@ trait Event {
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    if (behaviorVersion.forcePrivateResponse) {
-      eventualMaybeDMChannel(services).map { maybeDMChannel =>
-        maybeDMChannel
-      }
-    } else {
-      Future.successful(maybeChannel)
+  def shouldAutoForcePrivate(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
+      params.exists(_.paramType.mayRequireTypedAnswer)
     }
+  }
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    for {
+      forcePrivate <- shouldAutoForcePrivate(behaviorVersion, services.dataService).map(_ || behaviorVersion.forcePrivateResponse)
+      maybeChannelToUse <- if (forcePrivate) {
+        eventualMaybeDMChannel(services).map { maybeDMChannel =>
+          maybeDMChannel
+        }
+      } else {
+        Future.successful(maybeChannel)
+      }
+    } yield maybeChannelToUse
   }
 
   def maybeChannelForSendAction(

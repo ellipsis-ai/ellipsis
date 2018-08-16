@@ -7,13 +7,13 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.{ActionChoice, DeveloperContext}
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.{JsString, Json}
 import services.DefaultServices
 import services.slack.SlackApiClient
-import services.slack.apiModels._
 import services.slack.apiModels.Formatting._
+import services.slack.apiModels._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
@@ -28,19 +28,6 @@ case class SlackMessageSenderException(underlying: Throwable, channel: String, s
        |${underlying.toString}
      """.stripMargin, underlying) {
 }
-
-case class BotNotInSlackChannelException(
-                                          text: String,
-                                          maybeAttachments: Option[Seq[Attachment]],
-                                          channel: String,
-                                          slackTeamId: String,
-                                          userId: String,
-                                          maybeEvent: Option[Event]
-                                        )
-  extends Exception(
-    s"""Tried to send a message to user $userId in channel $channel on team $slackTeamId, but I'm not in that channel!
-     |Message:
-     |$text""".stripMargin)
 
 case class SlackMessageSender(
                                client: SlackApiClient,
@@ -130,10 +117,10 @@ case class SlackMessageSender(
 
   private def postEphemeralMessage(
                                     text: String,
-                                    channel: String,
-                                    maybeAttachments: Option[Seq[Attachment]] = None
+                                    maybeAttachments: Option[Seq[Attachment]] = None,
+                                    maybeChannelToForce: Option[String] = None
                                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    Logger.info(s"Posting ephemeral msg: $text in channel: $channel")
+    val channel = maybeChannelToForce.getOrElse(channelToUse)
     client.postEphemeralMessage(
       text,
       channel,
@@ -142,7 +129,9 @@ case class SlackMessageSender(
       parse = None,
       linkNames = None,
       attachments = maybeAttachments
-    )
+    ).recover {
+      case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
+    }
   }
 
   private def postChatMessage(
@@ -151,11 +140,11 @@ case class SlackMessageSender(
                                maybeReplyBroadcast: Option[Boolean] = None,
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
-                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
-    (if (isEphemeral) {
-      postEphemeralMessage(text, channel, maybeAttachments)
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    if (isEphemeral) {
+      postEphemeralMessage(text, maybeAttachments, maybeChannelToForce)
     } else {
+      val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
       client.postChatMessage(
         channel,
         text,
@@ -172,14 +161,8 @@ case class SlackMessageSender(
         deleteOriginal = None,
         threadTs = maybeThreadTs,
         replyBroadcast = maybeReplyBroadcast
-      )
-    }).map(Some(_)).recover {
-      case t: Throwable => {
-        if ("not_in_channel".r.findFirstIn(t.getMessage).isDefined) {
-          throw BotNotInSlackChannelException(text, maybeAttachments, channel, slackTeamId, user, None)
-        } else {
-          throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
-        }
+      ).recover {
+        case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
       }
     }
   }
@@ -269,7 +252,7 @@ case class SlackMessageSender(
           maybeReplyBroadcast = Some(false),
           maybeAttachmentsForSegment
         )
-      }.flatMap { maybeTs => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeTs)}
+      }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
     }
   }
 

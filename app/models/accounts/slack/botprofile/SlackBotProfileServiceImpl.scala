@@ -234,8 +234,6 @@ class SlackBotProfileServiceImpl @Inject() (
       originalMessageTs,
       delayMilliseconds
     )
-    eventualResult.recover {
-      case e: BotNotInSlackChannelException => throw e.copy(maybeEvent = Some(event))
-    }
+    eventualResult
   }
 }

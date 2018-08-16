@@ -33,6 +33,8 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
   def needsConfig(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean]
   val isBuiltIn: Boolean
 
+  val mayRequireTypedAnswer: Boolean = false
+
   def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean]
 
   def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[JsValue]
@@ -157,6 +159,8 @@ object TextType extends BuiltInType {
 
   val outputName: String = "String"
 
+  override val mayRequireTypedAnswer: Boolean = true
+
   def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = DBIO.successful(true)
 
   def prepareValue(text: String) = JsString(text)
@@ -176,6 +180,8 @@ object NumberType extends BuiltInType {
   val name = "Number"
 
   val outputName: String = "Float"
+
+  override val mayRequireTypedAnswer: Boolean = true
 
   def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = DBIO.successful {
     try {
@@ -268,6 +274,8 @@ object FileType extends BuiltInType {
   val name = "File"
 
   val outputName: String = "File"
+
+  override val mayRequireTypedAnswer: Boolean = true
 
   def isIntentionallyEmpty(text: String): Boolean = text.trim.toLowerCase == "none"
 
@@ -365,6 +373,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       )
     ) ++ vv.data
   }
+
+  override val mayRequireTypedAnswer: Boolean = true
 
   def resolvedValueForAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[String]] = {
     cachedValidValueFor(text, context).map { vv =>

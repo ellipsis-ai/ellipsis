@@ -368,6 +368,7 @@ class SlackController @Inject() (
   )
 
   private def respondToCommandFor(profile: SlackBotProfile, info: SlashCommandInfo, result: BotResult): Future[Unit] = {
+    val maybeConvoChannel = result.maybeConversation.flatMap(_.maybeChannel)
     for {
       maybeChoices <- dataService.run(result.maybeChoicesAction(dataService))
       botName <- result.event.botName(services)
@@ -379,7 +380,7 @@ class SlackController @Inject() (
         forcePrivate = result.forcePrivateResponse,
         result.developerContext,
         info.channelId,
-        info.channelId,
+        maybeConvoChannel.getOrElse(info.channelId),
         maybeThreadId = None,
         maybeShouldUnfurl = None,
         maybeConversation = None,
