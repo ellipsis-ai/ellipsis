@@ -10,6 +10,5 @@ case class SlashCommandInfo(
                            ) {
 
   val commandText: String = s"${command} ${text}"
-  val preamble: String = s"<@${userId}> triggered the command `${commandText}`"
-  val confirmation: String = s"OK, running `${commandText}`"
+  val confirmation: String = s"Sending the following to the bot: `${text}`"
 }
