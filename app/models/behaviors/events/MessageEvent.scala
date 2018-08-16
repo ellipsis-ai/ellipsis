@@ -24,7 +24,8 @@ trait MessageEvent extends Event {
                             )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
-      activatedTriggers <- dataService.behaviorGroupDeployments.activatedTriggersFor(this, maybeTeam, maybeChannel, context, maybeLimitToBehavior)
+      possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(this, maybeTeam, maybeChannel, context, maybeLimitToBehavior)
+      activatedTriggers <- activatedTriggersIn(possibleActivatedTriggers, dataService)
       responses <- Future.sequence(activatedTriggers.map { trigger =>
         for {
           params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)

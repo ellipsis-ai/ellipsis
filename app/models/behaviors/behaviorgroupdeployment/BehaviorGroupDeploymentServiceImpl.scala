@@ -93,7 +93,7 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
     } yield triggers
   }
 
-  def activatedTriggersFor(
+  def possibleActivatedTriggersFor(
                                      event: Event,
                                      maybeTeam: Option[Team],
                                      maybeChannel: Option[String],
@@ -114,33 +114,7 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
           dataService.behaviorGroupDeployments.allActiveTriggersFor(context, channel, team)
         }).getOrElse(Future.successful(Seq()))
       }
-      activatedTriggerLists <- Future.successful {
-        triggers.
-          filter(_.isActivatedBy(event)).
-          groupBy(_.behaviorVersion).
-          values.
-          toSeq
-      }
-      activatedTriggerListsWithParamCounts <- Future.sequence(
-        activatedTriggerLists.map { list =>
-          Future.sequence(list.map { trigger =>
-            for {
-              params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
-            } yield {
-              (trigger, trigger.invocationParamsFor(event, params).size)
-            }
-          })
-        }
-      )
-      // we want to chose activated triggers with more params first
-      activatedTriggers <- Future.successful(activatedTriggerListsWithParamCounts.flatMap { list =>
-        list.
-          sortBy { case(_, paramCount) => paramCount }.
-          map { case(trigger, _) => trigger }.
-          reverse.
-          headOption
-      })
-    } yield activatedTriggers
+    } yield triggers
   }
 
   def maybeMostRecentFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]] = {

@@ -52,7 +52,8 @@ case class SlashCommandEvent(
                              )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
-      activatedTriggers <- dataService.behaviorGroupDeployments.activatedTriggersFor(this, maybeTeam, maybeChannel, context, None)
+      possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(this, maybeTeam, maybeChannel, context, maybeLimitToBehavior)
+      activatedTriggers <- activatedTriggersIn(possibleActivatedTriggers, dataService)
       responses <- Future.sequence(activatedTriggers.map { trigger =>
         for {
           params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
