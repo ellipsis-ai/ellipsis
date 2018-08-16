@@ -17,11 +17,6 @@ object SlackMessageReactionHandler {
                (implicit system: ActorSystem): Future[Unit] = {
     implicit val ec: ExecutionContext = system.dispatcher
     val p = Promise[T]()
-    future.recover {
-      case t: Throwable => {
-        Logger.error("Exception responding to a Slack message", t)
-      }
-    }
     p.completeWith(future)
     Future {
       Thread.sleep(delayMilliseconds)

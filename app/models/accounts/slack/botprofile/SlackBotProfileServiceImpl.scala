@@ -16,7 +16,7 @@ import services.caching.CacheService
 import services.slack.{MalformedResponseException, SlackApiService, SlackEventService}
 import services.DataService
 import slick.dbio.DBIO
-import utils.{SlackChannels, SlackMessageReactionHandler, SlackTimestamp}
+import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -138,7 +138,8 @@ class SlackBotProfileServiceImpl @Inject() (
           None,
           SlackTimestamp.now,
           maybeOriginalEventType,
-          isUninterruptedConversation = false
+          isUninterruptedConversation = false,
+          isEphemeral = false
         )
       }
     }
@@ -208,8 +209,9 @@ class SlackBotProfileServiceImpl @Inject() (
                               channelId: String,
                               userId: String,
                               originalMessageTs: String,
-                              maybeThreadTs: Option[String]
-  ): Future[Unit] = {
+                              maybeThreadTs: Option[String],
+                              isEphemeral: Boolean
+  ): Future[Option[String]] = {
     val delayMilliseconds = 1000
     val event = SlackMessageEvent(
       botProfile,
@@ -221,18 +223,19 @@ class SlackBotProfileServiceImpl @Inject() (
       None,
       SlackTimestamp.now,
       None,
-      isUninterruptedConversation = false
+      isUninterruptedConversation = false,
+      isEphemeral
     )
-    (for {
-      _ <- {
-        val eventualResult = getEventualMaybeResult(event)
-        sendResult(eventualResult)
-        SlackMessageReactionHandler.handle(slackApiService.clientFor(botProfile), eventualResult, channelId, originalMessageTs, delayMilliseconds)
-      }
-    } yield {}).recover {
-      case t: Throwable => {
-        Logger.error(s"Exception responding to a Slack action: $description", t)
-      }
+    val eventualResult = sendResult(getEventualMaybeResult(event))
+    SlackMessageReactionHandler.handle(
+      slackApiService.clientFor(botProfile),
+      eventualResult,
+      channelId,
+      originalMessageTs,
+      delayMilliseconds
+    )
+    eventualResult.recover {
+      case e: BotNotInSlackChannelException => throw e.copy(maybeEvent = Some(event))
     }
   }
 }

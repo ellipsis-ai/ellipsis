@@ -137,7 +137,8 @@ class APIController @Inject() (
             None,
             SlackTimestamp.now,
             maybeOriginalEventType,
-            isUninterruptedConversation = false
+            isUninterruptedConversation = false,
+            isEphemeral = false
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)

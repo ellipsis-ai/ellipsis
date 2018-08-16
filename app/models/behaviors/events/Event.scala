@@ -39,6 +39,7 @@ trait Event {
   val messageRecipientPrefix: String
   val isPublicChannel: Boolean
   val isUninterruptedConversation: Boolean = false
+  val isEphemeral: Boolean = false
 
   def originalEventType: EventType = {
     maybeOriginalEventType.getOrElse(eventType)

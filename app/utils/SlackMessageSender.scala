@@ -7,11 +7,13 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.{ActionChoice, DeveloperContext}
-import play.api.Configuration
-import play.api.libs.json.Json
+import play.api.{Configuration, Logger}
+import play.api.http.{HeaderNames, MimeTypes}
+import play.api.libs.json.{JsString, Json}
 import services.DefaultServices
 import services.slack.SlackApiClient
-import services.slack.apiModels.Attachment
+import services.slack.apiModels._
+import services.slack.apiModels.Formatting._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
@@ -26,6 +28,19 @@ case class SlackMessageSenderException(underlying: Throwable, channel: String, s
        |${underlying.toString}
      """.stripMargin, underlying) {
 }
+
+case class BotNotInSlackChannelException(
+                                          text: String,
+                                          maybeAttachments: Option[Seq[Attachment]],
+                                          channel: String,
+                                          slackTeamId: String,
+                                          userId: String,
+                                          maybeEvent: Option[Event]
+                                        )
+  extends Exception(
+    s"""Tried to send a message to user $userId in channel $channel on team $slackTeamId, but I'm not in that channel!
+     |Message:
+     |$text""".stripMargin)
 
 case class SlackMessageSender(
                                client: SlackApiClient,
@@ -45,7 +60,8 @@ case class SlackMessageSender(
                                configuration: Configuration,
                                botName: String,
                                userDataList: Set[MessageUserData],
-                               services: DefaultServices
+                               services: DefaultServices,
+                               isEphemeral: Boolean
                              ) {
 
   val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
@@ -93,32 +109,78 @@ case class SlackMessageSender(
     }
   }
 
+  private def postResponse(
+                            responseInfo: SlashCommandInfo,
+                            text: String,
+                            maybeAttachments: Option[Seq[Attachment]] = None
+                          ) = {
+    val payload = Json.obj(
+      "response_type" -> JsString("in_channel"),
+      "text" -> JsString(text)
+    ) ++ maybeAttachments.map { attachments =>
+      Json.obj(
+        "attachments" -> attachments.map(a => Json.toJson(a))
+      )
+    }.getOrElse(Json.obj())
+    services.ws.
+      url(responseInfo.responseUrl).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      post(payload)
+  }
+
+  private def postEphemeralMessage(
+                                    text: String,
+                                    channel: String,
+                                    maybeAttachments: Option[Seq[Attachment]] = None
+                                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    Logger.info(s"Posting ephemeral msg: $text in channel: $channel")
+    client.postEphemeralMessage(
+      text,
+      channel,
+      user,
+      asUser = Some(false), // allows it to work in channels where bot is not a member
+      parse = None,
+      linkNames = None,
+      attachments = maybeAttachments
+    )
+  }
+
   private def postChatMessage(
                                text: String,
                                maybeThreadTs: Option[String] = None,
                                maybeReplyBroadcast: Option[Boolean] = None,
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
-                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
-    client.postChatMessage(
-      channel,
-      text,
-      username = None,
-      asUser = Some(true),
-      parse = None,
-      linkNames = None,
-      attachments = maybeAttachments,
-      unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
-      unfurlMedia = Some(true),
-      iconUrl = None,
-      iconEmoji = None,
-      replaceOriginal = None,
-      deleteOriginal = None,
-      threadTs = maybeThreadTs,
-      replyBroadcast = maybeReplyBroadcast
-    ).recover {
-      case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
+    (if (isEphemeral) {
+      postEphemeralMessage(text, channel, maybeAttachments)
+    } else {
+      client.postChatMessage(
+        channel,
+        text,
+        username = None,
+        asUser = Some(true),
+        parse = None,
+        linkNames = None,
+        attachments = maybeAttachments,
+        unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
+        unfurlMedia = Some(true),
+        iconUrl = None,
+        iconEmoji = None,
+        replaceOriginal = None,
+        deleteOriginal = None,
+        threadTs = maybeThreadTs,
+        replyBroadcast = maybeReplyBroadcast
+      )
+    }).map(Some(_)).recover {
+      case t: Throwable => {
+        if ("not_in_channel".r.findFirstIn(t.getMessage).isDefined) {
+          throw BotNotInSlackChannelException(text, maybeAttachments, channel, slackTeamId, user, None)
+        } else {
+          throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
+        }
+      }
     }
   }
 
@@ -207,7 +269,7 @@ case class SlackMessageSender(
           maybeReplyBroadcast = Some(false),
           maybeAttachmentsForSegment
         )
-      }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
+      }.flatMap { maybeTs => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeTs)}
     }
   }
 

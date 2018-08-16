@@ -80,7 +80,8 @@ case class RunEvent(
         configuration,
         botName,
         Set.empty[MessageUserData],
-        services
+        services,
+        isEphemeral = false
       ).send
     } yield maybeTs
   }

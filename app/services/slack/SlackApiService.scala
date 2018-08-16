@@ -206,6 +206,23 @@ case class SlackApiClient(
     }
   }
 
+  def postEphemeralMessage(text: String, channelId: String, userId: String, asUser: Option[Boolean] = None,
+                           parse: Option[String] = None, linkNames: Option[String] = None, attachments: Option[Seq[Attachment]] = None): Future[String] = {
+    val params = Map(
+      "channel" -> channelId,
+      "text" -> text,
+      "user" -> userId,
+      "as_user" -> asUser,
+      "parse" -> parse,
+      "link_names" -> linkNames,
+      "attachments" -> attachments.map(a => Json.stringify(Json.toJson(a)))
+    )
+    postResponseFor("chat.postEphemeral", params).map { r =>
+      println(Json.prettyPrint(r.json))
+      extract[String](r, "message_ts")
+    }
+  }
+
   def addReactionToMessage(emojiName: String, channelId: String, timestamp: String): Future[Boolean] = {
     val params = Map(
       "name" -> emojiName,

@@ -44,6 +44,7 @@ trait SlackBotProfileService {
     channelId: String,
     userId: String,
     originalMessageTs: String,
-    maybeThreadTs: Option[String]
-  ): Future[Unit]
+    maybeThreadTs: Option[String],
+    isEphemeral: Boolean
+  ): Future[Option[String]]
 }

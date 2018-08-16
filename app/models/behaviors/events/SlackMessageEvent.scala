@@ -22,7 +22,8 @@ case class SlackMessageEvent(
                               maybeFile: Option[SlackFile],
                               ts: String,
                               maybeOriginalEventType: Option[EventType],
-                              override val isUninterruptedConversation: Boolean
+                              override val isUninterruptedConversation: Boolean,
+                              override val isEphemeral: Boolean
                             ) extends MessageEvent with SlackEvent {
 
   val eventType: EventType = EventType.chat
@@ -121,7 +122,8 @@ case class SlackMessageEvent(
         configuration,
         botName,
         messageUserDataList(maybeConversation, services),
-        services
+        services,
+        isEphemeral
       ).send
     } yield maybeTs
   }
