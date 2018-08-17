@@ -143,7 +143,7 @@ trait Event {
 
   def shouldAutoForcePrivate(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
-      params.exists(_.paramType.mayRequireTypedAnswer)
+      isEphemeral && params.exists(_.paramType.mayRequireTypedAnswer)
     }
   }
   def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
