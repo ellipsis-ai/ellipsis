@@ -483,6 +483,9 @@ class SlackController @Inject() (
                                    response_url: String
                                  ) extends RequestInfo {
 
+    val maybeOriginalMessageThreadId: Option[String] = original_message.flatMap(_.thread_ts)
+    val isEphemeral: Boolean = original_message.isEmpty
+
     def slackTeamIdToUse: String = user.team_id.getOrElse(team.id)
 
     def maybeBotProfile: Future[Option[SlackBotProfile]] = {
@@ -763,14 +766,14 @@ class SlackController @Inject() (
           profile,
           info.slackTeamIdToUse,
           info.channel.id,
-          info.original_message.flatMap(_.thread_ts),
+          info.maybeOriginalMessageThreadId,
           info.user.id,
           slackMessage,
           None,
           info.message_ts,
           None,
           isUninterruptedConversation = false,
-          isEphemeral = info.original_message.isEmpty
+          info.isEphemeral
         ))
       }).getOrElse {
         Future.successful({})
@@ -856,8 +859,8 @@ class SlackController @Inject() (
       info.channel.id,
       info.user.id,
       info.message_ts,
-      info.original_message.flatMap(_.thread_ts),
-      info.original_message.isEmpty
+      info.maybeOriginalMessageThreadId,
+      info.isEphemeral
     ).map(_ => {})
   }
 
@@ -899,8 +902,8 @@ class SlackController @Inject() (
             info.channel.id,
             info.user.id,
             info.message_ts,
-            info.original_message.flatMap(_.thread_ts),
-            info.original_message.isEmpty
+            info.maybeOriginalMessageThreadId,
+            info.isEphemeral
           )
         }).getOrElse(Future.successful({}))
       }
@@ -1185,8 +1188,8 @@ class SlackController @Inject() (
         info.channel.id,
         info.user.id,
         info.message_ts,
-        info.original_message.flatMap(_.thread_ts),
-        info.original_message.isEmpty
+        info.maybeOriginalMessageThreadId,
+        info.isEphemeral
       )
     }
 
@@ -1238,8 +1241,8 @@ class SlackController @Inject() (
         info.channel.id,
         info.user.id,
         info.message_ts,
-        info.original_message.flatMap(_.thread_ts),
-        info.original_message.isEmpty
+        info.maybeOriginalMessageThreadId,
+        info.isEphemeral
       )
     }
 
@@ -1287,8 +1290,8 @@ class SlackController @Inject() (
         info.channel.id,
         info.user.id,
         info.message_ts,
-        info.original_message.flatMap(_.thread_ts),
-        info.original_message.isEmpty
+        info.maybeOriginalMessageThreadId,
+        info.isEphemeral
       )
     }
 
@@ -1479,8 +1482,8 @@ class SlackController @Inject() (
         info.channel.id,
         info.user.id,
         info.message_ts,
-        info.original_message.flatMap(_.thread_ts),
-        info.original_message.isEmpty
+        info.maybeOriginalMessageThreadId,
+        info.isEphemeral
       )
     }
 
