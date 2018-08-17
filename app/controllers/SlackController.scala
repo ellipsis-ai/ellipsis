@@ -817,58 +817,13 @@ class SlackController @Inject() (
     } yield {}
   }
 
-  private def sendResultWithNewEvent(
-                                      description: String,
-                                      getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
-                                      slackTeamId: String,
-                                      botProfile: SlackBotProfile,
-                                      channelId: String,
-                                      userId: String,
-                                      originalMessageTs: String,
-                                      maybeThreadTs: Option[String],
-                                      isEphemeral: Boolean = false
-                                    ): Future[Option[String]] = {
-    dataService.slackBotProfiles.sendResultWithNewEvent(
-      description,
-      getEventualMaybeResult,
-      slackTeamId,
-      botProfile,
-      channelId,
-      userId,
-      originalMessageTs,
-      maybeThreadTs,
-      isEphemeral
-    )/*.recoverWith {
-      case e: BotNotInSlackChannelException => {
-        for {
-          _ <- sendEphemeralMessage("I'm not in this channel, so I've moved this to a private message", slackTeamId, channelId, userId)
-          maybeDMChannel <- e.maybeEvent.map { event =>
-            event.eventualMaybeDMChannel(services)
-          }.getOrElse(Future.successful(None))
-          _ <- maybeDMChannel.map { dmChannel =>
-            dataService.slackBotProfiles.sendResultWithNewEvent(
-              description,
-              getEventualMaybeResult,
-              slackTeamId,
-              botProfile,
-              dmChannel,
-              userId,
-              originalMessageTs,
-              maybeThreadTs
-            )
-          }.getOrElse(Future.successful({}))
-        } yield None
-      }
-    }*/
-  }
-
   private def processTriggerableAndActiveActionChoice(
                                                        actionChoice: ActionChoice,
                                                        maybeGroupVersion: Option[BehaviorGroupVersion],
                                                        info: ActionsTriggeredInfo,
                                                        botProfile: SlackBotProfile
                                                      ): Future[Unit] = {
-    sendResultWithNewEvent(
+    dataService.slackBotProfiles.sendResultWithNewEvent(
       s"run action named ${actionChoice.actionName}",
       event => for {
         maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
@@ -925,7 +880,7 @@ class SlackController @Inject() (
         (for {
           botProfile <- maybeBotProfile
         } yield {
-          sendResultWithNewEvent(
+          dataService.slackBotProfiles.sendResultWithNewEvent(
             "Message acknowledging response to Slack action",
             slackMessageEvent => for {
               maybeConversation <- slackMessageEvent.maybeOngoingConversation(dataService)
@@ -1213,7 +1168,7 @@ class SlackController @Inject() (
     val maybeResultText = Some(s"$slackUser clicked More help.")
 
     def runForCorrectTeam: Unit = {
-      sendResultWithNewEvent(
+      dataService.slackBotProfiles.sendResultWithNewEvent(
         "help index",
         (event) => DisplayHelpBehavior(
           None,
@@ -1266,7 +1221,7 @@ class SlackController @Inject() (
     })
 
     def runForCorrectTeam: Unit = {
-      sendResultWithNewEvent(
+      dataService.slackBotProfiles.sendResultWithNewEvent(
         "skill help with maybe search",
         (event) => DisplayHelpBehavior(
           searchValue.maybeSearchText,
@@ -1315,7 +1270,7 @@ class SlackController @Inject() (
     val maybeResultText = Some(s"$slackUser clicked List all actions")
 
     def runForCorrectTeam: Unit = {
-      sendResultWithNewEvent(
+      dataService.slackBotProfiles.sendResultWithNewEvent(
         "for skill action list",
         event => DisplayHelpBehavior(
           searchValue.maybeSearchText,
@@ -1501,7 +1456,7 @@ class SlackController @Inject() (
     })
 
     private def runIt(): Unit = {
-      sendResultWithNewEvent(
+      dataService.slackBotProfiles.sendResultWithNewEvent(
         s"run behavior version $behaviorVersionId",
         event => for {
           maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
