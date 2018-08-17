@@ -77,7 +77,6 @@ case class SlashCommandEvent(
     message.userList.map(MessageUserData.fromSlackUserData)
   }
 
-  // never happens in conversation
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
 
   def sendMessage(
