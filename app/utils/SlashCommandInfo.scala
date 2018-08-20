@@ -10,5 +10,5 @@ case class SlashCommandInfo(
                            ) {
 
   val commandText: String = s"${command} ${text}"
-  val confirmation: String = s"Sending the following to the bot: `${text}`"
+  val confirmation: String = s"You typed:\n>${commandText}"
 }

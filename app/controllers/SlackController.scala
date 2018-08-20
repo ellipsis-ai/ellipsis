@@ -359,7 +359,7 @@ class SlackController @Inject() (
   private val slashCommandForm = Form(
     mapping(
       "command" -> nonEmptyText,
-      "text" -> nonEmptyText,
+      "text" -> text,
       "response_url" -> nonEmptyText,
       "user_id" -> nonEmptyText,
       "team_id" -> nonEmptyText,
