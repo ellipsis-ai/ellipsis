@@ -40,6 +40,7 @@ trait Event {
   val isPublicChannel: Boolean
   val isUninterruptedConversation: Boolean = false
   val isEphemeral: Boolean = false
+  val maybeResponseUrl: Option[String] = None
 
   def originalEventType: EventType = {
     maybeOriginalEventType.getOrElse(eventType)

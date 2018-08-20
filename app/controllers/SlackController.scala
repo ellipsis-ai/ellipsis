@@ -11,7 +11,7 @@ import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.{ActionChoice, BotResult, SimpleTextResult}
+import models.behaviors.{ActionChoice, SimpleTextResult}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.Logger
@@ -23,7 +23,7 @@ import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
 import services._
 import services.slack.SlackEventService
-import utils.{SlackMessageSender, SlashCommandInfo}
+import utils.SlashCommandInfo
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -308,7 +308,8 @@ class SlackController @Inject() (
               info.ts,
               None,
               isUninterruptedConversation = false,
-              isEphemeral = false
+              isEphemeral = false,
+              None
             )
           )
         } yield {}
@@ -375,7 +376,8 @@ class SlackController @Inject() (
         info.teamId,
         info.channelId,
         info.userId,
-        slackMessage
+        slackMessage,
+        info.responseUrl
       ))
       maybeConversation <- dataService.conversations.allOngoingFor(
         info.userId,
@@ -773,7 +775,8 @@ class SlackController @Inject() (
           info.message_ts,
           None,
           isUninterruptedConversation = false,
-          info.isEphemeral
+          info.isEphemeral,
+          Some(info.response_url)
         ))
       }).getOrElse {
         Future.successful({})
@@ -860,7 +863,8 @@ class SlackController @Inject() (
       info.user.id,
       info.message_ts,
       info.maybeOriginalMessageThreadId,
-      info.isEphemeral
+      info.isEphemeral,
+      Some(info.response_url)
     ).map(_ => {})
   }
 
@@ -903,7 +907,8 @@ class SlackController @Inject() (
             info.user.id,
             info.message_ts,
             info.maybeOriginalMessageThreadId,
-            info.isEphemeral
+            info.isEphemeral,
+            Some(info.response_url)
           )
         }).getOrElse(Future.successful({}))
       }
@@ -1189,7 +1194,8 @@ class SlackController @Inject() (
         info.user.id,
         info.message_ts,
         info.maybeOriginalMessageThreadId,
-        info.isEphemeral
+        info.isEphemeral,
+        Some(info.response_url)
       )
     }
 
@@ -1242,7 +1248,8 @@ class SlackController @Inject() (
         info.user.id,
         info.message_ts,
         info.maybeOriginalMessageThreadId,
-        info.isEphemeral
+        info.isEphemeral,
+        Some(info.response_url)
       )
     }
 
@@ -1291,7 +1298,8 @@ class SlackController @Inject() (
         info.user.id,
         info.message_ts,
         info.maybeOriginalMessageThreadId,
-        info.isEphemeral
+        info.isEphemeral,
+        Some(info.response_url)
       )
     }
 
@@ -1483,7 +1491,8 @@ class SlackController @Inject() (
         info.user.id,
         info.message_ts,
         info.maybeOriginalMessageThreadId,
-        info.isEphemeral
+        info.isEphemeral,
+        Some(info.response_url)
       )
     }
 

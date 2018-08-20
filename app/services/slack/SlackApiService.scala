@@ -8,11 +8,11 @@ import javax.inject.{Inject, Singleton}
 import json.Formatting._
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.json.{Format, JsError, JsSuccess, Json}
+import play.api.libs.json._
 import play.api.libs.ws.WSResponse
 import services.DefaultServices
 import services.slack.apiModels._
-import utils.SlackConversation
+import utils.{SlackConversation, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -221,6 +221,25 @@ case class SlackApiClient(
       println(Json.prettyPrint(r.json))
       extract[String](r, "message_ts")
     }
+  }
+
+  def postToResponseUrl(text: String, maybeAttachments: Option[Seq[Attachment]], responseUrl: String, isEphemeral: Boolean): Future[String] = {
+    val responseType = if (isEphemeral) { "ephemeral" } else { "in_channel" }
+    val payload = Json.obj(
+      "response_type" -> JsString(responseType),
+      "text" -> JsString(text)
+    ) ++ maybeAttachments.map { attachments =>
+      Json.obj(
+        "attachments" -> attachments.map(a => Json.toJson(a))
+      )
+    }.getOrElse(Json.obj())
+    services.ws.
+      url(responseUrl).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      post(payload).
+      map { r =>
+        SlackTimestamp.now
+      }
   }
 
   def addReactionToMessage(emojiName: String, channelId: String, timestamp: String): Future[Boolean] = {

@@ -36,7 +36,8 @@ case class SlackMessageEventData(
                                   ts: String,
                                   maybeOriginalEventType: Option[String],
                                   isUninterruptedConversation: Boolean,
-                                  isEphemeral: Boolean
+                                  isEphemeral: Boolean,
+                                  maybeResponseUrl: Option[String]
                                 )
 
 case class InvokeResultData(
@@ -94,7 +95,7 @@ class CacheServiceImpl @Inject() (
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {
     event match {
       case ev: SlackMessageEvent => {
-        val eventData = SlackMessageEventData(ev.profile, ev.userSlackTeamId, ev.channel, ev.maybeThreadId, ev.user, ev.message, ev.maybeFile, ev.ts, ev.maybeOriginalEventType.map(_.toString), ev.isUninterruptedConversation, ev.isEphemeral)
+        val eventData = SlackMessageEventData(ev.profile, ev.userSlackTeamId, ev.channel, ev.maybeThreadId, ev.user, ev.message, ev.maybeFile, ev.ts, ev.maybeOriginalEventType.map(_.toString), ev.isUninterruptedConversation, ev.isEphemeral, ev.maybeResponseUrl)
         set(key, Json.toJson(eventData), expiration)
       }
       case _ =>
@@ -116,7 +117,8 @@ class CacheServiceImpl @Inject() (
             event.ts,
             EventType.maybeFrom(event.maybeOriginalEventType),
             event.isUninterruptedConversation,
-            event.isEphemeral
+            event.isEphemeral,
+            event.maybeResponseUrl
           ))
         }
         case JsError(err) => None

@@ -17,12 +17,14 @@ case class SlashCommandEvent(
                               userSlackTeamId: String,
                               channel: String,
                               user: String,
-                              message: SlackMessage
+                              message: SlackMessage,
+                              responseUrl: String
                             ) extends Event with SlackEvent {
 
   val eventType: EventType = EventType.chat
 
   override val isEphemeral: Boolean = true
+  override val maybeResponseUrl: Option[String] = Some(responseUrl)
 
   val teamId: String = profile.teamId
   val userIdForContext: String = user
@@ -114,7 +116,8 @@ case class SlashCommandEvent(
         botName,
         messageUserDataList(maybeConversation, services),
         services,
-        isEphemeral
+        isEphemeral,
+        maybeResponseUrl
       ).send
     } yield maybeTs
   }

@@ -64,7 +64,8 @@ case class ScheduledBehavior(
             slackUserId,
             SlackTimestamp.now,
             Some(EventType.scheduled),
-            isEphemeral = false
+            isEphemeral = false,
+            None
           ),
           this
         )

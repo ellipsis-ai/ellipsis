@@ -45,7 +45,8 @@ case class ScheduledMessage(
             SlackTimestamp.now,
             Some(EventType.scheduled),
             isUninterruptedConversation = false,
-            isEphemeral = false
+            isEphemeral = false,
+            None
           ),
           this
         )

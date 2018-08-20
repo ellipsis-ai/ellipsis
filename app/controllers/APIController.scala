@@ -138,7 +138,8 @@ class APIController @Inject() (
             SlackTimestamp.now,
             maybeOriginalEventType,
             isUninterruptedConversation = false,
-            isEphemeral = false
+            isEphemeral = false,
+            None
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)
@@ -327,7 +328,8 @@ class APIController @Inject() (
           slackProfile.loginInfo.providerKey,
           SlackTimestamp.now,
           info.originalEventType.flatMap(EventType.find),
-          isEphemeral = false
+          isEphemeral = false,
+          None
         )
       )
       result <- if (maybeBehaviorVersion.isDefined) {

@@ -8,11 +8,9 @@ import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.{ActionChoice, DeveloperContext}
 import play.api.Configuration
-import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.json.{JsString, Json}
+import play.api.libs.json.Json
 import services.DefaultServices
 import services.slack.SlackApiClient
-import services.slack.apiModels.Formatting._
 import services.slack.apiModels._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -48,7 +46,8 @@ case class SlackMessageSender(
                                botName: String,
                                userDataList: Set[MessageUserData],
                                services: DefaultServices,
-                               isEphemeral: Boolean
+                               isEphemeral: Boolean,
+                               maybeResponseUrl: Option[String]
                              ) {
 
   val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
@@ -96,25 +95,6 @@ case class SlackMessageSender(
     }
   }
 
-  private def postResponse(
-                            responseInfo: SlashCommandInfo,
-                            text: String,
-                            maybeAttachments: Option[Seq[Attachment]] = None
-                          ) = {
-    val payload = Json.obj(
-      "response_type" -> JsString("in_channel"),
-      "text" -> JsString(text)
-    ) ++ maybeAttachments.map { attachments =>
-      Json.obj(
-        "attachments" -> attachments.map(a => Json.toJson(a))
-      )
-    }.getOrElse(Json.obj())
-    services.ws.
-      url(responseInfo.responseUrl).
-      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-      post(payload)
-  }
-
   private def postEphemeralMessage(
                                     text: String,
                                     maybeAttachments: Option[Seq[Attachment]] = None,
@@ -134,6 +114,14 @@ case class SlackMessageSender(
     }
   }
 
+  private def maybeResponseUrlToUse(maybeChannelToForce: Option[String]): Option[String] = {
+    if (originatingChannel == channelToUse || maybeChannelToForce.contains(originatingChannel)) {
+      maybeResponseUrl
+    } else {
+      None
+    }
+  }
+
   private def postChatMessage(
                                text: String,
                                maybeThreadTs: Option[String] = None,
@@ -141,28 +129,32 @@ case class SlackMessageSender(
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    if (isEphemeral) {
-      postEphemeralMessage(text, maybeAttachments, maybeChannelToForce)
-    } else {
-      val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
-      client.postChatMessage(
-        channel,
-        text,
-        username = None,
-        asUser = Some(true),
-        parse = None,
-        linkNames = None,
-        attachments = maybeAttachments,
-        unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
-        unfurlMedia = Some(true),
-        iconUrl = None,
-        iconEmoji = None,
-        replaceOriginal = None,
-        deleteOriginal = None,
-        threadTs = maybeThreadTs,
-        replyBroadcast = maybeReplyBroadcast
-      ).recover {
-        case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
+    maybeResponseUrlToUse(maybeChannelToForce).map { responseUrl =>
+      client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral)
+    }.getOrElse {
+      if (isEphemeral) {
+        postEphemeralMessage(text, maybeAttachments, maybeChannelToForce)
+      } else {
+        val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
+        client.postChatMessage(
+          channel,
+          text,
+          username = None,
+          asUser = Some(true),
+          parse = None,
+          linkNames = None,
+          attachments = maybeAttachments,
+          unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
+          unfurlMedia = Some(true),
+          iconUrl = None,
+          iconEmoji = None,
+          replaceOriginal = None,
+          deleteOriginal = None,
+          threadTs = maybeThreadTs,
+          replyBroadcast = maybeReplyBroadcast
+        ).recover {
+          case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
+        }
       }
     }
   }
