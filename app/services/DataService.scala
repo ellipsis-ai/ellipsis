@@ -5,6 +5,9 @@ import models.accounts.linkedaccount.LinkedAccountService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
 import models.accounts.logintoken.LoginTokenService
+import models.accounts.oauth1api.OAuth1ApiService
+import models.accounts.oauth1application.OAuth1ApplicationService
+import models.accounts.oauth1token.OAuth1TokenService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
@@ -68,11 +71,14 @@ trait DataService {
   val invocationTokens: InvocationTokenService
   val linkedOAuth2Tokens: LinkedOAuth2TokenService
   val linkedSimpleTokens: LinkedSimpleTokenService
+  val oauth1Apis: OAuth1ApiService
+  val oauth1Applications: OAuth1ApplicationService
   val oauth2Apis: OAuth2ApiService
   val oauth2Applications: OAuth2ApplicationService
   val simpleTokenApis: SimpleTokenApiService
   val githubProfiles: GithubProfileService
   val slackBotProfiles: SlackBotProfileService
+  val oauth1Tokens: OAuth1TokenService
   val oauth2Tokens: OAuth2TokenService
   val behaviorGroups: BehaviorGroupService
   val behaviorGroupVersions: BehaviorGroupVersionService

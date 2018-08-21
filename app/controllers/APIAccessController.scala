@@ -152,6 +152,11 @@ class APIAccessController @Inject() (
     } yield result
   }
 
+//  def linkCustomOAuth1Service(
+//                             applicationId: String,
+//
+//                             )
+
   def authenticated(message: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     dataService.teams.find(user.teamId).map { maybeTeam =>

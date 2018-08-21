@@ -7,6 +7,9 @@ import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountService
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
 import models.accounts.linkedsimpletoken.{LinkedSimpleTokenService, LinkedSimpleTokenServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
+import models.accounts.oauth1api.{OAuth1ApiService, OAuth1ApiServiceImpl}
+import models.accounts.oauth1application.{OAuth1ApplicationService, OAuth1ApplicationServiceImpl}
+import models.accounts.oauth1token.{OAuth1TokenService, OAuth1TokenServiceImpl}
 import models.accounts.oauth2api.{OAuth2ApiService, OAuth2ApiServiceImpl}
 import models.accounts.oauth2application.{OAuth2ApplicationService, OAuth2ApplicationServiceImpl}
 import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
@@ -80,11 +83,14 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[InvocationTokenService].to[InvocationTokenServiceImpl]
     bind[LinkedOAuth2TokenService].to[LinkedOAuth2TokenServiceImpl]
     bind[LinkedSimpleTokenService].to[LinkedSimpleTokenServiceImpl]
+    bind[OAuth1ApiService].to[OAuth1ApiServiceImpl]
+    bind[OAuth1ApplicationService].to[OAuth1ApplicationServiceImpl]
     bind[OAuth2ApiService].to[OAuth2ApiServiceImpl]
     bind[OAuth2ApplicationService].to[OAuth2ApplicationServiceImpl]
     bind[SimpleTokenApiService].to[SimpleTokenApiServiceImpl]
     bind[GithubProfileService].to[GithubProfileServiceImpl]
     bind[SlackBotProfileService].to[SlackBotProfileServiceImpl]
+    bind[OAuth1TokenService].to[OAuth1TokenServiceImpl]
     bind[OAuth2TokenService].to[OAuth2TokenServiceImpl]
     bind[BehaviorGroupService].to[BehaviorGroupServiceImpl]
     bind[BehaviorGroupVersionService].to[BehaviorGroupVersionServiceImpl]

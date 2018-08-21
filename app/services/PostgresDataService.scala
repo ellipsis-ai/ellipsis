@@ -7,6 +7,9 @@ import models.accounts.linkedaccount.LinkedAccountService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
 import models.accounts.logintoken.LoginTokenService
+import models.accounts.oauth1api.OAuth1ApiService
+import models.accounts.oauth1application.OAuth1ApplicationService
+import models.accounts.oauth1token.OAuth1TokenService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
@@ -72,11 +75,14 @@ class PostgresDataService @Inject() (
                                       val invocationTokensProvider: Provider[InvocationTokenService],
                                       val linkedOAuth2TokensProvider: Provider[LinkedOAuth2TokenService],
                                       val linkedSimpleTokensProvider: Provider[LinkedSimpleTokenService],
+                                      val oauth1ApisProvider: Provider[OAuth1ApiService],
+                                      val oauth1ApplicationsProvider: Provider[OAuth1ApplicationService],
                                       val oauth2ApisProvider: Provider[OAuth2ApiService],
                                       val oauth2ApplicationsProvider: Provider[OAuth2ApplicationService],
                                       val simpleTokenApisProvider: Provider[SimpleTokenApiService],
                                       val githubProfilesProvider: Provider[GithubProfileService],
                                       val slackBotProfilesProvider: Provider[SlackBotProfileService],
+                                      val oauth1TokensProvider: Provider[OAuth1TokenService],
                                       val oauth2TokensProvider: Provider[OAuth2TokenService],
                                       val behaviorGroupsProvider: Provider[BehaviorGroupService],
                                       val behaviorGroupVersionsProvider: Provider[BehaviorGroupVersionService],
@@ -128,11 +134,14 @@ class PostgresDataService @Inject() (
   val invocationTokens = invocationTokensProvider.get
   val linkedOAuth2Tokens = linkedOAuth2TokensProvider.get
   val linkedSimpleTokens = linkedSimpleTokensProvider.get
+  val oauth1Apis = oauth1ApisProvider.get
+  val oauth1Applications = oauth1ApplicationsProvider.get
   val oauth2Apis = oauth2ApisProvider.get
   val oauth2Applications = oauth2ApplicationsProvider.get
   val simpleTokenApis = simpleTokenApisProvider.get
   val githubProfiles = githubProfilesProvider.get
   val slackBotProfiles = slackBotProfilesProvider.get
+  val oauth1Tokens = oauth1TokensProvider.get
   val oauth2Tokens = oauth2TokensProvider.get
   val behaviorGroups = behaviorGroupsProvider.get
   val behaviorGroupVersions = behaviorGroupVersionsProvider.get

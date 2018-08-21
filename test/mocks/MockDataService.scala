@@ -6,6 +6,9 @@ import models.accounts.linkedaccount.LinkedAccountService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
 import models.accounts.logintoken.LoginTokenService
+import models.accounts.oauth1api.OAuth1ApiService
+import models.accounts.oauth1application.OAuth1ApplicationService
+import models.accounts.oauth1token.OAuth1TokenService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
@@ -72,11 +75,14 @@ class MockDataService extends DataService with MockitoSugar {
   val invocationTokens = mock[InvocationTokenService]
   val linkedOAuth2Tokens = mock[LinkedOAuth2TokenService]
   val linkedSimpleTokens = mock[LinkedSimpleTokenService]
+  val oauth1Apis = mock[OAuth1ApiService]
+  val oauth1Applications = mock[OAuth1ApplicationService]
   val oauth2Apis = mock[OAuth2ApiService]
   val oauth2Applications = mock[OAuth2ApplicationService]
   val simpleTokenApis = mock[SimpleTokenApiService]
   val githubProfiles = mock[GithubProfileService]
   val slackBotProfiles = mock[SlackBotProfileService]
+  val oauth1Tokens = mock[OAuth1TokenService]
   val oauth2Tokens = mock[OAuth2TokenService]
   val behaviorGroups = mock[BehaviorGroupService]
   val behaviorGroupVersions = mock[BehaviorGroupVersionService]
