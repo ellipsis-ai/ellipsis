@@ -1,5 +1,6 @@
 import * as React from 'react';
 import autobind from '../lib/autobind';
+import {FocusableTextInputInterface} from "./input";
 
 interface Props {
   autoFocus?: boolean,
@@ -14,7 +15,7 @@ interface Props {
   title?: string
 }
 
-class Textarea extends React.Component<Props> {
+class Textarea extends React.Component<Props> implements FocusableTextInputInterface {
   input: Option<HTMLTextAreaElement>;
 
     constructor(props) {
@@ -47,6 +48,12 @@ class Textarea extends React.Component<Props> {
     focus() {
       if (this.input) {
         this.input.focus();
+      }
+    }
+
+    blur() {
+      if (this.input) {
+        this.input.blur();
       }
     }
 

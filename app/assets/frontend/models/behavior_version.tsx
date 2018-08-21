@@ -24,7 +24,6 @@ export interface BehaviorVersionJson extends EditableJson {
   inputIds: Array<string>;
   triggers: Array<TriggerJson>;
   config: BehaviorConfigJson;
-  knownEnvVarsUsed: Array<string>;
 }
 
 export interface BehaviorVersionInterface extends EditableInterface, BehaviorVersionJson {
@@ -47,7 +46,6 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     readonly triggers: Array<Trigger>,
     readonly config: BehaviorConfig,
     readonly exportId: Option<string>,
-    readonly knownEnvVarsUsed: Array<string>,
     readonly createdAt: Option<Timestamp>,
     readonly isNew: Option<boolean>,
     readonly editorScrollPosition: Option<number>
@@ -70,8 +68,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         responseTemplate: { value: responseTemplate, enumerable: true },
         inputIds: { value: inputIds || [], enumerable: true },
         triggers: { value: triggers || [], enumerable: true },
-        config: { value: config, enumerable: true },
-        knownEnvVarsUsed: { value: knownEnvVarsUsed || [], enumerable: true }
+        config: { value: config, enumerable: true }
       });
   }
 
@@ -293,6 +290,18 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return this.functionBody || "";
     }
 
+    getEnvVarNamesInFunction(): Array<string> {
+      const vars: Array<string> = [];
+      const body = this.getFunctionBody();
+      const matches = body.match(/ellipsis\.env\.([A-Z_][0-9A-Z_]*)/g);
+      if (matches) {
+        matches.forEach((match) => {
+          vars.push(match.replace(/^ellipsis\.env\./, ""));
+        });
+      }
+      return vars;
+    }
+
     includesText(queryString: string): boolean {
       var lowercase = queryString.toLowerCase().trim();
       return super.includesText(queryString) ||
@@ -358,7 +367,6 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         props.triggers,
         props.config,
         props.exportId,
-        props.knownEnvVarsUsed,
         props.createdAt,
         props.isNew,
         props.editorScrollPosition

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Collapsible from '../../shared_ui/collapsible';
 import ImmutableObjectUtils from '../../lib/immutable_object_utils';
-import Input from '../../form/input';
+import FormInput, {FocusableTextInputInterface} from '../../form/input';
 import Textarea from '../../form/textarea';
 import Formatter from '../../lib/formatter';
 import autobind from "../../lib/autobind";
@@ -43,8 +43,9 @@ interface State {
 }
 
 class Setter extends React.Component<Props, State> {
-  envVarValueInputs: Array<Option<Textarea>>;
-  newVarNameInputs: Array<Option<Input>>;
+  envVarValueInputs: Array<Option<FocusableTextInputInterface>>;
+  newVarNameInputs: Array<Option<FocusableTextInputInterface>>;
+  newVarValueInputs: Array<Option<FocusableTextInputInterface>>;
 
   constructor(props: Props) {
     super(props);
@@ -52,15 +53,16 @@ class Setter extends React.Component<Props, State> {
     this.state = this.defaultState();
     this.envVarValueInputs = [];
     this.newVarNameInputs = [];
+    this.newVarValueInputs = [];
   }
 
   getVars(): Array<EnvironmentVariableData> {
     return this.state.vars;
   }
 
-  createNewVar(): EnvironmentVariableData {
+  createNewVar(optionalName?: Option<string>): EnvironmentVariableData {
     return {
-      name: "",
+      name: optionalName || "",
       value: "",
       isAlreadySavedWithValue: false
     };
@@ -81,7 +83,7 @@ class Setter extends React.Component<Props, State> {
 
   componentDidMount(): void {
     if (this.props.focus) {
-      this.focusOnVarName(this.props.focus);
+      this.focusOrCreateVarName(this.props.focus);
     }
   }
 
@@ -146,22 +148,25 @@ class Setter extends React.Component<Props, State> {
     }).map((dupe) => dupe.name);
   }
 
-  addNewVar(): void {
+  addNewVar(optionalName?: Option<string>): void {
     this.setState({
-      newVars: this.state.newVars.concat(this.createNewVar())
+      newVars: this.state.newVars.concat(this.createNewVar(optionalName))
     }, () => {
-      const newVarNameInput = this.newVarNameInputs[this.state.newVars.length - 1];
-      if (newVarNameInput) {
-        newVarNameInput.focus();
+      const newIndex = this.state.newVars.length - 1;
+      const newInput = optionalName ? this.newVarValueInputs[newIndex] : this.newVarNameInputs[newIndex];
+      if (newInput) {
+        newInput.focus();
       }
     });
   }
 
-  focusOnVarName(name: string): void {
+  focusOrCreateVarName(name: string): void {
     var matchingVarIndex = this.getVars().findIndex((ea) => ea.name === name);
     const input = matchingVarIndex >= 0 ? this.envVarValueInputs[matchingVarIndex] : null;
     if (input) {
       input.focus();
+    } else {
+      this.addNewVar(name);
     }
   }
 
@@ -504,7 +509,7 @@ class Setter extends React.Component<Props, State> {
               return (
                 <div className="border bg-white phs mbm columns" key={`newEnvVar${index}`}>
                   <div className="column column-one-quarter mobile-column-one-half">
-                    <Input
+                    <FormInput
                       ref={(el) => this.newVarNameInputs[index] = el}
                       className="form-input-borderless type-monospace"
                       placeholder="New variable name"
@@ -514,6 +519,7 @@ class Setter extends React.Component<Props, State> {
                   </div>
                   <div className="column column-three-quarters mobile-column-full">
                     <Textarea
+                      ref={(el) => this.newVarValueInputs[index] = el}
                       className="type-monospace form-input-borderless form-input-height-auto"
                       placeholder="Set value (optional)"
                       value={v.value || ""}
@@ -528,12 +534,12 @@ class Setter extends React.Component<Props, State> {
         </div>
 
         <div className="mtxl">
-          <button type="button"
+          <Button
             className="button-s"
             onClick={this.addNewVar}
           >
             Add new environment variable
-          </button>
+          </Button>
         </div>
 
         {this.renderFooter()}
