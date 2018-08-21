@@ -31,7 +31,6 @@ case class BehaviorVersionData(
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
                                 exportId: Option[String],
-                                knownEnvVarsUsed: Seq[String],
                                 createdAt: Option[OffsetDateTime]
                                 ) extends BehaviorVersionForDataTypeSchema {
 
@@ -139,8 +138,6 @@ object BehaviorVersionData {
                 dataService: DataService
               ): BehaviorVersionData = {
 
-    val knownEnvVarsUsed = dataService.teamEnvironmentVariables.lookForInCode(functionBody)
-
     BehaviorVersionData(
       id,
       teamId,
@@ -155,7 +152,6 @@ object BehaviorVersionData {
       triggers.sorted,
       config,
       exportId,
-      knownEnvVarsUsed,
       createdAt
     )
   }

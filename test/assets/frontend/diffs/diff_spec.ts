@@ -54,7 +54,6 @@ const behaviorVersion1: BehaviorVersionJson = Object.freeze({
     dataTypeConfig: null
   },
   "createdAt": 1468338136532,
-  knownEnvVarsUsed: [],
   isNew: false,
   editorScrollPosition: null
 });
@@ -90,7 +89,6 @@ const behaviorVersion2: BehaviorVersionJson = Object.freeze({
     dataTypeConfig: null
   },
   "createdAt": 1468359271138,
-  knownEnvVarsUsed: [],
   isNew: false,
   editorScrollPosition: null
 });
@@ -323,7 +321,6 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
-    "knownEnvVarsUsed": []
   }, {
     "id": "BlFk7azKRjaCgH5ricykTA",
     "teamId": "v-i65oxZQDiBsZuXceONmA",
@@ -353,7 +350,6 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "V-LAjv1AS4CoFimMANnxpg",
-    "knownEnvVarsUsed": []
   }, {
     "id": "AFV_L2J3Sp2DRxx4t9Qdjw",
     "teamId": "v-i65oxZQDiBsZuXceONmA",
@@ -373,7 +369,6 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "J0uB9LvZTo6_L-spEBrtqg",
-    "knownEnvVarsUsed": []
   }, {
     "id": "Eb6wNX-WS1KiobO6Khud6w",
     "teamId": "v-i65oxZQDiBsZuXceONmA",
@@ -398,7 +393,6 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "SBH4IfDzTGO8P7kV02yECw",
-    "knownEnvVarsUsed": []
   }, {
     "id": "Sb6jPeE0RaSXGbLTBh-GSg",
     "teamId": "v-i65oxZQDiBsZuXceONmA",
@@ -422,8 +416,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isDataType": false,
       "isTest": false
     },
-    "exportId": "ioHMv3b3T4utFwwH0cwjLg",
-    "knownEnvVarsUsed": []
+    "exportId": "ioHMv3b3T4utFwwH0cwjLg"
   }],
   "libraryVersions": [{
     "id": "Q-h3QwrnSjiAU7YAmMPZYg",
@@ -504,7 +497,6 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "V-LAjv1AS4CoFimMANnxpg",
-    "knownEnvVarsUsed": [],
     "createdAt": "2018-04-16T15:18:28.21-04:00"
   }, {
     "id": "pURDxka2SK6pMMtgp6P0kA",
@@ -526,7 +518,6 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "J0uB9LvZTo6_L-spEBrtqg",
-    "knownEnvVarsUsed": [],
     "createdAt": "2018-04-16T15:18:28.166-04:00"
   }, {
     "id": "yD5828gvSgifRejls5_G-A",
@@ -553,7 +544,6 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "ioHMv3b3T4utFwwH0cwjLg",
-    "knownEnvVarsUsed": [],
     "createdAt": "2018-04-16T15:18:28.021-04:00"
   }, {
     "id": "dLhVuW9XRh2BUM9SmIEYww",
@@ -580,7 +570,6 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "SBH4IfDzTGO8P7kV02yECw",
-    "knownEnvVarsUsed": [],
     "createdAt": "2018-04-16T15:18:28.189-04:00"
   }, {
     "id": "vgvsAlqBSXSoeR42UYR5Kg",
@@ -607,7 +596,6 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "isTest": false
     },
     "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
-    "knownEnvVarsUsed": [],
     "createdAt": "2018-04-16T15:18:28.14-04:00"
   }],
   "libraryVersions": [{

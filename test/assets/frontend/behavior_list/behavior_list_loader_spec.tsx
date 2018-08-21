@@ -50,8 +50,7 @@ describe('BehaviorListApp', () => {
       isTest: false
     },
     "createdAt": 1468338136532,
-    inputIds: [],
-    knownEnvVarsUsed: []
+    inputIds: []
   };
   const behaviorVersionTask2: BehaviorVersionJson = {
     "teamId": "abcdef",
@@ -70,8 +69,7 @@ describe('BehaviorListApp', () => {
       isTest: false
     },
     "createdAt": 1468359271138,
-    inputIds: [],
-    knownEnvVarsUsed: []
+    inputIds: []
   };
   const behaviorVersionKnowledge1: BehaviorVersionJson ={
     "teamId": "abcdef",
@@ -85,8 +83,7 @@ describe('BehaviorListApp', () => {
       isTest: false
     },
     "createdAt": 1466109904858,
-    inputIds: [],
-    knownEnvVarsUsed: []
+    inputIds: []
   };
   const group1: BehaviorGroupJson = {
     id: "a",

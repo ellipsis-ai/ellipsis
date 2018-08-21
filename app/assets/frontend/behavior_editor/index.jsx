@@ -419,17 +419,18 @@ const BehaviorEditor = React.createClass({
   },
 
   buildEnvVarNotifications: function() {
-    var selectedBehavior = this.getSelectedBehavior();
+    const selectedBehavior = this.getSelectedBehavior();
+    const existingEnvVars = this.getEnvVariables();
     if (selectedBehavior) {
-      return this.getEnvVariables()
-        .filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name))
-        .filter((ea) => !ea.isAlreadySavedWithValue)
-        .map((ea) => new EnvVarMissingNotificationData({
-          environmentVariableName: ea.name,
-          onClick: () => {
-            this.showEnvVariableSetter(ea.name);
-          }
-        }));
+      return selectedBehavior.getEnvVarNamesInFunction().filter((varName) => {
+        const existingVar = existingEnvVars.find((ea) => ea.name === varName);
+        return !existingVar || !existingVar.isAlreadySavedWithValue;
+      }).map((varName) => new EnvVarMissingNotificationData({
+        environmentVariableName: varName,
+        onClick: () => {
+          this.showEnvVariableSetter(varName);
+        }
+      }));
     } else {
       return [];
     }
