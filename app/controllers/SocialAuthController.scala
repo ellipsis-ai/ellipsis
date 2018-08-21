@@ -105,7 +105,7 @@ class SocialAuthController @Inject() (
            |Ellipsis ID: ${team.id}
            |Slack ID: ${slackBotProfile.slackTeamId}
            |
-             |_User:_
+           |_User:_
            |**${userData.fullName.getOrElse("(full name unknown)")}**
            |Username: @${userData.userName.getOrElse("(unknown)")}
            |Email: ${userData.email.getOrElse("(unknown)")}
