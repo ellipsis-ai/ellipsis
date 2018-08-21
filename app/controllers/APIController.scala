@@ -205,33 +205,13 @@ class APIController @Inject() (
 
   }
 
-  private def maybeIntroTextFor(event: Event, context: ApiMethodContext, isForInterruption: Boolean): Option[String] = {
-    val greeting = if (isForInterruption) {
-      "Meanwhile, "
-    } else {
-      s""":wave: Hi.
-       |
-       |""".stripMargin
-    }
-    if (context.isInvokedExternally) {
-      Some(s"""${greeting}I’ve been asked to run `${event.messageText}`.
-       |
-       |───
-       |""".stripMargin)
-    } else {
-      None
-    }
-  }
-
   private def runBehaviorFor(maybeEvent: Option[Event], context: ApiMethodContext) = {
     for {
       result <- maybeEvent.map { event =>
         for {
           result <- eventHandler.handle(event, None).map { results =>
             results.foreach { result =>
-              val maybeIntro = maybeIntroTextFor(event, context, isForInterruption = false)
-              val maybeInterruptionIntro = maybeIntroTextFor(event, context, isForInterruption = true)
-              botResultService.sendIn(result, None, maybeIntro, maybeInterruptionIntro).map { _ =>
+              botResultService.sendIn(result, None).map { _ =>
                 Logger.info(event.logTextFor(result, Some("in response to /api/post_message")))
               }
             }

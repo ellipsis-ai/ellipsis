@@ -29,7 +29,7 @@ class BotResultServiceImpl @Inject() (
       result <- maybeEvent.map { event =>
         DBIO.from(eventHandler.handle(event, None)).flatMap { results =>
           DBIO.sequence(results.map { result =>
-            sendInAction(result, None, None, None).map { _ =>
+            sendInAction(result, None).map { _ =>
               val nextActionPart = result.maybeBehaviorVersion.map(_.nameAndIdString).getOrElse("<not found>")
               val originatingActionPart = maybeOriginatingBehaviorVersion.map(_.nameAndIdString).getOrElse("<not found>")
               Logger.info(event.logTextFor(result, Some(s"as next action `${nextActionPart}` from action `${originatingActionPart}`")))
@@ -80,16 +80,14 @@ class BotResultServiceImpl @Inject() (
       } else {
         val text = s"Can't run action named `${nextAction.actionName}` in this skill"
         val result = SimpleTextResult(botResult.event, botResult.maybeConversation, text, botResult.forcePrivateResponse)
-        sendInAction(result, None, None, None)
+        sendInAction(result, None)
       }
     } yield {}
   }
 
   def sendInAction(
                     botResult: BotResult,
-                    maybeShouldUnfurl: Option[Boolean],
-                    maybeIntro: Option[String] = None,
-                    maybeInterruptionIntro: Option[String] = None
+                    maybeShouldUnfurl: Option[Boolean]
                   )(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
     if (!botResult.shouldSend) {
       return DBIO.successful(None)
@@ -103,17 +101,6 @@ class BotResultServiceImpl @Inject() (
         botResult.interruptOngoingConversationsForAction(services)
       } else {
         DBIO.successful(false)
-      }
-      _ <- maybeIntro.map { intro =>
-        val introToSend = if (didInterrupt) {
-          maybeInterruptionIntro.getOrElse(intro)
-        } else {
-          intro
-        }
-        val result = SimpleTextResult(event, maybeConversation, introToSend, forcePrivateResponse)
-        sendInAction(result, None)
-      }.getOrElse {
-        DBIO.successful({})
       }
       files <- try {
         DBIO.successful(botResult.files)
@@ -145,11 +132,9 @@ class BotResultServiceImpl @Inject() (
 
   def sendIn(
               botResult: BotResult,
-              maybeShouldUnfurl: Option[Boolean],
-              maybeIntro: Option[String] = None,
-              maybeInterruptionIntro: Option[String] = None
+              maybeShouldUnfurl: Option[Boolean]
             )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    dataService.run(sendInAction(botResult, maybeShouldUnfurl, maybeIntro, maybeInterruptionIntro))
+    dataService.run(sendInAction(botResult, maybeShouldUnfurl))
   }
 
 }
