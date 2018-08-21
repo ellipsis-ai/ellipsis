@@ -1,28 +1,33 @@
 package controllers
 
 import java.net.{URI, URLDecoder, URLEncoder}
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZoneId}
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 
+import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.util.Clock
-import play.api.Configuration
+import javax.inject.Inject
+import play.api.{Configuration, Logger}
 import services.DataService
+import services.slack.SlackApiError
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import models._
-import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.github.GithubProvider
+import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackProvider
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
+import models.behaviors.{BotResultService, SimpleTextResult}
 import models.silhouette.EllipsisEnv
 import play.api.mvc.{RequestHeader, Result}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 
 class SocialAuthController @Inject() (
                                        val silhouette: Silhouette[EllipsisEnv],
@@ -33,9 +38,11 @@ class SocialAuthController @Inject() (
                                        slackProvider: SlackProvider,
                                        githubProvider: GithubProvider,
                                        dataService: DataService,
+                                       botResultService: BotResultService,
                                        authInfoRepository: AuthInfoRepository,
-                                       implicit val ec: ExecutionContext
-                                     ) extends EllipsisController with Logger {
+                                       implicit val ec: ExecutionContext,
+                                       implicit val actorSystem: ActorSystem
+                                     ) extends EllipsisController {
 
   val env = silhouette.env
 
@@ -71,6 +78,67 @@ class SocialAuthController @Inject() (
       routes.ApplicationController.index().toString
     } else {
       uri
+    }
+  }
+
+  private def announceNewTeam(slackBotProfile: SlackBotProfile, user: User)(implicit request: RequestHeader): Future[Unit] = {
+    for {
+      team <- dataService.teams.find(slackBotProfile.teamId).map(_.get) /* Blow up if there's no team */
+      userData <- dataService.users.userDataFor(user, team)
+      maybeEvent <- dataService.slackBotProfiles.eventualMaybeEvent(
+        LinkedAccount.ELLIPSIS_SLACK_TEAM_ID,
+        LinkedAccount.ELLIPSIS_MONITORING_CHANNEL_ID,
+        None,
+        None
+      )
+    } yield {
+      val timestamp = team.createdAt.format(
+        DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z").
+          withLocale(java.util.Locale.ENGLISH).
+          withZone(ZoneId.of("America/Toronto"))
+      )
+      val message =
+        s"""**Slack team installed (created ${timestamp}):**
+           |
+           |_Team:_
+           |**[${team.name}](${routes.ApplicationController.index(Some(team.id)).absoluteURL(true)})**
+           |Ellipsis ID: ${team.id}
+           |Slack ID: ${slackBotProfile.slackTeamId}
+           |
+             |_User:_
+           |**${userData.fullName.getOrElse("(full name unknown)")}**
+           |Username: @${userData.userName.getOrElse("(unknown)")}
+           |Email: ${userData.email.getOrElse("(unknown)")}
+           |""".stripMargin
+      maybeEvent.map { event =>
+        val result = SimpleTextResult(event, None, message, forcePrivateResponse = false)
+        botResultService.sendIn(result, None).map(maybeSentTs => {
+          if (maybeSentTs.isDefined) {
+            Logger.info(message)
+          } else {
+            Logger.error(
+              s"""New team announcement failed to send (no timestamp):
+                 |[${message}]
+                 |""".stripMargin
+            )
+          }
+        }
+        ).recover {
+          case e: SlackApiError => {
+            Logger.error(
+              s"""Error sending new team announcement to Slack:
+                 |[${message}]
+                 |""".stripMargin, e
+            )
+          }
+        }
+      }.getOrElse {
+        Logger.error(
+          s"""Error creating event to send new team announcement:
+             |[${message}]
+           """.stripMargin
+        )
+      }
     }
   }
 
@@ -114,6 +182,7 @@ class SocialAuthController @Inject() (
             }
           }
           user <- Future.successful(linkedAccount.user)
+          _ <- announceNewTeam(botProfile, user)
           result <- Future.successful {
             maybeRedirect.map { redirect =>
               Redirect(validatedRedirectUri(redirect))
