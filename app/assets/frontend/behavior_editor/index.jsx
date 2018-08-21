@@ -1115,7 +1115,7 @@ const BehaviorEditor = React.createClass({
   showEnvVariableSetter: function(nameToFocus) {
     this.toggleActivePanel('envVariableSetter', true, () => {
       if (nameToFocus && this.envVariableSetterPanel) {
-        this.envVariableSetterPanel.focusOnVarName(nameToFocus);
+        this.envVariableSetterPanel.focusOrCreateVarName(nameToFocus);
       }
     });
   },
