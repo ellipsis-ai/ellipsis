@@ -66,7 +66,9 @@ trait Conversation {
         None,
         SlackTimestamp.now,
         None, // TODO: Pass the original event type down to here if we actually care about it, but it doesn't seem useful at present
-        isUninterruptedConversation = false
+        isUninterruptedConversation = false,
+        isEphemeral = false,
+        None
       )
     }
   }

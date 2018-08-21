@@ -1,7 +1,6 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.{ActionChoice, BotResult, DeveloperContext}
@@ -22,7 +21,9 @@ case class SlackMessageEvent(
                               maybeFile: Option[SlackFile],
                               ts: String,
                               maybeOriginalEventType: Option[EventType],
-                              override val isUninterruptedConversation: Boolean
+                              override val isUninterruptedConversation: Boolean,
+                              override val isEphemeral: Boolean,
+                              override val maybeResponseUrl: Option[String]
                             ) extends MessageEvent with SlackEvent {
 
   val eventType: EventType = EventType.chat
@@ -121,7 +122,9 @@ case class SlackMessageEvent(
         configuration,
         botName,
         messageUserDataList(maybeConversation, services),
-        services
+        services,
+        isEphemeral,
+        maybeResponseUrl
       ).send
     } yield maybeTs
   }

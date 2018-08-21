@@ -24,45 +24,8 @@ trait MessageEvent extends Event {
                             )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
-      maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
-        dataService.behaviors.maybeCurrentVersionFor(limitToBehavior)
-      }.getOrElse(Future.successful(None))
-      triggers <- maybeLimitToBehaviorVersion.map { limitToBehaviorVersion =>
-        dataService.messageTriggers.allFor(limitToBehaviorVersion)
-      }.getOrElse {
-        (for {
-          team <- maybeTeam
-          channel <- maybeChannel
-        } yield {
-          dataService.behaviorGroupDeployments.allActiveTriggersFor(context, channel, team)
-        }).getOrElse(Future.successful(Seq()))
-      }
-      activatedTriggerLists <- Future.successful {
-        triggers.
-          filter(_.isActivatedBy(this)).
-          groupBy(_.behaviorVersion).
-          values.
-          toSeq
-      }
-      activatedTriggerListsWithParamCounts <- Future.sequence(
-        activatedTriggerLists.map { list =>
-          Future.sequence(list.map { trigger =>
-            for {
-              params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
-            } yield {
-              (trigger, trigger.invocationParamsFor(this, params).size)
-            }
-          })
-        }
-      )
-      // we want to chose activated triggers with more params first
-      activatedTriggers <- Future.successful(activatedTriggerListsWithParamCounts.flatMap { list =>
-        list.
-          sortBy { case(_, paramCount) => paramCount }.
-          map { case(trigger, _) => trigger }.
-          reverse.
-          headOption
-      })
+      possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(this, maybeTeam, maybeChannel, context, maybeLimitToBehavior)
+      activatedTriggers <- activatedTriggersIn(possibleActivatedTriggers, dataService)
       responses <- Future.sequence(activatedTriggers.map { trigger =>
         for {
           params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)

@@ -8,11 +8,11 @@ import javax.inject.{Inject, Singleton}
 import json.Formatting._
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.json.{Format, JsError, JsSuccess, Json}
+import play.api.libs.json._
 import play.api.libs.ws.WSResponse
 import services.DefaultServices
 import services.slack.apiModels._
-import utils.SlackConversation
+import utils.{SlackConversation, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -204,6 +204,42 @@ case class SlackApiClient(
     postResponseFor("chat.postMessage", params).map { r =>
       extract[String](r, "ts")
     }
+  }
+
+  def postEphemeralMessage(text: String, channelId: String, userId: String, asUser: Option[Boolean] = None,
+                           parse: Option[String] = None, linkNames: Option[String] = None, attachments: Option[Seq[Attachment]] = None): Future[String] = {
+    val params = Map(
+      "channel" -> channelId,
+      "text" -> text,
+      "user" -> userId,
+      "as_user" -> asUser,
+      "parse" -> parse,
+      "link_names" -> linkNames,
+      "attachments" -> attachments.map(a => Json.stringify(Json.toJson(a)))
+    )
+    postResponseFor("chat.postEphemeral", params).map { r =>
+      extract[String](r, "message_ts")
+    }
+  }
+
+  def postToResponseUrl(text: String, maybeAttachments: Option[Seq[Attachment]], responseUrl: String, isEphemeral: Boolean): Future[String] = {
+    val responseType = if (isEphemeral) { "ephemeral" } else { "in_channel" }
+    val payload = Json.obj(
+      "response_type" -> JsString(responseType),
+      "text" -> JsString(text)
+    ) ++ maybeAttachments.map { attachments =>
+      Json.obj(
+        "attachments" -> attachments.map(a => Json.toJson(a))
+      )
+    }.getOrElse(Json.obj())
+    services.ws.
+      url(responseUrl).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      post(payload).
+      map { r =>
+        // These endpoints seem to just return a 200 OK with no data, so let's simulate a timestamp
+        SlackTimestamp.now
+      }
   }
 
   def addReactionToMessage(emojiName: String, channelId: String, timestamp: String): Future[Boolean] = {

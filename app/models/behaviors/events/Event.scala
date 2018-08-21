@@ -9,10 +9,10 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
+import models.behaviors.triggers.messagetrigger.MessageTrigger
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
-import services.caching.CacheService
 import services.{AWSLambdaService, DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
@@ -39,6 +39,8 @@ trait Event {
   val messageRecipientPrefix: String
   val isPublicChannel: Boolean
   val isUninterruptedConversation: Boolean = false
+  val isEphemeral: Boolean = false
+  val maybeResponseUrl: Option[String] = None
 
   def originalEventType: EventType = {
     maybeOriginalEventType.getOrElse(eventType)
@@ -140,14 +142,22 @@ trait Event {
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    if (behaviorVersion.forcePrivateResponse) {
-      eventualMaybeDMChannel(services).map { maybeDMChannel =>
-        maybeDMChannel
-      }
-    } else {
-      Future.successful(maybeChannel)
+  def shouldAutoForcePrivate(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
+      isEphemeral && params.exists(_.paramType.mayRequireTypedAnswer)
     }
+  }
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    for {
+      forcePrivate <- shouldAutoForcePrivate(behaviorVersion, services.dataService).map(_ || behaviorVersion.forcePrivateResponse)
+      maybeChannelToUse <- if (forcePrivate) {
+        eventualMaybeDMChannel(services).map { maybeDMChannel =>
+          maybeDMChannel
+        }
+      } else {
+        Future.successful(maybeChannel)
+      }
+    } yield maybeChannelToUse
   }
 
   def maybeChannelForSendAction(
@@ -185,5 +195,37 @@ trait Event {
                                maybeLimitToBehavior: Option[Behavior],
                                services: DefaultServices
                              )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]]
+
+  def activatedTriggersIn(
+                           triggers: Seq[MessageTrigger],
+                           dataService: DataService
+                         )(implicit ec: ExecutionContext): Future[Seq[MessageTrigger]] = {
+    val activatedTriggerLists = triggers.
+        filter(_.isActivatedBy(this)).
+        groupBy(_.behaviorVersion).
+        values.
+        toSeq
+    Future.sequence(
+      activatedTriggerLists.map { list =>
+        Future.sequence(list.map { trigger =>
+          for {
+            params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
+          } yield {
+            (trigger, trigger.invocationParamsFor(this, params).size)
+          }
+        })
+      }
+    ).map { activatedTriggerListsWithParamCounts =>
+
+      // we want to chose activated triggers with more params first
+      activatedTriggerListsWithParamCounts.flatMap { list =>
+        list.
+          sortBy { case(_, paramCount) => paramCount }.
+          map { case(trigger, _) => trigger }.
+          reverse.
+          headOption
+      }
+    }
+  }
 
 }

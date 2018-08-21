@@ -23,6 +23,7 @@ import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
 import services._
 import services.slack.SlackEventService
+import utils.SlashCommandInfo
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -306,7 +307,9 @@ class SlackController @Inject() (
               maybeFile,
               info.ts,
               None,
-              isUninterruptedConversation = false
+              isUninterruptedConversation = false,
+              isEphemeral = false,
+              None
             )
           )
         } yield {}
@@ -350,6 +353,65 @@ class SlackController @Inject() (
 
   def event = Action { implicit request =>
     (maybeChallengeResult orElse maybeEventResult).getOrElse {
+      Ok("I don't know what to do with this request but I'm not concerned")
+    }
+  }
+
+  private val slashCommandForm = Form(
+    mapping(
+      "command" -> nonEmptyText,
+      "text" -> text,
+      "response_url" -> nonEmptyText,
+      "user_id" -> nonEmptyText,
+      "team_id" -> nonEmptyText,
+      "channel_id" -> nonEmptyText
+    )(SlashCommandInfo.apply)(SlashCommandInfo.unapply)
+  )
+
+  private def processCommandFor(info: SlashCommandInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
+    for {
+      slackMessage <- SlackMessage.fromFormattedText(info.text, botProfile, slackEventService)
+      event <- Future.successful(SlashCommandEvent(
+        botProfile,
+        info.teamId,
+        info.channelId,
+        info.userId,
+        slackMessage,
+        info.responseUrl
+      ))
+      maybeConversation <- dataService.conversations.allOngoingFor(
+        info.userId,
+        Conversation.SLACK_CONTEXT,
+        Some(info.channelId),
+        None,
+        botProfile.teamId
+      ).map(_.headOption)
+      results <- eventHandler.handle(event, maybeConversation)
+      _ <- Future.sequence(
+        results.map(result => botResultService.sendIn(result, None).map { _ =>
+          Logger.info(event.logTextFor(result, None))
+        })
+      )
+    } yield {}
+  }
+
+
+  private def slashCommandResult(info: SlashCommandInfo)(implicit request: Request[AnyContent]): Result = {
+    for {
+      profiles <- dataService.slackBotProfiles.allForSlackTeamId(info.teamId)
+      _ <- Future.sequence(
+        profiles.map { profile =>
+          processCommandFor(info, profile)
+        }
+      )
+    } yield {}
+
+    // respond immediately
+    Ok(info.confirmation)
+  }
+
+  def command = Action { implicit request =>
+    maybeResultFor(slashCommandForm, slashCommandResult).getOrElse {
       Ok("I don't know what to do with this request but I'm not concerned")
     }
   }
@@ -419,9 +481,12 @@ class SlackController @Inject() (
                                    message_ts: String,
                                    attachment_id: String,
                                    token: String,
-                                   original_message: OriginalMessageInfo,
+                                   original_message: Option[OriginalMessageInfo],
                                    response_url: String
                                  ) extends RequestInfo {
+
+    val maybeOriginalMessageThreadId: Option[String] = original_message.flatMap(_.thread_ts)
+    val isEphemeral: Boolean = original_message.isEmpty
 
     def slackTeamIdToUse: String = user.team_id.getOrElse(team.id)
 
@@ -571,7 +636,9 @@ class SlackController @Inject() (
     }
 
     private def originalMessageActions: Seq[ActionInfo] = {
-      this.original_message.attachments.flatMap(_.actions).flatten
+      this.original_message.map { msg =>
+        msg.attachments.flatMap(_.actions).flatten
+      }.getOrElse(Seq())
     }
 
     def findOptionLabelForValue(value: String): Option[String] = {
@@ -632,15 +699,7 @@ class SlackController @Inject() (
       _ <- (for {
         profile <- maybeProfile
       } yield {
-        ws.
-          url("https://slack.com/api/chat.postEphemeral").
-          withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-          post(Map(
-            "token" -> Seq(profile.token),
-            "channel" -> Seq(slackChannelId),
-            "text" -> Seq(message),
-            "user" -> Seq(slackUserId)
-          ))
+        services.slackApiService.clientFor(profile).postEphemeralMessage(message, slackChannelId, slackUserId)
       }).getOrElse {
         Future.successful({})
       }
@@ -660,35 +719,39 @@ class SlackController @Inject() (
                                        maybeResultText: Option[String],
                                        shouldRemoveActions: Boolean
                                      ): Future[Unit] = {
-    val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
-    val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
-    val originalAttachmentsToUse = if (shouldRemoveActions) {
-      info.original_message.attachments.map(ea => ea.copy(actions = None))
-    } else {
-      info.original_message.attachments
-    }
-    val updated = info.original_message.copy(attachments = originalAttachmentsToUse :+ newAttachment)
-    for {
-      maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
-      _ <- (for {
-        profile <- maybeProfile
-      } yield {
-        ws.
-          url("https://slack.com/api/chat.update").
-          withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-          post(Map(
-            "token" -> Seq(profile.token),
-            "channel" -> Seq(info.channel.id),
-            "text" -> Seq(updated.text),
-            "attachments" -> Seq(Json.prettyPrint(Json.toJson(updated.attachments))),
-            "as_user" -> Seq("true"),
-            "ts" -> Seq(info.message_ts),
-            "user" -> Seq(info.user.id)
-          ))
-      }).getOrElse {
-        Future.successful({})
+    info.original_message.map { originalMessage =>
+      val maybeOriginalColor = originalMessage.attachments.headOption.flatMap(_.color)
+      val newAttachment = AttachmentInfo(maybeResultText, None, None, Some(Seq("text")), Some(info.callback_id), color = maybeOriginalColor, footer = maybeResultText)
+      val originalAttachmentsToUse = if (shouldRemoveActions) {
+        originalMessage.attachments.map(ea => ea.copy(actions = None))
+      } else {
+        originalMessage.attachments
       }
-    } yield {}
+      val updated = originalMessage.copy(attachments = originalAttachmentsToUse :+ newAttachment)
+      for {
+        maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(info.team.id).map(_.headOption)
+        _ <- (for {
+          profile <- maybeProfile
+        } yield {
+          ws.
+            url("https://slack.com/api/chat.update").
+            withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+            post(Map(
+              "token" -> Seq(profile.token),
+              "channel" -> Seq(info.channel.id),
+              "text" -> Seq(updated.text),
+              "attachments" -> Seq(Json.prettyPrint(Json.toJson(updated.attachments))),
+              "as_user" -> Seq("true"),
+              "ts" -> Seq(info.message_ts),
+              "user" -> Seq(info.user.id)
+            ))
+        }).getOrElse {
+          Future.successful({})
+        }
+      } yield {}
+    }.getOrElse {
+      Future.successful({})
+    }
   }
 
   private def inputChoiceResultFor(value: String, info: ActionsTriggeredInfo)(implicit request: Request[AnyContent]): Future[Unit] = {
@@ -705,13 +768,15 @@ class SlackController @Inject() (
           profile,
           info.slackTeamIdToUse,
           info.channel.id,
-          info.original_message.thread_ts,
+          info.maybeOriginalMessageThreadId,
           info.user.id,
           slackMessage,
           None,
           info.message_ts,
           None,
-          isUninterruptedConversation = false
+          isUninterruptedConversation = false,
+          info.isEphemeral,
+          Some(info.response_url)
         ))
       }).getOrElse {
         Future.successful({})
@@ -797,8 +862,10 @@ class SlackController @Inject() (
       info.channel.id,
       info.user.id,
       info.message_ts,
-      info.original_message.thread_ts
-    )
+      info.maybeOriginalMessageThreadId,
+      info.isEphemeral,
+      Some(info.response_url)
+    ).map(_ => {})
   }
 
   trait ActionPermission {
@@ -839,7 +906,9 @@ class SlackController @Inject() (
             info.channel.id,
             info.user.id,
             info.message_ts,
-            info.original_message.thread_ts
+            info.maybeOriginalMessageThreadId,
+            info.isEphemeral,
+            Some(info.response_url)
           )
         }).getOrElse(Future.successful({}))
       }
@@ -854,22 +923,26 @@ class SlackController @Inject() (
       runInBackground
 
       val updated = if (shouldRemoveActions) {
-        val maybeOriginalColor = info.original_message.attachments.headOption.flatMap(_.color)
-        val newAttachment = AttachmentInfo(
-          maybeResultText,
-          title = None,
-          text = None,
-          Some(Seq("text")),
-          Some(info.callback_id),
-          color = maybeOriginalColor,
-          footer = Some("✔︎︎ OK")
-        )
-        val attachments = info.original_message.attachments.map(ea => ea.copy(actions = None))
-        info.original_message.copy(attachments = attachments :+ newAttachment)
+        info.original_message.map { originalMessage =>
+          val maybeOriginalColor = originalMessage.attachments.headOption.flatMap(_.color)
+          val newAttachment = AttachmentInfo(
+            maybeResultText,
+            title = None,
+            text = None,
+            Some(Seq("text")),
+            Some(info.callback_id),
+            color = maybeOriginalColor,
+            footer = Some("✔︎︎ OK")
+          )
+          val attachments = originalMessage.attachments.map(ea => ea.copy(actions = None))
+          originalMessage.copy(attachments = attachments :+ newAttachment)
+        }
       } else {
         info.original_message
       }
-      Ok(Json.toJson(updated))
+      updated.map { u =>
+        Ok(Json.toJson(u))
+      }.getOrElse(Ok(""))
     }
 
   }
@@ -1120,7 +1193,9 @@ class SlackController @Inject() (
         info.channel.id,
         info.user.id,
         info.message_ts,
-        info.original_message.thread_ts
+        info.maybeOriginalMessageThreadId,
+        info.isEphemeral,
+        Some(info.response_url)
       )
     }
 
@@ -1172,7 +1247,9 @@ class SlackController @Inject() (
         info.channel.id,
         info.user.id,
         info.message_ts,
-        info.original_message.thread_ts
+        info.maybeOriginalMessageThreadId,
+        info.isEphemeral,
+        Some(info.response_url)
       )
     }
 
@@ -1220,7 +1297,9 @@ class SlackController @Inject() (
         info.channel.id,
         info.user.id,
         info.message_ts,
-        info.original_message.thread_ts
+        info.maybeOriginalMessageThreadId,
+        info.isEphemeral,
+        Some(info.response_url)
       )
     }
 
@@ -1411,7 +1490,9 @@ class SlackController @Inject() (
         info.channel.id,
         info.user.id,
         info.message_ts,
-        info.original_message.thread_ts
+        info.maybeOriginalMessageThreadId,
+        info.isEphemeral,
+        Some(info.response_url)
       )
     }
 
