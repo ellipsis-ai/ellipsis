@@ -9,16 +9,12 @@ trait BotResultService {
 
   def sendInAction(
                     botResult: BotResult,
-                    maybeShouldUnfurl: Option[Boolean],
-                    maybeIntro: Option[String] = None,
-                    maybeInterruptionIntro: Option[String] = None
+                    maybeShouldUnfurl: Option[Boolean]
                   )(implicit actorSystem: ActorSystem): DBIO[Option[String]]
 
   def sendIn(
               botResult: BotResult,
-              maybeShouldUnfurl: Option[Boolean],
-              maybeIntro: Option[String] = None,
-              maybeInterruptionIntro: Option[String] = None
+              maybeShouldUnfurl: Option[Boolean]
             )(implicit actorSystem: ActorSystem): Future[Option[String]]
 
 }

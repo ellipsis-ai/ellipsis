@@ -42,32 +42,6 @@ trait Scheduled {
     }
   }
 
-  def maybeScheduleInfoTextFor(
-                           event: ScheduledEvent,
-                           result: BotResult,
-                           configuration: Configuration,
-                           displayText: String,
-                           isForInterruption: Boolean
-                         ): Option[String] = {
-    if (result.hasText) {
-      val scheduleLink = scheduleLinkFor(configuration, event.scheduled.id, event.teamId)
-      val greeting = if (isForInterruption) {
-        "Meanwhile, "
-      } else {
-        """:wave: Hi.
-         |
-         |""".stripMargin
-      }
-      Some(s"""${greeting}I’m running $displayText as scheduled. $scheduleLink
-       |
-       |───
-       |
-       |""".stripMargin)
-    } else {
-      None
-    }
-  }
-
   def scheduleLinkFor(configuration: Configuration, scheduleId: String, teamId: String): String = {
     configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val path = controllers.routes.ScheduledActionsController.index(Some(scheduleId), None, Some(teamId))
@@ -254,14 +228,8 @@ trait Scheduled {
     val botResultService = services.botResultService
     for {
       displayText <- displayText(dataService)
-      maybeIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = false))
-      maybeInterruptionIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = true))
-      _ <- botResultService.sendIn(result, None, maybeIntroText, maybeInterruptionIntroText)
+      _ <- botResultService.sendIn(result, None)
     } yield {
-      val channelInfo =
-        event.maybeChannel.
-          map { channel => s" in channel $channel" }.
-          getOrElse("")
       Logger.info(event.logTextFor(result, Some(s"for scheduled message [$displayText]")))
     }
   }
