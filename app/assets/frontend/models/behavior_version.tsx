@@ -293,7 +293,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     getEnvVarNamesInFunction(): Array<string> {
       const vars: Array<string> = [];
       const body = this.getFunctionBody();
-      const matches = body.match(/ellipsis\.env\.([$A-Za-z_][0-9A-Za-z_$]*)/g);
+      const matches = body.match(/ellipsis\.env\.([A-Z_][0-9A-Z_]*)/g);
       if (matches) {
         matches.forEach((match) => {
           vars.push(match.replace(/^ellipsis\.env\./, ""));
