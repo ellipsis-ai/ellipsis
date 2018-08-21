@@ -218,7 +218,6 @@ case class SlackApiClient(
       "attachments" -> attachments.map(a => Json.stringify(Json.toJson(a)))
     )
     postResponseFor("chat.postEphemeral", params).map { r =>
-      println(Json.prettyPrint(r.json))
       extract[String](r, "message_ts")
     }
   }
@@ -238,6 +237,7 @@ case class SlackApiClient(
       withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
       post(payload).
       map { r =>
+        // These endpoints seem to just return a 200 OK with no data, so let's simulate a timestamp
         SlackTimestamp.now
       }
   }
