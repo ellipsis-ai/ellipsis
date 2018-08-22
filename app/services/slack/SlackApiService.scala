@@ -222,10 +222,17 @@ case class SlackApiClient(
     }
   }
 
-  def postToResponseUrl(text: String, maybeAttachments: Option[Seq[Attachment]], responseUrl: String, isEphemeral: Boolean): Future[String] = {
+  def postToResponseUrl(
+                         text: String,
+                         maybeAttachments: Option[Seq[Attachment]],
+                         responseUrl: String,
+                         isEphemeral: Boolean,
+                         replaceOriginal: Boolean = false
+                       ): Future[String] = {
     val responseType = if (isEphemeral) { "ephemeral" } else { "in_channel" }
     val payload = Json.obj(
       "response_type" -> JsString(responseType),
+      "replace_original" -> Json.toJson(replaceOriginal),
       "text" -> JsString(text)
     ) ++ maybeAttachments.map { attachments =>
       Json.obj(

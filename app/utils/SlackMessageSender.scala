@@ -98,9 +98,8 @@ case class SlackMessageSender(
   private def postEphemeralMessage(
                                     text: String,
                                     maybeAttachments: Option[Seq[Attachment]] = None,
-                                    maybeChannelToForce: Option[String] = None
+                                    channel: String
                                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    val channel = maybeChannelToForce.getOrElse(channelToUse)
     client.postEphemeralMessage(
       text,
       channel,
@@ -114,8 +113,8 @@ case class SlackMessageSender(
     }
   }
 
-  private def maybeResponseUrlToUse(maybeChannelToForce: Option[String]): Option[String] = {
-    if (originatingChannel == channelToUse || maybeChannelToForce.contains(originatingChannel)) {
+  private def maybeResponseUrlToUse(channel: String): Option[String] = {
+    if (channel == originatingChannel) {
       maybeResponseUrl
     } else {
       None
@@ -129,13 +128,13 @@ case class SlackMessageSender(
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    maybeResponseUrlToUse(maybeChannelToForce).map { responseUrl =>
+    val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
+    maybeResponseUrlToUse(channel).map { responseUrl =>
       client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral)
     }.getOrElse {
       if (isEphemeral) {
-        postEphemeralMessage(text, maybeAttachments, maybeChannelToForce)
+        postEphemeralMessage(text, maybeAttachments, channel)
       } else {
-        val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
         client.postChatMessage(
           channel,
           text,
