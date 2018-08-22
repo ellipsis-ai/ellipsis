@@ -51,7 +51,7 @@ class TeamsController @Inject() (
       } else {
         for {
           count <- dataService.teams.allCount
-          pageData <- Future.successful(PageData.getPageData(count, page, perPage))
+          pageData <- Future.successful(PageData.pageDataFor(count, page, perPage))
           teams <- dataService.teams.allTeamsPaged(pageData.currentPage, pageData.pageSize)
           adminTeamsData <- Future.sequence(teams.map(adminTeamDataFor)).map(_.sorted.reverse)
         } yield {
