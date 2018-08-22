@@ -13,7 +13,7 @@
   teamCount: Int,
   currentPage: Int,
   pageSize: Int,
-  pageCount: Int,
+  totalPages: Int,
   maybeUpdatedTeamId: Option[String]
 )(implicit messages: Messages, r: RequestHeader)
 
@@ -75,18 +75,33 @@
     }
     </div>
 
-    @*
-    if(teamCount != pageSize ) {
-      <a href="?page=1">1</a>
-      <a href="?page=@pageCount&perPage=@pageSize">@pageCount</a>
-      @if(currentPage != 1) {
-        <a href="?page=@{currentPage-1}&perPage=@pageSize">Previous</a>
-      }
-      @if(currentPage != pageCount) {
-        <a href="?page=@{currentPage-1}">Next</a>
-      }
+    @if(teamCount > pageSize ) {
+      <div class="type-s type-label">
+        @if(currentPage > 1) {
+          <a href="?page=1&perPage=@pageSize">Page 1</a>
+          @if(currentPage > 3) {
+            <span> … </span>
+          }
+          @if(currentPage > 2) {
+            <span> · </span>
+            <a href="?page=@{currentPage - 1}&perPage=@pageSize">Page @{currentPage - 1}</a>
+          }
+          <span> · </span>
+        }
+        <span>Page @currentPage</span>
+        @if(currentPage < totalPages) {
+          @if(currentPage + 1 < totalPages) {
+            <span> · </span>
+            <a href="?page=@{currentPage + 1}&perPage=@pageSize">Page @{currentPage + 1}</a>
+          }
+          @if(currentPage + 2 < totalPages) {
+            <span> … </span>
+          }
+          <span> · </span>
+          <a href="?page=@totalPages&perPage=@pageSize">Page @totalPages</a>
+        }
+      </div>
     }
-    *@
   </div>
 }
 
