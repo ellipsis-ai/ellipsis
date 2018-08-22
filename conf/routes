@@ -103,7 +103,7 @@ GET         /authenticated/:message                   @controllers.APIAccessCont
 GET         /admin/lambdas                            @controllers.admin.LambdasController.list()
 POST        /admin/lambdas/:versionId/redeploy        @controllers.admin.LambdasController.redeploy(versionId: String)
 POST        /admin/lambdas/redeploy_all               @controllers.admin.LambdasController.redeployAll
-GET         /admin/teams                              @controllers.admin.TeamsController.list(page: Int ?= 0, perPage: Int ?= 10, updatedTeamId: Option[String] ?= None)
+GET         /admin/teams                              @controllers.admin.TeamsController.list(page: Int ?= 1, perPage: Int ?= 50, updatedTeamId: Option[String] ?= None)
 GET         /admin/billing/plans                      @controllers.admin.billing.PlansController.list()
 GET         /admin/user_info/lookup                   @controllers.admin.UserInfoController.userDataFor(userId: String)
 GET         /admin/managed_skills/:teamId             @controllers.admin.ManagedBehaviorGroupsController.list(teamId: String)
