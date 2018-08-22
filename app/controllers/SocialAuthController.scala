@@ -97,8 +97,14 @@ class SocialAuthController @Inject() (
           withLocale(java.util.Locale.ENGLISH).
           withZone(ZoneId.of("America/Toronto"))
       )
+      val isNewTeam = team.createdAt.isBefore(OffsetDateTime.now.minusDays(1))
+      val heading = if (isNewTeam) {
+        "New Slack team installed"
+      } else {
+        "Slack team re-installed"
+      }
       val message =
-        s"""**Slack team installed (created ${timestamp}):**
+        s"""**${heading}** _(created ${timestamp}):_
            |
            |_Team:_
            |**[${team.name}](${routes.ApplicationController.index(Some(team.id)).absoluteURL(true)})**
@@ -106,7 +112,8 @@ class SocialAuthController @Inject() (
            |Slack ID: ${slackBotProfile.slackTeamId}
            |
            |_User:_
-           |**${userData.fullName.getOrElse("(full name unknown)")}**
+           |**${userData.fullName.getOrElse("(Name unknown)")}**
+           |Slack ID: ${userData.userIdForContext.getOrElse("(unknown)")}
            |Username: @${userData.userName.getOrElse("(unknown)")}
            |Email: ${userData.email.getOrElse("(unknown)")}
            |""".stripMargin
