@@ -25,8 +25,8 @@
   )
 }
 
-@page.main("Teams", config, Seq(NavItem.adminTeamsList(false))) {
-  <div class="container">
+@page.main("Teams", config, Seq(NavItem.adminTeamsList(false)), bodyClass = "bg-light") {
+  <div class="container pbxxxxl">
     <h4>@teamCount Teams</h4>
     <div class="columns">
     @teams.map { team =>
@@ -74,34 +74,33 @@
       </div>
     }
     </div>
-
-    @if(teamCount > pageSize ) {
-      <div class="type-s type-label">
-        @if(currentPage > 1) {
-          <a href="?page=1&perPage=@pageSize">Page 1</a>
-          @if(currentPage > 3) {
-            <span> … </span>
-          }
-          @if(currentPage > 2) {
-            <span> · </span>
-            <a href="?page=@{currentPage - 1}&perPage=@pageSize">Page @{currentPage - 1}</a>
-          }
-          <span> · </span>
-        }
-        <span>Page @currentPage</span>
-        @if(currentPage < totalPages) {
-          @if(currentPage + 1 < totalPages) {
-            <span> · </span>
-            <a href="?page=@{currentPage + 1}&perPage=@pageSize">Page @{currentPage + 1}</a>
-          }
-          @if(currentPage + 2 < totalPages) {
-            <span> … </span>
-          }
-          <span> · </span>
-          <a href="?page=@totalPages&perPage=@pageSize">Page @totalPages</a>
-        }
-      </div>
-    }
   </div>
+  @if(teamCount > pageSize ) {
+    <div class="position-fixed position-fixed-bottom type-weak type-label border-emphasis-top border-blue mtm pvl container bg-blue-lightest">
+      @if(currentPage > 1) {
+        <a href="?page=1&perPage=@pageSize">Page 1</a>
+        @if(currentPage > 3) {
+          <span> … </span>
+        }
+        @if(currentPage > 2) {
+          <span> · </span>
+          <a href="?page=@{currentPage - 1}&perPage=@pageSize">Page @{currentPage - 1}</a>
+        }
+        <span> · </span>
+      }
+      <span>Page @currentPage</span>
+      @if(currentPage < totalPages) {
+        @if(currentPage + 1 < totalPages) {
+          <span> · </span>
+          <a href="?page=@{currentPage + 1}&perPage=@pageSize">Page @{currentPage + 1}</a>
+        }
+        @if(currentPage + 2 < totalPages) {
+          <span> … </span>
+        }
+        <span> · </span>
+        <a href="?page=@totalPages&perPage=@pageSize">Page @totalPages</a>
+      }
+    </div>
+  }
 }
 
