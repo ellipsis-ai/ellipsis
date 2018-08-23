@@ -27,80 +27,13 @@ class OAuth2ApplicationController @Inject() (
                                               implicit val ec: ExecutionContext
                                             ) extends ReAuthable {
 
-  def add(
-              maybeTeamId: Option[String],
-              maybeBehaviorGroupId: Option[String],
-              maybeBehaviorId: Option[String],
-              maybeRequiredNameInCode: Option[String]
-            ) = silhouette.SecuredAction.async { implicit request =>
-    val user = request.identity
-    render.async {
-      case Accepts.JavaScript() => {
-        for {
-          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-          apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
-          maybeBehaviorGroup <- maybeBehaviorGroupId.map { groupId =>
-            dataService.behaviorGroups.find(groupId, user)
-          }.getOrElse(Future.successful(None))
-          maybeBehaviorGroupVersion <- maybeBehaviorGroup.map { group =>
-            dataService.behaviorGroups.maybeCurrentVersionFor(group)
-          }.getOrElse(Future.successful(None))
-          maybeRequiredOAuth2Application <- (for {
-            groupVersion <- maybeBehaviorGroupVersion
-            nameInCode <- maybeRequiredNameInCode
-          } yield {
-            dataService.requiredOAuth2ApiConfigs.findWithNameInCode(nameInCode, groupVersion)
-          }).getOrElse(Future.successful(None))
-        } yield {
-          teamAccess.maybeTargetTeam.map { team =>
-            val newApplicationId = IDs.next
-            val config = OAuth2ApplicationEditConfig(
-              containerId = "applicationEditor",
-              csrfToken = CSRF.getToken(request).map(_.value),
-              isAdmin = teamAccess.isAdminAccess,
-              teamId = team.id,
-              apis = apis.map(ea => OAuth2ApiData.from(ea, assets)),
-              callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
-              mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
-              applicationId = newApplicationId,
-              applicationApiId = maybeRequiredOAuth2Application.map(_.api.id),
-              recommendedScope = maybeRequiredOAuth2Application.flatMap(_.maybeRecommendedScope),
-              requiredNameInCode = maybeRequiredNameInCode,
-              behaviorGroupId = maybeBehaviorGroupId,
-              behaviorId = maybeBehaviorId
-            )
-            Ok(views.js.shared.webpackLoader(
-              viewConfig(Some(teamAccess)),
-              "IntegrationEditorConfig",
-              "integrationEditor",
-              Json.toJson(config)
-            ))
-          }.getOrElse {
-            NotFound("Team not found")
-          }
-        }
-      }
-      case Accepts.Html() => {
-        for {
-          teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-        } yield {
-          teamAccess.maybeTargetTeam.map { team =>
-            val dataRoute = routes.OAuth2ApplicationController.add(maybeTeamId, maybeBehaviorGroupId, maybeBehaviorId, maybeRequiredNameInCode)
-            Ok(views.html.web.settings.oauth2application.edit(viewConfig(Some(teamAccess)), "Add an API configuration", dataRoute))
-          }.getOrElse {
-            NotFound(s"Team not found: ${maybeTeamId}")
-          }
-        }
-      }
-    }
-  }
-
   def edit(id: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       isAdmin <- dataService.users.isAdmin(user)
-      apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
+      oauth1Apis <- dataService.oauth1Apis.allFor(teamAccess.maybeTargetTeam)
+      oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       maybeApplication <- teamAccess.maybeTargetTeam.map { team =>
         dataService.oauth2Applications.find(id).map { maybeApp =>
           maybeApp.filter(_.teamId == team.id)
@@ -113,20 +46,26 @@ class OAuth2ApplicationController @Inject() (
             team <- teamAccess.maybeTargetTeam
             application <- maybeApplication
           } yield {
-            val config = OAuth2ApplicationEditConfig(
+            val config = OAuthApplicationEditConfig(
               containerId = "applicationEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
               isAdmin = teamAccess.isAdminAccess,
               teamId = team.id,
-              apis = apis.map(ea => OAuth2ApiData.from(ea, assets)),
-              callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
+              oauth1Config = OAuth1ApplicationEditConfig(
+                apis = oauth1Apis.map(ea => OAuth1ApiData.from(ea, assets)),
+                callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth1Service(application.id, None, None).absoluteURL(secure = true)
+              ),
+              oauth2Config = OAuth2ApplicationEditConfig(
+                apis = oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
+                callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
+                requiresAuth = Some(application.api.grantType.requiresAuth),
+                applicationClientId = Some(application.clientId),
+                applicationClientSecret = Some(application.clientSecret),
+                applicationScope = application.maybeScope
+              ),
               mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
               applicationId = application.id,
               applicationName = Some(application.name),
-              requiresAuth = Some(application.api.grantType.requiresAuth),
-              applicationClientId = Some(application.clientId),
-              applicationClientSecret = Some(application.clientSecret),
-              applicationScope = application.maybeScope,
               applicationApiId = Some(application.api.id),
               applicationSaved = true,
               applicationShared = application.isShared,

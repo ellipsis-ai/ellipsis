@@ -2,6 +2,7 @@ package services
 
 import models.accounts.github.profile.GithubProfileService
 import models.accounts.linkedaccount.LinkedAccountService
+import models.accounts.linkedoauth1token.LinkedOAuth1TokenService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
 import models.accounts.logintoken.LoginTokenService
@@ -69,6 +70,7 @@ trait DataService {
   val apiTokens: APITokenService
   val teamEnvironmentVariables: TeamEnvironmentVariableService
   val invocationTokens: InvocationTokenService
+  val linkedOAuth1Tokens: LinkedOAuth1TokenService
   val linkedOAuth2Tokens: LinkedOAuth2TokenService
   val linkedSimpleTokens: LinkedSimpleTokenService
   val oauth1Apis: OAuth1ApiService

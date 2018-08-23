@@ -56,11 +56,11 @@
   web.settings.routes.javascript.EnvironmentVariablesController.adminLoadValue,
   web.settings.routes.javascript.RegionalSettingsController.index,
   web.settings.routes.javascript.IntegrationsController.list,
+  web.settings.routes.javascript.IntegrationsController.add,
   web.settings.routes.javascript.AWSConfigController.add,
   web.settings.routes.javascript.AWSConfigController.edit,
   web.settings.routes.javascript.AWSConfigController.save,
   web.settings.routes.javascript.OAuth2ApplicationController.edit,
-  web.settings.routes.javascript.OAuth2ApplicationController.add,
   web.settings.routes.javascript.OAuth2ApplicationController.save,
 
   admin.routes.javascript.UserInfoController.userDataFor

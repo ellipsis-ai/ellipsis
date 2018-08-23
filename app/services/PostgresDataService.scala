@@ -4,6 +4,7 @@ import javax.inject._
 import models._
 import models.accounts.github.profile.GithubProfileService
 import models.accounts.linkedaccount.LinkedAccountService
+import models.accounts.linkedoauth1token.LinkedOAuth1TokenService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
 import models.accounts.logintoken.LoginTokenService
@@ -73,6 +74,7 @@ class PostgresDataService @Inject() (
                                       val apiTokensProvider: Provider[APITokenService],
                                       val environmentVariablesProvider: Provider[TeamEnvironmentVariableService],
                                       val invocationTokensProvider: Provider[InvocationTokenService],
+                                      val linkedOAuth1TokensProvider: Provider[LinkedOAuth1TokenService],
                                       val linkedOAuth2TokensProvider: Provider[LinkedOAuth2TokenService],
                                       val linkedSimpleTokensProvider: Provider[LinkedSimpleTokenService],
                                       val oauth1ApisProvider: Provider[OAuth1ApiService],
@@ -132,6 +134,7 @@ class PostgresDataService @Inject() (
   val apiTokens = apiTokensProvider.get
   val teamEnvironmentVariables = environmentVariablesProvider.get
   val invocationTokens = invocationTokensProvider.get
+  val linkedOAuth1Tokens = linkedOAuth1TokensProvider.get
   val linkedOAuth2Tokens = linkedOAuth2TokensProvider.get
   val linkedSimpleTokens = linkedSimpleTokensProvider.get
   val oauth1Apis = oauth1ApisProvider.get

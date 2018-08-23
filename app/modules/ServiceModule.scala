@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule
 import models.Models
 import models.accounts.github.profile.{GithubProfileService, GithubProfileServiceImpl}
 import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
+import models.accounts.linkedoauth1token.{LinkedOAuth1TokenService, LinkedOAuth1TokenServiceImpl}
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
 import models.accounts.linkedsimpletoken.{LinkedSimpleTokenService, LinkedSimpleTokenServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
@@ -81,6 +82,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[APITokenService].to[APITokenServiceImpl]
     bind[TeamEnvironmentVariableService].to[TeamEnvironmentVariableServiceImpl]
     bind[InvocationTokenService].to[InvocationTokenServiceImpl]
+    bind[LinkedOAuth1TokenService].to[LinkedOAuth1TokenServiceImpl]
     bind[LinkedOAuth2TokenService].to[LinkedOAuth2TokenServiceImpl]
     bind[LinkedSimpleTokenService].to[LinkedSimpleTokenServiceImpl]
     bind[OAuth1ApiService].to[OAuth1ApiServiceImpl]

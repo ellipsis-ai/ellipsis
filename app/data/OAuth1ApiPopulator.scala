@@ -11,15 +11,6 @@ class OAuth1ApiPopulator @Inject() (
                                      implicit val ec: ExecutionContext
                                    ) {
 
-
-//  id: String,
-//  name: String,
-//  requestTokenURL: String,
-//  accessTokenUrl: String,
-//  authorizationUrl: String,
-//  maybeNewApplicationUrl: Option[String],
-//  maybeTeamId: Option[String]
-
   val apis: Seq[OAuth1Api] = Seq(
     OAuth1Api(
       "dfsdfgl;sdfglfskgj",
@@ -33,7 +24,7 @@ class OAuth1ApiPopulator @Inject() (
   )
 
   def run(): Unit = {
-   // dataService.runNow(Future.sequence(apis.map(dataService.oauth2Apis.save)).map(_ => {}))
+    dataService.runNow(Future.sequence(apis.map(dataService.oauth1Apis.save)).map(_ => {}))
   }
 
   run()

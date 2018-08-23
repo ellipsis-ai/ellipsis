@@ -11,8 +11,8 @@ const IntegrationList = React.createClass({
       csrfToken: React.PropTypes.string.isRequired,
       isAdmin: React.PropTypes.bool.isRequired,
       teamId: React.PropTypes.string.isRequired,
-      apis: React.PropTypes.arrayOf(React.PropTypes.object),
-      applications: React.PropTypes.arrayOf(React.PropTypes.object),
+      oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.object),
+      oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.object),
       awsConfigs: React.PropTypes.arrayOf(React.PropTypes.object)
     }),
 
@@ -20,16 +20,20 @@ const IntegrationList = React.createClass({
       return Page.requiredPropDefaults();
     },
 
-    hasApis: function() {
-      return !!(this.props.apis && this.props.apis.length > 0);
+    getOAuth2Apis: function() {
+      return this.props.oauth2Apis || [];
     },
 
-    getApplications: function() {
-      return this.props.applications || [];
+    hasApis: function() {
+      return Boolean(this.getOAuth2Apis().length > 0);
+    },
+
+    getOAuth2Applications: function() {
+      return this.props.oauth2Applications || [];
     },
 
     getGroupedApplications: function() {
-      var flatApps = Sort.arrayAlphabeticalBy(this.getApplications(), (item) => item.displayName);
+      var flatApps = Sort.arrayAlphabeticalBy(this.getOAuth2Applications(), (item) => item.displayName);
       var groupedApps = {};
       flatApps.forEach(ea => {
         if (groupedApps[ea.apiId]) {
@@ -42,16 +46,16 @@ const IntegrationList = React.createClass({
     },
 
     getApiNameForId: function(apiId) {
-      var found = this.props.apis.find(ea => ea.apiId === apiId);
+      const found = this.props.oauth2Apis.find(ea => ea.apiId === apiId);
       return found ? found.name : "";
     },
 
     hasApplications: function() {
-      return !!(this.props.applications && this.props.applications.length > 0);
+      return Boolean(this.getOAuth2Applications().length > 0);
     },
 
     hasAwsConfigs: function() {
-      return !!(this.props.awsConfigs && this.props.awsConfigs.length > 0);
+      return Boolean(this.props.awsConfigs && this.props.awsConfigs.length > 0);
     },
 
     getAwsConfigs: function() {
@@ -210,7 +214,7 @@ const IntegrationList = React.createClass({
       return (
         <div className="mvxl">
           <a className="button"
-             href={jsRoutes.controllers.web.settings.OAuth2ApplicationController.add(this.optionalTeamId(), null, null, null).url}
+             href={jsRoutes.controllers.web.settings.IntegrationsController.add(this.optionalTeamId(), null, null, null).url}
           >
             Add a new integration
           </a>
