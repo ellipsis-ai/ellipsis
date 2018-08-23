@@ -299,7 +299,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
           vars.push(match.replace(/^ellipsis\.env\./, ""));
         });
       }
-      return vars;
+      return Array.from(new Set(vars).values());
     }
 
     includesText(queryString: string): boolean {
