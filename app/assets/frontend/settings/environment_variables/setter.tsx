@@ -10,6 +10,8 @@ import Button from "../../form/button";
 import {DataRequest, ResponseError} from "../../lib/data_request";
 import DynamicLabelButton from "../../form/dynamic_label_button";
 import ConfirmActionPanel from "../../panels/confirm_action";
+import FormSearch from "../../form/search";
+import SubstringHighlighter from "../../shared_ui/substring_highlighter";
 
 const formatEnvVarName = Formatter.formatEnvironmentVariableName;
 
@@ -39,11 +41,14 @@ interface State {
   isSaving: boolean,
   isDeleting: boolean,
   deleteVarName: Option<string>,
-  adminValuesLoading: Array<string>
+  adminValuesLoading: Array<string>,
+  filter: string
 }
 
 class Setter extends React.Component<Props, State> {
-  envVarValueInputs: Array<Option<FocusableTextInputInterface>>;
+  envVarValueInputs: {
+    [varName: string]: Option<FocusableTextInputInterface>
+  };
   newVarNameInputs: Array<Option<FocusableTextInputInterface>>;
   newVarValueInputs: Array<Option<FocusableTextInputInterface>>;
 
@@ -51,13 +56,40 @@ class Setter extends React.Component<Props, State> {
     super(props);
     autobind(this);
     this.state = this.defaultState();
-    this.envVarValueInputs = [];
+    this.envVarValueInputs = {};
     this.newVarNameInputs = [];
     this.newVarValueInputs = [];
   }
 
+  getFilter(): string {
+    return this.state.filter.trim().toLowerCase();
+  }
+
+  updateFilter(newValue: string): void {
+    this.setState({
+      filter: newValue
+    });
+  }
+
   getVars(): Array<EnvironmentVariableData> {
     return this.state.vars;
+  }
+
+  getExistingFilteredVars(): Array<EnvironmentVariableData> {
+    return this.getFilteredVars(this.getVars());
+  }
+
+  getFilteredVars(vars: Array<EnvironmentVariableData>): Array<EnvironmentVariableData> {
+    const filter = this.getFilter();
+    if (filter) {
+      return vars.filter((ea) => {
+        const lowerCased = ea.name.toLowerCase();
+        return lowerCased.includes(filter) ||
+          lowerCased.replace(/_/g, "").includes(filter);
+      });
+    } else {
+      return vars;
+    }
   }
 
   createNewVar(optionalName?: Option<string>): EnvironmentVariableData {
@@ -77,7 +109,8 @@ class Setter extends React.Component<Props, State> {
       isSaving: false,
       isDeleting: false,
       deleteVarName: null,
-      adminValuesLoading: []
+      adminValuesLoading: [],
+      filter: ""
     };
   }
 
@@ -161,13 +194,16 @@ class Setter extends React.Component<Props, State> {
   }
 
   focusOrCreateVarName(name: string): void {
-    var matchingVarIndex = this.getVars().findIndex((ea) => ea.name === name);
-    const input = matchingVarIndex >= 0 ? this.envVarValueInputs[matchingVarIndex] : null;
-    if (input) {
-      input.focus();
-    } else {
-      this.addNewVar(name);
-    }
+    this.setState({
+      filter: name
+    }, () => {
+      const existingVarValueInput = this.envVarValueInputs[name];
+      if (existingVarValueInput) {
+        existingVarValueInput.focus();
+      } else {
+        this.addNewVar(name);
+      }
+    });
   }
 
   cancelShouldBeDisabled(): boolean {
@@ -332,7 +368,7 @@ class Setter extends React.Component<Props, State> {
     } else {
       return (
         <Textarea
-          ref={(el) => this.envVarValueInputs[index] = el}
+          ref={(el) => this.envVarValueInputs[envVar.name] = el}
           className="type-monospace form-input-borderless form-input-height-auto"
           placeholder="Set value"
           value={envVar.value || ""}
@@ -470,13 +506,21 @@ class Setter extends React.Component<Props, State> {
         </p>
 
         <div>
+
+          <div className="columns columns-elastic mbl">
+            <div className="column column-shrink type-label align-form-input">Search:</div>
+            <div className="column column-expand">
+              <FormSearch className="form-input-borderless type-monospace" onChange={this.updateFilter} value={this.state.filter} />
+            </div>
+          </div>
+
           <div>
-            {this.getVars().map((ea, index) => {
+            {this.getExistingFilteredVars().map((ea, index) => {
               return (
                 <div className="border bg-white phs mbm columns" key={`envVar${index}`}>
                   <div className="column column-one-quarter mobile-column-one-half">
                     <div className="align-button type-monospace type-s type-wrap-words" title={ea.name}>
-                      {ea.name}
+                      <SubstringHighlighter text={ea.name} substring={this.getFilter()} />
                     </div>
                   </div>
                   <div className="column column-three-quarters mobile-column-full">

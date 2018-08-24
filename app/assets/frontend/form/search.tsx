@@ -1,60 +1,72 @@
 import * as React from 'react';
-import FormInput from './input';
+import FormInput, {FocusableTextInputInterface, FormInputProps} from './input';
 import SVGSearch from '../svg/search';
 import SVGX from '../svg/x';
+import autobind from "../lib/autobind";
 
-const FormSearch = React.createClass({
-    propTypes: {
-      isSearching: React.PropTypes.bool,
-      onChange: React.PropTypes.func.isRequired,
-      value: React.PropTypes.string,
-      className: React.PropTypes.string,
-      withResults: React.PropTypes.bool
-    },
+interface SearchProps {
+  isSearching?: boolean,
+  withResults?: boolean
+}
 
-    getRemainingProps: function() {
-      var props = Object.assign({}, this.props);
+type Props = FormInputProps & SearchProps;
+
+class FormSearch extends React.Component<Props> implements FocusableTextInputInterface {
+  input: Option<FormInput>;
+
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+    getRemainingProps(): FormInputProps {
+      var props: FormInputProps & Props = Object.assign({}, this.props);
       delete props.isSearching;
       delete props.className;
       return props;
-    },
+    }
 
-    clearValue: function() {
+    clearValue(): void {
       const hasCurrentValue = Boolean(this.props.value);
-      this.props.onChange("", () => {
-        if (hasCurrentValue) {
-          this.focus();
-        } else {
-          this.blur();
-        }
-      });
-    },
+      this.props.onChange("");
+      if (hasCurrentValue) {
+        this.focus();
+      } else {
+        this.blur();
+      }
+    }
 
-    focus: function() {
+    focus(): void {
       if (this.input) {
         this.input.focus();
       }
-    },
+    }
 
-    blur: function() {
+    blur(): void {
       if (this.input) {
         this.input.blur();
       }
-    },
+    }
 
-    getClassNames: function() {
+    select(): void {
+      if (this.input) {
+        this.input.select();
+      }
+    }
+
+    getClassNames(): Array<string> {
       return this.props.className ? this.props.className.split(" ") : [];
-    },
+    }
 
-    isSmall: function() {
+    isSmall(): boolean {
       return this.getClassNames().includes("form-input-s");
-    },
+    }
 
-    isBorderless: function() {
+    isBorderless(): boolean {
       return this.getClassNames().includes("form-input-borderless");
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div className={"columns columns-elastic position-relative " + (this.props.withResults ? " mbneg1 position-z-above " : "")}>
           <div className="column column-expand prn">
@@ -111,6 +123,6 @@ const FormSearch = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default FormSearch;
