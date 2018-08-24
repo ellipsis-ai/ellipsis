@@ -56,9 +56,10 @@ class APIAccessController @Inject() (
   }
 
   private def resultWithToken(
-                               maybeRedirectAfterAuth: Option[String]
+                                maybeInvocationId: Option[String],
+                                maybeRedirectAfterAuth: Option[String]
                              )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-    request.session.get("invocation-id").flatMap { invocationId =>
+    maybeInvocationId.flatMap { invocationId =>
       maybeResultWithMagicLinkFor(invocationId)
     }.getOrElse {
       val redirect = maybeRedirectAfterAuth.getOrElse {
@@ -74,12 +75,12 @@ class APIAccessController @Inject() (
                             maybeInvocationId: Option[String]
                             )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     val state = IDs.next
-    val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, maybeRedirectAfterAuth).absoluteURL(secure = true)
+    val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId, maybeRedirectAfterAuth).absoluteURL(secure = true)
     val maybeRedirect = application.maybeAuthorizationRequestFor(state, redirectParam, ws).map { r =>
       r.uri.toString
     }
     val result = maybeRedirect.map { redirect =>
-      val sessionState = Seq(Some("oauth-state" -> state), maybeInvocationId.map(id => "invocation-id" -> id)).flatten
+      val sessionState = Seq("oauth-state" -> state)
       Redirect(redirect).withSession(sessionState: _*)
     }.getOrElse(BadRequest("Doesn't use authorization code"))
     Future.successful(result)
@@ -98,7 +99,7 @@ class APIAccessController @Inject() (
       val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId, maybeRedirectAfterAuth).absoluteURL(secure = true)
       getToken(code, application, user, redirect).flatMap { maybeLinkedToken =>
         maybeLinkedToken.
-          map(_ => resultWithToken(maybeRedirectAfterAuth)).
+          map(_ => resultWithToken(maybeInvocationId, maybeRedirectAfterAuth)).
           getOrElse(Future.successful(BadRequest("boom")))
       }
     } else {
@@ -191,7 +192,7 @@ class APIAccessController @Inject() (
                   // We received the authorized tokens in the OAuth object - store it before we proceed
                   val token = LinkedOAuth1Token(t.token, t.secret, user.id, application)
                   dataService.linkedOAuth1Tokens.save(token).flatMap { _ =>
-                    resultWithToken(maybeRedirectAfterAuth).map { r =>
+                    resultWithToken(maybeInvocationId, maybeRedirectAfterAuth).map { r =>
                       r.withSession("token" -> t.token, "secret" -> t.secret)
                     }
                   }
