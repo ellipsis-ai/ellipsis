@@ -35,11 +35,11 @@ const IntegrationEditor = React.createClass({
         requiresAuth: React.PropTypes.bool,
         applicationClientId: React.PropTypes.string,
         applicationClientSecret: React.PropTypes.string,
-        applicationScope: React.PropTypes.string,
         requiredOAuth2ApiConfigId: React.PropTypes.string,
-        recommendedScope: React.PropTypes.string
       }),
       applicationApiId: React.PropTypes.string,
+      recommendedScope: React.PropTypes.string,
+      applicationScope: React.PropTypes.string,
       requiredNameInCode: React.PropTypes.string,
       applicationName: React.PropTypes.string,
       applicationSaved: React.PropTypes.bool,
@@ -73,7 +73,7 @@ const IntegrationEditor = React.createClass({
         applicationName: this.props.applicationName || "",
         applicationClientId: this.props.oauth2Config.applicationClientId || "",
         applicationClientSecret: this.props.oauth2Config.applicationClientSecret || "",
-        applicationScope: this.props.oauth2Config.applicationScope || this.props.recommendedScope || "",
+        applicationScope: this.props.applicationScope || this.props.recommendedScope || "",
         hasNamedApplication: this.props.applicationSaved || false,
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false,
@@ -569,44 +569,40 @@ const IntegrationEditor = React.createClass({
       }
     },
 
-    renderOAuth2ScopeDetails: function() {
-      if (this.isOAuth1()) {
-        return null;
-      } else {
-        return (
-          <div>
-            <hr className="mvxxxl" />
+    renderScopeDetails: function() {
+      return (
+        <div>
+          <hr className="mvxxxl" />
 
-            <div className="mvm">
-              <h4 className="mbn position-relative">
-                <span className="position-hanging-indent">4</span>
-                <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
-              </h4>
+          <div className="mvm">
+            <h4 className="mbn position-relative">
+              <span className="position-hanging-indent">4</span>
+              <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
+            </h4>
+            <p className="type-s">
+              This may not be necessary for some APIs.
+            </p>
+            {ifPresent(this.getApplicationApiScopeDocumentationUrl(), url => (
               <p className="type-s">
-                This may not be necessary for some APIs.
+                <span>Use the <a href={url} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
+                <span>the correct value for your configuration.</span>
               </p>
-              {ifPresent(this.getApplicationApiScopeDocumentationUrl(), url => (
-                <p className="type-s">
-                  <span>Use the <a href={url} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
-                  <span>the correct value for your configuration.</span>
-                </p>
-              ))}
+            ))}
 
-              <div className="columns">
-                <div className="column column-one-third">
-                  <FormInput className="form-input-borderless type-monospace"
-                             name="scope"
-                             value={this.getApplicationScope()}
-                             onChange={this.setApplicationScope}
-                             placeholder="Enter scope value"
-                             disableAuto={true}
-                  />
-                </div>
+            <div className="columns">
+              <div className="column column-one-third">
+                <FormInput className="form-input-borderless type-monospace"
+                           name="scope"
+                           value={this.getApplicationScope()}
+                           onChange={this.setApplicationScope}
+                           placeholder="Enter scope value"
+                           disableAuto={true}
+                />
               </div>
             </div>
           </div>
-        );
-      }
+        </div>
+      );
     },
 
     renderConfigureApplicationDetails: function() {
@@ -637,7 +633,7 @@ const IntegrationEditor = React.createClass({
 
             {this.renderOAuth1ConsumerDetails()}
 
-            {this.renderOAuth2ScopeDetails()}
+            {this.renderScopeDetails()}
 
             {ifPresent(this.applicationCanBeShared(), () => (
               <div className="mvm">

@@ -9,6 +9,7 @@ CREATE TABLE oauth1_apis (
   access_token_url TEXT NOT NULL,
   authorization_url TEXT NOT NULL,
   new_application_url TEXT,
+  scope_documentation_url TEXT,
   team_id TEXT REFERENCES teams(id)
 );
 
@@ -18,6 +19,7 @@ CREATE TABLE oauth1_applications (
   api_id TEXT NOT NULL REFERENCES oauth1_apis(id) ON DELETE CASCADE,
   consumer_key TEXT NOT NULL,
   consumer_secret TEXT NOT NULL,
+  scope TEXT,
   team_id TEXT NOT NULL REFERENCES teams(id),
   is_shared BOOL NOT NULL
 );

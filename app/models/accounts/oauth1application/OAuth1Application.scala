@@ -8,6 +8,7 @@ case class OAuth1Application(
                               api: OAuth1Api,
                               consumerKey: String,
                               consumerSecret: String,
+                              maybeScope: Option[String],
                               teamId: String,
                               isShared: Boolean
                             ) {
@@ -18,6 +19,7 @@ case class OAuth1Application(
     api.id,
     consumerKey,
     consumerSecret,
+    maybeScope,
     teamId,
     isShared
   )

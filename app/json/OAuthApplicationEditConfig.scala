@@ -11,6 +11,8 @@ case class OAuthApplicationEditConfig(
                                         applicationId: String,
                                         applicationName: Option[String] = None,
                                         applicationApiId: Option[String] = None,
+                                        applicationScope: Option[String] = None,
+                                        recommendedScope: Option[String] = None,
                                         applicationSaved: Boolean = false,
                                         applicationShared: Boolean = false,
                                         applicationCanBeShared: Boolean = false,

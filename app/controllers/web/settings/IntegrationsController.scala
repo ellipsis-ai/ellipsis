@@ -133,12 +133,12 @@ class IntegrationsController @Inject() (
               oauth2Config = OAuth2ApplicationEditConfig(
                 apis = oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
                 callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
-                requiresAuth = maybeRequiredOAuth2Application.map(_.api.grantType.requiresAuth),
-                recommendedScope = maybeRequiredOAuth2Application.flatMap(_.maybeRecommendedScope)
+                requiresAuth = maybeRequiredOAuth2Application.map(_.api.grantType.requiresAuth)
               ),
               mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
               applicationId = newApplicationId,
               applicationApiId = maybeRequiredOAuth2Application.map(_.api.id),
+              recommendedScope = maybeRequiredOAuth2Application.flatMap(_.maybeRecommendedScope),
               requiredNameInCode = maybeRequiredNameInCode,
               behaviorGroupId = maybeBehaviorGroupId,
               behaviorId = maybeBehaviorId
@@ -227,7 +227,7 @@ class IntegrationsController @Inject() (
         consumerSecret <- info.consumerSecret
       } yield {
         val isShared = isAdmin && info.isShared
-        val instance = OAuth1Application(info.id, info.name, api, consumerKey, consumerSecret, team.id, isShared)
+        val instance = OAuth1Application(info.id, info.name, api, consumerKey, consumerSecret, info.maybeScope, team.id, isShared)
         dataService.oauth1Applications.save(instance).map(Some(_))
       }).getOrElse(Future.successful(None))
       _ <- (for {
@@ -358,13 +358,13 @@ class IntegrationsController @Inject() (
         callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
         requiresAuth = None,
         applicationClientId = None,
-        applicationClientSecret = None,
-        applicationScope = None
+        applicationClientSecret = None
       ),
       mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
       applicationId = application.id,
       applicationName = Some(application.name),
       applicationApiId = Some(application.api.id),
+      applicationScope = application.maybeScope,
       applicationSaved = true,
       applicationShared = application.isShared,
       applicationCanBeShared = isAdmin
@@ -393,13 +393,13 @@ class IntegrationsController @Inject() (
         callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
         requiresAuth = Some(application.api.grantType.requiresAuth),
         applicationClientId = Some(application.clientId),
-        applicationClientSecret = Some(application.clientSecret),
-        applicationScope = application.maybeScope
+        applicationClientSecret = Some(application.clientSecret)
       ),
       mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
       applicationId = application.id,
       applicationName = Some(application.name),
       applicationApiId = Some(application.api.id),
+      applicationScope = application.maybeScope,
       applicationSaved = true,
       applicationShared = application.isShared,
       applicationCanBeShared = isAdmin

@@ -175,10 +175,12 @@ class APIAccessController @Inject() (
           if (application.isShared || isLoggedInToCorrectTeam) {
             val api = application.api
             val key = ConsumerKey(application.consumerKey, application.consumerSecret)
+            val scopePart = application.maybeScope.map(scope => s"&scope=$scope").getOrElse("")
+            val authorizationUrlToUse = s"${api.authorizationUrl}?name=Ellipsis${scopePart}"
             val serviceInfo = ServiceInfo(
               api.requestTokenUrl,
               api.accessTokenUrl,
-              api.authorizationUrl,
+              authorizationUrlToUse,
               key
             )
             val oauth = OAuth(serviceInfo, use10a=true)

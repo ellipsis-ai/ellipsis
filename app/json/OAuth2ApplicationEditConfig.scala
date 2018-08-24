@@ -5,7 +5,5 @@ case class OAuth2ApplicationEditConfig(
                                        callbackUrl: String,
                                        requiresAuth: Option[Boolean] = None,
                                        applicationClientId: Option[String] = None,
-                                       applicationClientSecret: Option[String] = None,
-                                       applicationScope: Option[String] = None,
-                                       recommendedScope: Option[String] = None
+                                       applicationClientSecret: Option[String] = None
                                      )
