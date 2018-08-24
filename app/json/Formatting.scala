@@ -51,8 +51,8 @@ object Formatting {
   lazy implicit val oAuth2ApplicationEditConfigWrites = Json.writes[OAuth2ApplicationEditConfig]
   lazy implicit val oAuthApplicationEditConfigWrites = Json.writes[OAuthApplicationEditConfig]
 
-  lazy implicit val requiredOAuth2ApiConfigReads = Json.reads[RequiredOAuth2ApiConfigData]
-  lazy implicit val requiredOAuth2ApiConfigWrites = Json.writes[RequiredOAuth2ApiConfigData]
+  lazy implicit val requiredOAuth1ApiConfigFormat = Json.format[RequiredOAuth1ApiConfigData]
+  lazy implicit val requiredOAuth2ApiConfigFormat = Json.format[RequiredOAuth2ApiConfigData]
 
   lazy implicit val simpleTokenApiReads = Json.reads[SimpleTokenApiData]
   lazy implicit val simpleTokenApiWrites = Json.writes[SimpleTokenApiData]

@@ -29,6 +29,7 @@ import models.behaviors.behaviortestresult.{BehaviorTestResultService, BehaviorT
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
 import models.behaviors.config.requiredawsconfig.{RequiredAWSConfigService, RequiredAWSConfigServiceImpl}
+import models.behaviors.config.requiredoauth1apiconfig.{RequiredOAuth1ApiConfigService, RequiredOAuth1ApiConfigServiceImpl}
 import models.behaviors.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigService, RequiredOAuth2ApiConfigServiceImpl}
 import models.behaviors.config.requiredsimpletokenapi.{RequiredSimpleTokenApiService, RequiredSimpleTokenApiServiceImpl}
 import models.behaviors.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
@@ -108,6 +109,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[MessageTriggerService].to[MessageTriggerServiceImpl]
     bind[AWSConfigService].to[AWSConfigServiceImpl]
     bind[RequiredAWSConfigService].to[RequiredAWSConfigServiceImpl]
+    bind[RequiredOAuth1ApiConfigService].to[RequiredOAuth1ApiConfigServiceImpl]
     bind[RequiredOAuth2ApiConfigService].to[RequiredOAuth2ApiConfigServiceImpl]
     bind[RequiredSimpleTokenApiService].to[RequiredSimpleTokenApiServiceImpl]
     bind[LinkedGithubRepoService].to[LinkedGithubRepoServiceImpl]

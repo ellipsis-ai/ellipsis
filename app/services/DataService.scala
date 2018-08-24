@@ -27,6 +27,7 @@ import models.behaviors.behaviortestresult.BehaviorTestResultService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfigService
+import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfigService
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
@@ -97,6 +98,7 @@ trait DataService {
   val messageTriggers: MessageTriggerService
   val awsConfigs: AWSConfigService
   val requiredAWSConfigs: RequiredAWSConfigService
+  val requiredOAuth1ApiConfigs: RequiredOAuth1ApiConfigService
   val requiredOAuth2ApiConfigs: RequiredOAuth2ApiConfigService
   val requiredSimpleTokenApis: RequiredSimpleTokenApiService
   val linkedGithubRepos: LinkedGithubRepoService

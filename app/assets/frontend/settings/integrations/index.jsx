@@ -11,6 +11,8 @@ const IntegrationList = React.createClass({
       csrfToken: React.PropTypes.string.isRequired,
       isAdmin: React.PropTypes.bool.isRequired,
       teamId: React.PropTypes.string.isRequired,
+      oauth1Apis: React.PropTypes.arrayOf(React.PropTypes.object),
+      oauth1Applications: React.PropTypes.arrayOf(React.PropTypes.object),
       oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.object),
       oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.object),
       awsConfigs: React.PropTypes.arrayOf(React.PropTypes.object)
@@ -20,21 +22,37 @@ const IntegrationList = React.createClass({
       return Page.requiredPropDefaults();
     },
 
+    hasApis: function() {
+      return Boolean(this.getAllApis().length > 0);
+    },
+
+    getOAuth1Apis: function() {
+      return this.props.oauth1Apis || [];
+    },
+
     getOAuth2Apis: function() {
       return this.props.oauth2Apis || [];
     },
 
-    hasApis: function() {
-      return Boolean(this.getOAuth2Apis().length > 0);
+    getAllApis: function() {
+      return this.getOAuth1Apis().concat(this.getOAuth2Apis());
+    },
+
+    getOAuth1Applications: function() {
+      return this.props.oauth1Applications || [];
     },
 
     getOAuth2Applications: function() {
       return this.props.oauth2Applications || [];
     },
 
+    getAllApplications: function() {
+      return this.getOAuth1Applications().concat(this.getOAuth2Applications());
+    },
+
     getGroupedApplications: function() {
-      var flatApps = Sort.arrayAlphabeticalBy(this.getOAuth2Applications(), (item) => item.displayName);
-      var groupedApps = {};
+      const flatApps = Sort.arrayAlphabeticalBy(this.getAllApplications(), (item) => item.displayName);
+      const groupedApps = {};
       flatApps.forEach(ea => {
         if (groupedApps[ea.apiId]) {
           groupedApps[ea.apiId].push(ea);
@@ -46,12 +64,12 @@ const IntegrationList = React.createClass({
     },
 
     getApiNameForId: function(apiId) {
-      const found = this.props.oauth2Apis.find(ea => ea.apiId === apiId);
+      const found = this.getAllApis().find(ea => ea.apiId === apiId);
       return found ? found.name : "";
     },
 
     hasApplications: function() {
-      return Boolean(this.getOAuth2Applications().length > 0);
+      return Boolean(this.getAllApplications().length > 0);
     },
 
     hasAwsConfigs: function() {
@@ -138,7 +156,7 @@ const IntegrationList = React.createClass({
 
     renderApplicationList: function() {
       var grouped = this.getGroupedApplications();
-      var route = jsRoutes.controllers.web.settings.OAuth2ApplicationController.edit;
+      var route = jsRoutes.controllers.web.settings.IntegrationsController.edit;
       var groupKeys = Object.keys(grouped);
       return (
         <div>

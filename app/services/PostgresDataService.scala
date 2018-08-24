@@ -29,6 +29,7 @@ import models.behaviors.behaviortestresult.BehaviorTestResultService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfigService
+import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfigService
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
@@ -101,6 +102,7 @@ class PostgresDataService @Inject() (
                                       val messageTriggersProvider: Provider[MessageTriggerService],
                                       val awsConfigsProvider: Provider[AWSConfigService],
                                       val requiredAWSConfigsProvider: Provider[RequiredAWSConfigService],
+                                      val requiredOAuth1ApiConfigsProvider: Provider[RequiredOAuth1ApiConfigService],
                                       val requiredOAuth2ApiConfigsProvider: Provider[RequiredOAuth2ApiConfigService],
                                       val requiredSimpleTokenApiConfigsProvider: Provider[RequiredSimpleTokenApiService],
                                       val linkedGithubReposProvider: Provider[LinkedGithubRepoService],
@@ -161,6 +163,7 @@ class PostgresDataService @Inject() (
   val messageTriggers = messageTriggersProvider.get
   val awsConfigs = awsConfigsProvider.get
   val requiredAWSConfigs = requiredAWSConfigsProvider.get
+  val requiredOAuth1ApiConfigs = requiredOAuth1ApiConfigsProvider.get
   val requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsProvider.get
   val requiredSimpleTokenApis = requiredSimpleTokenApiConfigsProvider.get
   val linkedGithubRepos = linkedGithubReposProvider.get

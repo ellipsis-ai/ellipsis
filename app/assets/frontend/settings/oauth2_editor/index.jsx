@@ -71,15 +71,15 @@ const IntegrationEditor = React.createClass({
       return {
         applicationApi: this.findApiById(this.props.applicationApiId),
         applicationName: this.props.applicationName || "",
-        applicationClientId: this.props.applicationClientId || "",
-        applicationClientSecret: this.props.applicationClientSecret || "",
-        applicationScope: this.props.applicationScope || this.props.recommendedScope || "",
+        applicationClientId: this.props.oauth2Config.applicationClientId || "",
+        applicationClientSecret: this.props.oauth2Config.applicationClientSecret || "",
+        applicationScope: this.props.oauth2Config.applicationScope || this.props.recommendedScope || "",
         hasNamedApplication: this.props.applicationSaved || false,
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false,
         applicationShared: this.props.applicationShared,
-        applicationConsumerKey: this.props.applicationConsumerKey || "",
-        applicationConsumerSecret: this.props.applicationConsumerSecret || ""
+        applicationConsumerKey: this.props.oauth1Config.applicationConsumerKey || "",
+        applicationConsumerSecret: this.props.oauth1Config.applicationConsumerSecret || ""
       };
     },
 
@@ -293,7 +293,7 @@ const IntegrationEditor = React.createClass({
     render: function() {
       return (
         <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"}>
-          <form action={jsRoutes.controllers.web.settings.OAuth2ApplicationController.save().url} method="POST" className="flex-row-cascade">
+          <form action={jsRoutes.controllers.web.settings.IntegrationsController.save().url} method="POST" className="flex-row-cascade">
             <CsrfTokenHiddenInput value={this.props.csrfToken} />
             <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
             <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
@@ -499,7 +499,7 @@ const IntegrationEditor = React.createClass({
                   <h5 className="mtn">Consumer key</h5>
                   <FormInput className="form-input-borderless type-monospace"
                              placeholder="Enter key"
-                             name="clientId"
+                             name="consumerKey"
                              value={this.getApplicationConsumerKey()}
                              onChange={this.setApplicationConsumerKey}
                              disableAuto={true}
@@ -509,7 +509,7 @@ const IntegrationEditor = React.createClass({
                   <h5 className="mtn">Consumer secret</h5>
                   <FormInput className="form-input-borderless type-monospace"
                              placeholder="Enter secret"
-                             name="clientSecret"
+                             name="consumerSecret"
                              value={this.getApplicationConsumerSecret()}
                              onChange={this.setApplicationConsumerSecret}
                              disableAuto={true}
