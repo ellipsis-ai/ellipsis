@@ -12,6 +12,7 @@ import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/front
 import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
 import ParamType from '../../../../app/assets/frontend/models/param_type';
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
+import {OAuth1ApplicationRef} from '../../../../app/assets/frontend/models/oauth1';
 import {OAuth2ApplicationRef} from '../../../../app/assets/frontend/models/oauth2';
 import {SimpleTokenApiRef} from '../../../../app/assets/frontend/models/simple_token';
 
@@ -90,6 +91,18 @@ describe('BehaviorEditor', () => {
       "secretAccessKey": "b",
       "region": "c"
     }],
+    "oauth1Applications": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "applicationId": "R1-v9CKHTEmaUvgei-GmIg",
+      "scope": "read",
+      "displayName": "Trello"
+    }],
+    "oauth1Apis": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "name": "Trello",
+      "newApplicationUrl": "https://trello.com/app-key",
+      "scopeDocumentationUrl": ""
+    }],
     "oauth2Applications": [{
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
@@ -109,6 +122,7 @@ describe('BehaviorEditor', () => {
       "tokenUrl": "https://www.pivotaltracker.com/profile",
       "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
     }],
+    "linkedOAuth1ApplicationIds": ["R1-v9CKHTEmaUvgei-GmIg"],
     "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
     onSave: jest.fn(),
     savedAnswers: [],
@@ -168,6 +182,18 @@ describe('BehaviorEditor', () => {
       "secretAccessKey": "b",
       "region": "c"
     }],
+    "oauth1Applications": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "applicationId": "R1-v9CKHTEmaUvgei-GmIg",
+      "scope": "read",
+      "displayName": "Trello"
+    }],
+    "oauth1Apis": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "name": "Trello",
+      "newApplicationUrl": "https://trello.com/app-key",
+      "scopeDocumentationUrl": ""
+    }],
     "oauth2Applications": [{
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
@@ -187,6 +213,7 @@ describe('BehaviorEditor', () => {
       "tokenUrl": "https://www.pivotaltracker.com/profile",
       "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
     }],
+    "linkedOAuth1ApplicationIds": ["R1-v9CKHTEmaUvgei-GmIg"],
     "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
     "userId": "3",
     selectedId: "2",
@@ -208,6 +235,7 @@ describe('BehaviorEditor', () => {
     const props = Object.assign({}, config, {
       group: BehaviorGroup.fromJson(config.group),
       awsConfigs: config.awsConfigs.map(AWSConfigRef.fromJson),
+      oauth1Applications: config.oauth1Applications.map(OAuth1ApplicationRef.fromJson),
       oauth2Applications: config.oauth2Applications.map(OAuth2ApplicationRef.fromJson),
       simpleTokenApis: config.simpleTokenApis.map(SimpleTokenApiRef.fromJson),
       builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson),

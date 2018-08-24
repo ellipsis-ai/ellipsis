@@ -97,6 +97,7 @@ describe('BehaviorList', () => {
     behaviorVersions: [behaviorVersionTask1, behaviorVersionTask3],
     libraryVersions: [],
     requiredAWSConfigs: [],
+    requiredOAuth1ApiConfigs: [],
     requiredOAuth2ApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858
@@ -108,6 +109,7 @@ describe('BehaviorList', () => {
     behaviorVersions: [behaviorVersionTask2],
     libraryVersions: [],
     requiredAWSConfigs: [],
+    requiredOAuth1ApiConfigs: [],
     requiredOAuth2ApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858
@@ -119,6 +121,7 @@ describe('BehaviorList', () => {
     behaviorVersions: [behaviorVersionKnowledge2, behaviorVersionKnowledge1],
     libraryVersions: [],
     requiredAWSConfigs: [],
+    requiredOAuth1ApiConfigs: [],
     requiredOAuth2ApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858

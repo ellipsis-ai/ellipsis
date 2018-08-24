@@ -9,6 +9,7 @@ const behaviorGroupData = Object.freeze({
   "behaviorVersions": [],
   "libraryVersions": [],
   'requiredAWSConfigs': [],
+  'requiredOAuth1ApiConfigs': [],
   'requiredOAuth2ApiConfigs': [],
   'requiredSimpleTokenApis': [],
   "createdAt": 1468338136532

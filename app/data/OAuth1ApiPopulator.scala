@@ -13,7 +13,7 @@ class OAuth1ApiPopulator @Inject() (
 
   val apis: Seq[OAuth1Api] = Seq(
     OAuth1Api(
-      "dfsdfgl;sdfglfskgj",
+      "7gK5ysNxSjSa9BzfB44yAg",
       "Trello",
       "https://trello.com/1/OAuthGetRequestToken",
       "https://trello.com/1/OAuthGetAccessToken",
