@@ -9,7 +9,7 @@ export interface FocusableTextInputInterface {
   select: () => void
 }
 
-interface Props {
+export interface FormInputProps {
   autoFocus?: boolean,
   className?: Option<string>,
   style?: CSSProperties,
@@ -30,7 +30,7 @@ interface Props {
   readOnly?: boolean
 }
 
-class FormInput extends React.Component<Props> implements FocusableTextInputInterface {
+class FormInput extends React.Component<FormInputProps> implements FocusableTextInputInterface {
   input: Option<HTMLInputElement>;
 
   constructor(props) {
