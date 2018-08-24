@@ -548,7 +548,6 @@ class Setter extends React.Component<Props, State> {
         </div>
 
         <div>
-          <h4>New variables</h4>
           <div>
             {this.getNewVars().map((v, index) => {
               return (
