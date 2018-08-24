@@ -8,6 +8,7 @@ import LibraryVersion, {LibraryVersionJson} from './library_version';
 import Input, {InputJson} from './input';
 import DeepEqual from '../lib/deep_equal';
 import {RequiredAWSConfig, RequiredAWSConfigJson} from './aws';
+import {RequiredOAuth1Application, RequiredOAuth1ApplicationJson} from './oauth1';
 import {RequiredOAuth2Application, RequiredOAuth2ApplicationJson} from './oauth2';
 import {RequiredSimpleTokenApi, RequiredSimpleTokenApiJson} from './simple_token';
 import User, {UserJson} from './user';
@@ -28,6 +29,7 @@ export interface BehaviorGroupJson {
   behaviorVersions: Array<BehaviorVersionJson>;
   libraryVersions: Array<LibraryVersionJson>;
   requiredAWSConfigs: Array<RequiredAWSConfigJson>;
+  requiredOAuth1ApiConfigs: Array<RequiredOAuth1ApplicationJson>;
   requiredOAuth2ApiConfigs: Array<RequiredOAuth2ApplicationJson>;
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApiJson>;
   createdAt?: Option<Timestamp>;
@@ -47,6 +49,7 @@ interface BehaviorGroupInterface extends BehaviorGroupJson {
   behaviorVersions: Array<BehaviorVersion>;
   libraryVersions: Array<LibraryVersion>;
   requiredAWSConfigs: Array<RequiredAWSConfig>;
+  requiredOAuth1ApiConfigs: Array<RequiredOAuth1Application>;
   requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>;
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>;
   author?: Option<User>;
@@ -69,6 +72,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     readonly behaviorVersions: Array<BehaviorVersion>,
     readonly libraryVersions: Array<LibraryVersion>,
     readonly requiredAWSConfigs: Array<RequiredAWSConfig>,
+    readonly requiredOAuth1ApiConfigs: Array<RequiredOAuth1Application>,
     readonly requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>,
     readonly requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
     readonly createdAt: Option<Timestamp>,
@@ -92,6 +96,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         behaviorVersions: { value: behaviorVersions, enumerable: true },
         libraryVersions: { value: libraryVersions, enumerable: true },
         requiredAWSConfigs: { value: requiredAWSConfigs, enumerable: true },
+        requiredOAuth1ApiConfigs: { value: requiredOAuth1ApiConfigs, enumerable: true },
         requiredOAuth2ApiConfigs: { value: requiredOAuth2ApiConfigs, enumerable: true },
         requiredSimpleTokenApis: { value: requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: createdAt, enumerable: true },
@@ -115,6 +120,10 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
       return this.requiredAWSConfigs || [];
     }
 
+    getRequiredOAuth1ApiConfigs(): Array<RequiredOAuth1Application> {
+      return this.requiredOAuth1ApiConfigs || [];
+    }
+
     getRequiredOAuth2ApiConfigs(): Array<RequiredOAuth2Application> {
       return this.requiredOAuth2ApiConfigs || [];
     }
@@ -124,7 +133,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     }
 
     needsConfig(): boolean {
-      return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config).length > 0;
+      return (this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config).length > 0) ||
+        (this.getRequiredOAuth1ApiConfigs().filter(ea => !ea.config).length > 0);
     }
 
     static timestampToNumber(t: Option<Timestamp>): Option<number> {
@@ -330,6 +340,9 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         name: "Required AWS configurations",
         value: this.requiredAWSConfigs
       }, {
+        name: "Required OAuth1 configurations",
+        value: this.requiredOAuth1ApiConfigs
+      }, {
         name: "Required OAuth2 configurations",
         value: this.requiredOAuth2ApiConfigs
       }, {
@@ -350,6 +363,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         props.behaviorVersions,
         props.libraryVersions,
         props.requiredAWSConfigs,
+        props.requiredOAuth1ApiConfigs,
         props.requiredOAuth2ApiConfigs,
         props.requiredSimpleTokenApis,
         props.createdAt,
@@ -367,6 +381,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     static fromJson(props: BehaviorGroupJson): BehaviorGroup {
       return BehaviorGroup.fromProps(Object.assign({}, props, {
         requiredAWSConfigs: props.requiredAWSConfigs.map(RequiredAWSConfig.fromJson),
+        requiredOAuth1ApiConfigs: props.requiredOAuth1ApiConfigs.map(RequiredOAuth1Application.fromJson),
         requiredOAuth2ApiConfigs: props.requiredOAuth2ApiConfigs.map(RequiredOAuth2Application.fromJson),
         requiredSimpleTokenApis: props.requiredSimpleTokenApis.map(RequiredSimpleTokenApi.fromJson),
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id }))),

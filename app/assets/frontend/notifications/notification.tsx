@@ -5,12 +5,14 @@ import SVGTip from '../svg/tip';
 import SVGWarning from '../svg/warning';
 import NotificationForEnvVarMissing from './env_var_not_defined';
 import NotificationForRequiredAWSConfigWithoutConfig from './required_aws_config_without_config';
+import NotificationForMissingOAuth1Application from './oauth1_config_without_application';
 import NotificationForMissingOAuth2Application from './oauth2_config_without_application';
 import NotificationForDataTypeNeedsConfig from './data_type_needs_config';
 import NotificationForDataTypeUnnamed from './data_type_unnamed';
 import NotificationForDataTypeMissingFields from './data_type_missing_fields';
 import NotificationForDataTypeUnnamedFields from './data_type_unnamed_fields';
 import NotificationForDataTypeDuplicateFields from './data_type_duplicate_fields';
+import NotificationForUnusedOAuth1Application from './oauth1_application_unused';
 import NotificationForUnusedOAuth2Application from './oauth2_application_unused';
 import NotificationForUnusedAWS from './aws_unused';
 import NotificationForParamNotInFunction from './param_not_in_function';
@@ -23,12 +25,14 @@ import NotificationDataGroup from '../models/notifications/notification_data_gro
 import NotificationData, {NotificationDataInterface, NotificationKind} from "../models/notifications/notification_data";
 import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
 import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
+import OAuth1ConfigWithoutApplicationNotificationData from "../models/notifications/oauth1_config_without_application_notification_data";
 import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
 import DataTypeNeedsConfigNotificationData from "../models/notifications/data_type_needs_config_notification_data";
 import DataTypeUnnamedNotificationData from "../models/notifications/data_type_unnamed_notification_data";
 import DataTypeMissingFieldsNotificationData from "../models/notifications/data_type_missing_fields_notification_data";
 import DataTypeUnnamedFieldsNotificationData from "../models/notifications/data_type_unnamed_fields_notification_data";
 import DataTypeDuplicateFieldsNotificationData from "../models/notifications/data_type_duplicate_fields_notification_data";
+import OAuth1ApplicationUnusedNotificationData from "../models/notifications/oauth1_application_unused";
 import OAuth2ApplicationUnusedNotificationData from "../models/notifications/oauth2_application_unused";
 import AWSUnusedNotificationData from "../models/notifications/aws_unused_notification_data";
 import ParamNotInFunctionNotificationData from "../models/notifications/param_not_in_function_notification_data";
@@ -69,6 +73,14 @@ class Notification<T extends NotificationData> extends React.Component<Props<T>>
           icon: this.getWarningIcon(),
           message: (
             <NotificationForRequiredAWSConfigWithoutConfig details={members} />
+          )
+        };
+      } else if (notificationTypeIs(members, OAuth1ConfigWithoutApplicationNotificationData)) {
+        return {
+          containerClass: "box-warning",
+          icon: this.getWarningIcon(),
+          message: (
+            <NotificationForMissingOAuth1Application details={members} />
           )
         };
       } else if (notificationTypeIs(members, OAuth2ConfigWithoutApplicationNotificationData)) {
@@ -117,6 +129,14 @@ class Notification<T extends NotificationData> extends React.Component<Props<T>>
           icon: this.getWarningIcon(),
           message: (
             <NotificationForDataTypeDuplicateFields details={members} />
+          )
+        };
+      } else if (notificationTypeIs(members, OAuth1ApplicationUnusedNotificationData)) {
+        return {
+          containerClass: "box-tip pvs",
+          icon: this.getTipIcon(),
+          message: (
+            <NotificationForUnusedOAuth1Application details={members} />
           )
         };
       } else if (notificationTypeIs(members, OAuth2ApplicationUnusedNotificationData)) {

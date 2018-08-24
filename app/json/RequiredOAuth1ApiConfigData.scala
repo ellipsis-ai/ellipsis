@@ -6,6 +6,7 @@ case class RequiredOAuth1ApiConfigData(
                                         id: Option[String],
                                         exportId: Option[String],
                                         apiId: String,
+                                        recommendedScope: Option[String],
                                         nameInCode: String,
                                         config: Option[OAuth1ApplicationData]
                                       ) {
@@ -22,6 +23,7 @@ object RequiredOAuth1ApiConfigData {
       Some(required.id),
       Some(required.exportId),
       required.api.id,
+      required.maybeRecommendedScope,
       required.nameInCode,
       required.maybeApplication.map(OAuth1ApplicationData.from)
     )

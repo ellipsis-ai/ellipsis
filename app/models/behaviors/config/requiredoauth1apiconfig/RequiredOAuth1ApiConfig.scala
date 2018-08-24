@@ -9,6 +9,7 @@ case class RequiredOAuth1ApiConfig(
                                     exportId: String,
                                     groupVersion: BehaviorGroupVersion,
                                     api: OAuth1Api,
+                                    maybeRecommendedScope: Option[String],
                                     nameInCode: String,
                                     maybeApplication: Option[OAuth1Application]
                                   ) {
@@ -20,6 +21,7 @@ case class RequiredOAuth1ApiConfig(
       exportId,
       groupVersion.id,
       api.id,
+      maybeRecommendedScope,
       nameInCode,
       maybeApplication.map(_.id)
     )

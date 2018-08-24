@@ -7,6 +7,7 @@ import DataTypeSchemaConfig from './data_type_schema_config';
 import DataTypeSourceConfig from './data_type_source_config';
 import ID from '../lib/id';
 import {RequiredAWSConfig} from '../models/aws';
+import {RequiredOAuth1Application} from '../models/oauth1';
 import {RequiredOAuth2Application} from '../models/oauth2';
 import SequentialName from '../lib/sequential_name';
 import BehaviorConfig from '../models/behavior_config';
@@ -170,7 +171,8 @@ class DataTypeEditor extends React.Component {
             inputs={this.props.inputs}
             systemParams={this.props.systemParams}
             requiredAWSConfigs={this.props.requiredAWSConfigs}
-            apiApplications={this.props.apiApplications}
+            oauth1ApiApplications={this.props.oauth1ApiApplications}
+            oauth2ApiApplications={this.props.oauth2ApiApplications}
 
             functionBody={this.getSelectedBehavior().getFunctionBody()}
             onChangeFunctionBody={this.props.onChangeCode}
@@ -295,7 +297,8 @@ class DataTypeEditor extends React.Component {
 
     requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
 
-    apiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
+    oauth1ApiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth1Application)).isRequired,
+    oauth2ApiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
 
     onCursorChange: React.PropTypes.func.isRequired,
     useLineWrapping: React.PropTypes.bool.isRequired,

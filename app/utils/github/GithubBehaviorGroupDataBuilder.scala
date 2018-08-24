@@ -109,6 +109,7 @@ case class GithubBehaviorGroupDataBuilder(
     val name = maybeConfig.map(_.name).getOrElse(repoName)
     val icon = maybeConfig.flatMap(_.icon)
     val requiredAWSConfigData = maybeConfig.map(_.requiredAWSConfigs).getOrElse(Seq())
+    val requiredOAuth1ApiConfigData = maybeConfig.map(_.requiredOAuth1ApiConfigs).getOrElse(Seq())
     val requiredOAuth2ApiConfigData = maybeConfig.map(_.requiredOAuth2ApiConfigs).getOrElse(Seq())
     val requiredSimpleTokenApiData = maybeConfig.map(_.requiredSimpleTokenApis).getOrElse(Seq())
     val readme = findEntryNamed("README", entries).flatMap(readme => (readme \ "object" \ "text").asOpt[String])
@@ -128,6 +129,7 @@ case class GithubBehaviorGroupDataBuilder(
       behaviors,
       libraries,
       requiredAWSConfigData,
+      requiredOAuth1ApiConfigData,
       requiredOAuth2ApiConfigData,
       requiredSimpleTokenApiData,
       maybeSHA,

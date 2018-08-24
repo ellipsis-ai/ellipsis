@@ -125,7 +125,7 @@ class APIAccessController @Inject() (
 
   private def noApplicationResult(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     Future.successful(
-      NotFound(views.html.error.notFound(viewConfig(None), Some("Can't find OAuth2 configuration"), None, None))
+      NotFound(views.html.error.notFound(viewConfig(None), Some("Can't find OAuth configuration"), None, None))
     )
   }
 
@@ -152,91 +152,6 @@ class APIAccessController @Inject() (
       }.getOrElse(noApplicationResult)
     } yield result
   }
-
-//  private def resultForOAuth1Step1(
-//                                    application: OAuth1Application,
-//                                    maybeInvocationId: Option[String],
-//                                    maybeRedirectAfterAuth: Option[String]
-//                                  )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-//    val api = application.api
-//    val serviceInfo = ServiceInfo(api.requestTokenUrl, api.accessTokenUrl, api.authorizationUrl, ConsumerKey(application.consumerKey, application.consumerSecret))
-//    val service = OAuth(serviceInfo)
-//    val callbackUrl = routes.APIAccessController.linkCustomOAuth1Service(application.id, maybeInvocationId, maybeRedirectAfterAuth).absoluteURL(secure = true)
-//
-//    service.retrieveRequestToken(callbackUrl).fold(
-//      err => Future.successful(BadRequest(err)),
-//      requestToken => {
-//        val redirect = api.authorizationUrl
-//        val redirect = routes.APIAccessController.linkCustomOAuth1Service(Some(requestToken.token), Some(requestToken.secret), Some(verifier), application.id, maybeInvocationId, maybeRedirectAfterAuth).absoluteURL(secure = true)
-//        Future.successful(Redirect(redirect))
-//      }
-//    )
-//  }
-//
-//  private def resultForOAuth1Step2(
-//                                         requestToken: RequestToken,
-//                                         verifier: String,
-//                                         user: User,
-//                                         application: OAuth1Application,
-//                                         maybeInvocationId: Option[String],
-//                                         maybeRedirectAfterAuth: Option[String]
-//                                      )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-//    val api = application.api
-//    val serviceInfo = ServiceInfo(api.requestTokenUrl, api.accessTokenUrl, api.authorizationUrl, ConsumerKey(application.consumerKey, application.consumerSecret))
-//    val service = OAuth(serviceInfo)
-//    service.retrieveAccessToken(requestToken, verifier).fold(
-//      err => Future.successful(BadRequest(err)),
-//      accessToken => {
-//        val token = LinkedOAuth1Token(accessToken.token, accessToken.secret, user.id, application)
-//        dataService.linkedOAuth1Tokens.save(token).flatMap { _ =>
-//          resultWithToken(maybeRedirectAfterAuth)
-//        }
-//      }
-//    )
-//  }
-//
-//  private def maybeResultForOAuth1Step2(
-//                                         maybeRequestToken: Option[String],
-//                                         maybeRequestTokenSecret: Option[String],
-//                                         maybeVerifier: Option[String],
-//                                         user: User,
-//                                         application: OAuth1Application,
-//                                         maybeInvocationId: Option[String],
-//                                         maybeRedirectAfterAuth: Option[String]
-//                                       )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[Future[Result]] = {
-//    for {
-//      requestToken <- maybeRequestToken
-//      requestTokenSecret <- maybeRequestTokenSecret
-//      verifier <- maybeVerifier
-//    } yield {
-//      resultForOAuth1Step2(RequestToken(requestToken, requestTokenSecret), verifier, user, application, maybeInvocationId, maybeRedirectAfterAuth)
-//    }
-//  }
-//
-//  def linkCustomOAuth1Service(
-//                             requestToken: Option[String],
-//                             requestTokenSecret: Option[String],
-//                             verifier: Option[String],
-//                             applicationId: String,
-//                             maybeInvocationId: Option[String],
-//                             maybeRedirectAfterAuth: Option[String]
-//                             ) = silhouette.SecuredAction.async { implicit request =>
-//    val user = request.identity
-//    for {
-//      maybeApplication <- dataService.oauth1Applications.find(applicationId)
-//      result <- maybeApplication.map { application =>
-//        dataService.teams.find(application.teamId, user).map(_.isDefined).flatMap { isLoggedInToCorrectTeam =>
-//          if (application.isShared || isLoggedInToCorrectTeam) {
-//            maybeResultForOAuth1Step2(requestToken, requestTokenSecret, verifier, user, application, maybeInvocationId, maybeRedirectAfterAuth).getOrElse {
-//              resultForOAuth1Step1(application, maybeRedirectAfterAuth, maybeInvocationId)
-//            }
-//          } else {
-//            reAuthFor(request, maybeApplication.map(_.teamId))
-//          }
-//        }
-//      }.getOrElse(noApplicationResult)
-//    } yield result
-//  }
 
   private def sessionTokenPair(implicit request: RequestHeader): Option[RequestToken] = {
     for {

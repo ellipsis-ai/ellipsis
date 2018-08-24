@@ -20,9 +20,12 @@ case class BehaviorEditorData(
                                environmentVariables: Seq[EnvironmentVariableData],
                                savedAnswers: Seq[InputSavedAnswerData],
                                awsConfigs: Seq[AWSConfigData],
+                               oauth1Applications: Seq[OAuth1ApplicationData],
+                               oauth1Apis: Seq[OAuth1ApiData],
                                oauth2Applications: Seq[OAuth2ApplicationData],
                                oauth2Apis: Seq[OAuth2ApiData],
                                simpleTokenApis: Seq[SimpleTokenApiData],
+                               linkedOAuth1ApplicationIds: Seq[String],
                                linkedOAuth2ApplicationIds: Seq[String],
                                userId: String,
                                isAdmin: Boolean,
@@ -129,9 +132,12 @@ object BehaviorEditorData {
       maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
       awsConfigs <- dataService.awsConfigs.allFor(team)
+      oAuth1Applications <- dataService.oauth1Applications.allUsableFor(team)
+      oauth1Apis <- dataService.oauth1Apis.allFor(teamAccess.maybeTargetTeam)
       oAuth2Applications <- dataService.oauth2Applications.allUsableFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       simpleTokenApis <- dataService.simpleTokenApis.allFor(teamAccess.maybeTargetTeam)
+      linkedOAuth1Tokens <- dataService.linkedOAuth1Tokens.allForUser(user, ws)
       linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUser(user, ws)
       // TODO: use the group data or some such to avoid grabbing group from DB again
       maybeGroup <- maybeGroupData.flatMap { groupData =>
@@ -200,6 +206,7 @@ object BehaviorEditorData {
           Seq(),
           Seq(),
           Seq(),
+          Seq(),
           maybeGitSHA.map(_.gitSHA),
           exportId = None,
           Some(OffsetDateTime.now),
@@ -219,9 +226,12 @@ object BehaviorEditorData {
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         inputSavedAnswerData,
         awsConfigs.map(AWSConfigData.from),
+        oAuth1Applications.map(OAuth1ApplicationData.from),
+        oauth1Apis.map(ea => OAuth1ApiData.from(ea, assets)),
         oAuth2Applications.map(OAuth2ApplicationData.from),
         oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
         simpleTokenApis.map(ea => SimpleTokenApiData.from(ea, assets)),
+        linkedOAuth1Tokens.map(_.application.id),
         linkedOAuth2Tokens.map(_.application.id),
         user.id,
         isAdmin,

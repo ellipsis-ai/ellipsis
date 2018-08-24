@@ -18,6 +18,7 @@ case class RawRequiredOAuth1ApiConfig(
                                        exportId: String,
                                        groupVersionId: String,
                                        apiId: String,
+                                       maybeRecommendedScope: Option[String],
                                        nameInCode: String,
                                        maybeApplicationId: Option[String]
                                      )
@@ -28,10 +29,11 @@ class RequiredOAuth1ApiConfigsTable(tag: Tag) extends Table[RawRequiredOAuth1Api
   def exportId = column[String]("export_id")
   def groupVersionId = column[String]("group_version_id")
   def apiId = column[String]("api_id")
+  def maybeRecommendedScope = column[Option[String]]("recommended_scope")
   def nameInCode = column[String]("name_in_code")
   def maybeApplicationId = column[Option[String]]("application_id")
 
-  def * = (id, exportId, groupVersionId, apiId, nameInCode, maybeApplicationId) <> ((RawRequiredOAuth1ApiConfig.apply _).tupled, RawRequiredOAuth1ApiConfig.unapply _)
+  def * = (id, exportId, groupVersionId, apiId, maybeRecommendedScope, nameInCode, maybeApplicationId) <> ((RawRequiredOAuth1ApiConfig.apply _).tupled, RawRequiredOAuth1ApiConfig.unapply _)
 }
 
 class RequiredOAuth1ApiConfigServiceImpl @Inject() (
@@ -56,6 +58,7 @@ class RequiredOAuth1ApiConfigServiceImpl @Inject() (
       raw.exportId,
       groupVersion,
       tuple._1._2,
+      raw.maybeRecommendedScope,
       raw.nameInCode,
       tuple._2.map(OAuth1ApplicationQueries.tuple2Application)
     )
@@ -152,7 +155,7 @@ class RequiredOAuth1ApiConfigServiceImpl @Inject() (
         DBIO.from(dataService.oauth1Applications.find(appData.id))
       }.getOrElse(DBIO.successful(None))
       maybeConfig <- maybeApi.map { api =>
-        val newInstance = RequiredOAuth1ApiConfig(IDs.next, data.exportId.getOrElse(IDs.next), groupVersion, api, data.nameInCode, maybeApplication)
+        val newInstance = RequiredOAuth1ApiConfig(IDs.next, data.exportId.getOrElse(IDs.next), groupVersion, api, data.recommendedScope, data.nameInCode, maybeApplication)
         (all += newInstance.toRaw).map(_ => newInstance).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeConfig

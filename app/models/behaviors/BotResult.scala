@@ -4,9 +4,12 @@ import akka.actor.ActorSystem
 import json.Formatting._
 import models.IDs
 import models.accounts.logintoken.LoginToken
+import models.accounts.oauth1application.OAuth1Application
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
+import models.behaviors.ResultType.ResultType
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
@@ -14,6 +17,7 @@ import models.behaviors.templates.TemplateApplier
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json._
+import play.api.mvc.Call
 import services.AWSLambdaConstants._
 import services.caching.CacheService
 import services.{AWSLambdaLogResult, DataService, DefaultServices}
@@ -602,6 +606,61 @@ case class AWSDownResult(
 
 }
 
+trait OAuthTokenMissing {
+  val key = IDs.next
+
+  val resultType = ResultType.OAuth2TokenMissing
+
+  val behaviorVersion: BehaviorVersion
+  val loginToken: LoginToken
+  val event: Event
+  val configuration: Configuration
+  val cacheService: CacheService
+  val apiApplicationId: String
+  val apiApplicationName: String
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+
+  val forcePrivateResponse = true
+
+  val redirectPath: Call
+
+  def authLink: String = {
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val redirect = s"$baseUrl$redirectPath"
+    val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))
+    s"$baseUrl$authPath"
+  }
+
+  def text: String = {
+    s"""To use this skill, you need to [authenticate with ${apiApplicationName}]($authLink).
+       |
+       |You only need to do this one time for ${apiApplicationName}. You may be prompted to sign in to Ellipsis using your Slack account.
+       |""".stripMargin
+  }
+
+  def beforeSend: Unit = cacheService.cacheEvent(key, event, 5.minutes)
+}
+
+case class OAuth1TokenMissing(
+                               oAuth1Application: OAuth1Application,
+                               event: Event,
+                               behaviorVersion: BehaviorVersion,
+                               maybeConversation: Option[Conversation],
+                               loginToken: LoginToken,
+                               cacheService: CacheService,
+                               configuration: Configuration,
+                               developerContext: DeveloperContext
+                             ) extends BotResult with OAuthTokenMissing {
+
+  val apiApplicationId: String = oAuth1Application.id
+  val apiApplicationName: String = oAuth1Application.name
+
+  val redirectPath: Call = controllers.routes.APIAccessController.linkCustomOAuth1Service(apiApplicationId, Some(key), None)
+
+  override def beforeSend: Unit = super.beforeSend
+}
+
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
                                event: Event,
@@ -611,56 +670,57 @@ case class OAuth2TokenMissing(
                                cacheService: CacheService,
                                configuration: Configuration,
                                developerContext: DeveloperContext
-                             ) extends BotResult {
+                             ) extends BotResult with OAuthTokenMissing {
 
-  val key = IDs.next
+  val apiApplicationId: String = oAuth2Application.id
+  val apiApplicationName: String = oAuth2Application.name
 
-  val resultType = ResultType.OAuth2TokenMissing
+  val redirectPath: Call = controllers.routes.APIAccessController.linkCustomOAuth2Service(apiApplicationId, None, None, Some(key), None)
 
-  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+  override def beforeSend: Unit = super.beforeSend
+}
 
+trait RequiredApiNotReady {
+  val resultType: ResultType = ResultType.RequiredApiNotReady
   val forcePrivateResponse = true
 
-  def authLink: String = {
-    val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val redirectPath = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key), None)
-    val redirect = s"$baseUrl$redirectPath"
-    val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))
-    s"$baseUrl$authPath"
+  val behaviorVersion: BehaviorVersion
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+  val dataService: DataService
+  val configuration: Configuration
+
+  val requiredApiName: String
+
+  def configLink: String = dataService.behaviors.editLinkFor(behaviorVersion.groupVersion.group.id, None, configuration)
+  def configText: String = {
+    s"You first must [configure the ${requiredApiName} API]($configLink)"
   }
 
   def text: String = {
-    s"""To use this skill, you need to [authenticate with ${oAuth2Application.name}]($authLink).
-       |
-       |You only need to do this one time for ${oAuth2Application.name}. You may be prompted to sign in to Ellipsis using your Slack account.
-       |""".stripMargin
+    s"This skill is not ready to use. $configText."
   }
-
-  override def beforeSend: Unit = cacheService.cacheEvent(key, event, 5.minutes)
 }
 
-case class RequiredApiNotReady(
-                                required: RequiredOAuth2ApiConfig,
+case class RequiredOAuth1ApiNotReady(
+                                required: RequiredOAuth1ApiConfig,
                                 event: Event,
                                 behaviorVersion: BehaviorVersion,
                                 maybeConversation: Option[Conversation],
                                 dataService: DataService,
                                 configuration: Configuration,
                                 developerContext: DeveloperContext
-                             ) extends BotResult {
+                             ) extends BotResult with RequiredApiNotReady {
+  val requiredApiName: String = required.api.name
+}
 
-  val resultType = ResultType.RequiredApiNotReady
-  val forcePrivateResponse = true
-
-  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
-
-  def configLink: String = dataService.behaviors.editLinkFor(required.groupVersion.group.id, None, configuration)
-  def configText: String = {
-    s"You first must [configure the ${required.api.name} API]($configLink)"
-  }
-
-  def text: String = {
-    s"This skill is not ready to use. $configText."
-  }
-
+case class RequiredOAuth2ApiNotReady(
+                                      required: RequiredOAuth2ApiConfig,
+                                      event: Event,
+                                      behaviorVersion: BehaviorVersion,
+                                      maybeConversation: Option[Conversation],
+                                      dataService: DataService,
+                                      configuration: Configuration,
+                                      developerContext: DeveloperContext
+                                    ) extends BotResult with RequiredApiNotReady {
+  val requiredApiName: String = required.api.name
 }

@@ -1,10 +1,12 @@
 import * as React from 'react';
+import {RequiredOAuth1Application} from '../models/oauth1';
 import {RequiredOAuth2Application} from '../models/oauth2';
 
 const TesterAuthRequired = React.createClass({
     propTypes: {
       behaviorId: React.PropTypes.string.isRequired,
-      appsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired
+      oauth1AppsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth1Application)).isRequired,
+      oauth2AppsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired
     },
 
     renderAuthRequiredFor: function (app) {
@@ -16,7 +18,7 @@ const TesterAuthRequired = React.createClass({
     },
 
     render: function () {
-      var apps = this.props.appsRequiringAuth;
+      var apps = this.props.oauth1AppsRequiringAuth.concat(this.props.oauth2AppsRequiringAuth);
       var numApps = apps.length;
       if (numApps === 1) {
         return (

@@ -5,6 +5,7 @@ import BehaviorVersion from '../models/behavior_version';
 import LibraryVersion from '../models/library_version';
 import NodeModuleVersion from '../models/node_module_version';
 import {RequiredAWSConfig} from '../models/aws';
+import {RequiredOAuth1Application} from '../models/oauth1';
 import {RequiredOAuth2Application} from '../models/oauth2';
 import {RequiredSimpleTokenApi} from '../models/simple_token';
 import DynamicLabelButton from "../form/dynamic_label_button";
@@ -33,6 +34,7 @@ interface Props {
   isModified: (editable: Editable) => boolean,
   onUpdateNodeModules: () => void,
   requiredAWSConfigs: Array<RequiredAWSConfig>,
+  requiredOAuth1Applications: Array<RequiredOAuth1Application>,
   requiredOAuth2Applications: Array<RequiredOAuth2Application>,
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
   onApiConfigClick: (config: RequiredApiConfig) => void,
@@ -214,6 +216,7 @@ class BehaviorSwitcher extends React.Component<Props> {
 
             <ApiConfigList
               requiredAWSConfigs={this.props.requiredAWSConfigs}
+              requiredOAuth1Applications={this.props.requiredOAuth1Applications}
               requiredOAuth2Applications={this.props.requiredOAuth2Applications}
               requiredSimpleTokenApis={this.props.requiredSimpleTokenApis}
               onApiConfigClick={this.props.onApiConfigClick}

@@ -24,6 +24,7 @@ const ApiConfigPanel = React.createClass({
       toggle: React.PropTypes.func.isRequired,
       onDoneClick: React.PropTypes.func.isRequired,
       addNewAWSConfig: React.PropTypes.func.isRequired,
+      addNewOAuth1Application: React.PropTypes.func.isRequired,
       addNewOAuth2Application: React.PropTypes.func.isRequired,
       animationDisabled: React.PropTypes.bool
     },
@@ -101,6 +102,10 @@ const ApiConfigPanel = React.createClass({
             onClick={this.props.addNewAWSConfig}
             className="border-top"
             label="Add new AWS configuration…"
+          />
+          <DropdownMenu.Item
+            onClick={this.props.addNewOAuth1Application}
+            label="Add new OAuth1 API configuration…"
           />
           <DropdownMenu.Item
             onClick={this.props.addNewOAuth2Application}

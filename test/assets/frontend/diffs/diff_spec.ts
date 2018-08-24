@@ -9,6 +9,7 @@ import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavi
 import {LibraryVersionJson} from "../../../../app/assets/frontend/models/library_version";
 import {InputJson} from "../../../../app/assets/frontend/models/input";
 import {RequiredAWSConfigJson} from "../../../../app/assets/frontend/models/aws";
+import {RequiredOAuth1ApplicationJson} from "../../../../app/assets/frontend/models/oauth1";
 import {RequiredOAuth2Application, RequiredOAuth2ApplicationJson} from "../../../../app/assets/frontend/models/oauth2";
 import {RequiredSimpleTokenApiJson} from "../../../../app/assets/frontend/models/simple_token";
 
@@ -19,6 +20,7 @@ const libraryId = 'lib123456';
 const inputId = 'input123456';
 const inputId2 = 'input234567';
 const requiredAWSConfigId = 'requiredAWS123456';
+const requiredTrelloConfigId = 'requiredTrello123456';
 const requiredGithubConfigId = 'requiredGithub123456';
 const requiredPivotalTrackerConfigId = 'requiredPivotalTracker123456';
 
@@ -187,6 +189,15 @@ const requiredAWSConfig2: RequiredAWSConfigJson = Object.freeze({
   }
 });
 
+const requiredOAuth1Config1: RequiredOAuth1ApplicationJson = Object.freeze({
+  id: 'trello123',
+  exportId: requiredTrelloConfigId,
+  apiId: 'trello',
+  nameInCode: 'trello',
+  config: null,
+  recommendedScope: 'read'
+});
+
 const requiredOAuth2Config1: RequiredOAuth2ApplicationJson = Object.freeze({
   id: 'github123',
   exportId: requiredGithubConfigId,
@@ -238,6 +249,7 @@ const behaviorGroupVersion1: BehaviorGroupJson = Object.freeze({
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion1],
   requiredAWSConfigs: [requiredAWSConfig1],
+  requiredOAuth1ApiConfigs: [requiredOAuth1Config1],
   requiredOAuth2ApiConfigs: [requiredOAuth2Config1, requiredOAuth2Config3],
   requiredSimpleTokenApis: [requiredSimpleTokenApi1],
   actionInputs: [actionInput1, actionInput2],
@@ -261,6 +273,7 @@ const behaviorGroupVersion2: BehaviorGroupJson = Object.freeze({
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion2],
   requiredAWSConfigs: [requiredAWSConfig2],
+  requiredOAuth1ApiConfigs: [requiredOAuth1Config1],
   requiredOAuth2ApiConfigs: [requiredOAuth2Config2, requiredOAuth2Config3],
   requiredSimpleTokenApis: [requiredSimpleTokenApi2],
   actionInputs: [actionInputChanged, actionInput2],
@@ -436,6 +449,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "createdAt": "2018-04-17T10:19:13.74-04:00"
   }],
   "requiredAWSConfigs": [],
+  "requiredOAuth1ApiConfigs": [],
   "requiredOAuth2ApiConfigs": [{
     "exportId": "aCJZZ3vgS8eU9BAqhxjz6w-RdG2Wm5DR0m2_4FZXf-yKA-googleCalendar",
     "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
@@ -621,6 +635,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "createdAt": "2018-04-16T15:18:27.809-04:00"
   }],
   "requiredAWSConfigs": [],
+  "requiredOAuth1ApiConfigs": [],
   "requiredOAuth2ApiConfigs": [{
     "id": "y7d7pXsyScGEYN_lzrB2ow",
     "exportId": "aCJZZ3vgS8eU9BAqhxjz6w-RdG2Wm5DR0m2_4FZXf-yKA-googleCalendar",

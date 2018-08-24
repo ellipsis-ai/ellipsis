@@ -9,6 +9,7 @@ import BehaviorGroup from '../models/behavior_group';
 import BehaviorGroupDeployment from '../models/behavior_group_deployment';
 import ParamType from '../models/param_type';
 import {AWSConfigRef} from '../models/aws';
+import {OAuth1ApplicationRef} from '../models/oauth1';
 import {OAuth2ApplicationRef} from '../models/oauth2';
 import {SimpleTokenApiRef} from '../models/simple_token';
 import LinkedGithubRepo from '../models/linked_github_repo';
@@ -24,6 +25,7 @@ class BehaviorEditorLoader extends React.Component {
           const selectedId = this.props.selectedId || this.fallbackSelectedIdFor(group);
           this.state = {
             awsConfigs: this.props.awsConfigs.map(AWSConfigRef.fromJson),
+            oauth1Applications: this.props.oauth1Applications.map(OAuth1ApplicationRef.fromJson),
             oauth2Applications: this.props.oauth2Applications.map(OAuth2ApplicationRef.fromJson),
             simpleTokenApis: this.props.simpleTokenApis.map(SimpleTokenApiRef.fromJson),
             linkedGithubRepo: group.linkedGithubRepo,
@@ -133,9 +135,12 @@ class BehaviorEditorLoader extends React.Component {
                 builtinParamTypes={this.state.builtinParamTypes}
                 envVariables={this.props.envVariables}
                 awsConfigs={this.state.awsConfigs}
+                oauth1Applications={this.state.oauth1Applications}
+                oauth1Apis={this.props.oauth1Apis}
                 oauth2Applications={this.state.oauth2Applications}
                 oauth2Apis={this.props.oauth2Apis}
                 simpleTokenApis={this.state.simpleTokenApis}
+                linkedOAuth1ApplicationIds={this.props.linkedOAuth1ApplicationIds}
                 linkedOAuth2ApplicationIds={this.props.linkedOAuth2ApplicationIds}
                 savedAnswers={this.getSavedAnswers()}
                 onSave={this.onSave}
@@ -169,9 +174,12 @@ BehaviorEditorLoader.propTypes = {
   envVariables: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
   savedAnswers: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
   awsConfigs: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+  oauth1Applications: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+  oauth1Apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
   oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
   oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
   simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+  linkedOAuth1ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
   linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
   userId: React.PropTypes.string.isRequired,
   isAdmin: React.PropTypes.bool.isRequired,

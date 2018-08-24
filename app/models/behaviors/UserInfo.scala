@@ -79,10 +79,13 @@ object UserInfo {
                       services: DefaultServices
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
     for {
+      linkedOAuth1Tokens <- services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)
       linkedOAuth2Tokens <- services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)
       linkedSimpleTokens <- services.dataService.linkedSimpleTokens.allForUserAction(user)
       links <- DBIO.successful {
-        linkedOAuth2Tokens.map { ea =>
+        linkedOAuth1Tokens.map { ea =>
+          LinkedInfo(ea.application.name, ea.accessToken)
+        } ++ linkedOAuth2Tokens.map { ea =>
           LinkedInfo(ea.application.name, ea.accessToken)
         } ++ linkedSimpleTokens.map { ea =>
           LinkedInfo(ea.api.name, ea.accessToken)

@@ -21,7 +21,7 @@ class LinkedOAuth1TokensTable(tag: Tag) extends Table[RawLinkedOAuth1Token](tag,
   def accessToken = column[String]("access_token")
   def secret = column[String]("secret")
   def userId = column[String]("user_id")
-  def applicationId = column[String]("config_id")
+  def applicationId = column[String]("application_id")
 
   def * = (accessToken, secret, userId, applicationId) <>
     ((RawLinkedOAuth1Token.apply _).tupled, RawLinkedOAuth1Token.unapply _)

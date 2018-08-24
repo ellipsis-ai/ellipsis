@@ -2,6 +2,7 @@ package json
 
 import java.time.OffsetDateTime
 
+import models.accounts.oauth1application.OAuth1Application
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
@@ -24,6 +25,7 @@ case class BehaviorGroupData(
                               behaviorVersions: Seq[BehaviorVersionData],
                               libraryVersions: Seq[LibraryVersionData],
                               requiredAWSConfigs: Seq[RequiredAWSConfigData],
+                              requiredOAuth1ApiConfigs: Seq[RequiredOAuth1ApiConfigData],
                               requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                               gitSHA: Option[String],
@@ -91,7 +93,14 @@ case class BehaviorGroupData(
     )
   }
 
-  def copyWithApiApplicationsIfAvailable(oauth2Applications: Seq[OAuth2Application]): BehaviorGroupData = {
+  def copyWithApiApplicationsIfAvailable(oauth1Applications: Seq[OAuth1Application], oauth2Applications: Seq[OAuth2Application]): BehaviorGroupData = {
+    val oauth1 = requiredOAuth1ApiConfigs.map { eaRequired =>
+      oauth1Applications.find { eaAvailable =>
+        eaAvailable.api.id == eaRequired.apiId
+      }.map { app =>
+        eaRequired.copy(config = Some(OAuth1ApplicationData.from(app)))
+      }.getOrElse(eaRequired)
+    }
     val oauth2 = requiredOAuth2ApiConfigs.map { eaRequired =>
       oauth2Applications.find { eaAvailable =>
         eaAvailable.api.id == eaRequired.apiId && eaRequired.recommendedScope == eaAvailable.maybeScope
@@ -99,7 +108,7 @@ case class BehaviorGroupData(
         eaRequired.copy(config = Some(OAuth2ApplicationData.from(app)))
       }.getOrElse(eaRequired)
     }
-    copy(requiredOAuth2ApiConfigs = oauth2)
+    copy(requiredOAuth1ApiConfigs = oauth1, requiredOAuth2ApiConfigs = oauth2)
   }
 
   lazy val sortedActionBehaviorVersions = {
@@ -142,6 +151,7 @@ object BehaviorGroupData {
     val versionId = immutableData.id
     for {
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allForId(versionId)
+      requiredOAuth1ApiConfigs <- dataService.requiredOAuth1ApiConfigs.allForId(versionId)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForId(versionId)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForId(versionId)
       maybeAuthor <- immutableData.authorId.map { authorId =>
@@ -189,6 +199,7 @@ object BehaviorGroupData {
         immutableData.behaviorVersions,
         immutableData.libraryVersions,
         requiredAWSConfigs.map(RequiredAWSConfigData.from),
+        requiredOAuth1ApiConfigs.map(RequiredOAuth1ApiConfigData.from),
         requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
         None, // don't include SHA when building new data from existing version
@@ -283,6 +294,7 @@ object BehaviorGroupData {
                   behaviorVersions: Seq[BehaviorVersionData],
                   libraryVersions: Seq[LibraryVersionData],
                   requiredAWSConfigs: Seq[RequiredAWSConfigData],
+                  requiredOAuth1ApiConfigs: Seq[RequiredOAuth1ApiConfigData],
                   requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
                   requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                   maybeGitSHA: Option[String],
@@ -301,6 +313,7 @@ object BehaviorGroupData {
       behaviorVersions,
       libraryVersions,
       requiredAWSConfigs,
+      requiredOAuth1ApiConfigs,
       requiredOAuth2ApiConfigs,
       requiredSimpleTokenApis,
       maybeGitSHA,

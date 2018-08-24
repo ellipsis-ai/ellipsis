@@ -19,6 +19,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorParameter, FileType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
+import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
@@ -27,7 +28,6 @@ import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.library.LibraryVersion
 import models.behaviors.nodemoduleversion.NodeModuleVersion
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable}
-import models.team.Team
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
@@ -127,10 +127,11 @@ class AWSLambdaServiceImpl @Inject() (
     for {
       awsConfigs <- dataService.awsConfigs.allForAction(team)
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(groupVersion)
+      requiredOAuth1ApiConfigs <- dataService.requiredOAuth1ApiConfigs.allForAction(groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(groupVersion)
       teamInfo <- DBIO.from {
-        val apiConfigInfo = ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis)
+        val apiConfigInfo = ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth1ApiConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis)
         TeamInfo.forConfig(apiConfigInfo, userInfo, team, botInfo, ws)
       }
     } yield teamInfo
@@ -336,15 +337,25 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  private def accessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
+  private def oauth1AccessTokenCodeFor(app: RequiredOAuth1ApiConfig): String = {
+    app.maybeApplication.map { application =>
+      s"""$CONTEXT_PARAM.accessTokens.${app.nameInCode} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem === "${application.name}").token;"""
+    }.getOrElse("")
+  }
+
+  private def oauth1AccessTokensCodeFor(requiredOAuth1ApiConfigs: Seq[RequiredOAuth1ApiConfig]): String = {
+    requiredOAuth1ApiConfigs.map(oauth1AccessTokenCodeFor).mkString("\n")
+  }
+
+  private def oauth2AccessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
     app.maybeApplication.map { application =>
       val infoKey =  if (application.api.grantType.requiresAuth) { "userInfo" } else { "teamInfo" }
       s"""$CONTEXT_PARAM.accessTokens.${app.nameInCode} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem === "${application.name}").token;"""
     }.getOrElse("")
   }
 
-  private def accessTokensCodeFor(requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
-    requiredOAuth2ApiConfigs.map(accessTokenCodeFor).mkString("\n")
+  private def oauth2AccessTokensCodeFor(requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
+    requiredOAuth2ApiConfigs.map(oauth2AccessTokenCodeFor).mkString("\n")
   }
 
   private def accessTokenCodeFor(required: RequiredSimpleTokenApi): String = {
@@ -419,7 +430,8 @@ class AWSLambdaServiceImpl @Inject() (
         |
         |  ${awsCodeFor(apiConfigInfo)}
         |  $CONTEXT_PARAM.accessTokens = {};
-        |  ${accessTokensCodeFor(apiConfigInfo.requiredOAuth2ApiConfigs)}
+        |  ${oauth1AccessTokensCodeFor(apiConfigInfo.requiredOAuth1ApiConfigs)}
+        |  ${oauth2AccessTokensCodeFor(apiConfigInfo.requiredOAuth2ApiConfigs)}
         |  ${simpleTokensCodeFor(apiConfigInfo.requiredSimpleTokenApis)}
         |
         |  try {

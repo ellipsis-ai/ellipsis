@@ -135,6 +135,9 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       requiredAWSConfigs <- DBIO.sequence(data.requiredAWSConfigs.map { requiredData =>
         dataService.requiredAWSConfigs.createForAction(requiredData, groupVersion)
       })
+      requiredOAuth1ApiConfigs <- DBIO.sequence(data.requiredOAuth1ApiConfigs.map { requiredData =>
+        dataService.requiredOAuth1ApiConfigs.maybeCreateForAction(requiredData, groupVersion)
+      }).map(_.flatten)
       requiredOAuth2ApiConfigs <- DBIO.sequence(data.requiredOAuth2ApiConfigs.map { requiredData =>
         dataService.requiredOAuth2ApiConfigs.maybeCreateForAction(requiredData, groupVersion)
       }).map(_.flatten)
@@ -144,7 +147,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       _ <- DBIO.sequence(data.libraryVersions.map { ea =>
         dataService.libraries.ensureForAction(ea, groupVersion)
       })
-      apiConfig <- DBIO.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
+      apiConfig <- DBIO.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth1ApiConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
       dataTypeBehaviorVersionTuples <- DBIO.sequence(data.dataTypeBehaviorVersions.map { ea =>
         ea.behaviorId.map { behaviorId =>
           for {
@@ -215,9 +218,10 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     for {
       awsConfigs <- dataService.awsConfigs.allFor(groupVersion.team)
       requiredAWSConfigs <- dataService.requiredAWSConfigs.allFor(groupVersion)
+      requiredOAuth1ApiConfigs <- dataService.requiredOAuth1ApiConfigs.allFor(groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(groupVersion)
       requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allFor(groupVersion)
-      apiConfig <- Future.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
+      apiConfig <- Future.successful(ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth1ApiConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis))
       libraries <- dataService.libraries.allFor(groupVersion)
       behaviorVersions <- dataService.behaviorVersions.allForGroupVersion(groupVersion)
       behaviorVersionsWithParams <- Future.sequence(behaviorVersions.map { bv =>

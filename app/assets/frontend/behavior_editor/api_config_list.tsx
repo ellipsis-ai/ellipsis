@@ -2,6 +2,7 @@ import * as React from 'react';
 import AddButton from '../form/add_button';
 import Button from '../form/button';
 import {RequiredAWSConfig} from '../models/aws';
+import {RequiredOAuth1Application} from '../models/oauth1';
 import {RequiredOAuth2Application} from '../models/oauth2';
 import {RequiredSimpleTokenApi} from '../models/simple_token';
 import autobind from "../lib/autobind";
@@ -9,6 +10,7 @@ import RequiredApiConfig from "../models/required_api_config";
 
 interface Props {
   requiredAWSConfigs: Array<RequiredAWSConfig>,
+  requiredOAuth1Applications: Array<RequiredOAuth1Application>,
   requiredOAuth2Applications: Array<RequiredOAuth2Application>,
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
   onApiConfigClick: (config: RequiredApiConfig) => void,
@@ -55,9 +57,10 @@ class ApiConfigList extends React.Component<Props> {
 
     render() {
       const awsConfigs = this.renderConfigs(this.props.requiredAWSConfigs);
+      const oAuth1Configs = this.renderConfigs(this.props.requiredOAuth1Applications);
       const oAuth2Configs = this.renderConfigs(this.props.requiredOAuth2Applications);
       const simpleTokenConfigs = this.renderConfigs(this.props.requiredSimpleTokenApis);
-      const hasConfigs = awsConfigs.length > 0 || oAuth2Configs.length > 0 || simpleTokenConfigs.length > 0;
+      const hasConfigs = awsConfigs.length > 0 || oAuth1Configs.length > 0 || oAuth2Configs.length > 0 || simpleTokenConfigs.length > 0;
       return (
         <div className="border-bottom pbl">
           <div className="container container-wide prl">
@@ -75,6 +78,7 @@ class ApiConfigList extends React.Component<Props> {
           </div>
           <div className={`type-s ${hasConfigs ? "mts" : ""}`}>
             {awsConfigs}
+            {oAuth1Configs}
             {oAuth2Configs}
             {simpleTokenConfigs}
           </div>

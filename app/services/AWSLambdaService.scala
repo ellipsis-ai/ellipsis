@@ -7,6 +7,7 @@ import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
+import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
@@ -23,6 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class ApiConfigInfo(
                           awsConfigs: Seq[AWSConfig],
                           requiredAWSConfigs: Seq[RequiredAWSConfig],
+                          requiredOAuth1ApiConfigs: Seq[RequiredOAuth1ApiConfig],
                           requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig],
                           requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]
                         )
