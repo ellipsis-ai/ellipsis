@@ -3,6 +3,7 @@ package models.behaviors.config.requiredoauth1apiconfig
 import models.accounts.oauth1api.OAuth1Api
 import models.accounts.oauth1application.OAuth1Application
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.config.RequiredOAuthApiConfig
 
 case class RequiredOAuth1ApiConfig(
                                     id: String,
@@ -12,7 +13,7 @@ case class RequiredOAuth1ApiConfig(
                                     maybeRecommendedScope: Option[String],
                                     nameInCode: String,
                                     maybeApplication: Option[OAuth1Application]
-                                  ) {
+                                  ) extends RequiredOAuthApiConfig {
   def isReady: Boolean = maybeApplication.isDefined
 
   def toRaw: RawRequiredOAuth1ApiConfig = {

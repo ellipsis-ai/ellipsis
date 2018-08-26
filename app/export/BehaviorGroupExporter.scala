@@ -30,8 +30,7 @@ case class BehaviorGroupExporter(
     groupData.exportId,
     groupData.icon,
     groupData.requiredAWSConfigs,
-    groupData.requiredOAuth1ApiConfigs,
-    groupData.requiredOAuth2ApiConfigs,
+    groupData.requiredOAuthApiConfigs,
     groupData.requiredSimpleTokenApis
   ).copyForExport
 

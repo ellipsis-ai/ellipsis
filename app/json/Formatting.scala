@@ -37,22 +37,14 @@ object Formatting {
   lazy implicit val awsConfigReads = Json.reads[AWSConfigData]
   lazy implicit val awsConfigWrites = Json.writes[AWSConfigData]
 
-  lazy implicit val oAuth1ApiFormat = Json.format[OAuth1ApiData]
-
-  lazy implicit val oAuth1ApplicatioFormat = Json.format[OAuth1ApplicationData]
-
-  lazy implicit val oAuth2ApiForamt = Json.format[OAuth2ApiData]
-
-  lazy implicit val oAuth2ApplicationFormat = Json.format[OAuth2ApplicationData]
+  lazy implicit val oAuthApiFormat = Json.format[OAuthApiData]
+  lazy implicit val oAuthApplicatioFormat = Json.format[OAuthApplicationData]
 
   lazy implicit val linkedGithubRepoDataFormat = Json.format[LinkedGithubRepoData]
 
-  lazy implicit val oAuth1ApplicationEditConfigWrites = Json.writes[OAuth1ApplicationEditConfig]
-  lazy implicit val oAuth2ApplicationEditConfigWrites = Json.writes[OAuth2ApplicationEditConfig]
   lazy implicit val oAuthApplicationEditConfigWrites = Json.writes[OAuthApplicationEditConfig]
 
-  lazy implicit val requiredOAuth1ApiConfigFormat = Json.format[RequiredOAuth1ApiConfigData]
-  lazy implicit val requiredOAuth2ApiConfigFormat = Json.format[RequiredOAuth2ApiConfigData]
+  lazy implicit val requiredOAuthApiConfigFormat = Json.format[RequiredOAuthApiConfigData]
 
   lazy implicit val simpleTokenApiReads = Json.reads[SimpleTokenApiData]
   lazy implicit val simpleTokenApiWrites = Json.writes[SimpleTokenApiData]

@@ -11,32 +11,18 @@ import Page from '../../shared_ui/page';
 const IntegrationEditor = React.createClass({
     propTypes: Object.assign({}, Page.requiredPropTypes, {
       isAdmin: React.PropTypes.bool.isRequired,
-      oauth1Config: React.PropTypes.shape({
-        apis: React.PropTypes.arrayOf(React.PropTypes.shape({
-          apiId: React.PropTypes.string.isRequired,
-          name: React.PropTypes.string.isRequired,
-          newApplicationUrl: React.PropTypes.string,
-          iconImageUrl: React.PropTypes.string,
-          logoImageUrl: React.PropTypes.string
-        })).isRequired,
-        callbackUrl: React.PropTypes.string.isRequired
-      }),
-      oauth2Config: React.PropTypes.shape({
-        apis: React.PropTypes.arrayOf(React.PropTypes.shape({
-          apiId: React.PropTypes.string.isRequired,
-          name: React.PropTypes.string.isRequired,
-          requiresAuth: React.PropTypes.bool.isRequired,
-          newApplicationUrl: React.PropTypes.string,
-          scopeDocumentationUrl: React.PropTypes.string,
-          iconImageUrl: React.PropTypes.string,
-          logoImageUrl: React.PropTypes.string
-        })).isRequired,
-        callbackUrl: React.PropTypes.string.isRequired,
-        requiresAuth: React.PropTypes.bool,
-        applicationClientId: React.PropTypes.string,
-        applicationClientSecret: React.PropTypes.string,
-        requiredOAuth2ApiConfigId: React.PropTypes.string,
-      }),
+      apis: React.PropTypes.arrayOf(React.PropTypes.shape({
+        apiId: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired,
+        newApplicationUrl: React.PropTypes.string,
+        iconImageUrl: React.PropTypes.string,
+        logoImageUrl: React.PropTypes.string
+      })).isRequired,
+      oauth1CallbackUrl: React.PropTypes.string.isRequired,
+      oauth2CallbackUrl: React.PropTypes.string.isRequired,
+      applicationKey: React.PropTypes.string,
+      applicationSecret: React.PropTypes.string,
+      requiresAuth: React.PropTypes.bool,
       applicationApiId: React.PropTypes.string,
       recommendedScope: React.PropTypes.string,
       applicationScope: React.PropTypes.string,
@@ -71,20 +57,18 @@ const IntegrationEditor = React.createClass({
       return {
         applicationApi: this.findApiById(this.props.applicationApiId),
         applicationName: this.props.applicationName || "",
-        applicationClientId: this.props.oauth2Config.applicationClientId || "",
-        applicationClientSecret: this.props.oauth2Config.applicationClientSecret || "",
+        applicationKey: this.props.applicationKey || "",
+        applicationSecret: this.props.applicationSecret || "",
         applicationScope: this.props.applicationScope || this.props.recommendedScope || "",
         hasNamedApplication: this.props.applicationSaved || false,
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false,
-        applicationShared: this.props.applicationShared,
-        applicationConsumerKey: this.props.oauth1Config.applicationConsumerKey || "",
-        applicationConsumerSecret: this.props.oauth1Config.applicationConsumerSecret || ""
+        applicationShared: this.props.applicationShared
       };
     },
 
     getAllApis: function() {
-      return this.props.oauth1Config.apis.concat(this.props.oauth2Config.apis);
+      return this.props.apis;
     },
 
     findApiById: function(id) {
@@ -99,9 +83,9 @@ const IntegrationEditor = React.createClass({
 
     getCallbackUrl: function() {
       if (this.isOAuth1()) {
-        return this.props.oauth1Config.callbackUrl;
+        return this.props.oauth1CallbackUrl;
       } else {
-        return this.props.oauth2Config.callbackUrl;
+        return this.props.oauth2CallbackUrl;
       }
     },
 
@@ -183,48 +167,24 @@ const IntegrationEditor = React.createClass({
       return this.state.shouldRevealApplicationUrl;
     },
 
-    shouldRevealOAuth2CallbackUrl: function() {
-      return this.props.oauth2Config.requiresAuth || !!(this.state.applicationApi && this.state.applicationApi.requiresAuth);
-    },
-
-    shouldRevealOAuth1CallbackUrl: function() {
-      return this.isOAuth1() && this.state.applicationApi;
-    },
-
     shouldRevealCallbackUrl: function() {
-      return this.shouldRevealOAuth1CallbackUrl() || this.shouldRevealOAuth2CallbackUrl();
+      return this.props.requiresAuth; // TODO: check this
     },
 
-    getApplicationClientId: function() {
-      return this.state.applicationClientId;
+    getApplicationKey: function() {
+      return this.state.applicationKey;
     },
 
-    setApplicationClientId: function(value) {
-      this.setState({ applicationClientId: value });
+    setApplicationKey: function(value) {
+      this.setState({ applicationKey: value });
     },
 
-    getApplicationClientSecret: function() {
-      return this.state.applicationClientSecret;
+    getApplicationSecret: function() {
+      return this.state.applicationSecret;
     },
 
-    setApplicationClientSecret: function(value) {
-      this.setState({ applicationClientSecret: value });
-    },
-
-    getApplicationConsumerKey: function() {
-      return this.state.applicationConsumerKey;
-    },
-
-    setApplicationConsumerKey: function(value) {
-      this.setState({ applicationConsumerKey: value });
-    },
-
-    getApplicationConsumerSecret: function() {
-      return this.state.applicationConsumerSecret;
-    },
-
-    setApplicationConsumerSecret: function(value) {
-      this.setState({ applicationConsumerSecret: value });
+    setApplicationSecret: function(value) {
+      this.setState({ applicationSecret: value });
     },
 
     getApplicationScope: function() {
@@ -235,18 +195,13 @@ const IntegrationEditor = React.createClass({
       this.setState({ applicationScope: value });
     },
 
-    oauth1DetailsCanBeSaved: function() {
-      return this.getApplicationConsumerKey() && this.getApplicationConsumerSecret();
-    },
-
-    oauth2DetailsCanBeSaved: function() {
-      return this.getApplicationClientId() && this.getApplicationClientSecret();
+    oauthDetailsCanBeSaved: function() {
+      return this.getApplicationKey() && this.getApplicationSecret();
     },
 
     canBeSaved: function() {
       return !!(
-        this.getApplicationApiName() && this.getApplicationName() &&
-        (this.oauth1DetailsCanBeSaved() || this.oauth2DetailsCanBeSaved())
+        this.getApplicationApiName() && this.getApplicationName() && this.oauthDetailsCanBeSaved()
       );
     },
 
@@ -479,94 +434,45 @@ const IntegrationEditor = React.createClass({
       return this.state.applicationApi && this.state.applicationApi.isOAuth1;
     },
 
-    renderOAuth1ConsumerDetails: function() {
-      if (this.isOAuth1()) {
-        return (
-          <div>
-            <hr className="mvxxxl" />
+    renderOAuthDetails: function() {
+      return (
+        <div>
+          <hr className="mvxxxl" />
 
-            <div className="mvm">
-              <h4 className="mbn position-relative">
-                <span className="position-hanging-indent">3</span>
-                <span>Paste the consumer key and secret from your {this.getApplicationApiName()} OAuth application</span>
-              </h4>
-              <p className="type-s">
-                These values will be generated by {this.getApplicationApiName()} after you’ve saved an application there in step 2.
-              </p>
+          <div className="mvm">
+            <h4 className="mbn position-relative">
+              <span className="position-hanging-indent">3</span>
+              <span>Paste the key and secret from your {this.getApplicationApiName()} OAuth application</span>
+            </h4>
+            <p className="type-s">
+              These values will be generated by {this.getApplicationApiName()} after you’ve saved an application there in step 2.
+            </p>
 
-              <div className="columns mtl">
-                <div className="column column-one-half">
-                  <h5 className="mtn">Consumer key</h5>
-                  <FormInput className="form-input-borderless type-monospace"
-                             placeholder="Enter key"
-                             name="consumerKey"
-                             value={this.getApplicationConsumerKey()}
-                             onChange={this.setApplicationConsumerKey}
-                             disableAuto={true}
-                  />
-                </div>
-                <div className="column column-one-half">
-                  <h5 className="mtn">Consumer secret</h5>
-                  <FormInput className="form-input-borderless type-monospace"
-                             placeholder="Enter secret"
-                             name="consumerSecret"
-                             value={this.getApplicationConsumerSecret()}
-                             onChange={this.setApplicationConsumerSecret}
-                             disableAuto={true}
-                  />
-                </div>
+            <div className="columns mtl">
+              <div className="column column-one-half">
+                <h5 className="mtn">Consumer key or client ID</h5>
+                <FormInput className="form-input-borderless type-monospace"
+                           placeholder="Enter key"
+                           name="key"
+                           value={this.getApplicationKey()}
+                           onChange={this.setApplicationKey}
+                           disableAuto={true}
+                />
+              </div>
+              <div className="column column-one-half">
+                <h5 className="mtn">Consumer or client secret</h5>
+                <FormInput className="form-input-borderless type-monospace"
+                           placeholder="Enter secret"
+                           name="secret"
+                           value={this.getApplicationSecret()}
+                           onChange={this.setApplicationSecret}
+                           disableAuto={true}
+                />
               </div>
             </div>
           </div>
-        );
-      } else {
-        return null;
-      }
-    },
-
-    renderOAuth2ClientDetails: function() {
-      if (this.isOAuth1()) {
-        return null;
-      } else {
-        return (
-          <div>
-            <hr className="mvxxxl" />
-
-            <div className="mvm">
-              <h4 className="mbn position-relative">
-                <span className="position-hanging-indent">3</span>
-                <span>Paste the client ID and client secret from your {this.getApplicationApiName()} OAuth application</span>
-              </h4>
-              <p className="type-s">
-                These values will be generated by {this.getApplicationApiName()} after you’ve saved an application there in step 2.
-              </p>
-
-              <div className="columns mtl">
-                <div className="column column-one-half">
-                  <h5 className="mtn">Client ID</h5>
-                  <FormInput className="form-input-borderless type-monospace"
-                             placeholder="Enter identifier"
-                             name="clientId"
-                             value={this.getApplicationClientId()}
-                             onChange={this.setApplicationClientId}
-                             disableAuto={true}
-                  />
-                </div>
-                <div className="column column-one-half">
-                  <h5 className="mtn">Client secret</h5>
-                  <FormInput className="form-input-borderless type-monospace"
-                             placeholder="Enter secret"
-                             name="clientSecret"
-                             value={this.getApplicationClientSecret()}
-                             onChange={this.setApplicationClientSecret}
-                             disableAuto={true}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      }
+        </div>
+      );
     },
 
     renderScopeDetails: function() {
@@ -629,9 +535,7 @@ const IntegrationEditor = React.createClass({
               </ul>
             </div>
 
-            {this.renderOAuth2ClientDetails()}
-
-            {this.renderOAuth1ConsumerDetails()}
+            {this.renderOAuthDetails()}
 
             {this.renderScopeDetails()}
 

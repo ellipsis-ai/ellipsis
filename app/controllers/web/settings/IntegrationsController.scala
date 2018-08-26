@@ -5,22 +5,22 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import controllers.{ReAuthable, RemoteAssets}
 import javax.inject.Inject
-import json._
 import json.Formatting._
+import json._
 import json.web.settings.IntegrationListConfig
 import models._
-import models.accounts.oauth1api.OAuth1Api
 import models.accounts.oauth1application.OAuth1Application
-import models.accounts.oauth2api.OAuth2Api
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.{User, UserTeamAccess}
+import models.accounts.{OAuthApi, OAuthApplication}
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.config.RequiredOAuthApiConfig
 import models.silhouette.EllipsisEnv
 import models.team.Team
 import play.api.Configuration
 import play.api.data.Form
-import play.api.data.Forms.{mapping, nonEmptyText, optional}
+import play.api.data.Forms._
 import play.api.libs.json.Json
 import play.api.mvc.AnyContent
 import play.filters.csrf.CSRF
@@ -61,10 +61,8 @@ class IntegrationsController @Inject() (
               csrfToken = CSRF.getToken(request).map(_.value),
               isAdmin = teamAccess.isAdminAccess,
               teamId = team.id,
-              oauth1Apis = oauth1Apis.map(api => OAuth1ApiData.from(api, assets)),
-              oauth1Applications = oauth1Applications.map(app => OAuth1ApplicationData.from(app)),
-              oauth2Apis = oauth2Apis.map(api => OAuth2ApiData.from(api, assets)),
-              oauth2Applications = oauth2Applications.map(app => OAuth2ApplicationData.from(app)),
+              oauthApis = (oauth1Apis ++ oauth2Apis).map(api => OAuthApiData.from(api, assets)),
+              oauthApplications = (oauth1Applications ++ oauth2Applications).map(app => OAuthApplicationData.from(app)),
               awsConfigs = awsConfigs.map(AWSConfigData.from)
             )
             Ok(views.js.shared.webpackLoader(
@@ -112,11 +110,16 @@ class IntegrationsController @Inject() (
           maybeBehaviorGroupVersion <- maybeBehaviorGroup.map { group =>
             dataService.behaviorGroups.maybeCurrentVersionFor(group)
           }.getOrElse(Future.successful(None))
-          maybeRequiredOAuth2Application <- (for {
+          maybeRequiredOAuthApplication: Option[RequiredOAuthApiConfig] <- (for {
             groupVersion <- maybeBehaviorGroupVersion
             nameInCode <- maybeRequiredNameInCode
           } yield {
-            dataService.requiredOAuth2ApiConfigs.findWithNameInCode(nameInCode, groupVersion)
+            for {
+              maybeOAuth1 <- dataService.requiredOAuth1ApiConfigs.findWithNameInCode(nameInCode, groupVersion)
+              maybeOAuth2 <- dataService.requiredOAuth2ApiConfigs.findWithNameInCode(nameInCode, groupVersion)
+            } yield {
+              maybeOAuth1.orElse(maybeOAuth2)
+            }
           }).getOrElse(Future.successful(None))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
@@ -126,19 +129,16 @@ class IntegrationsController @Inject() (
               csrfToken = CSRF.getToken(request).map(_.value),
               isAdmin = teamAccess.isAdminAccess,
               teamId = team.id,
-              oauth1Config = OAuth1ApplicationEditConfig(
-                apis = oauth1Apis.map(ea => OAuth1ApiData.from(ea, assets)),
-                callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth1Service(newApplicationId, None, None).absoluteURL(secure = true)
-              ),
-              oauth2Config = OAuth2ApplicationEditConfig(
-                apis = oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
-                callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
-                requiresAuth = maybeRequiredOAuth2Application.map(_.api.grantType.requiresAuth)
-              ),
+              apis = (oauth1Apis ++ oauth2Apis).map(ea => OAuthApiData.from(ea, assets)),
+              oauth1CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth1Service(newApplicationId, None, None).absoluteURL(secure = true),
+              oauth2CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None, None, None).absoluteURL(secure = true),
+              requiresAuth = maybeRequiredOAuthApplication.flatMap(_.maybeApplication.map(_.api.requiresAuth)),
               mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
               applicationId = newApplicationId,
-              applicationApiId = maybeRequiredOAuth2Application.map(_.api.id),
-              recommendedScope = maybeRequiredOAuth2Application.flatMap(_.maybeRecommendedScope),
+              applicationApiId = maybeRequiredOAuthApplication.map(_.api.id),
+              applicationKey = maybeRequiredOAuthApplication.flatMap(_.maybeApplication.map(_.key)),
+              applicationSecret = maybeRequiredOAuthApplication.flatMap(_.maybeApplication.map(_.secret)),
+              recommendedScope = maybeRequiredOAuthApplication.flatMap(_.maybeRecommendedScope),
               requiredNameInCode = maybeRequiredNameInCode,
               behaviorGroupId = maybeBehaviorGroupId,
               behaviorId = maybeBehaviorId
@@ -174,40 +174,34 @@ class IntegrationsController @Inject() (
                                     id: String,
                                     name: String,
                                     apiId: String,
-                                    clientId: Option[String],
-                                    clientSecret: Option[String],
-                                    consumerKey: Option[String],
-                                    consumerSecret: Option[String],
+                                    key: String,
+                                    secret: String,
                                     maybeScope: Option[String],
                                     teamId: String,
                                     maybeBehaviorGroupId: Option[String],
                                     maybeBehaviorId: Option[String],
                                     maybeIsShared: Option[String],
-                                    maybeRequiredNameInCode: Option[String]
+                                    maybeRequiredNameInCode: Option[String],
+                                    isForOAuth1: Boolean
                                   ) {
     val isShared: Boolean = maybeIsShared.contains("on")
-    val isForOAuth1: Boolean = consumerKey.isDefined
   }
 
-  private def checkOAuthInfo(info: OAuthApplicationInfo) = {
-    (info.clientId.isDefined && info.clientSecret.isDefined) || (info.consumerKey.isDefined && info.consumerSecret.isDefined)
-  }
   private val saveForm = Form(
     mapping(
       "id" -> nonEmptyText,
       "name" -> nonEmptyText,
       "apiId" -> nonEmptyText,
-      "clientId" -> optional(nonEmptyText),
-      "clientSecret" -> optional(nonEmptyText),
-      "consumerKey" -> optional(nonEmptyText),
-      "consumerSecret" -> optional(nonEmptyText),
+      "key" -> nonEmptyText,
+      "secret" -> nonEmptyText,
       "scope" -> optional(nonEmptyText),
       "teamId" -> nonEmptyText,
       "behaviorGroupId" -> optional(nonEmptyText),
       "behaviorId" -> optional(nonEmptyText),
       "isShared" -> optional(nonEmptyText),
-      "requiredNameInCode" -> optional(nonEmptyText)
-    )(OAuthApplicationInfo.apply)(OAuthApplicationInfo.unapply) verifying("Not valid for OAuth1 or OAuth2", checkOAuthInfo _)
+      "requiredNameInCode" -> optional(nonEmptyText),
+      "isForOAuth1" -> boolean
+    )(OAuthApplicationInfo.apply)(OAuthApplicationInfo.unapply)
   )
 
   private def saveOAuth1(
@@ -223,11 +217,9 @@ class IntegrationsController @Inject() (
       maybeApplication <- (for {
         api <- maybeApi
         team <- maybeTeam
-        consumerKey <- info.consumerKey
-        consumerSecret <- info.consumerSecret
       } yield {
         val isShared = isAdmin && info.isShared
-        val instance = OAuth1Application(info.id, info.name, api, consumerKey, consumerSecret, info.maybeScope, team.id, isShared)
+        val instance = OAuth1Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared)
         dataService.oauth1Applications.save(instance).map(Some(_))
       }).getOrElse(Future.successful(None))
       _ <- (for {
@@ -238,9 +230,9 @@ class IntegrationsController @Inject() (
           maybeExisting.map { existing =>
             dataService.requiredOAuth1ApiConfigs.save(existing.copy(maybeApplication = maybeApplication))
           }.getOrElse {
-            val maybeApplicationData = maybeApplication.map(OAuth1ApplicationData.from)
+            val maybeApplicationData = maybeApplication.map(OAuthApplicationData.from)
             dataService.requiredOAuth1ApiConfigs.maybeCreateFor(
-              RequiredOAuth1ApiConfigData(None, None, info.apiId, info.maybeScope, nameInCode, maybeApplicationData),
+              RequiredOAuthApiConfigData(None, None, info.apiId, info.maybeScope, nameInCode, maybeApplicationData, isOAuth1 = true),
               groupVersion
             )
           }
@@ -272,11 +264,9 @@ class IntegrationsController @Inject() (
       maybeApplication <- (for {
         api <- maybeApi
         team <- maybeTeam
-        clientId <- info.clientId
-        clientSecret <- info.clientSecret
       } yield {
         val isShared = isAdmin && info.isShared
-        val instance = OAuth2Application(info.id, info.name, api, clientId, clientSecret, info.maybeScope, team.id, isShared)
+        val instance = OAuth2Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared)
         dataService.oauth2Applications.save(instance).map(Some(_))
       }).getOrElse(Future.successful(None))
       _ <- (for {
@@ -287,9 +277,9 @@ class IntegrationsController @Inject() (
           maybeExisting.map { existing =>
             dataService.requiredOAuth2ApiConfigs.save(existing.copy(maybeApplication = maybeApplication))
           }.getOrElse {
-            val maybeApplicationData = maybeApplication.map(OAuth2ApplicationData.from)
+            val maybeApplicationData = maybeApplication.map(OAuthApplicationData.from)
             dataService.requiredOAuth2ApiConfigs.maybeCreateFor(
-              RequiredOAuth2ApiConfigData(None, None, info.apiId, info.maybeScope, nameInCode, maybeApplicationData),
+              RequiredOAuthApiConfigData(None, None, info.apiId, info.maybeScope, nameInCode, maybeApplicationData, isOAuth1 = false),
               groupVersion
             )
           }
@@ -335,11 +325,10 @@ class IntegrationsController @Inject() (
   }
 
   private def editConfigFor(
-                             application: OAuth1Application,
+                             application: OAuthApplication,
                              teamAccess: UserTeamAccess,
                              team: Team,
-                             oauth1Apis: Seq[OAuth1Api],
-                             oauth2Apis: Seq[OAuth2Api],
+                             oauthApis: Seq[OAuthApi],
                              isAdmin: Boolean
                            )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): OAuthApplicationEditConfig = {
     OAuthApplicationEditConfig(
@@ -347,54 +336,11 @@ class IntegrationsController @Inject() (
       csrfToken = CSRF.getToken(request).map(_.value),
       isAdmin = teamAccess.isAdminAccess,
       teamId = team.id,
-      oauth1Config = OAuth1ApplicationEditConfig(
-        apis = oauth1Apis.map(ea => OAuth1ApiData.from(ea, assets)),
-        callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth1Service(application.id, None, None).absoluteURL(secure = true),
-        applicationConsumerKey = Some(application.consumerKey),
-        applicationConsumerSecret = Some(application.consumerSecret)
-      ),
-      oauth2Config = OAuth2ApplicationEditConfig(
-        apis = oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
-        callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
-        requiresAuth = None,
-        applicationClientId = None,
-        applicationClientSecret = None
-      ),
-      mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
-      applicationId = application.id,
-      applicationName = Some(application.name),
-      applicationApiId = Some(application.api.id),
-      applicationScope = application.maybeScope,
-      applicationSaved = true,
-      applicationShared = application.isShared,
-      applicationCanBeShared = isAdmin
-    )
-  }
-
-  private def editConfigFor(
-                             application: OAuth2Application,
-                             teamAccess: UserTeamAccess,
-                             team: Team,
-                             oauth1Apis: Seq[OAuth1Api],
-                             oauth2Apis: Seq[OAuth2Api],
-                             isAdmin: Boolean
-                           )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): OAuthApplicationEditConfig = {
-    OAuthApplicationEditConfig(
-      containerId = "applicationEditor",
-      csrfToken = CSRF.getToken(request).map(_.value),
-      isAdmin = teamAccess.isAdminAccess,
-      teamId = team.id,
-      oauth1Config = OAuth1ApplicationEditConfig(
-        apis = oauth1Apis.map(ea => OAuth1ApiData.from(ea, assets)),
-        callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth1Service(application.id, None, None).absoluteURL(secure = true)
-      ),
-      oauth2Config = OAuth2ApplicationEditConfig(
-        apis = oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
-        callbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
-        requiresAuth = Some(application.api.grantType.requiresAuth),
-        applicationClientId = Some(application.clientId),
-        applicationClientSecret = Some(application.clientSecret)
-      ),
+      apis = oauthApis.map(ea => OAuthApiData.from(ea, assets)),
+      applicationKey = Some(application.key),
+      applicationSecret = Some(application.secret),
+      oauth1CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth1Service(application.id, None, None).absoluteURL(secure = true),
+      oauth2CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, None).absoluteURL(secure = true),
       mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
       applicationId = application.id,
       applicationName = Some(application.name),
@@ -424,14 +370,12 @@ class IntegrationsController @Inject() (
         }
       }.getOrElse(Future.successful(None))
     } yield {
-      val maybeApplication = maybeOAuth1Application.orElse(maybeOAuth2Application)
+      val maybeOAuthApplication: Option[OAuthApplication] = maybeOAuth1Application.orElse(maybeOAuth2Application)
       render {
         case Accepts.JavaScript() => {
           (for {
             team <- teamAccess.maybeTargetTeam
-            config <- maybeOAuth1Application.map(editConfigFor(_, teamAccess, team, oauth1Apis, oauth2Apis, isAdmin)).orElse {
-              maybeOAuth2Application.map(editConfigFor(_, teamAccess, team, oauth1Apis, oauth2Apis, isAdmin))
-            }
+            config <- maybeOAuthApplication.map(editConfigFor(_, teamAccess, team, oauth1Apis ++ oauth2Apis, isAdmin))
           } yield {
             Ok(views.js.shared.webpackLoader(
               viewConfig(Some(teamAccess)),
@@ -446,7 +390,7 @@ class IntegrationsController @Inject() (
         case Accepts.Html() => {
           (for {
             _ <- teamAccess.maybeTargetTeam
-            _ <- maybeApplication
+            _ <- maybeOAuthApplication
           } yield {
             val dataRoute = routes.IntegrationsController.edit(id, maybeTeamId)
             Ok(views.html.web.settings.oauth2application.edit(viewConfig(Some(teamAccess)), "Edit API configuration", dataRoute))

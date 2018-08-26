@@ -1,19 +1,19 @@
 import * as React from 'react';
-import {OAuth1ApplicationRef, RequiredOAuth1Application} from '../models/oauth1';
-import OAuth1ConfigWithoutApplicationNotificationData from "../models/notifications/oauth1_config_without_application_notification_data";
+import {OAuthApplicationRef, RequiredOAuthApplication} from '../models/oauth';
+import OAuthConfigWithoutApplicationNotificationData from "../models/notifications/oauth_config_without_application_notification_data";
 import autobind from '../lib/autobind';
 
 interface Props {
-  details: Array<OAuth1ConfigWithoutApplicationNotificationData>
+  details: Array<OAuthConfigWithoutApplicationNotificationData>
 }
 
-class NotificationForMissingOAuth1Application extends React.PureComponent<Props> {
+class NotificationForMissingOAuthApplication extends React.PureComponent<Props> {
   constructor(props: Props) {
     super(props);
     autobind(this);
   }
 
-  recommendedScopeAnnotation(detail: OAuth1ConfigWithoutApplicationNotificationData) {
+  recommendedScopeAnnotation(detail: OAuthConfigWithoutApplicationNotificationData) {
     var recommendedScope = detail.requiredApiConfig.recommendedScope;
     if (recommendedScope) {
       return (
@@ -28,8 +28,8 @@ class NotificationForMissingOAuth1Application extends React.PureComponent<Props>
     }
   }
 
-  addOAuth1ApplicationPrompt(detail: OAuth1ConfigWithoutApplicationNotificationData) {
-    var matchingApplications = detail.existingOAuth1Applications.filter(ea => ea.apiId === detail.requiredApiConfig.apiId);
+  addOAuthApplicationPrompt(detail: OAuthConfigWithoutApplicationNotificationData) {
+    var matchingApplications = detail.existingOAuthApplications.filter(ea => ea.apiId === detail.requiredApiConfig.apiId);
     if (matchingApplications.length === 1) {
       const app = matchingApplications[0];
       return (
@@ -37,7 +37,7 @@ class NotificationForMissingOAuth1Application extends React.PureComponent<Props>
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onUpdateOAuth1Application.bind(this, detail, app)}>
+              onClick={this.onUpdateOAuthApplication.bind(this, detail, app)}>
 
               Add {app.displayName} to this skill
 
@@ -50,7 +50,7 @@ class NotificationForMissingOAuth1Application extends React.PureComponent<Props>
             <button
               type="button"
               className="button-raw link button-s"
-              onClick={this.onNewOAuth1Application.bind(this, detail, detail.requiredApiConfig)}>
+              onClick={this.onNewOAuthApplication.bind(this, detail, detail.requiredApiConfig)}>
 
               Configure the {detail.name} API for this skill
 
@@ -73,14 +73,14 @@ class NotificationForMissingOAuth1Application extends React.PureComponent<Props>
     }
   }
 
-  onUpdateOAuth1Application(detail: OAuth1ConfigWithoutApplicationNotificationData, app: OAuth1ApplicationRef) {
-    detail.onUpdateOAuth1Application(detail.requiredApiConfig.clone({
+  onUpdateOAuthApplication(detail: OAuthConfigWithoutApplicationNotificationData, app: OAuthApplicationRef) {
+    detail.onUpdateOAuthApplication(detail.requiredApiConfig.clone({
       config: app
     }));
   }
 
-  onNewOAuth1Application(detail: OAuth1ConfigWithoutApplicationNotificationData, requiredOAuth1ApiConfig: RequiredOAuth1Application) {
-    detail.onNewOAuth1Application(requiredOAuth1ApiConfig);
+  onNewOAuthApplication(detail: OAuthConfigWithoutApplicationNotificationData, requiredOAuthApiConfig: RequiredOAuthApplication) {
+    detail.onNewOAuthApplication(requiredOAuthApiConfig);
   }
 
   render() {
@@ -90,7 +90,7 @@ class NotificationForMissingOAuth1Application extends React.PureComponent<Props>
       return (
         <span>
             <span>This skill needs to be configured to use the <b>{detail.name}</b> API {this.recommendedScopeAnnotation(detail)}.</span>
-          {this.addOAuth1ApplicationPrompt(detail)}
+          {this.addOAuthApplicationPrompt(detail)}
           </span>
       );
     } else {
@@ -101,7 +101,7 @@ class NotificationForMissingOAuth1Application extends React.PureComponent<Props>
             return (
               <span key={"oAuthNotificationDetail" + index}>
                   <span>{ea.name} {this.recommendedScopeAnnotation(ea)}</span>
-                {this.addOAuth1ApplicationPrompt(ea)}
+                {this.addOAuthApplicationPrompt(ea)}
                 <span>{index + 1 < numRequiredApiConfigs ? ", " : ""}</span>
                 </span>
             );
@@ -112,4 +112,4 @@ class NotificationForMissingOAuth1Application extends React.PureComponent<Props>
   }
 }
 
-export default NotificationForMissingOAuth1Application;
+export default NotificationForMissingOAuthApplication;

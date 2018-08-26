@@ -19,6 +19,7 @@ class OAuth1ApiPopulator @Inject() (
       "https://trello.com/1/OAuthGetAccessToken",
       "https://trello.com/1/OAuthAuthorizeToken",
       Some("https://trello.com/app-key"),
+      None,
       None
     )
   )

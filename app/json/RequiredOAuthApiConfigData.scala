@@ -1,31 +1,33 @@
 package json
 
-import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
+import models.behaviors.config.RequiredOAuthApiConfig
 
-case class RequiredOAuth1ApiConfigData(
+case class RequiredOAuthApiConfigData(
                                         id: Option[String],
                                         exportId: Option[String],
                                         apiId: String,
                                         recommendedScope: Option[String],
                                         nameInCode: String,
-                                        config: Option[OAuth1ApplicationData]
+                                        config: Option[OAuthApplicationData],
+                                        isOAuth1: Boolean
                                       ) {
 
-  def copyForExport: RequiredOAuth1ApiConfigData = {
+  def copyForExport: RequiredOAuthApiConfigData = {
     copy(id = None, config = None)
   }
 
 }
 
-object RequiredOAuth1ApiConfigData {
-  def from(required: RequiredOAuth1ApiConfig): RequiredOAuth1ApiConfigData = {
-    RequiredOAuth1ApiConfigData(
+object RequiredOAuthApiConfigData {
+  def from(required: RequiredOAuthApiConfig): RequiredOAuthApiConfigData = {
+    RequiredOAuthApiConfigData(
       Some(required.id),
       Some(required.exportId),
       required.api.id,
       required.maybeRecommendedScope,
       required.nameInCode,
-      required.maybeApplication.map(OAuth1ApplicationData.from)
+      required.maybeApplication.map(OAuthApplicationData.from),
+      required.api.isOAuth1
     )
   }
 }

@@ -1,5 +1,6 @@
 package models.accounts.oauth2application
 
+import models.accounts.OAuthApplication
 import models.accounts.oauth2api.OAuth2Api
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
@@ -15,7 +16,10 @@ case class OAuth2Application(
                               maybeScope: Option[String],
                               teamId: String,
                               isShared: Boolean
-                            ) {
+                            ) extends OAuthApplication {
+
+  val key: String = clientId
+  val secret: String = clientSecret
 
   val maybeAuthorizationUrl = api.maybeAuthorizationUrl
   val accessTokenUrl = api.accessTokenUrl

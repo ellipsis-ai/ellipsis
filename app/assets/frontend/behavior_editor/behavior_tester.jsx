@@ -7,8 +7,7 @@ import FormInput from '../form/input';
 import Input from '../models/input';
 import Trigger from '../models/trigger';
 import debounce from 'javascript-debounce';
-import {RequiredOAuth1Application} from '../models/oauth1';
-import {RequiredOAuth2Application} from '../models/oauth2';
+import {RequiredOAuthApplication} from '../models/oauth';
 import TesterAuthRequired from './tester_auth_required';
 import InvocationTestResult from '../models/behavior_invocation_result';
 import InvocationResults from './behavior_tester_invocation_results';
@@ -20,8 +19,7 @@ const BehaviorTester = React.createClass({
       behaviorId: React.PropTypes.string,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired,
-      oauth1AppsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth1Application)).isRequired,
-      oauth2AppsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired
+      oauthAppsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuthApplication)).isRequired
     },
 
     getInitialState: function() {
@@ -240,13 +238,12 @@ const BehaviorTester = React.createClass({
     },
 
     renderContent: function() {
-      if (this.props.behaviorId && (this.props.oauth1AppsRequiringAuth.length > 0 || this.props.oauth2AppsRequiringAuth.length > 0)) {
+      if (this.props.behaviorId && this.props.oauthAppsRequiringAuth.length > 0) {
         return (
           <div>
             <TesterAuthRequired
               behaviorId={this.props.behaviorId}
-              oauth1AppsRequiringAuth={this.props.oauth1AppsRequiringAuth}
-              oauth2AppsRequiringAuth={this.props.oauth2AppsRequiringAuth}
+              oauthAppsRequiringAuth={this.props.oauthAppsRequiringAuth}
             />
 
             <div className="mtxl">

@@ -2,8 +2,7 @@ package json
 
 import java.time.OffsetDateTime
 
-import models.accounts.oauth1application.OAuth1Application
-import models.accounts.oauth2application.OAuth2Application
+import models.accounts.OAuthApplication
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -25,8 +24,7 @@ case class BehaviorGroupData(
                               behaviorVersions: Seq[BehaviorVersionData],
                               libraryVersions: Seq[LibraryVersionData],
                               requiredAWSConfigs: Seq[RequiredAWSConfigData],
-                              requiredOAuth1ApiConfigs: Seq[RequiredOAuth1ApiConfigData],
-                              requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
+                              requiredOAuthApiConfigs: Seq[RequiredOAuthApiConfigData],
                               requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                               gitSHA: Option[String],
                               exportId: Option[String],
@@ -57,6 +55,9 @@ case class BehaviorGroupData(
   lazy val actionBehaviorVersions = behaviorVersions.filterNot(_.isDataType)
 
   val maybeNonEmptyName: Option[String] = name.map(_.trim).filter(_.nonEmpty)
+
+  val requiredOAuth1ApiConfigs: Seq[RequiredOAuthApiConfigData] = requiredOAuthApiConfigs.filter(_.isOAuth1)
+  val requiredOAuth2ApiConfigs: Seq[RequiredOAuthApiConfigData] = requiredOAuthApiConfigs.filterNot(_.isOAuth1)
 
   def copyForImportableForTeam(team: Team, maybeExistingGroupData: Option[BehaviorGroupData]): BehaviorGroupData = {
     val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsuredFor(maybeExistingGroupData))
@@ -93,22 +94,15 @@ case class BehaviorGroupData(
     )
   }
 
-  def copyWithApiApplicationsIfAvailable(oauth1Applications: Seq[OAuth1Application], oauth2Applications: Seq[OAuth2Application]): BehaviorGroupData = {
-    val oauth1 = requiredOAuth1ApiConfigs.map { eaRequired =>
-      oauth1Applications.find { eaAvailable =>
+  def copyWithApiApplicationsIfAvailable(oauthApplications: Seq[OAuthApplication]): BehaviorGroupData = {
+    val required = requiredOAuthApiConfigs.map { eaRequired =>
+      oauthApplications.find { eaAvailable =>
         eaAvailable.api.id == eaRequired.apiId
       }.map { app =>
-        eaRequired.copy(config = Some(OAuth1ApplicationData.from(app)))
+        eaRequired.copy(config = Some(OAuthApplicationData.from(app)))
       }.getOrElse(eaRequired)
     }
-    val oauth2 = requiredOAuth2ApiConfigs.map { eaRequired =>
-      oauth2Applications.find { eaAvailable =>
-        eaAvailable.api.id == eaRequired.apiId && eaRequired.recommendedScope == eaAvailable.maybeScope
-      }.map { app =>
-        eaRequired.copy(config = Some(OAuth2ApplicationData.from(app)))
-      }.getOrElse(eaRequired)
-    }
-    copy(requiredOAuth1ApiConfigs = oauth1, requiredOAuth2ApiConfigs = oauth2)
+    copy(requiredOAuthApiConfigs = required)
   }
 
   lazy val sortedActionBehaviorVersions = {
@@ -199,8 +193,7 @@ object BehaviorGroupData {
         immutableData.behaviorVersions,
         immutableData.libraryVersions,
         requiredAWSConfigs.map(RequiredAWSConfigData.from),
-        requiredOAuth1ApiConfigs.map(RequiredOAuth1ApiConfigData.from),
-        requiredOAuth2ApiConfigs.map(RequiredOAuth2ApiConfigData.from),
+        (requiredOAuth1ApiConfigs ++ requiredOAuth2ApiConfigs).map(RequiredOAuthApiConfigData.from),
         requiredSimpleTokenApis.map(RequiredSimpleTokenApiData.from),
         None, // don't include SHA when building new data from existing version
         immutableData.exportId,
@@ -294,8 +287,7 @@ object BehaviorGroupData {
                   behaviorVersions: Seq[BehaviorVersionData],
                   libraryVersions: Seq[LibraryVersionData],
                   requiredAWSConfigs: Seq[RequiredAWSConfigData],
-                  requiredOAuth1ApiConfigs: Seq[RequiredOAuth1ApiConfigData],
-                  requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
+                  requiredOAuthApiConfigs: Seq[RequiredOAuthApiConfigData],
                   requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                   maybeGitSHA: Option[String],
                   maybeExportId: Option[String],
@@ -313,8 +305,7 @@ object BehaviorGroupData {
       behaviorVersions,
       libraryVersions,
       requiredAWSConfigs,
-      requiredOAuth1ApiConfigs,
-      requiredOAuth2ApiConfigs,
+      requiredOAuthApiConfigs,
       requiredSimpleTokenApis,
       maybeGitSHA,
       maybeExportId,

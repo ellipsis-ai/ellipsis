@@ -1,14 +1,12 @@
 export type NotificationKind = "env_var_not_defined" |
   "required_aws_config_without_config" |
-  "oauth1_config_without_application" |
-  "oauth2_config_without_application" |
+  "oauth_config_without_application" |
   "data_type_needs_config" |
   "data_type_unnamed" |
   "data_type_missing_fields" |
   "data_type_unnamed_fields" |
   "data_type_duplicate_fields" |
-  "oauth1_application_unused" |
-  "oauth2_application_unused" |
+  "oauth_application_unused" |
   "aws_unused" |
   "param_not_in_function" |
   "unknown_param_in_template" |

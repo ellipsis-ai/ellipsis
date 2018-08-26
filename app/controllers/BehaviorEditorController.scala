@@ -174,7 +174,7 @@ class BehaviorEditorController @Inject() (
               _ <- maybeGroup.map { group =>
                 val dataForNewVersion = data.copyForNewVersionOf(group)
                 val dataToUse = if (info.isReinstall.exists(identity)) {
-                  dataForNewVersion.copyWithApiApplicationsIfAvailable(oauth1Appications, oauth2Appications)
+                  dataForNewVersion.copyWithApiApplicationsIfAvailable(oauth1Appications ++ oauth2Appications)
                 } else {
                   dataForNewVersion
                 }
@@ -556,7 +556,7 @@ class BehaviorEditorController @Inject() (
             maybeGithubProfile.map { profile =>
               val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, maybeExistingGroupData, githubService, services, ec)
               try {
-                val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth1Applications, oauth2Applications)
+                val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth1Applications ++ oauth2Applications)
                 Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
               } catch {
                 case e: GithubResultFromDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))

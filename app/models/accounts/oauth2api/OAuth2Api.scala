@@ -1,5 +1,6 @@
 package models.accounts.oauth2api
 
+import models.accounts.OAuthApi
 import utils.Enum
 
 case class OAuth2Api(
@@ -11,7 +12,10 @@ case class OAuth2Api(
                       maybeNewApplicationUrl: Option[String],
                       maybeScopeDocumentationUrl: Option[String],
                       maybeTeamId: Option[String]
-                    ) {
+                    ) extends OAuthApi {
+
+  val requiresAuth: Boolean = grantType.requiresAuth
+  val isOAuth1: Boolean = false
 
 }
 

@@ -3,7 +3,7 @@ package models.behaviors.config.requiredoauth1apiconfig
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
-import json.RequiredOAuth1ApiConfigData
+import json.RequiredOAuthApiConfigData
 import models.IDs
 import models.accounts.oauth1api.{OAuth1Api, OAuth1ApiQueries}
 import models.accounts.oauth1application.OAuth1ApplicationQueries
@@ -148,7 +148,7 @@ class RequiredOAuth1ApiConfigServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def maybeCreateForAction(data: RequiredOAuth1ApiConfigData, groupVersion: BehaviorGroupVersion): DBIO[Option[RequiredOAuth1ApiConfig]] = {
+  def maybeCreateForAction(data: RequiredOAuthApiConfigData, groupVersion: BehaviorGroupVersion): DBIO[Option[RequiredOAuth1ApiConfig]] = {
     for {
       maybeApi <- DBIO.from(dataService.oauth1Apis.find(data.apiId))
       maybeApplication <- data.config.map { appData =>
@@ -161,7 +161,7 @@ class RequiredOAuth1ApiConfigServiceImpl @Inject() (
     } yield maybeConfig
   }
 
-  def maybeCreateFor(data: RequiredOAuth1ApiConfigData, groupVersion: BehaviorGroupVersion): Future[Option[RequiredOAuth1ApiConfig]] = {
+  def maybeCreateFor(data: RequiredOAuthApiConfigData, groupVersion: BehaviorGroupVersion): Future[Option[RequiredOAuth1ApiConfig]] = {
     dataService.run(maybeCreateForAction(data, groupVersion))
   }
 

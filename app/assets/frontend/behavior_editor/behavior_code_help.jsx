@@ -6,8 +6,7 @@ import HelpPanel from '../help/panel';
 const BehaviorCodeHelp = React.createClass({
   propTypes: {
     envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
-    oauth1ApiAccessTokens: React.PropTypes.arrayOf(React.PropTypes.object),
-    oauth2ApiAccessTokens: React.PropTypes.arrayOf(React.PropTypes.object),
+    oauthApiAccessTokens: React.PropTypes.arrayOf(React.PropTypes.object),
     onAddNewEnvVariable: React.PropTypes.func.isRequired,
     onCollapseClick: React.PropTypes.func.isRequired,
     isDataType: React.PropTypes.bool
@@ -79,7 +78,7 @@ const BehaviorCodeHelp = React.createClass({
   },
 
   getAllApiAccessTokens: function() {
-    return (this.props.oauth1ApiAccessTokens || []).concat(this.props.oauth2ApiAccessTokens || []);
+    return this.props.oauthApiAccessTokens || [];
   },
 
   renderApiAccessTokenList: function() {

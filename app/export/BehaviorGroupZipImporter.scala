@@ -49,8 +49,7 @@ case class BehaviorGroupZipImporter(
     var maybeExportId: Option[String] = None
     var maybeIcon: Option[String] = None
     var requiredAWSConfigData: Seq[RequiredAWSConfigData] = Seq()
-    var requiredOAuth1ApiConfigData: Seq[RequiredOAuth1ApiConfigData] = Seq()
-    var requiredOAuth2ApiConfigData: Seq[RequiredOAuth2ApiConfigData] = Seq()
+    var requiredOAuthApiConfigData: Seq[RequiredOAuthApiConfigData] = Seq()
     var requiredSimpleTokenApiData: Seq[RequiredSimpleTokenApiData] = Seq()
     var actionInputs: Seq[InputData] = Seq()
     var dataTypeInputs: Seq[InputData] = Seq()
@@ -84,8 +83,7 @@ case class BehaviorGroupZipImporter(
             maybeExportId = data.exportId
             maybeIcon = data.icon
             requiredAWSConfigData = data.requiredAWSConfigs
-            requiredOAuth1ApiConfigData = data.requiredOAuth1ApiConfigs
-            requiredOAuth2ApiConfigData = data.requiredOAuth2ApiConfigs
+            requiredOAuthApiConfigData = data.requiredOAuthApiConfigs
             requiredSimpleTokenApiData = data.requiredSimpleTokenApis
           }
           case e: JsError =>
@@ -143,8 +141,7 @@ case class BehaviorGroupZipImporter(
           versionsData,
           libraries,
           requiredAWSConfigData,
-          requiredOAuth1ApiConfigData,
-          requiredOAuth2ApiConfigData,
+          requiredOAuthApiConfigData,
           requiredSimpleTokenApiData,
           maybeGitSHA = None,
           maybeExportId,

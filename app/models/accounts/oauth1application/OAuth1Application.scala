@@ -1,5 +1,6 @@
 package models.accounts.oauth1application
 
+import models.accounts.OAuthApplication
 import models.accounts.oauth1api.OAuth1Api
 
 case class OAuth1Application(
@@ -11,7 +12,10 @@ case class OAuth1Application(
                               maybeScope: Option[String],
                               teamId: String,
                               isShared: Boolean
-                            ) {
+                            ) extends OAuthApplication {
+
+  val key: String = consumerKey
+  val secret: String = consumerSecret
 
   def toRaw = RawOAuth1Application(
     id,

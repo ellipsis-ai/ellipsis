@@ -11,10 +11,8 @@ const IntegrationList = React.createClass({
       csrfToken: React.PropTypes.string.isRequired,
       isAdmin: React.PropTypes.bool.isRequired,
       teamId: React.PropTypes.string.isRequired,
-      oauth1Apis: React.PropTypes.arrayOf(React.PropTypes.object),
-      oauth1Applications: React.PropTypes.arrayOf(React.PropTypes.object),
-      oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.object),
-      oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.object),
+      oauthApis: React.PropTypes.arrayOf(React.PropTypes.object),
+      oauthApplications: React.PropTypes.arrayOf(React.PropTypes.object),
       awsConfigs: React.PropTypes.arrayOf(React.PropTypes.object)
     }),
 
@@ -26,28 +24,20 @@ const IntegrationList = React.createClass({
       return Boolean(this.getAllApis().length > 0);
     },
 
-    getOAuth1Apis: function() {
-      return this.props.oauth1Apis || [];
-    },
-
-    getOAuth2Apis: function() {
-      return this.props.oauth2Apis || [];
+    getOAuthApis: function() {
+      return this.props.oauthApis || [];
     },
 
     getAllApis: function() {
-      return this.getOAuth1Apis().concat(this.getOAuth2Apis());
+      return this.getOAuthApis();
     },
 
-    getOAuth1Applications: function() {
-      return this.props.oauth1Applications || [];
-    },
-
-    getOAuth2Applications: function() {
-      return this.props.oauth2Applications || [];
+    getOAuthApplications: function() {
+      return this.props.oauthApplications || [];
     },
 
     getAllApplications: function() {
-      return this.getOAuth1Applications().concat(this.getOAuth2Applications());
+      return this.getOAuthApplications();
     },
 
     getGroupedApplications: function() {
@@ -80,8 +70,8 @@ const IntegrationList = React.createClass({
       return this.props.awsConfigs || [];
     },
 
-    toggleOAuth2ApplicationHelp: function() {
-      this.props.onToggleActivePanel("oAuth2ApplicationHelp");
+    toggleOAuthApplicationHelp: function() {
+      this.props.onToggleActivePanel("oAuthApplicationHelp");
     },
 
     render: function() {
@@ -94,9 +84,9 @@ const IntegrationList = React.createClass({
           </p>
 
           <p>
-            <HelpButton className="mrs" onClick={this.toggleOAuth2ApplicationHelp}
-                        toggled={this.props.activePanelName === 'oAuth2ApplicationHelp'}/>
-            <button type="button" className="button-raw" onClick={this.toggleOAuth2ApplicationHelp}>
+            <HelpButton className="mrs" onClick={this.toggleOAuthApplicationHelp}
+                        toggled={this.props.activePanelName === 'oAuthApplicationHelp'}/>
+            <button type="button" className="button-raw" onClick={this.toggleOAuthApplicationHelp}>
               How Integrations work
             </button>
           </p>
@@ -124,8 +114,8 @@ const IntegrationList = React.createClass({
           </Collapsible>
 
           {this.props.onRenderFooter((
-            <Collapsible revealWhen={this.props.activePanelName === 'oAuth2ApplicationHelp'}>
-              {this.renderOAuth2ApplicationHelp()}
+            <Collapsible revealWhen={this.props.activePanelName === 'oAuthApplicationHelp'}>
+              {this.renderOAuthApplicationHelp()}
             </Collapsible>
           ))}
         </SettingsPage>
@@ -143,7 +133,7 @@ const IntegrationList = React.createClass({
 
           <ul className="list-space-s">
             <li>which product API to use,</li>
-            <li>the OAuth2 credentials (client key and secret),</li>
+            <li>the OAuth credentials (key and secret),</li>
             <li>and the scope (level of access) to use for requests.</li>
           </ul>
         </div>
@@ -240,20 +230,20 @@ const IntegrationList = React.createClass({
       );
     },
 
-    renderOAuth2ApplicationHelp: function() {
+    renderOAuthApplicationHelp: function() {
       return (
         <HelpPanel
           heading="Creating a new configuration"
-          onCollapseClick={this.toggleOAuth2ApplicationHelp}
+          onCollapseClick={this.toggleOAuthApplicationHelp}
         >
           <p>
             <span>In order to connect Ellipsis to other products securely, </span>
             <span>you need to tell the other product how to recognize Ellipsis, and tell Ellipsis how </span>
-            <span>to authenticate with the other product’s API using OAuth2.</span>
+            <span>to authenticate with the other product’s API using OAuth.</span>
           </p>
 
           <p>
-            <span>An OAuth2 API configuration tells Ellipsis:</span>
+            <span>An OAuth API configuration tells Ellipsis:</span>
           </p>
 
           <ul>

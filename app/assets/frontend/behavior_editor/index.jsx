@@ -36,13 +36,11 @@ import LibraryVersion from '../models/library_version';
 import LinkedGithubRepo from '../models/linked_github_repo';
 import ModalScrim from '../shared_ui/modal_scrim';
 import Notifications from '../notifications/notifications';
-import {OAuth1ApplicationRef} from '../models/oauth1';
-import {OAuth2ApplicationRef} from '../models/oauth2';
+import {OAuthApplicationRef} from '../models/oauth';
 import Page from '../shared_ui/page';
 import ParamType from '../models/param_type';
 import {RequiredAWSConfig} from '../models/aws';
-import {RequiredOAuth1Application} from '../models/oauth1';
-import {RequiredOAuth2Application} from '../models/oauth2';
+import {RequiredOAuthApplication} from '../models/oauth';
 import ResponseTemplate from '../models/response_template';
 import ResponseTemplateConfiguration from './response_template_configuration';
 import ResponseTemplateHelp from './response_template_help';
@@ -78,8 +76,7 @@ import DataTypeUnnamedFieldsNotificationData from "../models/notifications/data_
 import DataTypeUnnamedNotificationData from "../models/notifications/data_type_unnamed_notification_data";
 import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
 import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
-import OAuth1ConfigWithoutApplicationNotificationData from "../models/notifications/oauth1_config_without_application_notification_data";
-import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
+import OAuthConfigWithoutApplicationNotificationData from "../models/notifications/oauth_config_without_application_notification_data";
 import ServerDataWarningNotificationData from "../models/notifications/server_data_warning_notification_data";
 import SkillDetailsWarningNotificationData from "../models/notifications/skill_details_warning_notification_data";
 import TestResultsNotificationData from "../models/notifications/test_result_notification_data";
@@ -94,19 +91,13 @@ const BehaviorEditor = React.createClass({
     builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
     awsConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(AWSConfigRef)),
-    oauth1Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth1ApplicationRef)),
-    oauth1Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
-      apiId: React.PropTypes.string.isRequired,
-      name: React.PropTypes.string.isRequired
-    })),
-    oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth2ApplicationRef)),
-    oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
+    oauthApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuthApplicationRef)),
+    oauthApis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
     })),
     simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(SimpleTokenApiRef)),
-    linkedOAuth1ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-    linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    linkedOAuthApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     linkedGithubRepo: React.PropTypes.instanceOf(LinkedGithubRepo),
     savedAnswers: React.PropTypes.arrayOf(
       React.PropTypes.shape({
@@ -163,20 +154,12 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().getRequiredAWSConfigs();
   },
 
-  getAllOAuth1Applications: function() {
-    return this.props.oauth1Applications || [];
+  getAllOAuthApplications: function() {
+    return this.props.oauthApplications || [];
   },
 
-  getRequiredOAuth1ApiConfigs: function() {
-    return this.getBehaviorGroup().getRequiredOAuth1ApiConfigs();
-  },
-
-  getAllOAuth2Applications: function() {
-    return this.props.oauth2Applications || [];
-  },
-
-  getRequiredOAuth2ApiConfigs: function() {
-    return this.getBehaviorGroup().getRequiredOAuth2ApiConfigs();
+  getRequiredOAuthApiConfigs: function() {
+    return this.getBehaviorGroup().getRequiredOAuthApiConfigs();
   },
 
   getAllSimpleTokenApis: function() {
@@ -187,13 +170,8 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().getRequiredSimpleTokenApis();
   },
 
-  getOAuth1ApiApplications: function() {
-    return this.getRequiredOAuth1ApiConfigs()
-      .filter(ea => !!ea.config);
-  },
-
-  getOAuth2ApiApplications: function() {
-    return this.getRequiredOAuth2ApiConfigs()
+  getOAuthApiApplications: function() {
+    return this.getRequiredOAuthApiConfigs()
       .filter(ea => !!ea.config);
   },
 
@@ -208,15 +186,13 @@ const BehaviorEditor = React.createClass({
 
   getAllConfigs: function() {
     return this.getAllAWSConfigs()
-      .concat(this.getAllOAuth1Applications())
-      .concat(this.getAllOAuth2Applications())
+      .concat(this.getAllOAuthApplications())
       .concat(this.getAllSimpleTokenApis());
   },
 
   getAllRequiredApiConfigs: function() {
     return this.getRequiredAWSConfigs()
-      .concat(this.getRequiredOAuth1ApiConfigs())
-      .concat(this.getRequiredOAuth2ApiConfigs())
+      .concat(this.getRequiredOAuthApiConfigs())
       .concat(this.getRequiredSimpleTokenApis());
   },
 
@@ -266,13 +242,8 @@ const BehaviorEditor = React.createClass({
     return api ? (api.logoImageUrl || api.iconImageUrl) : null;
   },
 
-  getOAuth1LogoUrlForConfig: function(config) {
-    const api = this.getOAuth1ApiWithId(config.apiId);
-    return this.getApiLogoUrlForApi(api);
-  },
-
-  getOAuth2LogoUrlForConfig: function(config) {
-    const api = this.getOAuth2ApiWithId(config.apiId);
+  getOAuthLogoUrlForConfig: function(config) {
+    const api = this.getOAuthApiWithId(config.apiId);
     return this.getApiLogoUrlForApi(api);
   },
 
@@ -301,13 +272,8 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getOAuth1ApiNameForConfig: function(config) {
-    const api = this.getOAuth1ApiWithId(config.apiId);
-    return api ? api.name : "";
-  },
-
-  getOAuth2ApiNameForConfig: function(config) {
-    const api = this.getOAuth2ApiWithId(config.apiId);
+  getOAuthApiNameForConfig: function(config) {
+    const api = this.getOAuthApiWithId(config.apiId);
     return api ? api.name : "";
   },
 
@@ -487,35 +453,21 @@ const BehaviorEditor = React.createClass({
     }));
   },
 
-  getOAuth1ApiWithId: function(apiId) {
-    return this.props.oauth1Apis.find(ea => ea.apiId === apiId);
-  },
-
-  getOAuth2ApiWithId: function(apiId) {
-    return this.props.oauth2Apis.find(ea => ea.apiId === apiId);
+  getOAuthApiWithId: function(apiId) {
+    return this.props.oauthApis.find(ea => ea.apiId === apiId);
   },
 
   getSimpleTokenApiWithId: function(tokenId) {
     return this.props.simpleTokenApis.find(ea => ea.id === tokenId);
   },
 
-  getRequiredOAuth1ApiConfigsWithNoApplication: function() {
-    return this.getRequiredOAuth1ApiConfigs().filter(ea => !ea.config);
+  getRequiredOAuthApiConfigsWithNoApplication: function() {
+    return this.getRequiredOAuthApiConfigs().filter(ea => !ea.config);
   },
 
-  getOAuth1ApplicationsRequiringAuth: function() {
-    return this.getOAuth1ApiApplications().filter(ea => {
-      return !this.props.linkedOAuth1ApplicationIds.includes(ea.config.id);
-    });
-  },
-
-  getRequiredOAuth2ApiConfigsWithNoApplication: function() {
-    return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config);
-  },
-
-  getOAuth2ApplicationsRequiringAuth: function() {
-    return this.getOAuth2ApiApplications().filter(ea => {
-      return !this.props.linkedOAuth2ApplicationIds.includes(ea.config.id);
+  getOAuthApplicationsRequiringAuth: function() {
+    return this.getOAuthApiApplications().filter(ea => {
+      return !this.props.linkedOAuthApplicationIds.includes(ea.config.id);
     });
   },
 
@@ -523,30 +475,16 @@ const BehaviorEditor = React.createClass({
     return this.props.activePanelName === "configureApi";
   },
 
-  buildOAuth1ApplicationNotifications: function() {
+  buildOAuthApplicationNotifications: function() {
     if (this.isConfiguringApi()) {
       return [];
     }
-    return this.getRequiredOAuth1ApiConfigsWithNoApplication().map(ea => new OAuth1ConfigWithoutApplicationNotificationData({
-      name: this.getOAuth1ApiWithId(ea.apiId).name,
+    return this.getRequiredOAuthApiConfigsWithNoApplication().map(ea => new OAuthConfigWithoutApplicationNotificationData({
+      name: this.getOAuthApiWithId(ea.apiId).name,
       requiredApiConfig: ea,
-      existingOAuth1Applications: this.getAllOAuth1Applications(),
-      onUpdateOAuth1Application: this.onUpdateOAuth1Application,
-      onNewOAuth1Application: this.onNewOAuth1Application,
-      onConfigClick: this.onApiConfigClick.bind(this, ea)
-    }));
-  },
-
-  buildOAuth2ApplicationNotifications: function() {
-    if (this.isConfiguringApi()) {
-      return [];
-    }
-    return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new OAuth2ConfigWithoutApplicationNotificationData({
-      name: this.getOAuth2ApiWithId(ea.apiId).name,
-      requiredApiConfig: ea,
-      existingOAuth2Applications: this.getAllOAuth2Applications(),
-      onUpdateOAuth2Application: this.onUpdateOAuth2Application,
-      onNewOAuth2Application: this.onNewOAuth2Application,
+      existingOAuthApplications: this.getAllOAuthApplications(),
+      onUpdateOAuthApplication: this.onUpdateOAuthApplication,
+      onNewOAuthApplication: this.onNewOAuthApplication,
       onConfigClick: this.onApiConfigClick.bind(this, ea)
     }));
   },
@@ -724,8 +662,7 @@ const BehaviorEditor = React.createClass({
     return [].concat(
       this.buildEnvVarNotifications(),
       this.buildAWSNotifications(),
-      this.buildOAuth1ApplicationNotifications(),
-      this.buildOAuth2ApplicationNotifications(),
+      this.buildOAuthApplicationNotifications(),
       this.buildDataTypeNotifications(),
       this.buildTemplateNotifications(),
       this.buildServerNotifications(),
@@ -1051,11 +988,8 @@ const BehaviorEditor = React.createClass({
           const group = this.getBehaviorGroup();
           const teamId = group.teamId;
           const groupId = json.id;
-          if (this.state.shouldRedirectToAddNewOAuth1App) {
-            const config = this.state.requiredOAuth1ApiConfig;
-            window.location.href = jsRoutes.controllers.web.settings.IntegrationsController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
-          } else if (this.state.shouldRedirectToAddNewOAuth2App) {
-            const config = this.state.requiredOAuth2ApiConfig;
+          if (this.state.shouldRedirectToAddNewOAuthApp) {
+            const config = this.state.requiredOAuthApiConfig;
             window.location.href = jsRoutes.controllers.web.settings.IntegrationsController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
           } else if (this.state.shouldRedirectToAddNewAWSConfig) {
             const config = this.state.requiredAWSConfig;
@@ -1623,18 +1557,18 @@ const BehaviorEditor = React.createClass({
     this.onNewAWSConfig(requiredToUse);
   },
 
-  onAddOAuth1Application: function(toAdd, callback) {
-    const existing = this.getRequiredOAuth1ApiConfigs();
+  onAddOAuthApplication: function(toAdd, callback) {
+    const existing = this.getRequiredOAuthApiConfigs();
     const newApplications = existing.concat([toAdd]);
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth1ApiConfigs: newApplications }), callback);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuthApiConfigs: newApplications }), callback);
   },
 
-  onRemoveOAuth1Application: function(toRemove, callback) {
-    const existing = this.getRequiredOAuth1ApiConfigs();
+  onRemoveOAuthApplication: function(toRemove, callback) {
+    const existing = this.getRequiredOAuthApiConfigs();
     const newApplications = existing.filter(function(ea) {
       return ea.id !== toRemove.id;
     });
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth1ApiConfigs: newApplications }), () => {
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuthApiConfigs: newApplications }), () => {
       this.props.onClearActivePanel();
       if (callback) {
         callback();
@@ -1642,15 +1576,15 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  onUpdateOAuth1Application: function(config, callback) {
-    const configs = this.getRequiredOAuth1ApiConfigs().slice();
+  onUpdateOAuthApplication: function(config, callback) {
+    const configs = this.getRequiredOAuthApiConfigs().slice();
     const indexToReplace = configs.findIndex(ea => ea.id === config.id);
     configs[indexToReplace] = config;
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth1ApiConfigs: configs }), callback);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuthApiConfigs: configs }), callback);
   },
 
-  addNewOAuth1Application: function(required) {
-    const requiredToUse = required || RequiredOAuth1Application.fromProps({
+  addNewOAuthApplication: function(required) {
+    const requiredToUse = required || RequiredOAuthApplication.fromProps({
       id: ID.next(),
       exportId: null,
       apiId: "",
@@ -1658,45 +1592,7 @@ const BehaviorEditor = React.createClass({
       config: null,
       recommendedScope: ""
     });
-    this.onNewOAuth1Application(requiredToUse);
-  },
-
-  onAddOAuth2Application: function(toAdd, callback) {
-    const existing = this.getRequiredOAuth2ApiConfigs();
-    const newApplications = existing.concat([toAdd]);
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newApplications }), callback);
-  },
-
-  onRemoveOAuth2Application: function(toRemove, callback) {
-    const existing = this.getRequiredOAuth2ApiConfigs();
-    const newApplications = existing.filter(function(ea) {
-      return ea.id !== toRemove.id;
-    });
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newApplications }), () => {
-      this.props.onClearActivePanel();
-      if (callback) {
-        callback();
-      }
-    });
-  },
-
-  onUpdateOAuth2Application: function(config, callback) {
-    const configs = this.getRequiredOAuth2ApiConfigs().slice();
-    const indexToReplace = configs.findIndex(ea => ea.id === config.id);
-    configs[indexToReplace] = config;
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: configs }), callback);
-  },
-
-  addNewOAuth2Application: function(required) {
-    const requiredToUse = required || RequiredOAuth2Application.fromProps({
-      id: ID.next(),
-      exportId: null,
-      apiId: "",
-      nameInCode: "",
-      config: null,
-      recommendedScope: ""
-    });
-    this.onNewOAuth2Application(requiredToUse);
+    this.onNewOAuthApplication(requiredToUse);
   },
 
   onAddSimpleTokenApi: function(toAdd) {
@@ -1725,17 +1621,10 @@ const BehaviorEditor = React.createClass({
     }, this.onSaveBehaviorGroup);
   },
 
-  onNewOAuth1Application: function(requiredOAuth1ApiConfig) {
+  onNewOAuthApplication: function(requiredOAuthApiConfig) {
     this.setState({
-      shouldRedirectToAddNewOAuth1App: true,
-      requiredOAuth1ApiConfig: requiredOAuth1ApiConfig
-    }, this.onSaveBehaviorGroup);
-  },
-
-  onNewOAuth2Application: function(requiredOAuth2ApiConfig) {
-    this.setState({
-      shouldRedirectToAddNewOAuth2App: true,
-      requiredOAuth2ApiConfig: requiredOAuth2ApiConfig
+      shouldRedirectToAddNewOAuthApp: true,
+      requiredOAuthApiConfig: requiredOAuthApiConfig
     }, this.onSaveBehaviorGroup);
   },
 
@@ -1925,9 +1814,8 @@ const BehaviorEditor = React.createClass({
       redirectValue: "",
       requiredAWSConfig: null,
       shouldRedirectToAddNewAWSConfig: false,
-      requiredOAuth1ApiConfig: null,
-      requiredOAuth2ApiConfig: null,
-      shouldRedirectToAddNewOAuth2App: false,
+      requiredOAuthApiConfig: null,
+      shouldRedirectToAddNewOAuthApp: false,
       paramNameToSync: null,
       error: null,
       selectedSavedAnswerInputId: null,
@@ -1995,8 +1883,7 @@ const BehaviorEditor = React.createClass({
         inputs={this.getInputs()}
         systemParams={codeConfigProps.systemParams || this.getSystemParams()}
         requiredAWSConfigs={this.getRequiredAWSConfigs()}
-        oauth1ApiApplications={this.getOAuth1ApiApplications()}
-        oauth2ApiApplications={this.getOAuth2ApiApplications()}
+        oauthApiApplications={this.getOAuthApiApplications()}
 
         functionBody={this.getFunctionBody()}
         onChangeFunctionBody={this.updateCode}
@@ -2113,8 +2000,7 @@ const BehaviorEditor = React.createClass({
               onUpdateConfig={this.onUpdateConfigForSelected()}
               onDoneClick={this.props.onClearActivePanel}
               addNewAWSConfig={this.addNewAWSConfig}
-              addNewOAuth1Application={this.addNewOAuth1Application}
-              addNewOAuth2Application={this.addNewOAuth2Application}
+              addNewOAuthApplication={this.addNewOAuthApplication}
               animationDisabled={this.state.animationDisabled}
             >
             </APIConfigPanel>
@@ -2155,8 +2041,7 @@ const BehaviorEditor = React.createClass({
           <Collapsible revealWhen={this.props.activePanelName === 'helpForBehaviorCode'} onChange={this.layoutDidUpdate}>
             <BehaviorCodeHelp
               envVariableNames={this.getEnvVariableNames()}
-              oauth1ApiAccessTokens={this.getOAuth1ApiApplications()}
-              oauth2ApiAccessTokens={this.getOAuth2ApiApplications()}
+              oauthApiAccessTokens={this.getOAuthApiApplications()}
               onAddNewEnvVariable={this.onAddNewEnvVariable}
               onCollapseClick={this.props.onClearActivePanel}
               isDataType={this.isDataTypeBehavior()}
@@ -2245,8 +2130,7 @@ const BehaviorEditor = React.createClass({
               behaviorId={this.getSelectedId()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
-              oauth1AppsRequiringAuth={this.getOAuth1ApplicationsRequiringAuth()}
-              oauth2AppsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
+              oauthAppsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
             />
           </Collapsible>
 
@@ -2257,8 +2141,7 @@ const BehaviorEditor = React.createClass({
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
-              oauth1AppsRequiringAuth={this.getOAuth1ApplicationsRequiringAuth()}
-              oauth2AppsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
+              oauthAppsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
             />
           </Collapsible>
 
@@ -2553,8 +2436,7 @@ const BehaviorEditor = React.createClass({
               isModified={this.editableIsModified}
               onUpdateNodeModules={this.updateNodeModules}
               requiredAWSConfigs={this.getRequiredAWSConfigs()}
-              requiredOAuth1Applications={this.getRequiredOAuth1ApiConfigs()}
-              requiredOAuth2Applications={this.getRequiredOAuth2ApiConfigs()}
+              requiredOAuthApplications={this.getRequiredOAuthApiConfigs()}
               requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
               onApiConfigClick={this.onApiConfigClick}
               onAddApiConfigClick={this.onAddApiConfigClick}
@@ -2724,8 +2606,7 @@ const BehaviorEditor = React.createClass({
 
           systemParams={this.getSystemParams()}
           requiredAWSConfigs={this.getRequiredAWSConfigs()}
-          oauth1ApiApplications={this.getOAuth1ApiApplications()}
-          oauth2ApiApplications={this.getOAuth2ApiApplications()}
+          oauthApiApplications={this.getOAuthApiApplications()}
 
           onCursorChange={this.ensureCursorVisible}
           useLineWrapping={this.state.codeEditorUseLineWrapping}

@@ -11,7 +11,7 @@ type AWSEditor = {
   onRemoveAWSConfig: (r: RequiredAWSConfig, c?: Option<callback>) => void,
   onUpdateAWSConfig: (r: RequiredAWSConfig, c?: Option<callback>) => void,
   getAllAWSConfigs: () => Array<AWSConfigRef>,
-  getOAuth2ApiNameForConfig: (a: AWSConfigRef) => string
+  getApiNameForConfig: (a: AWSConfigRef) => string
 }
 
 export interface RequiredAWSConfigJson extends RequiredApiConfigJson {
@@ -133,7 +133,7 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredA
     }
 
     getApiName(editor: AWSEditor): string {
-      return editor.getOAuth2ApiNameForConfig(this);
+      return editor.getApiNameForConfig(this);
     }
 
     configName(): string {

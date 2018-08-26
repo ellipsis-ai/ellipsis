@@ -1,12 +1,12 @@
 import * as React from 'react';
-import OAuth1ApplicationUnusedNotificationData from "../models/notifications/oauth1_application_unused";
+import OAuthApplicationUnusedNotificationData from "../models/notifications/oauth_application_unused";
 import autobind from '../lib/autobind';
 
 interface Props {
-  details: Array<OAuth1ApplicationUnusedNotificationData>
+  details: Array<OAuthApplicationUnusedNotificationData>
 }
 
-class NotificationForUnusedOAuth1Application extends React.PureComponent<Props> {
+class NotificationForUnusedOAuthApplication extends React.PureComponent<Props> {
   constructor(props: Props) {
     super(props);
     autobind(this);
@@ -40,4 +40,4 @@ class NotificationForUnusedOAuth1Application extends React.PureComponent<Props> 
   }
 }
 
-export default NotificationForUnusedOAuth1Application;
+export default NotificationForUnusedOAuthApplication;

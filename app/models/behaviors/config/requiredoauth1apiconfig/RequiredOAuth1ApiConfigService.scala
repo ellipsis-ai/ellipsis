@@ -1,6 +1,6 @@
 package models.behaviors.config.requiredoauth1apiconfig
 
-import json.RequiredOAuth1ApiConfigData
+import json.RequiredOAuthApiConfigData
 import models.accounts.oauth1api.OAuth1Api
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -26,8 +26,8 @@ trait RequiredOAuth1ApiConfigService {
 
   def save(requiredOAuth2ApiConfig: RequiredOAuth1ApiConfig): Future[RequiredOAuth1ApiConfig]
 
-  def maybeCreateForAction(data: RequiredOAuth1ApiConfigData, groupVersion: BehaviorGroupVersion): DBIO[Option[RequiredOAuth1ApiConfig]]
+  def maybeCreateForAction(data: RequiredOAuthApiConfigData, groupVersion: BehaviorGroupVersion): DBIO[Option[RequiredOAuth1ApiConfig]]
 
-  def maybeCreateFor(data: RequiredOAuth1ApiConfigData, groupVersion: BehaviorGroupVersion): Future[Option[RequiredOAuth1ApiConfig]]
+  def maybeCreateFor(data: RequiredOAuthApiConfigData, groupVersion: BehaviorGroupVersion): Future[Option[RequiredOAuth1ApiConfig]]
 
 }

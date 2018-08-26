@@ -7,9 +7,7 @@ case class IntegrationListConfig(
                                   csrfToken: Option[String],
                                   isAdmin: Boolean,
                                   teamId: String,
-                                  oauth1Apis: Seq[OAuth1ApiData],
-                                  oauth1Applications: Seq[OAuth1ApplicationData],
-                                  oauth2Apis: Seq[OAuth2ApiData],
-                                  oauth2Applications: Seq[OAuth2ApplicationData],
+                                  oauthApis: Seq[OAuthApiData],
+                                  oauthApplications: Seq[OAuthApplicationData],
                                   awsConfigs: Seq[AWSConfigData]
                           )

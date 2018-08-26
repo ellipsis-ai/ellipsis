@@ -17,9 +17,10 @@ class OAuth1ApisTable(tag: Tag) extends Table[OAuth1Api](tag, "oauth1_apis") {
   def accessTokenUrl = column[String]("access_token_url")
   def authorizationUrl = column[String]("authorization_url")
   def maybeNewApplicationUrl = column[Option[String]]("new_application_url")
+  def maybeScopeDocumentationUrl = column[Option[String]]("scope_documentation_url")
   def maybeTeamId = column[Option[String]]("team_id")
 
-  def * = (id, name, requestTokenUrl, accessTokenUrl, authorizationUrl, maybeNewApplicationUrl, maybeTeamId) <>
+  def * = (id, name, requestTokenUrl, accessTokenUrl, authorizationUrl, maybeNewApplicationUrl, maybeScopeDocumentationUrl, maybeTeamId) <>
     ((OAuth1Api.apply _).tupled, OAuth1Api.unapply _)
 
 }
