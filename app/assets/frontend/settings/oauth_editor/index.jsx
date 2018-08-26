@@ -168,7 +168,7 @@ const IntegrationEditor = React.createClass({
     },
 
     shouldRevealCallbackUrl: function() {
-      return this.props.requiresAuth; // TODO: check this
+      return this.props.requiresAuth || (this.state.applicationApi && this.state.applicationApi.requiresAuth);
     },
 
     getApplicationKey: function() {

@@ -11,7 +11,7 @@ case class OAuthApiData(
                           scopeDocumentationUrl: Option[String],
                           iconImageUrl: Option[String],
                           logoImageUrl: Option[String],
-                          isOAuth1: Boolean = false
+                          isOAuth1: Boolean
                         )
 
 object OAuthApiData {
@@ -43,7 +43,8 @@ object OAuthApiData {
       api.maybeNewApplicationUrl,
       api.maybeScopeDocumentationUrl,
       this.maybeIconImageUrlFor(api.name, assets),
-      this.maybeLogoImageUrlFor(api.name, assets)
+      this.maybeLogoImageUrlFor(api.name, assets),
+      api.isOAuth1
     )
   }
 }
