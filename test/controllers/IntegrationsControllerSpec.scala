@@ -48,7 +48,7 @@ class IntegrationsControllerSpec extends PlaySpec with MockitoSugar {
 
     lazy val authorizationUrl = "https://authorize.me/oauth2/authorize"
     lazy val oauth1ApiId = IDs.next
-    lazy val oauth1Api = OAuth1Api(oauth1ApiId, "", "", "", authorizationUrl, None, None)
+    lazy val oauth1Api = OAuth1Api(oauth1ApiId, "", "", "", authorizationUrl, None, None, None)
     lazy val oauth2ApiId = IDs.next
     lazy val oauth2Api = OAuth2Api(oauth2ApiId, "", AuthorizationCode, Some(authorizationUrl), "", None, None, None)
 
