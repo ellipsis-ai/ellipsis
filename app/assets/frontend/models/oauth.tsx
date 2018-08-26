@@ -51,6 +51,9 @@ class RequiredOAuthApplication extends RequiredApiConfigWithConfig implements Di
       name: "Configuration to use",
       value: this.configName(),
       ignoreForPublished: true
+    }, {
+      name: "Recommended scope",
+      value: this.recommendedScope
     }];
   }
 
