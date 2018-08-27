@@ -1683,29 +1683,27 @@ const BehaviorEditor = React.createClass({
 
   loadTestResults: function() {
     this.resetNotificationsEventually();
-    this.setState({
-      error: null,
-      runningTests: true,
-      testResults: []
-    }, () => {
-      this.doTestResultRequest(0);
-    });
-
+    const behaviorGroupId = this.getBehaviorGroup().id;
+    if (behaviorGroupId) {
+      this.setState({
+        error: null,
+        runningTests: true,
+        testResults: []
+      }, () => {
+        this.doTestResultRequest(behaviorGroupId, 0);
+      });
+    }
   },
 
-  doTestResultRequest: function(numRetries) {
+  doTestResultRequest: function(behaviorGroupId, numRetries) {
     const MAX_RETRY_COUNT = 4;
-    const behaviorGroupId = this.getBehaviorGroup().id;
-    if (!behaviorGroupId) {
-      return;
-    }
     DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(behaviorGroupId).url)
       .then(json => {
         if (json.shouldRetry) {
           if (numRetries < MAX_RETRY_COUNT) {
             const newRetryCount = numRetries + 1;
             setTimeout(() => {
-              this.doTestResultRequest(newRetryCount);
+              this.doTestResultRequest(behaviorGroupId, newRetryCount);
             }, Math.pow(2, newRetryCount) * 1000);
           } else {
             throw new Error("Unable to load test results. Try reloading the page in a moment.");
@@ -1753,9 +1751,7 @@ const BehaviorEditor = React.createClass({
     window.addEventListener('focus', this.checkForUpdates, false);
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
-    if (this.isExistingGroup()) {
-      this.loadTestResults();
-    }
+    this.loadTestResults();
     if (this.props.showVersions) {
       this.showVersions();
     }
@@ -2306,17 +2302,17 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.editorScrollPosition : 0;
   },
 
-  onSelect: function(optionalGroupId, id, optionalCallback) {
+  onSelect: function(optionalGroupId, optionalBehaviorId, optionalCallback) {
     var newState = {
       animationDisabled: true,
-      selectedId: id
+      selectedId: optionalBehaviorId
     };
     if (this.windowIsMobile()) {
       newState.behaviorSwitcherVisible = false;
     }
     this.setState(newState, () => {
       if (optionalGroupId) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, id).url);
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, optionalBehaviorId).url);
       }
       var newScrollPosition = this.getEditorScrollPosition();
       window.scrollTo(window.scrollX, typeof(newScrollPosition) === 'number' ? newScrollPosition : 0);
