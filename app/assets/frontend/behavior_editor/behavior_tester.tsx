@@ -1,44 +1,66 @@
-import React from 'react';
+import * as React from 'react';
 import {testTriggers, testInvocation} from './behavior_test';
 import Collapsible from '../shared_ui/collapsible';
 import DynamicLabelButton from '../form/dynamic_label_button';
-import ifPresent from '../lib/if_present';
 import FormInput from '../form/input';
 import Input from '../models/input';
 import Trigger from '../models/trigger';
-import debounce from 'javascript-debounce';
+import * as debounce from 'javascript-debounce';
 import {RequiredOAuthApplication} from '../models/oauth';
 import TesterAuthRequired from './tester_auth_required';
 import InvocationTestResult from '../models/behavior_invocation_result';
 import InvocationResults from './behavior_tester_invocation_results';
+import autobind from "../lib/autobind";
 
-const BehaviorTester = React.createClass({
-    propTypes: {
-      triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
-      inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
-      behaviorId: React.PropTypes.string,
-      csrfToken: React.PropTypes.string.isRequired,
-      onDone: React.PropTypes.func.isRequired,
-      oauthAppsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuthApplication)).isRequired
-    },
+interface Props {
+  triggers: Array<Trigger>,
+  inputs: Array<Input>,
+  behaviorId: Option<string>,
+  csrfToken: string,
+  onDone: () => void,
+  appsRequiringAuth: Array<RequiredOAuthApplication>
+}
 
-    getInitialState: function() {
-      return {
-        testMessage: '',
-        highlightedTriggerText: null,
-        inputValues: {},
-        isTestingTriggers: false,
-        isTestingResult: false,
-        hasTestedTriggers: false,
-        hasTestedResult: false,
-        triggerErrorOccurred: false,
-        resultErrorOccurred: false,
-        resultMissingInputNames: [],
-        results: []
-      };
-    },
+interface State {
+  testMessage: string,
+  highlightedTriggerText: Option<string>,
+  inputValues: {
+    [name: string]: string
+  },
+  isTestingTriggers: boolean,
+  isTestingResult: boolean,
+  hasTestedTriggers: boolean,
+  hasTestedResult: boolean,
+  triggerErrorOccurred: boolean,
+  resultErrorOccurred: boolean,
+  resultMissingInputNames: Array<string>,
+  results: Array<InvocationTestResult>
+}
 
-    componentWillReceiveProps: function(newProps) {
+class BehaviorTester extends React.Component<Props, State> {
+  testMessage: Option<FormInput>;
+  validateMessage: () => void;
+
+  constructor(props) {
+    super(props);
+    autobind(this);
+    this.state = {
+      testMessage: '',
+      highlightedTriggerText: null,
+      inputValues: {},
+      isTestingTriggers: false,
+      isTestingResult: false,
+      hasTestedTriggers: false,
+      hasTestedResult: false,
+      triggerErrorOccurred: false,
+      resultErrorOccurred: false,
+      resultMissingInputNames: [],
+      results: []
+    };
+    this.validateMessage = debounce(this._validateMessage, 500);
+  }
+
+    componentWillReceiveProps(newProps: Props): void {
       if (JSON.stringify(this.props.triggers) !== JSON.stringify(newProps.triggers)) {
         this.setState({
           testMessage: '',
@@ -57,9 +79,9 @@ const BehaviorTester = React.createClass({
           inputValues: {}
         });
       }
-    },
+    }
 
-    onChangeTestMessage: function(value) {
+    onChangeTestMessage(value: string): void {
       this.setState({
         testMessage: value,
         highlightedTriggerText: null,
@@ -71,27 +93,27 @@ const BehaviorTester = React.createClass({
       if (value) {
         this.validateMessage();
       }
-    },
+    }
 
-    onChangeInputValue: function(name, value) {
+    onChangeInputValue(name: string, value: string): void {
       var newInputValues = Object.assign({}, this.state.inputValues);
       newInputValues[name] = value;
       this.setState({
         inputValues: newInputValues
       });
-    },
+    }
 
-    onDone: function() {
+    onDone(): void {
       this.props.onDone();
-    },
+    }
 
-    validateMessage: debounce(function() {
+    _validateMessage(): void {
       this.setState({
         isTestingTriggers: true
       }, this.sendValidationRequest);
-    }, 500),
+    }
 
-    sendValidationRequest: function() {
+    sendValidationRequest(): void {
       testTriggers({
         behaviorId: this.props.behaviorId,
         csrfToken: this.props.csrfToken,
@@ -115,9 +137,9 @@ const BehaviorTester = React.createClass({
           });
         }
       });
-    },
+    }
 
-    fetchResult: function() {
+    fetchResult(): void {
       this.setState({
         isTestingResult: true,
         resultErrorOccurred: false
@@ -141,27 +163,27 @@ const BehaviorTester = React.createClass({
           });
         }
       });
-    },
+    }
 
-    focus: function() {
-      if (this.refs.testMessage) {
-        this.refs.testMessage.focus();
+    focus(): void {
+      if (this.testMessage) {
+        this.testMessage.focus();
       }
-    },
+    }
 
-    getTriggers: function() {
+    getTriggers(): Array<Trigger> {
       return this.props.triggers.filter((trigger) => !!trigger.text);
-    },
+    }
 
-    getResults: function() {
+    getResults(): Array<InvocationTestResult>  {
       return this.state.results;
-    },
+    }
 
-    hasResult: function() {
+    hasResult(): boolean {
       return this.getResults().length > 0;
-    },
+    }
 
-    getValueForInputName: function(name) {
+    getValueForInputName(name: string) {
       return (
         <FormInput
           className="form-input-borderless"
@@ -170,9 +192,9 @@ const BehaviorTester = React.createClass({
           placeholder="None"
         />
       );
-    },
+    }
 
-    getTriggerTestingStatus: function() {
+    getTriggerTestingStatus() {
       if (this.state.isTestingTriggers) {
         return (
           <span className="type-weak type-italic pulse">— testing “{this.state.testMessage}”…</span>
@@ -189,16 +211,18 @@ const BehaviorTester = React.createClass({
         return (
           <span className="type-pink">— no match for “{this.state.testMessage}”</span>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    countNonEmptyInputsProvided: function() {
+    countNonEmptyInputsProvided(): number {
       return Object.keys(this.state.inputValues).filter((inputName) => {
         return this.state.inputValues[inputName] != null;
       }).length;
-    },
+    }
 
-    getInputTestingStatus: function() {
+    getInputTestingStatus() {
       var numInputValues = this.countNonEmptyInputsProvided();
       if (this.state.isTestingTriggers || numInputValues === 0 || this.props.inputs.length === 0) {
         return "";
@@ -210,10 +234,12 @@ const BehaviorTester = React.createClass({
         return (
           <span className="type-green">— {numInputValues} values collected</span>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <Collapsible revealWhen={this.hasResult()}>
@@ -235,15 +261,16 @@ const BehaviorTester = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderContent: function() {
-      if (this.props.behaviorId && this.props.oauthAppsRequiringAuth.length > 0) {
+    renderContent() {
+      var apps = this.props.appsRequiringAuth;
+      if (this.props.behaviorId && apps.length > 0) {
         return (
           <div>
             <TesterAuthRequired
               behaviorId={this.props.behaviorId}
-              oauthAppsRequiringAuth={this.props.oauthAppsRequiringAuth}
+              appsRequiringAuth={this.props.appsRequiringAuth}
             />
 
             <div className="mtxl">
@@ -254,19 +281,21 @@ const BehaviorTester = React.createClass({
       } else {
         return this.renderTester();
       }
-    },
+    }
 
-    renderTester: function() {
+    renderTester() {
+      const triggers = this.getTriggers();
+      const inputs = this.props.inputs;
       return (
         <div>
 
-          {ifPresent(this.getTriggers(), this.renderTriggers, this.renderNoTriggers)}
+          {triggers.length > 0 ? this.renderTriggers(triggers) : this.renderNoTriggers()}
 
           <h4 className="mbxs">
             <span>User input </span>
             <span>{this.getInputTestingStatus()}</span>
           </h4>
-          {ifPresent(this.props.inputs, this.renderInputs, this.renderNoInputs)}
+          {inputs.length > 0 ? this.renderInputs(inputs) : this.renderNoInputs()}
 
           <div className="columns columns-elastic mvxl">
             <div className="column column-expand">
@@ -291,9 +320,9 @@ const BehaviorTester = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderTriggers: function(triggers) {
+    renderTriggers(triggers: Array<Trigger>) {
       return (
         <div>
           <p>
@@ -302,7 +331,7 @@ const BehaviorTester = React.createClass({
           </p>
 
           <div className="mbxl">
-            <FormInput ref="testMessage"
+            <FormInput ref={(el) => this.testMessage = el}
               value={this.state.testMessage}
               onChange={this.onChangeTestMessage}
               placeholder="Enter message"
@@ -318,18 +347,18 @@ const BehaviorTester = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderNoTriggers: function() {
+    renderNoTriggers() {
       return (
         <div className="mbxl">
           <h4 className="mbxs">Triggers</h4>
           <p className="type-weak">No triggers have been defined.</p>
         </div>
       );
-    },
+    }
 
-    renderTrigger: function(trigger, index) {
+    renderTrigger(trigger: Trigger, index: number) {
       var highlighted = this.state.highlightedTriggerText === trigger.text;
       var className = "pvxs " +
         (trigger.isRegex ? " type-monospace " : "") +
@@ -339,9 +368,9 @@ const BehaviorTester = React.createClass({
           {trigger.text} {highlighted ? "✓" : ""}
         </div>
       );
-    },
+    }
 
-    renderInputs: function(inputs) {
+    renderInputs(inputs: Array<Input>) {
       return (
         <div className="columns columns-elastic">
           <div className="column-group">
@@ -354,15 +383,15 @@ const BehaviorTester = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderNoInputs: function() {
+    renderNoInputs() {
       return (
         <p className="type-weak">No user input has been defined.</p>
       );
-    },
+    }
 
-    renderResultStatus: function() {
+    renderResultStatus() {
       if (this.state.resultErrorOccurred) {
         return (
           <span className="type-pink">— An error occurred while testing <b>{this.state.testMessage}</b></span>
@@ -375,9 +404,9 @@ const BehaviorTester = React.createClass({
           </span>
         );
       }
-    },
+    }
 
-    renderResultStatusTriggerText: function() {
+    renderResultStatusTriggerText() {
       if (this.state.highlightedTriggerText && this.state.testMessage) {
         return (
           <span>— Use <b>{this.state.testMessage}</b> </span>
@@ -386,10 +415,12 @@ const BehaviorTester = React.createClass({
         return (
           <span>— Simulate any trigger </span>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    renderResultStatusInputText: function() {
+    renderResultStatusInputText() {
       var numInputs = this.props.inputs.length;
       var numInputValues = this.countNonEmptyInputsProvided();
       if (numInputs === 0) {
@@ -408,6 +439,6 @@ const BehaviorTester = React.createClass({
         );
       }
     }
-});
+}
 
 export default BehaviorTester;

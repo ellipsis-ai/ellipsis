@@ -1,8 +1,32 @@
 import * as React from 'react';
+import autobind from "../lib/autobind";
+import {CSSProperties} from "react";
+import {ReactElement} from "react";
 
-var DEFAULT_DURATION = 0.25;
+const DEFAULT_DURATION = 0.25;
 
-const Collapsible = React.createClass({
+interface Props {
+  animationDisabled?: boolean,
+  animationDuration?: Option<number>,
+  children: any,
+  className?: Option<string>,
+  revealWhen: boolean,
+  animateInitialRender?: boolean,
+  isHorizontal?: boolean,
+  onChange?: (isRevealed: boolean) => void
+}
+
+interface State {
+  isAnimating: boolean,
+  isRevealed: boolean
+}
+
+interface ContainingElement {
+  "data-is-animating": boolean,
+  "data-is-revealed": boolean
+}
+
+class Collapsible extends React.Component<Props, State> {
 /*
 The Collapsible component reveals or collapses its children in the DOM in response
 to the boolean value of its revealWhen property, using the max-height CSS property.
@@ -13,49 +37,45 @@ which should be set with a number (not a string).
 Note: to allow for child content to be dynamic in height/width and to overflow the
 bounds, max-height/width and overflow get cleared after reveal, and reset before collapse.
 */
-  propTypes: {
-    animationDisabled: React.PropTypes.bool,
-    animationDuration: React.PropTypes.number,
-    children: React.PropTypes.node.isRequired,
-    className: React.PropTypes.string,
-    revealWhen: React.PropTypes.bool.isRequired,
-    animateInitialRender: React.PropTypes.bool,
-    isHorizontal: React.PropTypes.bool,
-    onChange: React.PropTypes.func
-  },
+  timers: Array<number>;
+  container: Option<HTMLDivElement>;
 
-  timers: [],
-
-  getInitialState: function() {
-    return {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+    this.state = {
       isAnimating: false,
       isRevealed: this.props.revealWhen
     };
-  },
+    this.timers = [];
+    this.container = null;
+  }
 
-  animationDisabled: function() {
-    const container = this.refs.container;
-    return this.props.animationDisabled || !container ||
-      (!container.parentElement.offsetHeight && !container.parentElement.offsetWidth);
-  },
+  animationDisabled(): boolean {
+    const container = this.container;
+    return Boolean(this.props.animationDisabled || !container ||
+      (container && container.parentElement && !container.parentElement.offsetHeight && !container.parentElement.offsetWidth));
+  }
 
-  setContainerStyle: function(name, value) {
-    if (this.refs.container) {
-      this.refs.container.style[name] = value;
+  setContainerStyle(name: string, value: any): void {
+    if (this.container) {
+      this.container.style[name] = value;
     }
-  },
+  }
 
-  isVertical: function() {
+  isVertical(): boolean {
     return !this.props.isHorizontal;
-  },
+  }
 
-  animationDurationSeconds: function() {
+  animationDurationSeconds(): number {
     return this.props.animationDuration || DEFAULT_DURATION;
-  },
-  animationDurationMilliseconds: function() {
+  }
+
+  animationDurationMilliseconds(): number {
     return this.animationDurationSeconds() * 1000;
-  },
-  after: function(callback) {
+  }
+
+  after(callback: () => void): void {
     if (this.animationDisabled()) {
       callback();
     } else {
@@ -63,8 +83,9 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
         callback();
       }, 1));
     }
-  },
-  afterAnimation: function(callback) {
+  }
+
+  afterAnimation(callback: () => void): void {
     var f = () => {
       callback();
       if (this.props.onChange) {
@@ -76,57 +97,65 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     } else {
       this.timers.push(setTimeout(f, this.animationDurationMilliseconds()));
     }
-  },
+  }
 
-  addTransition: function() {
+  addTransition(): void {
     var propName = this.isVertical() ? 'max-height' : 'max-width';
     this.setContainerStyle("transition", this.animationDisabled() ?
       null : `${propName} ${this.animationDurationSeconds()}s ease`);
-  },
-  removeTransition: function() {
+  }
+
+  removeTransition(): void {
     this.setContainerStyle("transition", null);
-  },
+  }
 
-  setMaxHeight: function(height) {
+  setMaxHeight(height: string): void {
     this.setContainerStyle("maxHeight", height);
-  },
-  setMaxWidth: function(width) {
+  }
+
+  setMaxWidth(width: string): void {
     this.setContainerStyle("maxWidth", width);
-  },
-  setOverflow: function(overflow) {
+  }
+
+  setOverflow(overflow: string): void {
     this.setContainerStyle("overflow", overflow);
-  },
+  }
 
-  setCurrentHeight: function() {
-    var c = this.refs.container;
+  setCurrentHeight(): void {
+    var c = this.container;
     this.setMaxHeight((c ? c.scrollHeight : 0) + 'px');
-  },
-  setNoHeight: function() {
+  }
+
+  setNoHeight(): void {
     this.setMaxHeight('0px');
-  },
-  setAutoHeight: function() {
+  }
+
+  setAutoHeight(): void {
     this.setMaxHeight('none');
-  },
+  }
 
-  setCurrentWidth: function() {
-    var c = this.refs.container;
+  setCurrentWidth(): void {
+    var c = this.container;
     this.setMaxWidth((c ? c.scrollWidth : 0) + 'px');
-  },
-  setNoWidth: function() {
+  }
+
+  setNoWidth(): void {
     this.setMaxWidth('0px');
-  },
-  setAutoWidth: function() {
+  }
+
+  setAutoWidth(): void {
     this.setMaxWidth('none');
-  },
+  }
 
-  setHidden: function() {
+  setHidden(): void {
     this.setContainerStyle("display", 'none');
-  },
-  setVisible: function() {
-    this.setContainerStyle("display", null);
-  },
+  }
 
-  collapse: function() {
+  setVisible(): void {
+    this.setContainerStyle("display", null);
+  }
+
+  collapse(): void {
     this.setState({
       isAnimating: !this.animationDisabled()
     }, () => {
@@ -139,8 +168,9 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
       this.setOverflow('hidden');
       this.after(this.doCollapse);
     });
-  },
-  doCollapse: function() {
+  }
+
+  doCollapse(): void {
     this.addTransition();
     if (this.isVertical()) {
       this.setNoHeight();
@@ -152,15 +182,16 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     }, () => {
       this.afterAnimation(this.finishCollapse);
     });
-  },
-  finishCollapse: function() {
+  }
+
+  finishCollapse(): void {
     this.setHidden();
     this.setState({
       isAnimating: false
     });
-  },
+  }
 
-  reveal: function() {
+  reveal(): void {
     this.setState({
       isAnimating: !this.animationDisabled()
     }, () => {
@@ -177,8 +208,9 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
         this.afterAnimation(this.afterReveal);
       });
     });
-  },
-  afterReveal: function() {
+  }
+
+  afterReveal(): void {
     this.removeTransition();
     if (this.isVertical()) {
       this.setAutoHeight();
@@ -189,9 +221,9 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     this.setState({
       isAnimating: false
     });
-  },
+  }
 
-  componentDidMount: function() {
+  componentDidMount(): void {
     if (this.props.animateInitialRender && this.props.revealWhen) {
       this.reveal();
     } else if (this.props.revealWhen) {
@@ -200,9 +232,9 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
       this.finishCollapse();
     }
     this.addTransition();
-  },
+  }
 
-  componentDidUpdate: function(prevProps) {
+  componentDidUpdate(prevProps: Props): void {
     if (prevProps.revealWhen === this.props.revealWhen) {
       return;
     }
@@ -215,24 +247,30 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
     } else {
       this.collapse();
     }
-  },
+  }
 
-  componentWillUnmount: function() {
+  componentWillUnmount(): void {
     this.timers.forEach((timer) => clearTimeout(timer));
-  },
+  }
 
-  getDefaultStyle: function() {
-    var styles = { overflow: 'hidden' };
+  getDefaultStyle(): CSSProperties {
+    const styles: CSSProperties = {
+      overflow: "hidden"
+    };
     styles[this.isVertical() ? 'maxHeight' : 'maxWidth'] = '0px';
     return styles;
-  },
+  }
 
-  render: function() {
+  elementIsValidElement(el: any): el is ReactElement<ContainingElement> {
+    return el && React.isValidElement(el);
+  }
+
+  render() {
     return (
-      <div ref="container" style={this.getDefaultStyle()} className={this.props.className || ""}>
+      <div ref={(el) => this.container = el} style={this.getDefaultStyle()} className={this.props.className || ""}>
         {React.Children.map(this.props.children, (ea) => {
           // Force children to re-render when animation starts or stops by inserting an extra data attribute
-          if (ea) {
+          if (this.elementIsValidElement(ea)) {
             return React.cloneElement(ea, {
               "data-is-animating": this.state.isAnimating,
               "data-is-revealed": this.state.isRevealed
@@ -244,6 +282,6 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
       </div>
     );
   }
-});
+}
 
 export default Collapsible;

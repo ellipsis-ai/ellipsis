@@ -1,6 +1,6 @@
-import BehaviorVersion from '../../../../app/assets/frontend/models/behavior_version';
+import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
 
-const behaviorVersionTask1 = Object.freeze({
+const behaviorVersionTask1: BehaviorVersionJson = Object.freeze({
   "id": "abcdef",
   "behaviorId": "ghijkl",
   "functionBody": "use strict;",
@@ -22,11 +22,14 @@ const behaviorVersionTask1 = Object.freeze({
       "accessKeyName": "AWS_ACCESS_KEY",
       "secretKeyName": "AWS_SECRET_KEY",
       "regionName": "AWS_REGION"
-    }
+    },
+    isDataType: false,
+    isTest: false
   },
-  "createdAt": 1468338136532
+  "createdAt": 1468338136532,
+  inputIds: []
 });
-const behaviorVersionTask2 = Object.freeze({
+const behaviorVersionTask2: BehaviorVersionJson = Object.freeze({
   "id": "abcdef",
   "groupId": "gsdfgsg",
   "behaviorId": "mnopqr",
@@ -49,11 +52,14 @@ const behaviorVersionTask2 = Object.freeze({
       "accessKeyName": "AWS_ACCESS_KEY",
       "secretKeyName": "AWS_SECRET_KEY",
       "regionName": "AWS_REGION"
-    }
+    },
+    isDataType: false,
+    isTest: false
   },
-  "createdAt": 1468359271138
+  "createdAt": 1468359271138,
+  inputIds: []
 });
-const behaviorVersionKnowledge1 = Object.freeze({
+const behaviorVersionKnowledge1: BehaviorVersionJson = Object.freeze({
   "id": "abcdef",
   "behaviorId": "stuvwx",
   "functionBody": "",
@@ -70,10 +76,14 @@ const behaviorVersionKnowledge1 = Object.freeze({
     "isRegex": false,
     "caseSensitive": false
   }],
-  "config": {},
-  "createdAt": 1466109904858
+  "config": {
+    isDataType: false,
+    isTest: false
+  },
+  "createdAt": 1466109904858,
+  inputIds: []
 });
-const defaultStorageDataType = Object.freeze({
+const defaultStorageDataType: BehaviorVersionJson = Object.freeze({
   id: "abcdef",
   behaviorId: "jfgh",
   name: "myDataType",
@@ -85,7 +95,8 @@ const defaultStorageDataType = Object.freeze({
         name: "field1",
         fieldType: {
           name: "Text",
-          id: "Text"
+          id: "Text",
+          exportId: "Text"
         },
         isLabel: true
       }, {
@@ -94,13 +105,19 @@ const defaultStorageDataType = Object.freeze({
         name: "field2",
         fieldType: {
           name: "Text",
-          id: "Text"
+          id: "Text",
+          exportId: "Text"
         },
         isLabel: false
       }],
       usesCode: false
-    }
-  }
+    },
+    isDataType: true,
+    isTest: false
+  },
+  inputIds: [],
+  triggers: [],
+  functionBody: ""
 });
 
 describe('BehaviorVersion', () => {
@@ -123,8 +140,7 @@ describe('BehaviorVersion', () => {
 
   describe('fromJson/construction', () => {
     it('includes the defined triggers', () => {
-      const data = behaviorVersionTask1;
-      const version = BehaviorVersion.fromJson(data);
+      const version = BehaviorVersion.fromJson(behaviorVersionTask1);
       expect(version.triggers.length).toEqual(2);
       expect(version.triggers.map(ea => ea.text)).toEqual(["B", "C"]);
     });
@@ -205,6 +221,19 @@ describe('BehaviorVersion', () => {
     it('returns a valid GraphQL list query for a default storage data type', () => {
       const dataType = BehaviorVersion.fromJson(defaultStorageDataType);
       expect(dataType.buildGraphQLListQuery()).toEqual(`{ myDataTypeList(filter: {}) { field1 field2 } }`);
+    });
+  });
+
+  describe('getEnvVarNamesInFunction', () => {
+    it('returns the list of unique environment variable names used in the function', () => {
+      const behavior = BehaviorVersion.fromJson(behaviorVersionTask1).clone({
+        functionBody: `const f = ellipsis.env.ONE_ENV_VAR
+const g = ellipsis.env.ANOTHER_ENV_VAR;
+const h = truthy ? (ellipsis.env.ONE_ENV_VAR : ellipsis.env.ANOTHER_ENV_VAR);
+const i = ellipsis.env.lowercaseEnvVarIsInvalid;
+`
+      });
+      expect(behavior.getEnvVarNamesInFunction()).toEqual(['ONE_ENV_VAR', 'ANOTHER_ENV_VAR']);
     });
   });
 });

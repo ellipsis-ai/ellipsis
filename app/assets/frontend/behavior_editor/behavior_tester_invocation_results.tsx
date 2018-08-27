@@ -1,24 +1,33 @@
 import * as React from 'react';
 import InvocationTestResult from '../models/behavior_invocation_result';
 import BehaviorTesterInvocationResult from './behavior_tester_invocation_result';
+import autobind from "../lib/autobind";
 
-const BehaviorTesterInvocationResults = React.createClass({
-    propTypes: {
-      results: React.PropTypes.arrayOf(React.PropTypes.instanceOf(InvocationTestResult)).isRequired,
-      resultStatus: React.PropTypes.node,
-      onRenderResult: React.PropTypes.func
-    },
+interface Props {
+  results: Array<InvocationTestResult>,
+  resultStatus?: any,
+  onRenderResult?: (result: InvocationTestResult) => any
+}
 
-    componentDidUpdate: function(prevProps) {
-      var resultsPane = this.refs.results;
-      var hasScrolled = resultsPane.scrollHeight > resultsPane.clientHeight;
+class BehaviorTesterInvocationResults extends React.Component<Props> {
+  results: Option<HTMLDivElement>;
+
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+    this.results = null;
+  }
+
+  componentDidUpdate(prevProps: Props): void {
+      var resultsPane = this.results;
+      var hasScrolled = resultsPane && resultsPane.scrollHeight > resultsPane.clientHeight;
       var resultsHaveChanged = prevProps.results !== this.props.results;
       if (resultsPane && resultsHaveChanged && hasScrolled) {
         resultsPane.scrollTop = resultsPane.scrollHeight - resultsPane.clientHeight;
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div className="box-help">
           <div className="container phn">
@@ -28,7 +37,7 @@ const BehaviorTesterInvocationResults = React.createClass({
                 {this.props.resultStatus || null}
               </div>
               <div className="column column-three-quarters pll mobile-pln mobile-column-full">
-                <div ref="results" className="type-s" style={{
+                <div ref={(el) => this.results = el} className="type-s" style={{
                   maxHeight: "12rem",
                   overflow: "auto"
                 }}>
@@ -39,9 +48,9 @@ const BehaviorTesterInvocationResults = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderResult: function(result, index) {
+    renderResult(result: InvocationTestResult, index: number) {
       const isMostRecentResult = index + 1 === this.props.results.length;
       return (
         <div
@@ -59,7 +68,7 @@ const BehaviorTesterInvocationResults = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default BehaviorTesterInvocationResults;
 

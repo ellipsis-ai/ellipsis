@@ -47,7 +47,6 @@ describe('BehaviorEditor', () => {
           isDataType: false,
           isTest: false
         },
-        knownEnvVarsUsed: [],
         groupId: '1'
       }
     ],
@@ -142,8 +141,7 @@ describe('BehaviorEditor', () => {
       "responseTemplate": "",
       "inputIds": [],
       "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false }],
-      "config": { "isDataType": false, "isTest": false },
-      "knownEnvVarsUsed": []
+      "config": { "isDataType": false, "isTest": false }
     }],
     "libraryVersions": [],
     "requiredAWSConfigs": [],
@@ -398,7 +396,6 @@ describe('BehaviorEditor', () => {
               isDataType: false,
               isTest: false
             },
-            knownEnvVarsUsed: [],
             groupId: groupId
           },
           {
@@ -412,7 +409,6 @@ describe('BehaviorEditor', () => {
               isDataType: false,
               isTest: false
             },
-            knownEnvVarsUsed: [],
             groupId: groupId
           }
         ].map(ea => BehaviorVersion.fromJson(ea));

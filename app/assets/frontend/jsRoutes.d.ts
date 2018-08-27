@@ -1,10 +1,14 @@
 interface JsRoute {
   url: string,
-  method: string
+  method: "get" | "post",
+  absoluteURL: (https: true) => string
 }
 
 declare var jsRoutes: {
   controllers: {
+    APIAccessController: {
+      linkCustomOAuth2Service: (configId: string, code?: Option<string>, state?: Option<string>, invocationId?: Option<string>, redirect?: Option<string>) => JsRoute
+    },
     APITokenController: {
       listTokens: (tokenId: Option<string>, teamId?: Option<string>) => JsRoute
     },
@@ -30,6 +34,8 @@ declare var jsRoutes: {
       queryDefaultStorage: () => JsRoute,
       save: () => JsRoute,
       saveDefaultStorageItem: () => JsRoute,
+      testInvocation: () => JsRoute,
+      testTriggers: () => JsRoute,
       updateFromGithub: () => JsRoute,
       updateNodeModules: () => JsRoute,
       versionInfoFor: (groupId: string) => JsRoute

@@ -12,7 +12,7 @@ import Page from '../../../../app/assets/frontend/shared_ui/page';
 import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
 import {Component} from "react";
 
-jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test", method: "get" });
+jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test", method: "get", absoluteURL: () => "https://nope/" });
 
 class Loader extends React.Component<SchedulingProps, SchedulingProps> {
   page: Scheduling;

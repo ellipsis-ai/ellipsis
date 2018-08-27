@@ -3,7 +3,13 @@ import Event from '../lib/event';
 import {CSSProperties} from "react";
 import autobind from "../lib/autobind";
 
-interface Props {
+export interface FocusableTextInputInterface {
+  focus: () => void,
+  blur: () => void,
+  select: () => void
+}
+
+export interface FormInputProps {
   autoFocus?: boolean,
   className?: Option<string>,
   style?: CSSProperties,
@@ -24,7 +30,7 @@ interface Props {
   readOnly?: boolean
 }
 
-class FormInput extends React.Component<Props> {
+class FormInput extends React.Component<FormInputProps> implements FocusableTextInputInterface {
   input: Option<HTMLInputElement>;
 
   constructor(props) {
