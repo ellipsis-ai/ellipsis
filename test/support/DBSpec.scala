@@ -203,7 +203,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def newSavedRequiredOAuth2ConfigFor(api: OAuth2Api, groupVersion: BehaviorGroupVersion): RequiredOAuth2ApiConfig = {
-    val data = RequiredOAuthApiConfigData(None, None, api.id, None, "default", None, isOAuth1 = false)
+    val data = RequiredOAuthApiConfigData(None, None, api.id, None, "default", None)
     runNow(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(data, groupVersion)).get
   }
 
