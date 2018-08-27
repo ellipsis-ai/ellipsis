@@ -29,9 +29,9 @@ case class BehaviorGroupExporter(
     groupData.name.getOrElse(""),
     groupData.exportId,
     groupData.icon,
-    groupData.requiredAWSConfigs,
-    groupData.requiredOAuthApiConfigs,
-    groupData.requiredSimpleTokenApis
+    Some(groupData.requiredAWSConfigs),
+    Some(groupData.requiredOAuthApiConfigs),
+    Some(groupData.requiredSimpleTokenApis)
   ).copyForExport
 
   val actionInputs = groupData.actionInputs

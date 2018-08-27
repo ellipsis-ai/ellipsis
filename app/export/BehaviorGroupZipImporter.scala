@@ -82,9 +82,9 @@ case class BehaviorGroupZipImporter(
             maybeGroupName = Some(data.name)
             maybeExportId = data.exportId
             maybeIcon = data.icon
-            requiredAWSConfigData = data.requiredAWSConfigs
-            requiredOAuthApiConfigData = data.requiredOAuthApiConfigs
-            requiredSimpleTokenApiData = data.requiredSimpleTokenApis
+            requiredAWSConfigData = data.requiredAWSConfigs.getOrElse(Seq())
+            requiredOAuthApiConfigData = data.requiredOAuthApiConfigs.getOrElse(Seq())
+            requiredSimpleTokenApiData = data.requiredSimpleTokenApis.getOrElse(Seq())
           }
           case e: JsError =>
         }
