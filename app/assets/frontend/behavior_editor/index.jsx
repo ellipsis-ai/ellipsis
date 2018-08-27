@@ -2128,6 +2128,7 @@ const BehaviorEditor = React.createClass({
               ref={(el) => this.props.onRenderPanel("behaviorTester", el)}
               triggers={this.getBehaviorTriggers()}
               inputs={this.getInputs()}
+              groupId={this.getBehaviorGroup().id}
               behaviorId={this.getSelectedId()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
@@ -2138,6 +2139,7 @@ const BehaviorEditor = React.createClass({
           <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.layoutDidUpdate}>
             <DataTypeTester
               ref={(el) => this.props.onRenderPanel("dataTypeTester", el)}
+              groupId={this.getBehaviorGroup().id}
               behaviorId={this.getSelectedId()}
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}

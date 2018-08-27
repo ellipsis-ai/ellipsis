@@ -3,6 +3,7 @@ import {OAuthApplicationRef, RequiredOAuthApplication} from '../models/oauth';
 import autobind from "../lib/autobind";
 
 interface Props {
+  groupId: string,
   behaviorId: string,
   appsRequiringAuth: Array<RequiredOAuthApplication>
 }
@@ -14,7 +15,7 @@ class TesterAuthRequired extends React.Component<Props> {
   }
 
   renderAuthRequiredFor(config: OAuthApplicationRef) {
-      const editUrl = jsRoutes.controllers.BehaviorEditorController.edit(this.props.behaviorId).absoluteURL(true);
+      const editUrl = jsRoutes.controllers.BehaviorEditorController.edit(this.props.groupId, this.props.behaviorId).absoluteURL(true);
       const url = jsRoutes.controllers.APIAccessController.linkCustomOAuth2Service(config.id, null, null, null, editUrl).absoluteURL(true);
       return (
         <a href={url}>{config.displayName || "(Unnamed)"}</a>

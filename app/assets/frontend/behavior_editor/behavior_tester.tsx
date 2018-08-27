@@ -15,7 +15,8 @@ import autobind from "../lib/autobind";
 interface Props {
   triggers: Array<Trigger>,
   inputs: Array<Input>,
-  behaviorId: Option<string>,
+  groupId: string,
+  behaviorId: string,
   csrfToken: string,
   onDone: () => void,
   appsRequiringAuth: Array<RequiredOAuthApplication>
@@ -269,6 +270,7 @@ class BehaviorTester extends React.Component<Props, State> {
         return (
           <div>
             <TesterAuthRequired
+              groupId={this.props.groupId}
               behaviorId={this.props.behaviorId}
               appsRequiringAuth={this.props.appsRequiringAuth}
             />

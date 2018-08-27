@@ -12,7 +12,8 @@ var MAX_RESULTS_TO_SHOW = 10;
 
 const DataTypeTester = React.createClass({
     propTypes: {
-      behaviorId: React.PropTypes.string,
+      groupId: React.PropTypes.string.isRequired,
+      behaviorId: React.PropTypes.string.isRequired,
       isSearch: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired,
@@ -147,6 +148,7 @@ const DataTypeTester = React.createClass({
       if (this.props.behaviorId && this.props.appsRequiringAuth.length > 0) {
         return (
           <TesterAuthRequired
+            groupId={this.props.groupId}
             behaviorId={this.props.behaviorId}
             appsRequiringAuth={this.props.appsRequiringAuth}
           />
