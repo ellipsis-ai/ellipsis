@@ -16,7 +16,7 @@ const DataTypeTester = React.createClass({
       isSearch: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired,
-      oauthAppsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuthApplication)).isRequired
+      appsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuthApplication)).isRequired
     },
 
     getInitialState: function() {
@@ -144,11 +144,11 @@ const DataTypeTester = React.createClass({
     },
 
     renderContent: function() {
-      if (this.props.behaviorId && this.props.oauthAppsRequiringAuth.length > 0) {
+      if (this.props.behaviorId && this.props.appsRequiringAuth.length > 0) {
         return (
           <TesterAuthRequired
             behaviorId={this.props.behaviorId}
-            oauthAppsRequiringAuth={this.props.oauthAppsRequiringAuth}
+            appsRequiringAuth={this.props.appsRequiringAuth}
           />
         );
       } else {

@@ -2131,7 +2131,7 @@ const BehaviorEditor = React.createClass({
               behaviorId={this.getSelectedId()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
-              oauthAppsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
+              appsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
             />
           </Collapsible>
 
@@ -2142,7 +2142,7 @@ const BehaviorEditor = React.createClass({
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
-              oauthAppsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
+              appsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
             />
           </Collapsible>
 
