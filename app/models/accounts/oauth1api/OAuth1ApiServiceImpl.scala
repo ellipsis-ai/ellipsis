@@ -35,8 +35,12 @@ class OAuth1ApiServiceImpl @Inject() (
 
   import OAuth1ApiQueries._
 
+  def findAction(id: String): DBIO[Option[OAuth1Api]] = {
+    findQuery(id).result.map(_.headOption)
+  }
+
   def find(id: String): Future[Option[OAuth1Api]] = {
-    dataService.run(findQuery(id).result.map(_.headOption))
+    dataService.run(findAction(id))
   }
 
   def allFor(maybeTeam: Option[Team]): Future[Seq[OAuth1Api]] = {

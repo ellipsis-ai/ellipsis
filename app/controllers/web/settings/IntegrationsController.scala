@@ -232,7 +232,7 @@ class IntegrationsController @Inject() (
           }.getOrElse {
             val maybeApplicationData = maybeApplication.map(OAuthApplicationData.from)
             dataService.requiredOAuth1ApiConfigs.maybeCreateFor(
-              RequiredOAuthApiConfigData(None, None, info.apiId, info.maybeScope, nameInCode, maybeApplicationData, isOAuth1 = true),
+              RequiredOAuthApiConfigData(None, None, info.apiId, info.maybeScope, nameInCode, maybeApplicationData),
               groupVersion
             )
           }
@@ -279,7 +279,7 @@ class IntegrationsController @Inject() (
           }.getOrElse {
             val maybeApplicationData = maybeApplication.map(OAuthApplicationData.from)
             dataService.requiredOAuth2ApiConfigs.maybeCreateFor(
-              RequiredOAuthApiConfigData(None, None, info.apiId, info.maybeScope, nameInCode, maybeApplicationData, isOAuth1 = false),
+              RequiredOAuthApiConfigData(None, None, info.apiId, info.maybeScope, nameInCode, maybeApplicationData),
               groupVersion
             )
           }

@@ -8,8 +8,7 @@ case class RequiredOAuthApiConfigData(
                                         apiId: String,
                                         recommendedScope: Option[String],
                                         nameInCode: String,
-                                        config: Option[OAuthApplicationData],
-                                        isOAuth1: Boolean
+                                        config: Option[OAuthApplicationData]
                                       ) {
 
   def copyForExport: RequiredOAuthApiConfigData = {
@@ -26,8 +25,7 @@ object RequiredOAuthApiConfigData {
       required.api.id,
       required.maybeRecommendedScope,
       required.nameInCode,
-      required.maybeApplication.map(OAuthApplicationData.from),
-      required.api.isOAuth1
+      required.maybeApplication.map(OAuthApplicationData.from)
     )
   }
 }

@@ -135,12 +135,16 @@ class BehaviorGroupVersionServiceImpl @Inject() (
       requiredAWSConfigs <- DBIO.sequence(data.requiredAWSConfigs.map { requiredData =>
         dataService.requiredAWSConfigs.createForAction(requiredData, groupVersion)
       })
-      requiredOAuth1ApiConfigs <- DBIO.sequence(data.requiredOAuth1ApiConfigs.map { requiredData =>
-        dataService.requiredOAuth1ApiConfigs.maybeCreateForAction(requiredData, groupVersion)
-      }).map(_.flatten)
-      requiredOAuth2ApiConfigs <- DBIO.sequence(data.requiredOAuth2ApiConfigs.map { requiredData =>
-        dataService.requiredOAuth2ApiConfigs.maybeCreateForAction(requiredData, groupVersion)
-      }).map(_.flatten)
+      requiredOAuth1ApiConfigs <- data.requiredOAuth1ApiConfigsAction(dataService).flatMap { requiredConfigs =>
+        DBIO.sequence(requiredConfigs.map { ea =>
+          dataService.requiredOAuth1ApiConfigs.maybeCreateForAction(ea, groupVersion)
+        })
+      }.map(_.flatten)
+      requiredOAuth2ApiConfigs <- data.requiredOAuth2ApiConfigsAction(dataService).flatMap { requiredConfigs =>
+        DBIO.sequence(requiredConfigs.map { ea =>
+          dataService.requiredOAuth2ApiConfigs.maybeCreateForAction(ea, groupVersion)
+        })
+      }.map(_.flatten)
       requiredSimpleTokenApis <- DBIO.sequence(data.requiredSimpleTokenApis.map { requiredData =>
         dataService.requiredSimpleTokenApis.maybeCreateForAction(requiredData, groupVersion)
       }).map(_.flatten)

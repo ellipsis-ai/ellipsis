@@ -2,13 +2,14 @@ package json
 
 import java.time.OffsetDateTime
 
-import models.accounts.OAuthApplication
+import models.accounts.{OAuthApi, OAuthApplication}
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import services.DataService
 import services.caching.CacheService
+import slick.dbio.DBIO
 import utils.{FuzzyMatchPattern, FuzzyMatchable, SimpleFuzzyMatchPattern}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -56,8 +57,21 @@ case class BehaviorGroupData(
 
   val maybeNonEmptyName: Option[String] = name.map(_.trim).filter(_.nonEmpty)
 
-  val requiredOAuth1ApiConfigs: Seq[RequiredOAuthApiConfigData] = requiredOAuthApiConfigs.filter(_.isOAuth1)
-  val requiredOAuth2ApiConfigs: Seq[RequiredOAuthApiConfigData] = requiredOAuthApiConfigs.filterNot(_.isOAuth1)
+  private def requiredOAuthApiConfigsAction(findFn: String => DBIO[Option[OAuthApi]], dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[RequiredOAuthApiConfigData]] = {
+    DBIO.sequence(requiredOAuthApiConfigs.map { ea =>
+      findFn(ea.apiId).map { maybeApi =>
+        maybeApi.map(_ => ea)
+      }
+    }).map(_.flatten)
+  }
+
+  def requiredOAuth1ApiConfigsAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[RequiredOAuthApiConfigData]] = {
+    requiredOAuthApiConfigsAction(dataService.oauth1Apis.findAction, dataService)
+  }
+
+  def requiredOAuth2ApiConfigsAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Seq[RequiredOAuthApiConfigData]] = {
+    requiredOAuthApiConfigsAction(dataService.oauth2Apis.findAction, dataService)
+  }
 
   def copyForImportableForTeam(team: Team, maybeExistingGroupData: Option[BehaviorGroupData]): BehaviorGroupData = {
     val actionInputsWithIds = actionInputs.map(_.copyWithIdsEnsuredFor(maybeExistingGroupData))
