@@ -1695,7 +1695,11 @@ const BehaviorEditor = React.createClass({
 
   doTestResultRequest: function(numRetries) {
     const MAX_RETRY_COUNT = 4;
-    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(this.getBehaviorGroup().id).url)
+    const behaviorGroupId = this.getBehaviorGroup().id;
+    if (!behaviorGroupId) {
+      return;
+    }
+    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(behaviorGroupId).url)
       .then(json => {
         if (json.shouldRetry) {
           if (numRetries < MAX_RETRY_COUNT) {
@@ -1749,7 +1753,9 @@ const BehaviorEditor = React.createClass({
     window.addEventListener('focus', this.checkForUpdates, false);
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
-    this.loadTestResults();
+    if (this.isExistingGroup()) {
+      this.loadTestResults();
+    }
     if (this.props.showVersions) {
       this.showVersions();
     }
@@ -1836,7 +1842,8 @@ const BehaviorEditor = React.createClass({
         width: window.innerWidth,
         height: window.innerHeight
       },
-      updatingNodeModules: false
+      updatingNodeModules: false,
+      testResults: []
     };
   },
 
@@ -1901,7 +1908,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getSelectedTestResult: function() {
-    return (this.state.testResults || []).find(ea => ea.behaviorVersionId === this.getSelectedBehavior().id);
+    return this.state.testResults.find(ea => ea.behaviorVersionId === this.getSelectedBehavior().id);
   },
 
   renderTestOutput: function(options) {
