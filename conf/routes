@@ -51,11 +51,6 @@ GET         /behavior_test_results/:groupId           @controllers.BehaviorEdito
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
 
-GET         /list_oauth2_apis                         @controllers.OAuth2ApiController.list(teamId: Option[String] ?= None)
-GET         /new_oauth2_api                           @controllers.OAuth2ApiController.newApi(teamId: Option[String] ?= None)
-GET         /edit_oauth2_api/:id                      @controllers.OAuth2ApiController.edit(id: String, teamId: Option[String] ?= None)
-POST        /save_oauth2_api                          @controllers.OAuth2ApiController.save
-
 GET         /list_api_tokens                          @controllers.APITokenController.listTokens(tokenId: Option[String] ?= None, teamId: Option[String] ?= None)
 POST        /create_api_token                         @controllers.APITokenController.createToken
 POST        /revoke_api_token                         @controllers.APITokenController.revokeToken

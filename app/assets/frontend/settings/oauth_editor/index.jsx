@@ -254,6 +254,7 @@ const IntegrationEditor = React.createClass({
             <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
             <input type="hidden" name="id" value={this.props.applicationId} />
             <input type="hidden" name="teamId" value={this.props.teamId} />
+            <input type="hidden" name="isForOAuth1" value={this.isOAuth1()} />
             {this.renderBehaviorGroupId()}
             {this.renderBehaviorId()}
 
