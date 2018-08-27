@@ -1683,25 +1683,27 @@ const BehaviorEditor = React.createClass({
 
   loadTestResults: function() {
     this.resetNotificationsEventually();
-    this.setState({
-      error: null,
-      runningTests: true,
-      testResults: []
-    }, () => {
-      this.doTestResultRequest(0);
-    });
-
+    const behaviorGroupId = this.getBehaviorGroup().id;
+    if (behaviorGroupId) {
+      this.setState({
+        error: null,
+        runningTests: true,
+        testResults: []
+      }, () => {
+        this.doTestResultRequest(behaviorGroupId, 0);
+      });
+    }
   },
 
-  doTestResultRequest: function(numRetries) {
+  doTestResultRequest: function(behaviorGroupId, numRetries) {
     const MAX_RETRY_COUNT = 4;
-    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(this.getBehaviorGroup().id).url)
+    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(behaviorGroupId).url)
       .then(json => {
         if (json.shouldRetry) {
           if (numRetries < MAX_RETRY_COUNT) {
             const newRetryCount = numRetries + 1;
             setTimeout(() => {
-              this.doTestResultRequest(newRetryCount);
+              this.doTestResultRequest(behaviorGroupId, newRetryCount);
             }, Math.pow(2, newRetryCount) * 1000);
           } else {
             throw new Error("Unable to load test results. Try reloading the page in a moment.");
@@ -1836,7 +1838,8 @@ const BehaviorEditor = React.createClass({
         width: window.innerWidth,
         height: window.innerHeight
       },
-      updatingNodeModules: false
+      updatingNodeModules: false,
+      testResults: []
     };
   },
 
@@ -1901,7 +1904,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getSelectedTestResult: function() {
-    return (this.state.testResults || []).find(ea => ea.behaviorVersionId === this.getSelectedBehavior().id);
+    return this.state.testResults.find(ea => ea.behaviorVersionId === this.getSelectedBehavior().id);
   },
 
   renderTestOutput: function(options) {
@@ -2299,17 +2302,17 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.editorScrollPosition : 0;
   },
 
-  onSelect: function(optionalGroupId, id, optionalCallback) {
+  onSelect: function(optionalGroupId, optionalBehaviorId, optionalCallback) {
     var newState = {
       animationDisabled: true,
-      selectedId: id
+      selectedId: optionalBehaviorId
     };
     if (this.windowIsMobile()) {
       newState.behaviorSwitcherVisible = false;
     }
     this.setState(newState, () => {
       if (optionalGroupId) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, id).url);
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, optionalBehaviorId).url);
       }
       var newScrollPosition = this.getEditorScrollPosition();
       window.scrollTo(window.scrollX, typeof(newScrollPosition) === 'number' ? newScrollPosition : 0);

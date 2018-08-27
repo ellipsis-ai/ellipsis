@@ -4,6 +4,7 @@ import EditableName from '../../frontend/behavior_list/editable_name';
 import Editable from '../models/editable';
 import Sort from '../lib/sort';
 import {ReactNode} from "react";
+import {BehaviorSelectCallback} from "./behavior_switcher";
 
 type Props = {
   heading: string,
@@ -11,7 +12,7 @@ type Props = {
   selectedId?: Option<string>,
   onAddNew: () => void,
   addNewLabel?: Option<string>,
-  onSelect: (groupId: string, selectableId: string) => void,
+  onSelect: BehaviorSelectCallback,
   isModified: (Editable) => boolean,
   renderGroupStatus?: () => ReactNode,
   renderEditableStatus?: (Editable) => ReactNode

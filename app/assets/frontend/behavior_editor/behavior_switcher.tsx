@@ -17,6 +17,8 @@ import {ReactNode} from "react";
 import SVGCheckmark from '../svg/checkmark';
 import SVGWarning from '../svg/warning';
 
+export type BehaviorSelectCallback = (optionalGroupId: Option<string>, editableId?: Option<string>, optionalCallback?: Option<() => void>) => void;
+
 interface Props {
   actionBehaviors: Array<BehaviorVersion>,
   dataTypeBehaviors: Array<BehaviorVersion>,
@@ -24,8 +26,8 @@ interface Props {
   tests: Array<BehaviorVersion>,
   nodeModuleVersions: Array<NodeModuleVersion>,
   selectedId?: Option<string>,
-  groupId: string,
-  onSelect: (groupId: string, editableId?: Option<string>) => void,
+  groupId: Option<string>,
+  onSelect: BehaviorSelectCallback,
   addNewAction: () => void,
   addNewDataType: () => void,
   addNewTest: () => void,
