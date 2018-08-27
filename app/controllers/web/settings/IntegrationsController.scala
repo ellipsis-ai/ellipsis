@@ -160,7 +160,7 @@ class IntegrationsController @Inject() (
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             val dataRoute = routes.IntegrationsController.add(maybeTeamId, maybeBehaviorGroupId, maybeBehaviorId, maybeRequiredNameInCode)
-            Ok(views.html.web.settings.oauth2application.edit(viewConfig(Some(teamAccess)), "Add an API configuration", dataRoute))
+            Ok(views.html.web.settings.integrations.edit(viewConfig(Some(teamAccess)), "Add an API configuration", dataRoute))
           }.getOrElse {
             NotFound(s"Team not found: ${maybeTeamId}")
           }
@@ -393,7 +393,7 @@ class IntegrationsController @Inject() (
             _ <- maybeOAuthApplication
           } yield {
             val dataRoute = routes.IntegrationsController.edit(id, maybeTeamId)
-            Ok(views.html.web.settings.oauth2application.edit(viewConfig(Some(teamAccess)), "Edit API configuration", dataRoute))
+            Ok(views.html.web.settings.integrations.edit(viewConfig(Some(teamAccess)), "Edit API configuration", dataRoute))
           }).getOrElse {
             NotFound(
               views.html.error.notFound(
