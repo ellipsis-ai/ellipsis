@@ -3,9 +3,13 @@ package mocks
 import javax.inject.Singleton
 import models.accounts.github.profile.GithubProfileService
 import models.accounts.linkedaccount.LinkedAccountService
+import models.accounts.linkedoauth1token.LinkedOAuth1TokenService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
 import models.accounts.logintoken.LoginTokenService
+import models.accounts.oauth1api.OAuth1ApiService
+import models.accounts.oauth1application.OAuth1ApplicationService
+import models.accounts.oauth1token.OAuth1TokenService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
@@ -24,6 +28,7 @@ import models.behaviors.behaviortestresult.BehaviorTestResultService
 import models.behaviors.behaviorversion.BehaviorVersionService
 import models.behaviors.config.awsconfig.AWSConfigService
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfigService
+import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfigService
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfigService
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApiService
 import models.behaviors.conversations.collectedparametervalue.CollectedParameterValueService
@@ -70,13 +75,17 @@ class MockDataService extends DataService with MockitoSugar {
   val apiTokens = mock[APITokenService]
   val teamEnvironmentVariables = mock[TeamEnvironmentVariableService]
   val invocationTokens = mock[InvocationTokenService]
+  val linkedOAuth1Tokens = mock[LinkedOAuth1TokenService]
   val linkedOAuth2Tokens = mock[LinkedOAuth2TokenService]
   val linkedSimpleTokens = mock[LinkedSimpleTokenService]
+  val oauth1Apis = mock[OAuth1ApiService]
+  val oauth1Applications = mock[OAuth1ApplicationService]
   val oauth2Apis = mock[OAuth2ApiService]
   val oauth2Applications = mock[OAuth2ApplicationService]
   val simpleTokenApis = mock[SimpleTokenApiService]
   val githubProfiles = mock[GithubProfileService]
   val slackBotProfiles = mock[SlackBotProfileService]
+  val oauth1Tokens = mock[OAuth1TokenService]
   val oauth2Tokens = mock[OAuth2TokenService]
   val behaviorGroups = mock[BehaviorGroupService]
   val behaviorGroupVersions = mock[BehaviorGroupVersionService]
@@ -93,6 +102,7 @@ class MockDataService extends DataService with MockitoSugar {
   val messageTriggers = mock[MessageTriggerService]
   val awsConfigs = mock[AWSConfigService]
   val requiredAWSConfigs: RequiredAWSConfigService = mock[RequiredAWSConfigService]
+  val requiredOAuth1ApiConfigs = mock[RequiredOAuth1ApiConfigService]
   val requiredOAuth2ApiConfigs = mock[RequiredOAuth2ApiConfigService]
   val requiredSimpleTokenApis = mock[RequiredSimpleTokenApiService]
   val linkedGithubRepos = mock[LinkedGithubRepoService]

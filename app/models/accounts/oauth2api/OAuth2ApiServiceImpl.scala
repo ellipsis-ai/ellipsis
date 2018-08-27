@@ -40,8 +40,12 @@ class OAuth2ApiServiceImpl @Inject() (
 
   import OAuth2ApiQueries._
 
+  def findAction(id: String): DBIO[Option[OAuth2Api]] = {
+    findQuery(id).result.map(_.headOption)
+  }
+
   def find(id: String): Future[Option[OAuth2Api]] = {
-    dataService.run(findQuery(id).result.map(_.headOption))
+    dataService.run(findAction(id))
   }
 
   def allFor(maybeTeam: Option[Team]): Future[Seq[OAuth2Api]] = {

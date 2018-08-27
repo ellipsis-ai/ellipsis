@@ -136,7 +136,7 @@ class BehaviorGroupServiceImpl @Inject() (
         val behaviorVersions = groupsData.flatMap(_.behaviorVersions)
         val libraryVersions = groupsData.flatMap(_.libraryVersions)
         val requiredAWSConfigs = groupsData.flatMap(_.requiredAWSConfigs)
-        val requiredOAuth2ApiConfigs = groupsData.flatMap(_.requiredOAuth2ApiConfigs)
+        val requiredOAuthApiConfigs = groupsData.flatMap(_.requiredOAuthApiConfigs)
         val requiredSimpleTokenApis = groupsData.flatMap(_.requiredSimpleTokenApis)
         val isManaged = groupsData.exists(_.isManaged)
         val maybeManagedContactData = groupsData.find(_.managedContact.isDefined).flatMap(_.managedContact)
@@ -152,7 +152,7 @@ class BehaviorGroupServiceImpl @Inject() (
           behaviorVersions,
           libraryVersions,
           requiredAWSConfigs,
-          requiredOAuth2ApiConfigs,
+          requiredOAuthApiConfigs,
           requiredSimpleTokenApis,
           gitSHA = None,
           exportId = None,

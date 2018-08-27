@@ -12,7 +12,7 @@ import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/front
 import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
 import ParamType from '../../../../app/assets/frontend/models/param_type';
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
-import {OAuth2ApplicationRef} from '../../../../app/assets/frontend/models/oauth2';
+import {OAuthApplicationRef} from '../../../../app/assets/frontend/models/oauth';
 import {SimpleTokenApiRef} from '../../../../app/assets/frontend/models/simple_token';
 
 jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
@@ -52,7 +52,7 @@ describe('BehaviorEditor', () => {
     ],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     dataTypeInputs: [],
     isManaged: false,
@@ -88,18 +88,30 @@ describe('BehaviorEditor', () => {
       "secretAccessKey": "b",
       "region": "c"
     }],
-    "oauth2Applications": [{
+    "oauthApplications": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "applicationId": "R1-v9CKHTEmaUvgei-GmIg",
+      "scope": "read",
+      "displayName": "Trello"
+    }, {
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
       "scope": "https://www.googleapis.com/auth/calendar",
       "displayName": "Google Calendar"
     }],
-    "oauth2Apis": [{
+    "oauthApis": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "name": "Trello",
+      "newApplicationUrl": "https://trello.com/app-key",
+      "scopeDocumentationUrl": "",
+      "isOAuth1": true
+    }, {
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "name": "Google",
       "requiresAuth": true,
       "newApplicationUrl": "https://console.developers.google.com/apis",
-      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes"
+      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes",
+      "isOAuth1": false
     }],
     "simpleTokenApis": [{
       "apiId": "pivotal-tracker",
@@ -107,7 +119,7 @@ describe('BehaviorEditor', () => {
       "tokenUrl": "https://www.pivotaltracker.com/profile",
       "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
     }],
-    "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
+    "linkedOAuthApplicationIds": ["R1-v9CKHTEmaUvgei-GmIg", "Yy1QcMTcT96tZZmUoYLroQ"],
     onSave: jest.fn(),
     savedAnswers: [],
     onForgetSavedAnswerForInput: jest.fn(),
@@ -133,7 +145,7 @@ describe('BehaviorEditor', () => {
     }],
     "libraryVersions": [],
     "requiredAWSConfigs": [],
-    "requiredOAuth2ApiConfigs": [],
+    "requiredOAuthApiConfigs": [],
     "requiredSimpleTokenApis": [],
     "createdAt": "2017-09-15T11:58:07.36-04:00",
     "author": { "id": "3", userName: "attaboy" },
@@ -164,18 +176,30 @@ describe('BehaviorEditor', () => {
       "secretAccessKey": "b",
       "region": "c"
     }],
-    "oauth2Applications": [{
+    "oauthApplications": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "applicationId": "R1-v9CKHTEmaUvgei-GmIg",
+      "scope": "read",
+      "displayName": "Trello"
+    }, {
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
       "scope": "https://www.googleapis.com/auth/calendar",
       "displayName": "Google Calendar"
     }],
-    "oauth2Apis": [{
+    "oauthApis": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "name": "Trello",
+      "newApplicationUrl": "https://trello.com/app-key",
+      "scopeDocumentationUrl": "",
+      "isOAuth1": true
+    }, {
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "name": "Google",
       "requiresAuth": true,
       "newApplicationUrl": "https://console.developers.google.com/apis",
-      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes"
+      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes",
+      "isOAuth1": false
     }],
     "simpleTokenApis": [{
       "apiId": "pivotal-tracker",
@@ -183,7 +207,7 @@ describe('BehaviorEditor', () => {
       "tokenUrl": "https://www.pivotaltracker.com/profile",
       "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
     }],
-    "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
+    "linkedOAuthApplicationIds": ["R1-v9CKHTEmaUvgei-GmIg", "Yy1QcMTcT96tZZmUoYLroQ"],
     "userId": "3",
     selectedId: "2",
     onSave: jest.fn(),
@@ -204,7 +228,7 @@ describe('BehaviorEditor', () => {
     const props = Object.assign({}, config, {
       group: BehaviorGroup.fromJson(config.group),
       awsConfigs: config.awsConfigs.map(AWSConfigRef.fromJson),
-      oauth2Applications: config.oauth2Applications.map(OAuth2ApplicationRef.fromJson),
+      oauthApplications: config.oauthApplications.map(OAuthApplicationRef.fromJson),
       simpleTokenApis: config.simpleTokenApis.map(SimpleTokenApiRef.fromJson),
       builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson),
       onDeploy: jest.fn(),

@@ -1,19 +1,20 @@
 package json
 
 import controllers.RemoteAssets
-import models.accounts.oauth2api.OAuth2Api
+import models.accounts.OAuthApi
 
-case class OAuth2ApiData(
+case class OAuthApiData(
                           apiId: String,
                           name: String,
                           requiresAuth: Boolean,
                           newApplicationUrl: Option[String],
                           scopeDocumentationUrl: Option[String],
                           iconImageUrl: Option[String],
-                          logoImageUrl: Option[String]
+                          logoImageUrl: Option[String],
+                          isOAuth1: Boolean
                         )
 
-object OAuth2ApiData {
+object OAuthApiData {
   private def maybeIconImageUrlFor(apiName: String, assets: RemoteAssets): Option[String] = {
     if (apiName.toLowerCase.contains("github")) {
       Some(assets.getUrl("images/logos/GitHub-Mark-64px.png"))
@@ -34,15 +35,16 @@ object OAuth2ApiData {
     }
   }
 
-  def from(api: OAuth2Api, assets: RemoteAssets): OAuth2ApiData = {
-    OAuth2ApiData(
+  def from(api: OAuthApi, assets: RemoteAssets): OAuthApiData = {
+    OAuthApiData(
       api.id,
       api.name,
-      api.grantType.requiresAuth,
+      api.requiresAuth,
       api.maybeNewApplicationUrl,
       api.maybeScopeDocumentationUrl,
       this.maybeIconImageUrlFor(api.name, assets),
-      this.maybeLogoImageUrlFor(api.name, assets)
+      this.maybeLogoImageUrlFor(api.name, assets),
+      api.isOAuth1
     )
   }
 }

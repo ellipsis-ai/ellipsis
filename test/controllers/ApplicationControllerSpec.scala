@@ -58,6 +58,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviorParameters.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.messageTriggers.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.requiredAWSConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
+        when(dataService.requiredOAuth1ApiConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
         when(dataService.requiredOAuth2ApiConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
         when(dataService.requiredSimpleTokenApis.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
         when(dataService.teamEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())

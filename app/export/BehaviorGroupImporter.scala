@@ -23,11 +23,12 @@ case class BehaviorGroupImporter(
       group <- maybeExistingGroup.map(Future.successful).getOrElse {
         dataService.behaviorGroups.createFor(data.exportId, team)
       }
+      oauth1Applications <- dataService.oauth1Applications.allUsableFor(team)
       oauth2Applications <- dataService.oauth2Applications.allUsableFor(team)
       _ <- dataService.behaviorGroupVersions.createFor(
         group,
         user,
-        data.copyForNewVersionOf(group).copyWithApiApplicationsIfAvailable(oauth2Applications)
+        data.copyForNewVersionOf(group).copyWithApiApplicationsIfAvailable(oauth1Applications ++ oauth2Applications)
       )
     } yield Some(group)
 

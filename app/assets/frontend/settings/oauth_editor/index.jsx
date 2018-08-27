@@ -14,27 +14,25 @@ const IntegrationEditor = React.createClass({
       apis: React.PropTypes.arrayOf(React.PropTypes.shape({
         apiId: React.PropTypes.string.isRequired,
         name: React.PropTypes.string.isRequired,
-        requiresAuth: React.PropTypes.bool.isRequired,
         newApplicationUrl: React.PropTypes.string,
-        scopeDocumentationUrl: React.PropTypes.string,
         iconImageUrl: React.PropTypes.string,
         logoImageUrl: React.PropTypes.string
       })).isRequired,
+      oauth1CallbackUrl: React.PropTypes.string.isRequired,
+      oauth2CallbackUrl: React.PropTypes.string.isRequired,
+      applicationKey: React.PropTypes.string,
+      applicationSecret: React.PropTypes.string,
+      requiresAuth: React.PropTypes.bool,
       applicationApiId: React.PropTypes.string,
       recommendedScope: React.PropTypes.string,
-      requiredNameInCode: React.PropTypes.string,
-      requiredOAuth2ApiConfigId: React.PropTypes.string,
-      applicationName: React.PropTypes.string,
-      requiresAuth: React.PropTypes.bool,
-      applicationClientId: React.PropTypes.string,
-      applicationClientSecret: React.PropTypes.string,
       applicationScope: React.PropTypes.string,
+      requiredNameInCode: React.PropTypes.string,
+      applicationName: React.PropTypes.string,
       applicationSaved: React.PropTypes.bool,
       applicationShared: React.PropTypes.bool.isRequired,
       applicationCanBeShared: React.PropTypes.bool.isRequired,
       csrfToken: React.PropTypes.string.isRequired,
       teamId: React.PropTypes.string.isRequired,
-      callbackUrl: React.PropTypes.string.isRequired,
       mainUrl: React.PropTypes.string.isRequired,
       applicationId: React.PropTypes.string,
       behaviorGroupId: React.PropTypes.string,
@@ -59,8 +57,8 @@ const IntegrationEditor = React.createClass({
       return {
         applicationApi: this.findApiById(this.props.applicationApiId),
         applicationName: this.props.applicationName || "",
-        applicationClientId: this.props.applicationClientId || "",
-        applicationClientSecret: this.props.applicationClientSecret || "",
+        applicationKey: this.props.applicationKey || "",
+        applicationSecret: this.props.applicationSecret || "",
         applicationScope: this.props.applicationScope || this.props.recommendedScope || "",
         hasNamedApplication: this.props.applicationSaved || false,
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
@@ -69,9 +67,13 @@ const IntegrationEditor = React.createClass({
       };
     },
 
+    getAllApis: function() {
+      return this.props.apis;
+    },
+
     findApiById: function(id) {
       if (id) {
-        var matches = this.props.apis.filter(function(api) { return api.apiId === id; });
+        const matches = this.getAllApis().filter(function(api) { return api.apiId === id; });
         if (matches.length > 0) {
           return matches[0];
         }
@@ -80,7 +82,11 @@ const IntegrationEditor = React.createClass({
     },
 
     getCallbackUrl: function() {
-      return this.props.callbackUrl;
+      if (this.isOAuth1()) {
+        return this.props.oauth1CallbackUrl;
+      } else {
+        return this.props.oauth2CallbackUrl;
+      }
     },
 
     getMainUrl: function() {
@@ -124,7 +130,9 @@ const IntegrationEditor = React.createClass({
         applicationScope: "",
         hasNamedApplication: false,
         shouldRevealApplicationUrl: false,
-        applicationShared: false
+        applicationShared: false,
+        applicationConsumerKey: "",
+        applicationConsumerSecret: ""
       }, function() {
         BrowserUtils.removeQueryParam('apiId');
       });
@@ -160,23 +168,23 @@ const IntegrationEditor = React.createClass({
     },
 
     shouldRevealCallbackUrl: function() {
-      return this.props.requiresAuth || !!(this.state.applicationApi && this.state.applicationApi.requiresAuth);
+      return this.props.requiresAuth || (this.state.applicationApi && this.state.applicationApi.requiresAuth);
     },
 
-    getApplicationClientId: function() {
-      return this.state.applicationClientId;
+    getApplicationKey: function() {
+      return this.state.applicationKey;
     },
 
-    setApplicationClientId: function(value) {
-      this.setState({ applicationClientId: value });
+    setApplicationKey: function(value) {
+      this.setState({ applicationKey: value });
     },
 
-    getApplicationClientSecret: function() {
-      return this.state.applicationClientSecret;
+    getApplicationSecret: function() {
+      return this.state.applicationSecret;
     },
 
-    setApplicationClientSecret: function(value) {
-      this.setState({ applicationClientSecret: value });
+    setApplicationSecret: function(value) {
+      this.setState({ applicationSecret: value });
     },
 
     getApplicationScope: function() {
@@ -187,10 +195,13 @@ const IntegrationEditor = React.createClass({
       this.setState({ applicationScope: value });
     },
 
+    oauthDetailsCanBeSaved: function() {
+      return this.getApplicationKey() && this.getApplicationSecret();
+    },
+
     canBeSaved: function() {
       return !!(
-        this.getApplicationApiName() && this.getApplicationName() &&
-        this.getApplicationClientId() && this.getApplicationClientSecret()
+        this.getApplicationApiName() && this.getApplicationName() && this.oauthDetailsCanBeSaved()
       );
     },
 
@@ -237,7 +248,7 @@ const IntegrationEditor = React.createClass({
     render: function() {
       return (
         <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"}>
-          <form action={jsRoutes.controllers.web.settings.OAuth2ApplicationController.save().url} method="POST" className="flex-row-cascade">
+          <form action={jsRoutes.controllers.web.settings.IntegrationsController.save().url} method="POST" className="flex-row-cascade">
             <CsrfTokenHiddenInput value={this.props.csrfToken} />
             <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
             <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
@@ -327,7 +338,7 @@ const IntegrationEditor = React.createClass({
             <button type="button" key={"apiTypeButton12"} className="button-l mrl mbl" onClick={this.redirectToAWSEditor}>
               <span className="type-black">AWS</span>
           </button>
-            {this.props.apis.map((api, index) => (
+            {this.getAllApis().map((api, index) => (
               <button type="button" key={"apiTypeButton" + index}
                       className="button-l mrl mbl"
                       onClick={this.setApplicationApi.bind(this, api)}
@@ -369,156 +380,190 @@ const IntegrationEditor = React.createClass({
           <p className="mtm mbxl">Set up a new {this.getApplicationApiName()} configuration so your skills can access data from a {this.getApplicationApiName()} account.</p>
 
           <div>
+            {this.renderConfigureApplicationName()}
+            {this.renderConfigureApplicationDetails()}
+          </div>
+        </div>
+      );
+    },
+
+    renderConfigureApplicationName: function() {
+      return (
+        <div>
+          <h4 className="mbn position-relative">
+            <span className="position-hanging-indent">1</span>
+            <span> Enter a name for this configuration</span>
+          </h4>
+          <p className="type-s">
+            <span>If you have multiple configurations for {this.getApplicationApiName()}, e.g. with different scopes, </span>
+            <span>the name should differentiate this one from others.</span>
+          </p>
+
+          <div className="mbxxl columns">
+            <div className="column column-two-thirds">
+              <div>
+                <FormInput
+                  ref={(el) => this.applicationNameInput = el}
+                  name="name"
+                  value={this.getApplicationName()}
+                  placeholder={"e.g. " + this.getApplicationApiName()}
+                  className="form-input-borderless form-input-l type-l"
+                  onChange={this.setApplicationName}
+                  onEnterKey={this.onApplicationNameEnterKey}
+                />
+              </div>
+
+            </div>
+          </div>
+
+          <Collapsible revealWhen={!this.shouldRevealApplicationUrl()}>
+            <div className="mvxl">
+              <button type="button"
+                      className="button-primary"
+                      disabled={this.applicationNameIsEmpty()}
+                      onClick={this.revealApplicationURL}>
+                Continue
+              </button>
+            </div>
+          </Collapsible>
+        </div>
+      );
+    },
+
+    isOAuth1: function() {
+      return this.state.applicationApi && this.state.applicationApi.isOAuth1;
+    },
+
+    renderOAuthDetails: function() {
+      return (
+        <div>
+          <hr className="mvxxxl" />
+
+          <div className="mvm">
             <h4 className="mbn position-relative">
-              <span className="position-hanging-indent">1</span>
-              <span> Enter a name for this configuration</span>
+              <span className="position-hanging-indent">3</span>
+              <span>Paste the key and secret from your {this.getApplicationApiName()} OAuth application</span>
             </h4>
             <p className="type-s">
-              <span>If you have multiple configurations for {this.getApplicationApiName()}, e.g. with different scopes, </span>
-              <span>the name should differentiate this one from others.</span>
+              These values will be generated by {this.getApplicationApiName()} after you’ve saved an application there in step 2.
             </p>
 
-            <div className="mbxxl columns">
-              <div className="column column-two-thirds">
-                <div>
-                  <FormInput
-                    ref={(el) => this.applicationNameInput = el}
-                    name="name"
-                    value={this.getApplicationName()}
-                    placeholder={"e.g. " + this.getApplicationApiName()}
-                    className="form-input-borderless form-input-l type-l"
-                    onChange={this.setApplicationName}
-                    onEnterKey={this.onApplicationNameEnterKey}
-                  />
-                </div>
-
+            <div className="columns mtl">
+              <div className="column column-one-half">
+                <h5 className="mtn">Consumer key or client ID</h5>
+                <FormInput className="form-input-borderless type-monospace"
+                           placeholder="Enter key"
+                           name="key"
+                           value={this.getApplicationKey()}
+                           onChange={this.setApplicationKey}
+                           disableAuto={true}
+                />
+              </div>
+              <div className="column column-one-half">
+                <h5 className="mtn">Consumer or client secret</h5>
+                <FormInput className="form-input-borderless type-monospace"
+                           placeholder="Enter secret"
+                           name="secret"
+                           value={this.getApplicationSecret()}
+                           onChange={this.setApplicationSecret}
+                           disableAuto={true}
+                />
               </div>
             </div>
+          </div>
+        </div>
+      );
+    },
 
+    renderScopeDetails: function() {
+      return (
+        <div>
+          <hr className="mvxxxl" />
 
-            <Collapsible revealWhen={!this.shouldRevealApplicationUrl()}>
-              <div className="mvxl">
-                <button type="button"
-                        className="button-primary"
-                        disabled={this.applicationNameIsEmpty()}
-                        onClick={this.revealApplicationURL}>
-                  Continue
-                </button>
-              </div>
-            </Collapsible>
+          <div className="mvm">
+            <h4 className="mbn position-relative">
+              <span className="position-hanging-indent">4</span>
+              <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
+            </h4>
+            <p className="type-s">
+              This may not be necessary for some APIs.
+            </p>
+            {ifPresent(this.getApplicationApiScopeDocumentationUrl(), url => (
+              <p className="type-s">
+                <span>Use the <a href={url} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
+                <span>the correct value for your configuration.</span>
+              </p>
+            ))}
 
-            <Collapsible revealWhen={this.shouldRevealApplicationUrl()}>
-              <hr className="mvxxxl" />
-
-              <div className="mvm">
-                <h4 className="mbn position-relative">
-                  <span className="position-hanging-indent">2</span>
-                  <span>Register a new OAuth developer application on your {this.getApplicationApiName()} account. </span>
-                  {ifPresent(this.getApplicationApiNewApplicationUrl(), url => (
-                    <a href={url} target="_blank">Go to {this.getApplicationApiName()} ↗︎</a>
-                  ))}
-                </h4>
-                <ul className="type-s list-space-l mvl">
-                  <li>You can set the name and description to whatever you like.</li>
-                  {this.renderCallbackUrl()}
-                  <li>
-                    <div>If there is a homepage, application or other URL option, you can set it to:</div>
-                    <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getMainUrl()} onFocus={this.onFocusExample} />
-                  </li>
-                </ul>
-              </div>
-
-              <hr className="mvxxxl" />
-
-              <div className="mvm">
-                <h4 className="mbn position-relative">
-                  <span className="position-hanging-indent">3</span>
-                  <span>Paste the client ID and client secret from your {this.getApplicationApiName()} OAuth application</span>
-                </h4>
-                <p className="type-s">
-                  These values will be generated by {this.getApplicationApiName()} after you’ve saved an application there in step 2.
-                </p>
-
-                <div className="columns mtl">
-                  <div className="column column-one-half">
-                    <h5 className="mtn">Client ID</h5>
-                    <FormInput className="form-input-borderless type-monospace"
-                           placeholder="Enter identifier"
-                           name="clientId"
-                           value={this.getApplicationClientId()}
-                           onChange={this.setApplicationClientId}
-                           disableAuto={true}
-                    />
-                  </div>
-                  <div className="column column-one-half">
-                    <h5 className="mtn">Client secret</h5>
-                    <FormInput className="form-input-borderless type-monospace"
-                           placeholder="Enter secret"
-                           name="clientSecret"
-                           value={this.getApplicationClientSecret()}
-                           onChange={this.setApplicationClientSecret}
-                           disableAuto={true}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <hr className="mvxxxl" />
-
-              <div className="mvm">
-                <h4 className="mbn position-relative">
-                  <span className="position-hanging-indent">4</span>
-                  <span>Set the scope to specify the kind of access to {this.getApplicationApiName()} data you want.</span>
-                </h4>
-                <p className="type-s">
-                  This may not be necessary for some APIs.
-                </p>
-                {ifPresent(this.getApplicationApiScopeDocumentationUrl(), url => (
-                  <p className="type-s">
-                    <span>Use the <a href={url} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
-                    <span>the correct value for your configuration.</span>
-                  </p>
-                ))}
-
-                <div className="columns">
-                  <div className="column column-one-third">
-                    <FormInput className="form-input-borderless type-monospace"
+            <div className="columns">
+              <div className="column column-one-third">
+                <FormInput className="form-input-borderless type-monospace"
                            name="scope"
                            value={this.getApplicationScope()}
                            onChange={this.setApplicationScope}
                            placeholder="Enter scope value"
                            disableAuto={true}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    },
+
+    renderConfigureApplicationDetails: function() {
+      return (
+        <div>
+          <Collapsible revealWhen={this.shouldRevealApplicationUrl()}>
+            <hr className="mvxxxl" />
+
+            <div className="mvm">
+              <h4 className="mbn position-relative">
+                <span className="position-hanging-indent">2</span>
+                <span>Register a new OAuth developer application on your {this.getApplicationApiName()} account. </span>
+                {ifPresent(this.getApplicationApiNewApplicationUrl(), url => (
+                  <a href={url} target="_blank">Go to {this.getApplicationApiName()} ↗︎</a>
+                ))}
+              </h4>
+              <ul className="type-s list-space-l mvl">
+                <li>You can set the name and description to whatever you like.</li>
+                {this.renderCallbackUrl()}
+                <li>
+                  <div>If there is a homepage, application or other URL option, you can set it to:</div>
+                  <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl" value={this.getMainUrl()} onFocus={this.onFocusExample} />
+                </li>
+              </ul>
+            </div>
+
+            {this.renderOAuthDetails()}
+
+            {this.renderScopeDetails()}
+
+            {ifPresent(this.applicationCanBeShared(), () => (
+              <div className="mvm">
+                <h4 className="mbn position-relative">
+                  <span className="position-hanging-indent">5</span>
+                  <span>Optionally share {this.getApplicationApiName()} with other teams.</span>
+                </h4>
+                <p className="type-s">
+                  This option is available for Ellipsis admins only.
+                </p>
+
+                <div className="columns">
+                  <div className="column column-one-third">
+                    <Checkbox
+                      className="display-block type-s"
+                      onChange={this.onApplicationSharedChange}
+                      checked={this.state.applicationShared}
+                      label="Shared with other teams"
+                      name="isShared"
                     />
                   </div>
                 </div>
               </div>
+            ))}
 
-              {ifPresent(this.applicationCanBeShared(), () => (
-                <div className="mvm">
-                  <h4 className="mbn position-relative">
-                    <span className="position-hanging-indent">5</span>
-                    <span>Optionally share {this.getApplicationApiName()} with other teams.</span>
-                  </h4>
-                  <p className="type-s">
-                    This option is available for Ellipsis admins only.
-                  </p>
-
-                  <div className="columns">
-                    <div className="column column-one-third">
-                      <Checkbox
-                        className="display-block type-s"
-                        onChange={this.onApplicationSharedChange}
-                        checked={this.state.applicationShared}
-                        label="Shared with other teams"
-                        name="isShared"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-            </Collapsible>
-          </div>
+          </Collapsible>
         </div>
       );
     }

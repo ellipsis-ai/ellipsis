@@ -2,7 +2,7 @@ import React from 'react';
 import {testInvocation} from './behavior_test';
 import Input from '../form/input';
 import Collapsible from '../shared_ui/collapsible';
-import {RequiredOAuth2Application} from '../models/oauth2';
+import {RequiredOAuthApplication} from '../models/oauth';
 import TesterAuthRequired from './tester_auth_required';
 import InvocationResults from './behavior_tester_invocation_results';
 import InvocationTestResult from '../models/behavior_invocation_result';
@@ -12,11 +12,12 @@ var MAX_RESULTS_TO_SHOW = 10;
 
 const DataTypeTester = React.createClass({
     propTypes: {
-      behaviorId: React.PropTypes.string,
+      groupId: React.PropTypes.string.isRequired,
+      behaviorId: React.PropTypes.string.isRequired,
       isSearch: React.PropTypes.bool,
       csrfToken: React.PropTypes.string.isRequired,
       onDone: React.PropTypes.func.isRequired,
-      appsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired
+      appsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuthApplication)).isRequired
     },
 
     getInitialState: function() {
@@ -144,10 +145,13 @@ const DataTypeTester = React.createClass({
     },
 
     renderContent: function() {
-      var apps = this.props.appsRequiringAuth;
-      if (this.props.behaviorId && apps.length > 0) {
+      if (this.props.behaviorId && this.props.appsRequiringAuth.length > 0) {
         return (
-          <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
+          <TesterAuthRequired
+            groupId={this.props.groupId}
+            behaviorId={this.props.behaviorId}
+            appsRequiringAuth={this.props.appsRequiringAuth}
+          />
         );
       } else {
         return this.renderTester();

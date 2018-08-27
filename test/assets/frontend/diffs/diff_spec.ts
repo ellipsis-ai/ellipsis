@@ -9,7 +9,7 @@ import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavi
 import {LibraryVersionJson} from "../../../../app/assets/frontend/models/library_version";
 import {InputJson} from "../../../../app/assets/frontend/models/input";
 import {RequiredAWSConfigJson} from "../../../../app/assets/frontend/models/aws";
-import {RequiredOAuth2Application, RequiredOAuth2ApplicationJson} from "../../../../app/assets/frontend/models/oauth2";
+import {RequiredOAuthApplication, RequiredOAuthApplicationJson} from "../../../../app/assets/frontend/models/oauth";
 import {RequiredSimpleTokenApiJson} from "../../../../app/assets/frontend/models/simple_token";
 
 const teamId = 'team123456';
@@ -19,6 +19,7 @@ const libraryId = 'lib123456';
 const inputId = 'input123456';
 const inputId2 = 'input234567';
 const requiredAWSConfigId = 'requiredAWS123456';
+const requiredTrelloConfigId = 'requiredTrello123456';
 const requiredGithubConfigId = 'requiredGithub123456';
 const requiredPivotalTrackerConfigId = 'requiredPivotalTracker123456';
 
@@ -185,7 +186,16 @@ const requiredAWSConfig2: RequiredAWSConfigJson = Object.freeze({
   }
 });
 
-const requiredOAuth2Config1: RequiredOAuth2ApplicationJson = Object.freeze({
+const requiredOAuth1Config1: RequiredOAuthApplicationJson = Object.freeze({
+  id: 'trello123',
+  exportId: requiredTrelloConfigId,
+  apiId: 'trello',
+  nameInCode: 'trello',
+  config: null,
+  recommendedScope: 'read'
+});
+
+const requiredOAuth2Config1: RequiredOAuthApplicationJson = Object.freeze({
   id: 'github123',
   exportId: requiredGithubConfigId,
   apiId: 'github',
@@ -194,7 +204,7 @@ const requiredOAuth2Config1: RequiredOAuth2ApplicationJson = Object.freeze({
   recommendedScope: 'repo'
 });
 
-const requiredOAuth2Config2: RequiredOAuth2ApplicationJson = Object.freeze({
+const requiredOAuth2Config2: RequiredOAuthApplicationJson = Object.freeze({
   id: 'github123',
   exportId: requiredGithubConfigId,
   apiId: 'github',
@@ -203,7 +213,7 @@ const requiredOAuth2Config2: RequiredOAuth2ApplicationJson = Object.freeze({
   recommendedScope: 'repo:readonly'
 });
 
-const requiredOAuth2Config3: RequiredOAuth2ApplicationJson = Object.freeze({
+const requiredOAuth2Config3: RequiredOAuthApplicationJson = Object.freeze({
   id: 'github12345',
   exportId: 'requiredGithubabcdef',
   apiId: 'github',
@@ -236,7 +246,7 @@ const behaviorGroupVersion1: BehaviorGroupJson = Object.freeze({
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion1],
   requiredAWSConfigs: [requiredAWSConfig1],
-  requiredOAuth2ApiConfigs: [requiredOAuth2Config1, requiredOAuth2Config3],
+  requiredOAuthApiConfigs: [requiredOAuth1Config1, requiredOAuth2Config1, requiredOAuth2Config3],
   requiredSimpleTokenApis: [requiredSimpleTokenApi1],
   actionInputs: [actionInput1, actionInput2],
   dataTypeInputs: [],
@@ -259,7 +269,7 @@ const behaviorGroupVersion2: BehaviorGroupJson = Object.freeze({
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion2],
   requiredAWSConfigs: [requiredAWSConfig2],
-  requiredOAuth2ApiConfigs: [requiredOAuth2Config2, requiredOAuth2Config3],
+  requiredOAuthApiConfigs: [requiredOAuth1Config1, requiredOAuth2Config2, requiredOAuth2Config3],
   requiredSimpleTokenApis: [requiredSimpleTokenApi2],
   actionInputs: [actionInputChanged, actionInput2],
   dataTypeInputs: [],
@@ -429,7 +439,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "createdAt": "2018-04-17T10:19:13.74-04:00"
   }],
   "requiredAWSConfigs": [],
-  "requiredOAuth2ApiConfigs": [{
+  "requiredOAuthApiConfigs": [{
     "exportId": "aCJZZ3vgS8eU9BAqhxjz6w-RdG2Wm5DR0m2_4FZXf-yKA-googleCalendar",
     "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
     "recommendedScope": "https://www.googleapis.com/auth/calendar",
@@ -609,7 +619,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "createdAt": "2018-04-16T15:18:27.809-04:00"
   }],
   "requiredAWSConfigs": [],
-  "requiredOAuth2ApiConfigs": [{
+  "requiredOAuthApiConfigs": [{
     "id": "y7d7pXsyScGEYN_lzrB2ow",
     "exportId": "aCJZZ3vgS8eU9BAqhxjz6w-RdG2Wm5DR0m2_4FZXf-yKA-googleCalendar",
     "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
@@ -1037,9 +1047,9 @@ describe('diffs', () => {
       expect(maybeDiff).not.toBeNull();
       const diff = maybeDiff as ModifiedDiff<BehaviorGroup>;
       expect(diff.children.length).toBe(1);
-      const childDiff = diff.children[0] as ModifiedDiff<RequiredOAuth2Application>;
+      const childDiff = diff.children[0] as ModifiedDiff<RequiredOAuthApplication>;
       expect(childDiff).toBeInstanceOf(ModifiedDiff);
-      expect(childDiff.original).toBeInstanceOf(RequiredOAuth2Application);
+      expect(childDiff.original).toBeInstanceOf(RequiredOAuthApplication);
       expect(childDiff.original.config).toBeNull();
       expect(childDiff.modified.config).not.toBeNull();
     });

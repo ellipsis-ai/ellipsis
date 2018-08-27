@@ -1,10 +1,11 @@
 import * as React from 'react';
-import {OAuth2ApplicationRef, RequiredOAuth2Application} from '../models/oauth2';
+import {OAuthApplicationRef, RequiredOAuthApplication} from '../models/oauth';
 import autobind from "../lib/autobind";
 
 interface Props {
+  groupId: string,
   behaviorId: string,
-  appsRequiringAuth: Array<RequiredOAuth2Application>
+  appsRequiringAuth: Array<RequiredOAuthApplication>
 }
 
 class TesterAuthRequired extends React.Component<Props> {
@@ -13,8 +14,8 @@ class TesterAuthRequired extends React.Component<Props> {
     autobind(this);
   }
 
-  renderAuthRequiredFor(config: OAuth2ApplicationRef) {
-      const editUrl = jsRoutes.controllers.BehaviorEditorController.edit(this.props.behaviorId).absoluteURL(true);
+  renderAuthRequiredFor(config: OAuthApplicationRef) {
+      const editUrl = jsRoutes.controllers.BehaviorEditorController.edit(this.props.groupId, this.props.behaviorId).absoluteURL(true);
       const url = jsRoutes.controllers.APIAccessController.linkCustomOAuth2Service(config.id, null, null, null, editUrl).absoluteURL(true);
       return (
         <a href={url}>{config.displayName || "(Unnamed)"}</a>
@@ -24,7 +25,7 @@ class TesterAuthRequired extends React.Component<Props> {
   render() {
       var appConfigs = this.props.appsRequiringAuth
         .map((ea) => ea.config)
-        .filter<OAuth2ApplicationRef>((eaConfig): eaConfig is OAuth2ApplicationRef => Boolean(eaConfig));
+        .filter<OAuthApplicationRef>((eaConfig): eaConfig is OAuthApplicationRef => Boolean(eaConfig));
       var numApps = appConfigs.length;
       if (numApps === 1) {
         return (

@@ -6,7 +6,7 @@ import FormInput from '../form/input';
 import Input from '../models/input';
 import Trigger from '../models/trigger';
 import * as debounce from 'javascript-debounce';
-import {RequiredOAuth2Application} from '../models/oauth2';
+import {RequiredOAuthApplication} from '../models/oauth';
 import TesterAuthRequired from './tester_auth_required';
 import InvocationTestResult from '../models/behavior_invocation_result';
 import InvocationResults from './behavior_tester_invocation_results';
@@ -15,10 +15,11 @@ import autobind from "../lib/autobind";
 interface Props {
   triggers: Array<Trigger>,
   inputs: Array<Input>,
-  behaviorId: Option<string>,
+  groupId: string,
+  behaviorId: string,
   csrfToken: string,
   onDone: () => void,
-  appsRequiringAuth: Array<RequiredOAuth2Application>
+  appsRequiringAuth: Array<RequiredOAuthApplication>
 }
 
 interface State {
@@ -268,7 +269,11 @@ class BehaviorTester extends React.Component<Props, State> {
       if (this.props.behaviorId && apps.length > 0) {
         return (
           <div>
-            <TesterAuthRequired behaviorId={this.props.behaviorId} appsRequiringAuth={apps}/>
+            <TesterAuthRequired
+              groupId={this.props.groupId}
+              behaviorId={this.props.behaviorId}
+              appsRequiringAuth={this.props.appsRequiringAuth}
+            />
 
             <div className="mtxl">
               <button className="mrs" type="button" onClick={this.onDone}>Cancel</button>

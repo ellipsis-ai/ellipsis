@@ -1,12 +1,12 @@
 package controllers
 
-import javax.inject.Inject
-
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
+import javax.inject.Inject
 import models.IDs
+import models.accounts.linkedoauth1token.LinkedOAuth1Token
 import models.accounts.linkedoauth2token.{LinkedOAuth2Token, LinkedOAuth2TokenInfo}
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
@@ -14,8 +14,9 @@ import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
+import play.api.libs.oauth._
 import play.api.libs.ws.WSClient
-import play.api.mvc.{AnyContent, Result}
+import play.api.mvc.{AnyContent, RequestHeader, Result}
 import services.DataService
 import services.caching.CacheService
 
@@ -55,9 +56,10 @@ class APIAccessController @Inject() (
   }
 
   private def resultWithToken(
-                               maybeRedirectAfterAuth: Option[String]
+                                maybeInvocationId: Option[String],
+                                maybeRedirectAfterAuth: Option[String]
                              )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-    request.session.get("invocation-id").flatMap { invocationId =>
+    maybeInvocationId.flatMap { invocationId =>
       maybeResultWithMagicLinkFor(invocationId)
     }.getOrElse {
       val redirect = maybeRedirectAfterAuth.getOrElse {
@@ -73,12 +75,12 @@ class APIAccessController @Inject() (
                             maybeInvocationId: Option[String]
                             )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     val state = IDs.next
-    val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, None, maybeRedirectAfterAuth).absoluteURL(secure = true)
+    val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId, maybeRedirectAfterAuth).absoluteURL(secure = true)
     val maybeRedirect = application.maybeAuthorizationRequestFor(state, redirectParam, ws).map { r =>
       r.uri.toString
     }
     val result = maybeRedirect.map { redirect =>
-      val sessionState = Seq(Some("oauth-state" -> state), maybeInvocationId.map(id => "invocation-id" -> id)).flatten
+      val sessionState = Seq("oauth-state" -> state)
       Redirect(redirect).withSession(sessionState: _*)
     }.getOrElse(BadRequest("Doesn't use authorization code"))
     Future.successful(result)
@@ -97,7 +99,7 @@ class APIAccessController @Inject() (
       val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId, maybeRedirectAfterAuth).absoluteURL(secure = true)
       getToken(code, application, user, redirect).flatMap { maybeLinkedToken =>
         maybeLinkedToken.
-          map(_ => resultWithToken(maybeRedirectAfterAuth)).
+          map(_ => resultWithToken(maybeInvocationId, maybeRedirectAfterAuth)).
           getOrElse(Future.successful(BadRequest("boom")))
       }
     } else {
@@ -124,7 +126,7 @@ class APIAccessController @Inject() (
 
   private def noApplicationResult(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     Future.successful(
-      NotFound(views.html.error.notFound(viewConfig(None), Some("Can't find OAuth2 configuration"), None, None))
+      NotFound(views.html.error.notFound(viewConfig(None), Some("Can't find OAuth configuration"), None, None))
     )
   }
 
@@ -150,6 +152,70 @@ class APIAccessController @Inject() (
         }
       }.getOrElse(noApplicationResult)
     } yield result
+  }
+
+  private def sessionTokenPair(implicit request: RequestHeader): Option[RequestToken] = {
+    for {
+      token <- request.session.get("token")
+      secret <- request.session.get("secret")
+    } yield {
+      RequestToken(token, secret)
+    }
+  }
+
+  def linkCustomOAuth1Service(
+                               applicationId: String,
+                               maybeInvocationId: Option[String],
+                               maybeRedirectAfterAuth: Option[String]
+                             ) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeApplication <- dataService.oauth1Applications.find(applicationId)
+      result <- maybeApplication.map { application =>
+        dataService.teams.find(application.teamId, user).map(_.isDefined).flatMap { isLoggedInToCorrectTeam =>
+          if (application.isShared || isLoggedInToCorrectTeam) {
+            val api = application.api
+            val key = ConsumerKey(application.consumerKey, application.consumerSecret)
+            val scopePart = application.maybeScope.map(scope => s"&scope=$scope").getOrElse("")
+            val authorizationUrlToUse = s"${api.authorizationUrl}?name=Ellipsis${scopePart}"
+            val serviceInfo = ServiceInfo(
+              api.requestTokenUrl,
+              api.accessTokenUrl,
+              authorizationUrlToUse,
+              key
+            )
+            val oauth = OAuth(serviceInfo, use10a=true)
+            request.getQueryString("oauth_verifier").map { verifier =>
+              val tokenPair = sessionTokenPair(request).get
+              oauth.retrieveAccessToken(tokenPair, verifier) match {
+                case Right(t) => {
+                  // We received the authorized tokens in the OAuth object - store it before we proceed
+                  val token = LinkedOAuth1Token(t.token, t.secret, user.id, application)
+                  dataService.linkedOAuth1Tokens.save(token).flatMap { _ =>
+                    resultWithToken(maybeInvocationId, maybeRedirectAfterAuth).map { r =>
+                      r.withSession("token" -> t.token, "secret" -> t.secret)
+                    }
+                  }
+                }
+                case Left(e) => throw e
+              }
+            }.getOrElse {
+              val callbackUrl = routes.APIAccessController.linkCustomOAuth1Service(application.id, maybeInvocationId, maybeRedirectAfterAuth).absoluteURL(secure = true)
+              oauth.retrieveRequestToken(callbackUrl) match {
+                case Right(t) => {
+                  // We received the unauthorized tokens in the OAuth object - store it before we proceed
+                  Future.successful(Redirect(oauth.redirectUrl(t.token)).withSession("token" -> t.token, "secret" -> t.secret))
+                }
+                case Left(e) => throw e
+              }
+            }
+          } else {
+            reAuthFor(request, maybeApplication.map(_.teamId))
+          }
+        }
+      }.getOrElse(noApplicationResult)
+    } yield result
+
   }
 
   def authenticated(message: String) = silhouette.SecuredAction.async { implicit request =>
