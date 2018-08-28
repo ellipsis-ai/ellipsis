@@ -177,8 +177,12 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(saveAction(message))
   }
 
-  def updateNextTriggeredForAction(message: ScheduledMessage): DBIO[ScheduledMessage] = {
-    saveAction(message.withUpdatedNextTriggeredFor(OffsetDateTime.now))
+  def updateForNextRunAction(message: ScheduledMessage): DBIO[ScheduledMessage] = {
+    val updated = message.updatedWithNextRunAfter(OffsetDateTime.now)
+    for {
+      _ <- dataService.recurrences.saveAction(updated.recurrence)
+      updatedMessage <- saveAction(updated)
+    } yield updatedMessage
   }
 
   def maybeCreateWithRecurrenceText(
@@ -236,10 +240,10 @@ class ScheduledMessageServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def delete(scheduledMessage: ScheduledMessage): Future[Option[ScheduledMessage]] = {
+  def deleteAction(scheduledMessage: ScheduledMessage): DBIO[Option[ScheduledMessage]] = {
     // recurrence deletes cascade to scheduled behaviors
     for {
-      didDelete <- dataService.recurrences.delete(scheduledMessage.recurrence.id)
+      didDelete <- dataService.recurrences.deleteAction(scheduledMessage.recurrence.id)
     } yield {
       if (didDelete) {
         Some(scheduledMessage)
@@ -247,5 +251,9 @@ class ScheduledMessageServiceImpl @Inject() (
         None
       }
     }
+  }
+
+  def delete(scheduledMessage: ScheduledMessage): Future[Option[ScheduledMessage]] = {
+    dataService.run(deleteAction(scheduledMessage))
   }
 }

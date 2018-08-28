@@ -13,6 +13,8 @@ case class RawRecurrence(
                           id: String,
                           recurrenceType: String,
                           frequency: Int,
+                          timesHasRun: Int,
+                          maybeTotalTimesToRun: Option[Int],
                           maybeTimeOfDay: Option[LocalTime],
                           maybeTimeZone: Option[ZoneId],
                           maybeMinuteOfHour: Option[Int],
@@ -68,11 +70,15 @@ class RecurrencesTable(tag: Tag) extends Table[RawRecurrence](tag, "recurrences"
   def maybeDayOfMonth = column[Option[Int]]("day_of_month")
   def maybeNthDayOfWeek = column[Option[Int]]("nth_day_of_week")
   def maybeMonth = column[Option[Int]]("month")
+  def maybeTotalTimesToRun = column[Option[Int]]("total_times_to_run")
+  def timesHasRun = column[Int]("times_has_run")
 
   def * = (
     id,
     recurrenceType,
     frequency,
+    timesHasRun,
+    maybeTotalTimesToRun,
     maybeTimeOfDay,
     maybeTimeZone,
     maybeMinuteOfHour,
@@ -110,17 +116,28 @@ class RecurrenceServiceImpl @Inject() (
     raw.copy(maybeTimeOfDay = raw.maybeTimeOfDay.map(_.plusNanos(1)))
   }
 
-  def save(recurrence: Recurrence): Future[Recurrence] = {
-    val raw = ensureAfterMinTimeOfDay(recurrence.toRaw)
-    val query = all.filter(_.id === raw.id)
-    val action = query.result.flatMap { r =>
+  private def resetTimesHasRunIfTimesToRunUpdated(existing: RawRecurrence, updated: RawRecurrence): RawRecurrence = {
+    if (updated.maybeTotalTimesToRun == existing.maybeTotalTimesToRun) {
+      updated
+    } else {
+      updated.copy(timesHasRun = 0)
+    }
+  }
+
+  def saveAction(recurrence: Recurrence): DBIO[Recurrence] = {
+    val newRawRecurrence = ensureAfterMinTimeOfDay(recurrence.toRaw)
+    val query = all.filter(_.id === newRawRecurrence.id)
+    query.result.flatMap { r =>
       r.headOption.map { existing =>
-        query.update(raw)
+        query.update(resetTimesHasRunIfTimesToRunUpdated(existing, newRawRecurrence))
       }.getOrElse {
-        all += raw
+        all += newRawRecurrence
       }
     }.map { _ => recurrence }
-    dataService.run(action)
+  }
+
+  def save(recurrence: Recurrence): Future[Recurrence] = {
+    dataService.run(saveAction(recurrence))
   }
 
   def maybeCreateFromText(text: String, defaultTimeZone: ZoneId): Future[Option[Recurrence]] = {
@@ -129,9 +146,12 @@ class RecurrenceServiceImpl @Inject() (
     }.getOrElse(Future.successful(None))
   }
 
+  def deleteAction(recurrenceId: String): DBIO[Boolean] = {
+    findRawQuery(recurrenceId).delete.map(r => r > 0)
+  }
+
   def delete(recurrenceId: String): Future[Boolean] = {
-    val action = findRawQuery(recurrenceId).delete.map(r => r > 0)
-    dataService.run(action)
+    dataService.run(deleteAction(recurrenceId))
   }
 
 }
