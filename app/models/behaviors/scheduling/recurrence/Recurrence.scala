@@ -622,7 +622,14 @@ object Recurrence {
     text.trim match {
       case runOnceRegex() => Some(1)
       case runTwiceRegex() => Some(2)
-      case runNTimesRegex(n) => Some(n.toInt)
+      case runNTimesRegex(n) => {
+        val asInt = n.toInt
+        if (asInt > 0) {
+          Some(asInt)
+        } else {
+          None
+        }
+      }
       case _ => None
     }
   }
