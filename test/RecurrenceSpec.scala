@@ -462,6 +462,23 @@ class RecurrenceSpec extends PlaySpec {
     }
   }
 
+  "Any Recurrence shouldRunAgainAfterNextRun" should {
+    "return true if there is no times to run set" in {
+      Minutely(IDs.next, 1, 0, None).shouldRunAgainAfterNextRun mustBe true
+    }
+
+    "return true if there is at least one more run after the next" in {
+      Minutely(IDs.next, 1, 0, Some(2)).shouldRunAgainAfterNextRun mustBe true
+      Minutely(IDs.next, 1, 5, Some(10)).shouldRunAgainAfterNextRun mustBe true
+    }
+
+    "return false if there is only one more run or less" in {
+      Minutely(IDs.next, 1, 0, Some(1)).shouldRunAgainAfterNextRun mustBe false
+      Minutely(IDs.next, 1, 99, Some(100)).shouldRunAgainAfterNextRun mustBe false
+      Minutely(IDs.next, 1, 100, Some(100)).shouldRunAgainAfterNextRun mustBe false
+    }
+  }
+
 
 
 }
