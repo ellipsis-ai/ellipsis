@@ -60,9 +60,11 @@ import models.organization.OrganizationService
 import models.team.TeamService
 import org.scalatest.mock.MockitoSugar
 import services.DataService
-import slick.dbio.DBIO
+import slick.dbio.{DBIO, FailureAction, SuccessAction}
 
-import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
+
 
 @Singleton
 class MockDataService extends DataService with MockitoSugar {
@@ -127,7 +129,17 @@ class MockDataService extends DataService with MockitoSugar {
 
   private def dontCallMe = throw new Exception("Don't call me")
 
-  def run[T](action: DBIO[T]): Future[T] = dontCallMe
-  def runNow[T](action: DBIO[T]): T = dontCallMe
-  def runNow[T](future: Future[T]): T = dontCallMe
+  def runNow[T](action: DBIO[T]): T = {
+    runNow(run(action))
+  }
+
+  def runNow[T](future: Future[T]): T = {
+    Await.result(future, 30.seconds)
+  }
+
+  def run[T](action: DBIO[T]): Future[T] = action match {
+    case a: SuccessAction[T] => Future.successful(a.value)
+    case FailureAction(err) => Future.failed(err)
+    case _ => dontCallMe
+  }
 }
