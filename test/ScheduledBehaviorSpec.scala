@@ -235,17 +235,17 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
     }
   }
 
+  // TODO: These tests could be improved by testing the return value of updateOrDeleteScheduleAction
+  // But it's unclear how to get the mock data service to reliably run DBIOActions and convert them into Futures
   "updateOrDeleteScheduleAction" should {
     "update if there is no times to run set on the recurrence" in new TestContext {
       running(app) {
         val behavior = newBehavior(team)
         val sb = newScheduledBehavior(user, behavior, team, recurrence = Minutely(IDs.next, 1, 0, None))
         when(dataService.scheduledBehaviors.updateForNextRunAction(sb)).thenReturn(DBIO.successful(sb))
-        sb.updateOrDeleteScheduleAction(dataService).map { result =>
-          result mustBe DBIO.successful(Some(sb))
-          verify(dataService.scheduledBehaviors, times(1)).updateForNextRunAction(sb)
-          verify(dataService.scheduledBehaviors, times(0)).deleteAction(sb)
-        }
+        sb.updateOrDeleteScheduleAction(dataService)
+        verify(dataService.scheduledBehaviors, times(1)).updateForNextRunAction(sb)
+        verify(dataService.scheduledBehaviors, times(0)).deleteAction(sb)
       }
     }
 
@@ -254,11 +254,9 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val behavior = newBehavior(team)
         val sb = newScheduledBehavior(user, behavior, team, recurrence = Minutely(IDs.next, 1, 0, Some(2)))
         when(dataService.scheduledBehaviors.updateForNextRunAction(sb)).thenReturn(DBIO.successful(sb))
-        sb.updateOrDeleteScheduleAction(dataService).map { result =>
-          result mustBe DBIO.successful(Some(sb))
-          verify(dataService.scheduledBehaviors, times(1)).updateForNextRunAction(sb)
-          verify(dataService.scheduledBehaviors, times(0)).deleteAction(sb)
-        }
+        sb.updateOrDeleteScheduleAction(dataService)
+        verify(dataService.scheduledBehaviors, times(1)).updateForNextRunAction(sb)
+        verify(dataService.scheduledBehaviors, times(0)).deleteAction(sb)
       }
     }
 
@@ -267,11 +265,9 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val behavior = newBehavior(team)
         val sb = newScheduledBehavior(user, behavior, team, recurrence = Minutely(IDs.next, 1, 1, Some(2)))
         when(dataService.scheduledBehaviors.deleteAction(sb)).thenReturn(DBIO.successful(Some(sb)))
-        sb.updateOrDeleteScheduleAction(dataService).map { result =>
-          result mustBe DBIO.successful(None)
-          verify(dataService.scheduledBehaviors, times(0)).updateForNextRunAction(sb)
-          verify(dataService.scheduledBehaviors, times(1)).deleteAction(sb)
-        }
+        sb.updateOrDeleteScheduleAction(dataService)
+        verify(dataService.scheduledBehaviors, times(0)).updateForNextRunAction(sb)
+        verify(dataService.scheduledBehaviors, times(1)).deleteAction(sb)
       }
     }
   }
