@@ -14,6 +14,8 @@ export interface RecurrenceJson {
   id?: Option<string>,
   displayString?: Option<string>,
   frequency: number,
+  timesHasRun: number,
+  totalTimesToRun?: Option<number>,
   typeName: string,
   timeOfDay?: Option<Time>,
   timeZone?: Option<string>,
@@ -32,6 +34,8 @@ class Recurrence implements RecurrenceInterface {
   readonly id: Option<string>;
   readonly displayString: Option<string>;
   readonly frequency: number;
+  readonly timesHasRun: number;
+  readonly totalTimesToRun: Option<number>;
   readonly typeName: string;
   readonly timeOfDay: Option<Time>;
   readonly timeZone: Option<string>;
@@ -48,6 +52,8 @@ class Recurrence implements RecurrenceInterface {
         id: null,
         displayString: "",
         frequency: 1,
+        timesHasRun: 0,
+        totalTimesToRun: null,
         typeName: "",
         timeOfDay: null,
         timeZone: null,
@@ -64,6 +70,8 @@ class Recurrence implements RecurrenceInterface {
         id: { value: initialProps.id, enumerable: true },
         displayString: { value: initialProps.displayString, enumerable: true },
         frequency: { value: initialProps.frequency, enumerable: true },
+        timesHasRun: { value: initialProps.timesHasRun, enumerable: true },
+        totalTimesToRun: { value: initialProps.totalTimesToRun, enumerable: true },
         typeName: { value: initialProps.typeName, enumerable: true },
         timeOfDay: { value: initialProps.timeOfDay, enumerable: true },
         timeZone: { value: initialProps.timeZone, enumerable: true },

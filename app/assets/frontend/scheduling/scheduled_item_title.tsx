@@ -1,31 +1,37 @@
 import * as React from 'react';
 import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction from '../models/scheduled_action';
+import autobind from "../lib/autobind";
 
-const ScheduledItemTitle = React.createClass({
-    propTypes: {
-      scheduledAction: React.PropTypes.instanceOf(ScheduledAction).isRequired,
-      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired
-    },
+interface Props {
+  scheduledAction: ScheduledAction,
+  behaviorGroups: Array<BehaviorGroup>
+}
 
-    getTriggerText: function() {
+class ScheduledItemTitle extends React.PureComponent<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    getTriggerText(): string {
       return this.props.scheduledAction.trigger || "";
-    },
+    }
 
-    hasTriggerText: function() {
-      return !!this.props.scheduledAction.trigger;
-    },
+    hasTriggerText(): boolean {
+      return Boolean(this.props.scheduledAction.trigger);
+    }
 
-    renderTriggerTitle: function() {
+    renderTriggerTitle() {
       return (
         <span>
           <span>Run </span>
           <span className="box-chat mhs type-black">{this.getTriggerText()}</span>
         </span>
       );
-    },
+    }
 
-    renderActionNameTitle: function() {
+    renderActionNameTitle() {
       const skillName = this.props.scheduledAction.getSkillNameFromGroups(this.props.behaviorGroups);
       const actionName = this.props.scheduledAction.getActionNameFromGroups(this.props.behaviorGroups);
       return (
@@ -41,15 +47,15 @@ const ScheduledItemTitle = React.createClass({
           ) : null}
         </span>
       );
-    },
+    }
 
-    render: function() {
+    render() {
       if (this.hasTriggerText()) {
         return this.renderTriggerTitle();
       } else {
         return this.renderActionNameTitle();
       }
     }
-});
+}
 
 export default ScheduledItemTitle;
