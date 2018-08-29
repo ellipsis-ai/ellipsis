@@ -207,6 +207,7 @@ object BehaviorVersionData {
           }
           json = obj ++ Json.obj("responseType" -> Json.toJson(BehaviorResponseTypeData.from(responseType)))
         }
+        case _ =>
       }
     }
     val config = json.validate[BehaviorConfig].get

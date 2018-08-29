@@ -51,6 +51,8 @@ case class SlackMessageSender(
                                maybeResponseUrl: Option[String]
                              ) {
 
+  val maybeThreadTsToUse = maybeConversation.flatMap(_.maybeThreadId).orElse(maybeThreadId)
+
   val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
     if (choices.isEmpty) {
       Seq()
@@ -129,7 +131,8 @@ case class SlackMessageSender(
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
+    val channel = responseType.channelToUseFor(maybeChannelToForce, originatingChannel, channelToUse, maybeThreadTs)
+    val maybeThreadTsToUse = responseType.maybeThreadTsToUseFor(channel, originatingChannel, maybeThreadTs)
     maybeResponseUrlToUse(channel).map { responseUrl =>
       client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral)
     }.getOrElse {
@@ -150,7 +153,7 @@ case class SlackMessageSender(
           iconEmoji = None,
           replaceOriginal = None,
           deleteOriginal = None,
-          threadTs = maybeThreadTs,
+          threadTs = maybeThreadTsToUse,
           replyBroadcast = maybeReplyBroadcast
         ).recover {
           case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
@@ -161,10 +164,6 @@ case class SlackMessageSender(
 
   private def isDirectMessage(channelId: String): Boolean = {
     channelId.startsWith("D")
-  }
-
-  private def isPrivateChannel(channelId: String): Boolean = {
-    channelId.startsWith("G")
   }
 
   private def messageSegmentsFor(formattedText: String): List[String] = {
@@ -181,24 +180,10 @@ case class SlackMessageSender(
   def sendPreamble(formattedText: String, channelToUse: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
-        _ <- if (maybeThreadId.isDefined && maybeConversation.flatMap(_.maybeThreadId).isEmpty) {
-          val channelText = if (isDirectMessage(originatingChannel)) {
-            "the DM channel"
-          } else if (isPrivateChannel(originatingChannel)) {
-            "the private channel"
-          } else {
-            s"<#$originatingChannel>"
-          }
-          postChatMessage(
-            text = s"<@${user}> I've responded back in $channelText.",
-            maybeThreadTs = maybeThreadId
-          )
-        } else {
-          Future.successful({})
-        }
         _ <- if (isDirectMessage(channelToUse) && channelToUse != originatingChannel) {
           postChatMessage(
             s"<@${user}> I've sent you a private message :sleuth_or_spy:",
+            maybeThreadTs = maybeThreadTsToUse,
             maybeChannelToForce = Some(originatingChannel)
           )
         } else {
@@ -236,7 +221,6 @@ case class SlackMessageSender(
         } else {
           None
         }
-        val maybeThreadTsToUse = maybeConversation.flatMap(_.maybeThreadId)
 
         postChatMessage(
           segment,
