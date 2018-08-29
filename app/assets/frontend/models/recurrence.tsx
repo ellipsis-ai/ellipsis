@@ -10,7 +10,7 @@ interface Time {
   minute: number
 }
 
-export type RecurrenceType = "minutely" | "hourly" | "daily" | "weekly" | "monthly" | "monthly_by_day_of_month" | "monthly_by_nth_day_of_week" | "yearly"
+export type RecurrenceType = "minutely" | "hourly" | "daily" | "weekly" | "monthly_by_day_of_month" | "monthly_by_nth_day_of_week" | "yearly"
 
 export interface RecurrenceJson {
   id?: Option<string>,
