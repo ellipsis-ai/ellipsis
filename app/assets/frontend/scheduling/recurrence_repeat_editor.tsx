@@ -88,6 +88,18 @@ class RecurrenceRepeatEditor extends React.Component<Props> {
     }
   }
 
+  getTimesRemaining(): string {
+    const totalTimes = this.props.recurrence.totalTimesToRun;
+    const timesRemaining = totalTimes ?
+      totalTimes - this.props.recurrence.timesHasRun : null;
+    if (timesRemaining && totalTimes && timesRemaining < totalTimes) {
+      return timesRemaining === 1 ?
+        "(1 more time remaining)" : `(${timesRemaining} more times remaining)`;
+    } else {
+      return "";
+    }
+  }
+
   render() {
     return (
       <div>
@@ -155,10 +167,12 @@ class RecurrenceRepeatEditor extends React.Component<Props> {
               placeholder={"1 or more"}
             />
           </div>
-          <div className="align-button">
+          <div className="align-button type-s mrm">
             {this.getTotalTimesUnit()}
           </div>
-
+          <div className="align-button type-disabled type-s">
+            {this.getTimesRemaining()}
+          </div>
         </div>
       </div>
     )
