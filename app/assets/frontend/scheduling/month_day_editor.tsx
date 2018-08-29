@@ -13,14 +13,6 @@ class MonthDayEditor extends React.Component<Props> {
       autobind(this);
     }
 
-    getPrefix(): string {
-      if (this.props.recurrence.typeName === "yearly" && this.props.recurrence.totalTimesToRun === 1) {
-        return "On the";
-      } else {
-        return "Starting on the";
-      }
-    }
-
     getDay(): Option<number> {
       return this.props.recurrence.dayOfMonth;
     }
@@ -50,7 +42,7 @@ class MonthDayEditor extends React.Component<Props> {
     render() {
       return (
         <div>
-          <span className="align-button mrm type-s">{this.getPrefix()}</span>
+          <span className="align-button mrm type-s">On the</span>
           <span className="mrm">
             <DayOfMonthInput value={this.getDay()} onChange={this.onChangeDay} />
           </span>

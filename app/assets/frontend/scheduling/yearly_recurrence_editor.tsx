@@ -16,18 +16,6 @@ class YearlyRecurrenceEditor extends React.Component<Props> {
     render() {
       return (
         <div>
-          {this.props.recurrence.totalTimesToRun === 1 ? null : (
-            <div className="mvm">
-              <FrequencyEditor
-                recurrence={this.props.recurrence}
-                onChange={this.props.onChange}
-                unit="year"
-                units="years"
-                min={1}
-                max={10}
-              />
-            </div>
-          )}
           <div className="mvm">
             <MonthDayEditor
               recurrence={this.props.recurrence}
@@ -42,6 +30,18 @@ class YearlyRecurrenceEditor extends React.Component<Props> {
               teamTimeZoneName={this.props.teamTimeZoneName}
             />
           </div>
+          {this.props.recurrence.totalTimesToRun === 1 ? null : (
+            <div className="mvm">
+              <FrequencyEditor
+                recurrence={this.props.recurrence}
+                onChange={this.props.onChange}
+                unit="year"
+                units="years"
+                min={1}
+                max={10}
+              />
+            </div>
+          )}
         </div>
       );
     }
