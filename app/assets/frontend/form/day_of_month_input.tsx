@@ -1,26 +1,32 @@
 import * as React from 'react';
 import FormInput from '../form/input';
 import DayOfMonth from '../models/day_of_month';
+import autobind from "../lib/autobind";
 
-const DayOfMonthInput = React.createClass({
-    propTypes: {
-      value: React.PropTypes.number,
-      onChange: React.PropTypes.func.isRequired
-    },
+interface Props {
+  value: Option<number>
+  onChange: (newValue: Option<number>) => void
+}
 
-    onChange: function(newValue) {
+class DayOfMonthInput extends React.Component<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    onChange(newValue: string): void {
       this.props.onChange(DayOfMonth.fromString(newValue).value);
-    },
+    }
 
-    getTextValue: function() {
+    getTextValue(): string {
       return new DayOfMonth(this.props.value).toString();
-    },
+    }
 
-    getOrdinalSuffix: function() {
+    getOrdinalSuffix(): string {
       return new DayOfMonth(this.props.value).ordinalSuffix();
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <span>
           <FormInput
@@ -32,6 +38,6 @@ const DayOfMonthInput = React.createClass({
         </span>
       );
     }
-});
+}
 
 export default DayOfMonthInput;

@@ -1,32 +1,33 @@
 import * as React from 'react';
+import DayOfMonthEditor from './day_of_month_editor';
 import FrequencyEditor from './frequency_editor';
-import MonthDayEditor from './month_day_editor';
 import TimeOfDayEditor from './time_of_day_editor';
-import Recurrence from '../models/recurrence';
+import {RecurrenceEditorProps, RecurrenceEditorTimeZoneProps} from "./recurrence_editor";
+import autobind from "../lib/autobind";
 
-const YearlyRecurrenceEditor = React.createClass({
-    propTypes: {
-      recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
-      onChange: React.PropTypes.func.isRequired,
-      teamTimeZone: React.PropTypes.string.isRequired,
-      teamTimeZoneName: React.PropTypes.string.isRequired
-    },
+type Props = RecurrenceEditorProps & RecurrenceEditorTimeZoneProps
 
-    render: function() {
+class MonthlyRecurrenceEditor extends React.Component<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+  render() {
       return (
         <div>
           <div className="mvm">
             <FrequencyEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
-              unit="year"
-              units="years"
+              unit="month"
+              units="months"
               min={1}
-              max={10}
+              max={120}
             />
           </div>
           <div className="mvm">
-            <MonthDayEditor
+            <DayOfMonthEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
             />
@@ -42,6 +43,6 @@ const YearlyRecurrenceEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
-export default YearlyRecurrenceEditor;
+export default MonthlyRecurrenceEditor;
