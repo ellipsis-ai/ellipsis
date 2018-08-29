@@ -243,8 +243,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
         val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
         val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
-        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
+        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
+        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val actionName = "foo"
         when(dataService.behaviorVersions.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
@@ -394,8 +394,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
         val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
         val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
-        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
+        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
+        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val actionName = "foo"
 
@@ -536,8 +536,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
         val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
         val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
-        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
+        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
+        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val actionName = "foo"
 
@@ -559,8 +559,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
       val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
       val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-      val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
-      val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
+      val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
+      val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
       val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
       val actionName = "foo"
 
@@ -581,8 +581,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
         val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
         val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
-        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
+        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
+        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val actionName = "foo"
 
@@ -620,8 +620,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
         val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
         val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
-        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
+        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
+        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val actionName = "foo"
 

@@ -58,7 +58,7 @@ import models.devmodechannel.DevModeChannelService
 import models.environmentvariable.TeamEnvironmentVariableService
 import models.organization.OrganizationService
 import models.team.TeamService
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import services.DataService
 import slick.dbio.DBIO
 
