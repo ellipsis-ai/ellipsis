@@ -1,7 +1,8 @@
 package controllers
 
-import javax.inject.Inject
+import java.time.OffsetDateTime
 
+import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
@@ -141,6 +142,7 @@ class ScheduledActionsController @Inject()(
             behavior = behavior,
             arguments = newArguments,
             recurrence = recurrence,
+            nextSentAt = recurrence.nextAfter(OffsetDateTime.now),
             maybeUser = Some(user),
             team = team,
             maybeChannel = maybeChannel,
@@ -177,6 +179,7 @@ class ScheduledActionsController @Inject()(
             dataService.scheduledMessages.save(original.copy(
               text = trigger,
               recurrence = recurrence,
+              nextSentAt = recurrence.nextAfter(OffsetDateTime.now),
               maybeUser = Some(user),
               team = team,
               maybeChannel = maybeChannel,
