@@ -116,8 +116,13 @@ case class Minutely(id: String, frequency: Int, timesHasRun: Int, maybeTotalTime
   def incrementTimesHasRun: Minutely = copy(timesHasRun = timesHasRun + 1)
 
   override def displayString: String = {
-    val frequencyString = if (frequency == 1) { "minute" } else { s"$frequency minutes" }
-    s"every $frequencyString$timesToRunString"
+    if (maybeTotalTimesToRun.contains(1)) {
+      val frequencyString = if (frequency == 1) { "1 minute" } else { s"$frequency minutes" }
+      s"in $frequencyString, once"
+    } else {
+      val frequencyString = if (frequency == 1) { "minute" } else { s"$frequency minutes" }
+      s"every $frequencyString$timesToRunString"
+    }
   }
 
   val typeName = Minutely.recurrenceType
@@ -155,8 +160,13 @@ case class Hourly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesT
   def incrementTimesHasRun: Hourly = copy(timesHasRun = timesHasRun + 1)
 
   def displayString: String = {
-    val frequencyString = if (frequency == 1) { "hour" } else { s"$frequency hours" }
-    s"every $frequencyString at $minuteOfHour minutes past$timesToRunString"
+    if (maybeTotalTimesToRun.contains(1)) {
+      val frequencyString = if (frequency == 1) { "the next hour" } else { s"$frequency hours" }
+      s"in $frequencyString at $minuteOfHour, once"
+    } else {
+      val frequencyString = if (frequency == 1) {"hour"} else {s"$frequency hours"}
+      s"every $frequencyString at $minuteOfHour minutes past$timesToRunString"
+    }
   }
 
   def isEarlierInHour(when: OffsetDateTime): Boolean = when.getMinute < minuteOfHour
@@ -216,6 +226,8 @@ trait RecurrenceWithTimeOfDay extends Recurrence {
   val secondOfMinute = timeOfDay.getSecond
   val nanosOfSecond = timeOfDay.getNano
 
+  def timeOfDayFormatted = s"${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
+
   // TODO: Someday we may care about locales
   def stringFor(timeZone: ZoneId): String = s"${timeZone.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)}"
 
@@ -235,8 +247,13 @@ case class Daily(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesTo
   def incrementTimesHasRun: Daily = copy(timesHasRun = timesHasRun + 1)
 
   def displayString: String = {
-    val frequencyString = if (frequency == 1) { "day" } else { s"$frequency days" }
-    s"every $frequencyString at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}$timesToRunString"
+    if (maybeTotalTimesToRun.contains(1)) {
+      val frequencyString = if (frequency == 1) {"at"} else {s"in $frequency days, at"}
+      s"$frequencyString $timeOfDayFormatted, once"
+    } else {
+      val frequencyString = if (frequency == 1) {"day"} else {s"$frequency days"}
+      s"every $frequencyString at $timeOfDayFormatted$timesToRunString"
+    }
   }
 
   def isEarlierInDay(when: OffsetDateTime): Boolean = when.toLocalTime.isBefore(timeOfDay)
@@ -323,12 +340,13 @@ case class Weekly(
   }
 
   def displayString: String = {
-    val frequencyString = if (frequency == 1) {
-      daysOfWeekString
+    if (maybeTotalTimesToRun.contains(1)) {
+      val frequencyString = if (frequency == 1) { s"the next $daysOfWeekString" } else { s"in $frequency weeks on each $daysOfWeekString"}
+      s"$frequencyString at $timeOfDayFormatted, once"
     } else {
-      s"$frequency weeks on $daysOfWeekString"
+      val frequencyString = if (frequency == 1) {daysOfWeekString} else {s"$frequency weeks on $daysOfWeekString"}
+      s"every $frequencyString at $timeOfDayFormatted$timesToRunString"
     }
-    s"every $frequencyString at ${Recurrence.timeFormatter.format(timeOfDay)} ${stringFor(timeZone)}$timesToRunString"
   }
 
   def isEarlierTheSameDay(when: OffsetDateTime): Boolean = {
@@ -403,8 +421,14 @@ case class MonthlyByDayOfMonth(id: String, frequency: Int, timesHasRun: Int, may
   def incrementTimesHasRun: MonthlyByDayOfMonth = copy(timesHasRun = timesHasRun + 1)
 
   def displayString: String = {
-    val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
-    s"every $frequencyString on the ${Recurrence.ordinalStringFor(dayOfMonth)} at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}$timesToRunString"
+    val dayOfMonthString = Recurrence.ordinalStringFor(dayOfMonth)
+    if (maybeTotalTimesToRun.contains(1)) {
+      val frequencyString = if (frequency == 1) { "" } else { s"in $frequency months, "}
+      s"${frequencyString}on the $dayOfMonthString of the month at $timeOfDayFormatted, once"
+    } else {
+      val frequencyString = if (frequency == 1) {"month"} else {s"$frequency months"}
+      s"every $frequencyString on the $dayOfMonthString at $timeOfDayFormatted$timesToRunString"
+    }
   }
 
   def isEarlierInMonth(when: OffsetDateTime): Boolean = {
@@ -486,8 +510,14 @@ case class MonthlyByNthDayOfWeek(id: String, frequency: Int, timesHasRun: Int, m
   def incrementTimesHasRun: MonthlyByNthDayOfWeek = copy(timesHasRun = timesHasRun + 1)
 
   def displayString: String = {
-    val frequencyString = if (frequency == 1) { "month" } else { s"$frequency months" }
-    s"every $frequencyString on the ${Recurrence.ordinalStringFor(nth)} ${Recurrence.dayOfWeekNameFor(dayOfWeek)} at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}$timesToRunString"
+    val formattedDayOfWeek = s"${Recurrence.ordinalStringFor(nth)} ${Recurrence.dayOfWeekNameFor(dayOfWeek)}"
+    if (maybeTotalTimesToRun.contains(1)) {
+      val frequencyString = if (frequency == 1) {""} else {s"in $frequency months, "}
+      s"${frequencyString}on the $formattedDayOfWeek of the month at $timeOfDayFormatted, once"
+    } else {
+      val frequencyString = if (frequency == 1) {"month"} else {s"$frequency months"}
+      s"every $frequencyString on the $formattedDayOfWeek at $timeOfDayFormatted$timesToRunString"
+    }
   }
 
   def targetInMonthMatching(when: OffsetDateTime): OffsetDateTime = {
@@ -558,8 +588,14 @@ object MonthlyByNthDayOfWeek {
 case class Yearly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesToRun: Option[Int], monthDay: MonthDay, timeOfDay: LocalTime, timeZone: ZoneId) extends RecurrenceWithTimeOfDay {
 
   def displayString: String = {
-    val frequencyString = if (frequency == 1) { "year" } else { s"$frequency years" }
-    s"every $frequencyString on ${monthDay.format(Recurrence.monthDayFormatter)} at ${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}$timesToRunString"
+    val formattedMonthDay = monthDay.format(Recurrence.monthDayFormatter)
+    if (maybeTotalTimesToRun.contains(1)) {
+      val frequencyString = if (frequency == 1) {""} else {s"in $frequency years, "}
+      s"${frequencyString}on $formattedMonthDay at $timeOfDayFormatted, once"
+    } else {
+      val frequencyString = if (frequency == 1) {"year"} else {s"$frequency years"}
+      s"every $frequencyString on $formattedMonthDay at $timeOfDayFormatted$timesToRunString"
+    }
   }
 
   def copyWithEmptyId: Yearly = copy(id = "")
