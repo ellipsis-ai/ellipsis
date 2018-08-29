@@ -10,13 +10,15 @@ interface Time {
   minute: number
 }
 
+export type RecurrenceType = "minutely" | "hourly" | "daily" | "weekly" | "monthly" | "monthly_by_day_of_month" | "monthly_by_nth_day_of_week" | "yearly"
+
 export interface RecurrenceJson {
   id?: Option<string>,
   displayString?: Option<string>,
   frequency: number,
   timesHasRun: number,
   totalTimesToRun?: Option<number>,
-  typeName: string,
+  typeName: RecurrenceType,
   timeOfDay?: Option<Time>,
   timeZone?: Option<string>,
   timeZoneName?: Option<string>,
@@ -28,7 +30,7 @@ export interface RecurrenceJson {
   daysOfWeek: Array<number>
 }
 
-interface RecurrenceInterface extends RecurrenceJson {}
+export interface RecurrenceInterface extends RecurrenceJson {}
 
 class Recurrence implements RecurrenceInterface {
   readonly id: Option<string>;
@@ -36,7 +38,7 @@ class Recurrence implements RecurrenceInterface {
   readonly frequency: number;
   readonly timesHasRun: number;
   readonly totalTimesToRun: Option<number>;
-  readonly typeName: string;
+  readonly typeName: RecurrenceType;
   readonly timeOfDay: Option<Time>;
   readonly timeZone: Option<string>;
   readonly timeZoneName: Option<string>;
