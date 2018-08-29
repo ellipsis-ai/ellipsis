@@ -17,16 +17,6 @@ class WeeklyRecurrenceEditor extends React.Component<Props> {
       return (
         <div>
           <div className="mvm">
-            <FrequencyEditor
-              recurrence={this.props.recurrence}
-              onChange={this.props.onChange}
-              unit="week"
-              units="weeks"
-              min={1}
-              max={520}
-            />
-          </div>
-          <div className="mvm">
             <WeekdayEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
@@ -40,6 +30,18 @@ class WeeklyRecurrenceEditor extends React.Component<Props> {
               teamTimeZoneName={this.props.teamTimeZoneName}
             />
           </div>
+          {this.props.recurrence.totalTimesToRun === 1 ? null : (
+            <div className="mvm">
+              <FrequencyEditor
+                recurrence={this.props.recurrence}
+                onChange={this.props.onChange}
+                unit="week"
+                units="weeks"
+                min={1}
+                max={520}
+              />
+            </div>
+          )}
         </div>
       );
     }

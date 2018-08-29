@@ -17,16 +17,6 @@ class MonthlyRecurrenceEditor extends React.Component<Props> {
       return (
         <div>
           <div className="mvm">
-            <FrequencyEditor
-              recurrence={this.props.recurrence}
-              onChange={this.props.onChange}
-              unit="month"
-              units="months"
-              min={1}
-              max={120}
-            />
-          </div>
-          <div className="mvm">
             <DayOfMonthEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
@@ -40,6 +30,18 @@ class MonthlyRecurrenceEditor extends React.Component<Props> {
               teamTimeZoneName={this.props.teamTimeZoneName}
             />
           </div>
+          {this.props.recurrence.totalTimesToRun === 1 ? null : (
+            <div className="mvm">
+              <FrequencyEditor
+                recurrence={this.props.recurrence}
+                onChange={this.props.onChange}
+                unit="month"
+                units="months"
+                min={1}
+                max={120}
+              />
+            </div>
+          )}
         </div>
       );
     }

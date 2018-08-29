@@ -157,9 +157,11 @@ class Recurrence implements RecurrenceInterface {
       return new Recurrence(Object.assign({}, this, props));
     }
 
-    becomeMinutely(): Recurrence {
+    becomeMinutely(defaultProps?: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
         typeName: "minutely",
+        timesHasRun: 0,
+        totalTimesToRun: (defaultProps && defaultProps.totalTimesToRun) || this.totalTimesToRun || null,
         timeOfDay: null,
         timeZone: null,
         timeZoneName: null,
@@ -172,10 +174,12 @@ class Recurrence implements RecurrenceInterface {
       });
     }
 
-    becomeHourly(): Recurrence {
+    becomeHourly(defaultProps?: Partial<RecurrenceInterface>): Recurrence {
       const minuteOfHour = typeof this.minuteOfHour === "number" && Number.isInteger(this.minuteOfHour) ? this.minuteOfHour : 0;
       return this.clone({
         typeName: "hourly",
+        timesHasRun: 0,
+        totalTimesToRun: (defaultProps && defaultProps.totalTimesToRun) || this.totalTimesToRun || null,
         minuteOfHour: minuteOfHour,
         timeOfDay: null,
         timeZone: null,
@@ -191,6 +195,8 @@ class Recurrence implements RecurrenceInterface {
     becomeDaily(defaultProps?: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
         typeName: "daily",
+        timesHasRun: 0,
+        totalTimesToRun: (defaultProps && defaultProps.totalTimesToRun) || this.totalTimesToRun || null,
         timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
@@ -203,23 +209,27 @@ class Recurrence implements RecurrenceInterface {
       });
     }
 
-    becomeWeekly(defaultProps): Recurrence {
+    becomeWeekly(defaultProps: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
         typeName: "weekly",
+        timesHasRun: 0,
+        totalTimesToRun: defaultProps.totalTimesToRun || this.totalTimesToRun || null,
         timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
         dayOfMonth: null,
         nthDayOfWeek: null,
         month: null,
-        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
-        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null)
+        timeZone: this.timeZone || defaultProps.timeZone || null,
+        timeZoneName: this.timeZoneName || defaultProps.timeZoneName || null
       });
     }
 
-    becomeMonthlyByDayOfMonth(defaultProps): Recurrence {
+    becomeMonthlyByDayOfMonth(defaultProps: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
         typeName: "monthly_by_day_of_month",
+        timesHasRun: 0,
+        totalTimesToRun: defaultProps.totalTimesToRun || this.totalTimesToRun || null,
         timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
@@ -227,14 +237,18 @@ class Recurrence implements RecurrenceInterface {
         dayOfMonth: this.dayOfMonth || 1,
         daysOfWeek: [],
         month: null,
-        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
-        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null)
+        timeZone: this.timeZone || defaultProps.timeZone || null,
+        timeZoneName: this.timeZoneName || defaultProps.timeZoneName || null
       });
     }
 
-    becomeYearly(defaultProps): Recurrence {
+    becomeYearly(defaultProps: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
+        frequency: defaultProps.frequency || this.frequency || null,
         typeName: "yearly",
+        timesHasRun: 0,
+        totalTimesToRun: (typeof defaultProps.totalTimesToRun === "undefined") ?
+          (this.totalTimesToRun || null) : defaultProps.totalTimesToRun,
         timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
@@ -242,8 +256,8 @@ class Recurrence implements RecurrenceInterface {
         daysOfWeek: [],
         dayOfMonth: this.dayOfMonth || 1,
         month: 1,
-        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
-        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null)
+        timeZone: this.timeZone || defaultProps.timeZone || null,
+        timeZoneName: this.timeZoneName || defaultProps.timeZoneName || null
       });
     }
 

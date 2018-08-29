@@ -14,6 +14,12 @@ class HourlyRecurrenceEditor extends React.Component<RecurrenceEditorProps> {
       return (
         <div>
           <div className="mvm">
+            <MinuteOfHourEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
+            />
+          </div>
+          <div className="mvm">
             <FrequencyEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
@@ -21,12 +27,6 @@ class HourlyRecurrenceEditor extends React.Component<RecurrenceEditorProps> {
               units="hours"
               min={1}
               max={8760}
-            />
-          </div>
-          <div className="mvm">
-            <MinuteOfHourEditor
-              recurrence={this.props.recurrence}
-              onChange={this.props.onChange}
             />
           </div>
         </div>

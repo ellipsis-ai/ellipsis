@@ -39,6 +39,14 @@ import OptionalInt from './optional_int';
       return this.is((int) => int >= 1 && int <= 12);
     }
 
+    valueForJSDate(): Option<number> {
+      if (this.isValid() && typeof this.value === "number") {
+        return this.value - 1;
+      } else {
+        return null;
+      }
+    }
+
     static fromString(string): Month {
       const parsed = string.match(/^(1[0-2]|[1-9])$/);
       const int = super.fromStringWithDefault(parsed ? parsed[1] : "", Month.JANUARY.value);

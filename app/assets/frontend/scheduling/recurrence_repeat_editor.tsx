@@ -43,8 +43,17 @@ class RecurrenceRepeatEditor extends React.Component<Props> {
 
   setTypeYearly(): void {
     this.props.onChange(this.props.recurrence.becomeYearly({
-      timeZone: this.props.teamTimeZone
+      timeZone: this.props.teamTimeZone,
+      totalTimesToRun: null
     }));
+  }
+
+  setTypeOnce(): void {
+    this.props.onChange(this.props.recurrence.becomeYearly({
+      frequency: 1,
+      timeZone: this.props.teamTimeZone,
+      totalTimesToRun: 1
+    }))
   }
 
   toggleTimesToRun(enableTimesToRun: boolean): void {
@@ -70,7 +79,14 @@ class RecurrenceRepeatEditor extends React.Component<Props> {
 
   setTotalTimesToRun(timesToRun: Option<number>): void {
     const totalHasChanged = timesToRun !== this.props.recurrence.totalTimesToRun;
+    const frequency = timesToRun === 1 ? 1 : this.props.recurrence.frequency;
+    let daysOfWeek = this.props.recurrence.daysOfWeek;
+    if (timesToRun && timesToRun < daysOfWeek.length) {
+      daysOfWeek = daysOfWeek.slice(daysOfWeek.length - timesToRun);
+    }
     this.props.onChange(this.props.recurrence.clone({
+      frequency: frequency,
+      daysOfWeek: daysOfWeek,
       totalTimesToRun: timesToRun,
       timesHasRun: totalHasChanged ? 0 : this.props.recurrence.timesHasRun
     }));
@@ -100,46 +116,9 @@ class RecurrenceRepeatEditor extends React.Component<Props> {
     }
   }
 
-  render() {
-    return (
-      <div>
-        <div className="mvm">
-          <div className="align-button type-s mrm">Interval</div>
-          <div className="align-button mrm">
-            <ToggleGroup className="form-toggle-group-s">
-              <ToggleGroupItem
-                onClick={this.setTypeMinutely}
-                activeWhen={this.props.recurrence.typeName === "minutely"}
-                label="Minutely"
-              />
-              <ToggleGroupItem
-                onClick={this.setTypeHourly}
-                activeWhen={this.props.recurrence.typeName === "hourly"}
-                label="Hourly"
-              />
-              <ToggleGroupItem
-                onClick={this.setTypeDaily}
-                activeWhen={this.props.recurrence.typeName === "daily"}
-                label="Daily"
-              />
-              <ToggleGroupItem
-                onClick={this.setTypeWeekly}
-                activeWhen={this.props.recurrence.typeName === "weekly"}
-                label="Weekly"
-              />
-              <ToggleGroupItem
-                onClick={this.setTypeMonthly}
-                activeWhen={this.props.recurrence.typeName.indexOf("monthly_by_day_of_month") === 0}
-                label="Monthly"
-              />
-              <ToggleGroupItem
-                onClick={this.setTypeYearly}
-                activeWhen={this.props.recurrence.typeName === "yearly"}
-                label="Yearly"
-              />
-            </ToggleGroup>
-          </div>
-        </div>
+  renderRepeatLimit() {
+    if (this.props.recurrence.typeName !== "yearly") {
+      return (
         <div className="mvm">
           <div className="align-button mrm type-s">
             How many times
@@ -174,6 +153,58 @@ class RecurrenceRepeatEditor extends React.Component<Props> {
             {this.getTimesRemaining()}
           </div>
         </div>
+      );
+    } else {
+      return null;
+    }
+  }
+
+  render() {
+    return (
+      <div>
+        <div className="mvm">
+          <div className="align-button type-s mrm">Interval</div>
+          <div className="align-button mrm">
+            <ToggleGroup className="form-toggle-group-s">
+              <ToggleGroupItem
+                activeWhen={this.props.recurrence.typeName === "yearly" && this.props.recurrence.totalTimesToRun === 1}
+                label={"Single date/time"}
+                onClick={this.setTypeOnce}
+              />
+              <ToggleGroupItem
+                onClick={this.setTypeMinutely}
+                activeWhen={this.props.recurrence.typeName === "minutely"}
+                label="Minutely"
+              />
+              <ToggleGroupItem
+                onClick={this.setTypeHourly}
+                activeWhen={this.props.recurrence.typeName === "hourly"}
+                label="Hourly"
+              />
+              <ToggleGroupItem
+                onClick={this.setTypeDaily}
+                activeWhen={this.props.recurrence.typeName === "daily"}
+                label="Daily"
+              />
+              <ToggleGroupItem
+                onClick={this.setTypeWeekly}
+                activeWhen={this.props.recurrence.typeName === "weekly"}
+                label="Weekly"
+              />
+              <ToggleGroupItem
+                onClick={this.setTypeMonthly}
+                activeWhen={this.props.recurrence.typeName.indexOf("monthly") === 0}
+                label="Monthly"
+              />
+              <ToggleGroupItem
+                onClick={this.setTypeYearly}
+                activeWhen={this.props.recurrence.typeName === "yearly" && this.props.recurrence.totalTimesToRun !== 1}
+                label="Yearly"
+              />
+            </ToggleGroup>
+          </div>
+        </div>
+        {this.renderRepeatLimit()}
       </div>
     )
   }
