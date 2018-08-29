@@ -73,9 +73,13 @@ sealed trait Recurrence {
       if (timesToRun == 1) {
         ", one time"
       } else if (timesToRun > 1 && timesRemaining == 1) {
-        ", for the last time"
+        s", for the last time (out of ${timesToRun} total)"
       } else if (timesRemaining > 1) {
-        s", for ${timesToRun} more times"
+        if (timesRemaining < timesToRun) {
+          s", for ${timesRemaining} more times (out of ${timesToRun} total)"
+        } else {
+          s", for ${timesToRun} times"
+        }
       } else {
         ""
       }
