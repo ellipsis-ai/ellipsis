@@ -1,62 +1,73 @@
 import * as React from 'react';
 import ToggleGroup from '../form/toggle_group';
-import Recurrence from '../models/recurrence';
+import Recurrence, {RecurrenceInterface, RecurrenceType} from '../models/recurrence';
 import MinutelyRecurrenceEditor from './minutely_recurrence_editor';
 import HourlyRecurrenceEditor from './hourly_recurrence_editor';
 import DailyRecurrenceEditor from './daily_recurrence_editor';
 import WeeklyRecurrenceEditor from './weekly_recurrence_editor';
 import MonthlyRecurrenceEditor from './monthly_recurrence_editor';
 import YearlyRecurrenceEditor from './yearly_recurrence_editor';
+import autobind from "../lib/autobind";
 
-const RecurrenceEditor = React.createClass({
-    propTypes: {
-      recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
-      onChange: React.PropTypes.func.isRequired,
-      teamTimeZone: React.PropTypes.string.isRequired,
-      teamTimeZoneName: React.PropTypes.string.isRequired
-    },
+export interface RecurrenceEditorProps {
+  recurrence: Recurrence,
+  onChange: (recurrence: Recurrence) => void,
+}
 
-    typeMatches: function(typeName) {
+export interface RecurrenceEditorTimeZoneProps {
+  teamTimeZone: string,
+  teamTimeZoneName: string
+}
+
+type Props = RecurrenceEditorProps & RecurrenceEditorTimeZoneProps
+
+class RecurrenceEditor extends React.Component<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    typeMatches(typeName: RecurrenceType): boolean {
       return this.props.recurrence.typeName.indexOf(typeName) === 0;
-    },
+    }
 
-    set: function(newProps) {
+    set(newProps: Partial<RecurrenceInterface>): void {
       this.props.onChange(this.props.recurrence.clone(newProps));
-    },
+    }
 
-    setTypeMinutely: function() {
+    setTypeMinutely(): void {
       this.props.onChange(this.props.recurrence.becomeMinutely());
-    },
+    }
 
-    setTypeHourly: function() {
+    setTypeHourly(): void {
       this.props.onChange(this.props.recurrence.becomeHourly());
-    },
+    }
 
-    setTypeDaily: function() {
+    setTypeDaily(): void {
       this.props.onChange(this.props.recurrence.becomeDaily({
         timeZone: this.props.teamTimeZone
       }));
-    },
+    }
 
-    setTypeWeekly: function() {
+    setTypeWeekly(): void {
       this.props.onChange(this.props.recurrence.becomeWeekly({
         timeZone: this.props.teamTimeZone
       }));
-    },
+    }
 
-    setTypeMonthly: function() {
+    setTypeMonthly(): void {
       this.props.onChange(this.props.recurrence.becomeMonthlyByDayOfMonth({
         timeZone: this.props.teamTimeZone
       }));
-    },
+    }
 
-    setTypeYearly: function() {
+    setTypeYearly(): void {
       this.props.onChange(this.props.recurrence.becomeYearly({
         timeZone: this.props.teamTimeZone
       }));
-    },
+    }
 
-    renderRecurrenceEditorForType: function() {
+    renderRecurrenceEditorForType() {
       if (this.typeMatches("yearly")) {
         return (
           <YearlyRecurrenceEditor recurrence={this.props.recurrence}
@@ -98,9 +109,9 @@ const RecurrenceEditor = React.createClass({
           <MinutelyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange}/>
         );
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <div className="mvm">
@@ -147,6 +158,6 @@ const RecurrenceEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default RecurrenceEditor;

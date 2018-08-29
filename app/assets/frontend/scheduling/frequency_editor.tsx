@@ -1,38 +1,42 @@
 import * as React from 'react';
 import FormInput from '../form/input';
 import OptionalInt from '../models/optional_int';
-import Recurrence from '../models/recurrence';
+import {RecurrenceEditorProps} from "./recurrence_editor";
+import autobind from "../lib/autobind";
 
-const FrequencyEditor = React.createClass({
-    propTypes: {
-      recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
-      onChange: React.PropTypes.func.isRequired,
-      unit: React.PropTypes.string.isRequired,
-      units: React.PropTypes.string.isRequired,
-      min: React.PropTypes.number.isRequired,
-      max: React.PropTypes.number.isRequired
-    },
+type Props = RecurrenceEditorProps & {
+  unit: string,
+  units: string,
+  min: number,
+  max: number
+}
 
-    getFrequency: function() {
+class FrequencyEditor extends React.Component<Props> {
+  constructor(props) {
+    super(props);
+    autobind(this);
+  }
+
+    getFrequency(): Option<number> {
       return this.props.recurrence.frequency;
-    },
+    }
 
-    getTextValue: function() {
+    getTextValue(): string {
       return new OptionalInt(this.getFrequency()).toString();
-    },
+    }
 
-    getUnit: function() {
+    getUnit(): string {
       return this.getFrequency() === 1 ? this.props.unit : this.props.units;
-    },
+    }
 
-    onChange: function(newValue) {
+    onChange(newValue: string): void {
       const newFrequency = OptionalInt.fromString(newValue).valueWithinRange(this.props.min, this.props.max);
       this.props.onChange(this.props.recurrence.clone({
         frequency: newFrequency
       }));
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <span className="align-button mrm type-s">Every</span>
@@ -45,6 +49,6 @@ const FrequencyEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default FrequencyEditor;

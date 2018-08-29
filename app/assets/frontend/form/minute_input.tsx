@@ -1,22 +1,28 @@
 import * as React from 'react';
 import FormInput from '../form/input';
 import Minute from '../models/minute';
+import autobind from "../lib/autobind";
 
-const MinuteInput = React.createClass({
-    propTypes: {
-      value: React.PropTypes.number,
-      onChange: React.PropTypes.func.isRequired
-    },
+interface Props {
+  value: Option<number>,
+  onChange: (newValue: Option<number>) => void
+}
 
-    getTextValue: function() {
+class MinuteInput extends React.Component<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    getTextValue() {
       return new Minute(this.props.value).toString();
-    },
+    }
 
-    onChange: function(newValue) {
+    onChange(newValue: string) {
       this.props.onChange(Minute.fromString(newValue).value);
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <span>
           <span className="align-button">:</span>
@@ -28,6 +34,6 @@ const MinuteInput = React.createClass({
         </span>
       );
     }
-});
+}
 
 export default MinuteInput;

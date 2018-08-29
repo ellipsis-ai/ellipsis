@@ -2,41 +2,44 @@ import * as React from 'react';
 import DayOfMonthInput from '../form/day_of_month_input';
 import Select from '../form/select';
 import Month from '../models/month';
-import Recurrence from '../models/recurrence';
+import {RecurrenceEditorProps} from "./recurrence_editor";
+import autobind from "../lib/autobind";
 
-const MonthDayEditor = React.createClass({
-    propTypes: {
-      recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
-      onChange: React.PropTypes.func.isRequired
-    },
+type Props = RecurrenceEditorProps
 
-    getDay: function() {
+class MonthDayEditor extends React.Component<Props> {
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
+
+    getDay(): Option<number> {
       return this.props.recurrence.dayOfMonth;
-    },
+    }
 
-    getMonth: function() {
+    getMonth(): Option<number> {
       return this.props.recurrence.month;
-    },
+    }
 
-    getMonthText: function() {
+    getMonthText(): string {
       return new Month(this.props.recurrence.month).toString();
-    },
+    }
 
-    onChangeDay: function(newDay) {
+    onChangeDay(newDay: Option<number>) {
       this.props.onChange(this.props.recurrence.clone({
-        dayOfMonth: new Month(this.getMonth()).limitDaytoMax(newDay)
+        dayOfMonth: newDay ? new Month(this.getMonth()).limitDaytoMax(newDay) : null
       }));
-    },
+    }
 
-    onChangeMonth: function(newMonthText) {
+    onChangeMonth(newMonthText: string) {
       const newMonth = Month.fromString(newMonthText);
       this.props.onChange(this.props.recurrence.clone({
         month: newMonth.value,
         dayOfMonth: newMonth.limitDaytoMax(this.getDay())
       }));
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <span className="align-button mrm type-s">On the</span>
@@ -54,6 +57,6 @@ const MonthDayEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default MonthDayEditor;

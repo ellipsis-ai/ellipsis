@@ -5,120 +5,144 @@ import MinuteInput from '../form/minute_input';
 import TimeZoneSelector from '../time_zone/time_zone_selector';
 import Hour from '../models/hour';
 import ToggleGroup from '../form/toggle_group';
-import Recurrence from '../models/recurrence';
+import {RecurrenceEditorProps, RecurrenceEditorTimeZoneProps} from "./recurrence_editor";
+import autobind from "../lib/autobind";
 
-const TimeOfDayEditor = React.createClass({
-    propTypes: {
-      recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
-      onChange: React.PropTypes.func.isRequired,
-      teamTimeZone: React.PropTypes.string.isRequired,
-      teamTimeZoneName: React.PropTypes.string.isRequired
-    },
+type Props = RecurrenceEditorProps & RecurrenceEditorTimeZoneProps
 
-    getInitialState: function() {
+interface State {
+  showTimeZones: boolean
+}
+
+class TimeOfDayEditor extends React.Component<Props, State> {
+    lastValidHour: Option<number>;
+    timeZoneSelector: Option<TimeZoneSelector>;
+
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+      this.state = this.defaultState();
+      this.lastValidHour = null;
+    }
+
+    defaultState(): State {
       return {
         showTimeZones: false
       };
-    },
+    }
 
-    componentWillReceiveProps(nextProps) {
+    componentWillReceiveProps(nextProps: Props) {
       if (this.props.recurrence.id !== nextProps.recurrence.id) {
-        this.setState(this.getInitialState());
+        this.setState(this.defaultState());
       }
-    },
+    }
 
-    lastValidHour: null,
-
-    updateLastValidHour: function() {
+    updateLastValidHour(): void {
       const hour = this.getHour();
-      if (Number.isInteger(hour)) {
+      if (typeof hour === "number" && Number.isInteger(hour)) {
         this.lastValidHour = hour;
       }
-    },
+    }
 
-    componentDidMount: function() {
+    componentDidMount(): void {
       this.updateLastValidHour();
-    },
+    }
 
-    componentDidUpdate: function() {
+    componentDidUpdate(): void {
       this.updateLastValidHour();
-    },
+    }
 
-    isAM: function() {
+    isAM(): boolean {
+      const hour = this.getHour() || this.lastValidHour;
+      return Boolean(hour && Hour.isAM(hour));
+    }
+
+    setAM(): void {
       const hour = this.getHour();
-      return Hour.isAM(Number.isInteger(hour) ? hour : this.lastValidHour);
-    },
+      if (hour) {
+        const newHour = Hour.convertToAM(hour);
+        this.setHour(newHour);
+      }
+    }
 
-    setAM: function() {
-      const newHour = Hour.convertToAM(this.getHour());
-      this.setHour(newHour);
-    },
+    isPM(): boolean {
+      const hour = this.getHour() || this.lastValidHour;
+      return Boolean(hour && Hour.isPM(hour));
+    }
 
-    isPM: function() {
+    setPM(): void {
       const hour = this.getHour();
-      return Hour.isPM(Number.isInteger(hour) ? hour : this.lastValidHour);
-    },
+      if (hour) {
+        const newHour = Hour.convertToPM(hour);
+        this.setHour(newHour);
+      }
+    }
 
-    setPM: function() {
-      const newHour = Hour.convertToPM(this.getHour());
-      this.setHour(newHour);
-    },
-
-    getHour: function() {
+    getHour(): Option<number> {
       return this.props.recurrence.timeOfDay ? this.props.recurrence.timeOfDay.hour : null;
-    },
+    }
 
-    setHour: function(newHour) {
-      this.props.onChange(this.props.recurrence.clone({
-        timeOfDay: {
-          hour: newHour,
-          minute: this.getMinute()
-        }
-      }));
-    },
+    setHour(newHour: number): void {
+      const minute = this.getMinute();
+      if (typeof minute === "number") {
+        this.props.onChange(this.props.recurrence.clone({
+          timeOfDay: {
+            hour: newHour,
+            minute: minute
+          }
+        }));
+      }
+    }
 
-    setMinute: function(newMinute) {
-      this.props.onChange(this.props.recurrence.clone({
-        timeOfDay: {
-          hour: this.getHour(),
-          minute: newMinute
-        }
-      }));
-    },
+    setMinute(newMinute: Option<number>): void {
+      const hour = this.getHour();
+      if (typeof hour === "number" && typeof newMinute === "number") {
+        this.props.onChange(this.props.recurrence.clone({
+          timeOfDay: {
+            hour: hour,
+            minute: newMinute
+          }
+        }));
+      }
+    }
 
-    getMinute: function() {
+    getMinute(): Option<number> {
       return this.props.recurrence.timeOfDay ? this.props.recurrence.timeOfDay.minute: null;
-    },
+    }
 
-    getHourTextValue: function() {
+    getHourTextValue(): string {
       const hour = this.getHour();
       return new Hour(hour).toString();
-    },
+    }
 
-    getCurrentTimeZoneName: function() {
+    getCurrentTimeZoneName(): string {
       if (this.props.recurrence.timeZoneName) {
         return this.props.recurrence.timeZoneName;
       } else {
         return this.props.teamTimeZoneName;
       }
-    },
+    }
 
-    onChangeHour: function(newValue) {
+    onChangeHour(newValue: string): void {
       const hour = Hour.fromString(newValue);
-      if (this.isAM()) {
-        this.setHour(hour.convertToAMValue());
+      let newHour;
+      if (this.isAM() && hour) {
+        newHour = hour.convertToAMValue();
       } else if (this.isPM()) {
-        this.setHour(hour.convertToPMValue());
+        newHour = hour.convertToPMValue();
       } else {
-        this.setHour(hour.value);
+        newHour = hour.value;
       }
-    },
+      if (newHour) {
+        this.setHour(newHour);
+      }
+    }
 
-    shouldShowTimeZones: function() {
+    shouldShowTimeZones(): boolean {
       return this.state.showTimeZones;
-    },
+    }
 
-    showTimeZones: function() {
+    showTimeZones(): void {
       this.setState({
         showTimeZones: true
       }, () => {
@@ -126,16 +150,16 @@ const TimeOfDayEditor = React.createClass({
           this.timeZoneSelector.focus();
         }
       });
-    },
+    }
 
-    updateSelectedTimeZone: function(timeZoneId, cityName, timeZoneName) {
+    updateSelectedTimeZone(timeZoneId: string, cityName: string, timeZoneName: string) {
       this.props.onChange(this.props.recurrence.clone({
         timeZone: timeZoneId,
         timeZoneName: timeZoneName
       }));
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <div>
@@ -177,6 +201,6 @@ const TimeOfDayEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default TimeOfDayEditor;
