@@ -273,7 +273,7 @@ class AWSLambdaServiceImpl @Inject() (
             invocationJson,
             behaviorVersion.maybeResponseTemplate,
             None,
-            behaviorVersion.forcePrivateResponse,
+            behaviorVersion.responseType,
             developerContext
           ))
         } else {

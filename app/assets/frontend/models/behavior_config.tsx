@@ -1,9 +1,10 @@
+import BehaviorResponseType, {BehaviorResponseTypeJson} from './behavior_response_type';
 import DataTypeConfig, {DataTypeConfigJson} from './data_type_config';
 
 export interface BehaviorConfigJson {
   exportId?: Option<string>;
   name?: Option<string>;
-  forcePrivateResponse?: Option<boolean>;
+  responseType: BehaviorResponseTypeJson;
   canBeMemoized?: Option<boolean>;
   isDataType: boolean;
   isTest: boolean;
@@ -12,7 +13,7 @@ export interface BehaviorConfigJson {
 
 interface BehaviorConfigInterface extends BehaviorConfigJson {
   dataTypeConfig?: Option<DataTypeConfig>;
-  forcePrivateResponse: boolean;
+  responseType: BehaviorResponseType;
   canBeMemoized: boolean;
 }
 
@@ -20,7 +21,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
   constructor(
     readonly exportId: Option<string>,
     readonly name: Option<string>,
-    readonly forcePrivateResponse: boolean,
+    readonly responseType: BehaviorResponseType,
     readonly canBeMemoized: boolean,
     readonly isDataType: boolean,
     readonly isTest: boolean,
@@ -29,7 +30,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
       Object.defineProperties(this, {
         exportId: { value: exportId, enumerable: true },
         name: { value: name, enumerable: true },
-        forcePrivateResponse: { value: Boolean(forcePrivateResponse), enumerable: true },
+        responseType: { value: responseType, enumerable: true },
         canBeMemoized: { value: Boolean(canBeMemoized), enumerable: true },
         isDataType: { value: isDataType, enumerable: true },
         isTest: { value: isTest, enumerable: true },
@@ -54,7 +55,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
       return new BehaviorConfig(
         props.exportId,
         props.name,
-        props.forcePrivateResponse,
+        props.responseType,
         props.canBeMemoized,
         props.isDataType,
         props.isTest,
@@ -63,11 +64,11 @@ class BehaviorConfig implements BehaviorConfigInterface {
     }
 
     static fromJson(props: BehaviorConfigJson): BehaviorConfig {
-      const materializedProps = Object.assign({}, props, props.dataTypeConfig ? {
-        dataTypeConfig: DataTypeConfig.fromJson(props.dataTypeConfig),
-        forcePrivateResponse: Boolean(props.forcePrivateResponse),
-        canBeMemoized: Boolean(props.canBeMemoized)
-      } : null);
+      const materializedProps = Object.assign({}, props, {
+        canBeMemoized: Boolean(props.canBeMemoized),
+        dataTypeConfig: props.dataTypeConfig ? DataTypeConfig.fromJson(props.dataTypeConfig) : null,
+        responseType: BehaviorResponseType.fromProps(props.responseType)
+      });
       return BehaviorConfig.fromProps(materializedProps);
     }
 

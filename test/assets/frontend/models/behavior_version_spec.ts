@@ -1,5 +1,10 @@
 import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
 
+const normalResponseTypeJson = {
+  id: "Normal",
+  displayString: "Respond normally"
+};
+
 const behaviorVersionTask1: BehaviorVersionJson = Object.freeze({
   "id": "abcdef",
   "behaviorId": "ghijkl",
@@ -24,7 +29,8 @@ const behaviorVersionTask1: BehaviorVersionJson = Object.freeze({
       "regionName": "AWS_REGION"
     },
     isDataType: false,
-    isTest: false
+    isTest: false,
+    responseType: normalResponseTypeJson
   },
   "createdAt": 1468338136532,
   inputIds: []
@@ -54,7 +60,8 @@ const behaviorVersionTask2: BehaviorVersionJson = Object.freeze({
       "regionName": "AWS_REGION"
     },
     isDataType: false,
-    isTest: false
+    isTest: false,
+    responseType: normalResponseTypeJson
   },
   "createdAt": 1468359271138,
   inputIds: []
@@ -78,7 +85,8 @@ const behaviorVersionKnowledge1: BehaviorVersionJson = Object.freeze({
   }],
   "config": {
     isDataType: false,
-    isTest: false
+    isTest: false,
+    responseType: normalResponseTypeJson
   },
   "createdAt": 1466109904858,
   inputIds: []
@@ -113,7 +121,8 @@ const defaultStorageDataType: BehaviorVersionJson = Object.freeze({
       usesCode: false
     },
     isDataType: true,
-    isTest: false
+    isTest: false,
+    responseType: normalResponseTypeJson
   },
   inputIds: [],
   triggers: [],

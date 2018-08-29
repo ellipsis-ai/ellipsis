@@ -22,6 +22,7 @@ import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackProvider
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.{BotResultService, SimpleTextResult}
 import models.silhouette.EllipsisEnv
 import play.api.mvc.{RequestHeader, Result}
@@ -118,7 +119,7 @@ class SocialAuthController @Inject() (
            |Email: ${userData.email.getOrElse("(unknown)")}
            |""".stripMargin
       maybeEvent.map { event =>
-        val result = SimpleTextResult(event, None, message, forcePrivateResponse = false)
+        val result = SimpleTextResult(event, None, message, responseType = Normal)
         botResultService.sendIn(result, None).map(maybeSentTs => {
           if (maybeSentTs.isDefined) {
             Logger.info(message)

@@ -1,9 +1,10 @@
 import React from 'react';
+import BehaviorResponseType from '../models/behavior_response_type';
 import Codemirror from '../shared_ui/react-codemirror';
+import DropdownMenu from '../shared_ui/dropdown_menu';
 import HelpButton from '../help/help_button';
 import ResponseTemplate from '../models/response_template';
 import SectionHeading from '../shared_ui/section_heading';
-import ToggleGroup from '../form/toggle_group';
 
 const ResponseTemplateConfiguration = React.createClass({
     propTypes: {
@@ -11,20 +12,15 @@ const ResponseTemplateConfiguration = React.createClass({
       onChangeTemplate: React.PropTypes.func.isRequired,
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       behaviorUsesCode: React.PropTypes.bool.isRequired,
-      shouldForcePrivateResponse: React.PropTypes.bool.isRequired,
-      onChangeForcePrivateResponse: React.PropTypes.func.isRequired,
+      toggleResponseTypeMenu: React.PropTypes.func.isRequired,
+      responseTypeMenuOpenWhen: React.PropTypes.bool.isRequired,
+      responseType: React.PropTypes.instanceOf(BehaviorResponseType).isRequired,
+      possibleResponseTypes: React.PropTypes.arrayOf(BehaviorResponseType).isRequired,
+      onSelectResponseType: React.PropTypes.func.isRequired,
       onCursorChange: React.PropTypes.func.isRequired,
       onToggleHelp: React.PropTypes.func.isRequired,
       helpVisible: React.PropTypes.bool.isRequired,
       sectionNumber: React.PropTypes.string.isRequired
-    },
-
-    unsetForcePrivateResponse: function() {
-      this.props.onChangeForcePrivateResponse(false);
-    },
-
-    setForcePrivateResponse: function() {
-      this.props.onChangeForcePrivateResponse(true);
     },
 
     render: function() {
@@ -40,20 +36,20 @@ const ResponseTemplateConfiguration = React.createClass({
             </SectionHeading>
 
             <div className="border-top border-left border-right border-light pas">
-              <ToggleGroup className="form-toggle-group-s align-m">
-                <ToggleGroup.Item
-                  title="Ellipsis will respond wherever you talk to it"
-                  label="Respond normally"
-                  activeWhen={!this.props.shouldForcePrivateResponse}
-                  onClick={this.unsetForcePrivateResponse}
-                />
-                <ToggleGroup.Item
-                  title="Ellipsis will always respond in a private message"
-                  label="Respond privately"
-                  activeWhen={this.props.shouldForcePrivateResponse}
-                  onClick={this.setForcePrivateResponse}
-                />
-              </ToggleGroup>
+              <DropdownMenu
+                openWhen={this.props.responseTypeMenuOpenWhen}
+                label={this.props.responseType.displayString}
+                menuClassName="popup-dropdown-menu-right"
+                toggle={this.props.toggleResponseTypeMenu}
+              >
+                {this.props.possibleResponseTypes.map((ea, index) => (
+                  <DropdownMenu.Item
+                    key={"response-type-" + index}
+                    onClick={this.props.onSelectResponseType.bind(null, ea)}
+                    label={ea.displayString}
+                  />
+                ))}
+              </DropdownMenu>
             </div>
             <div className="position-relative CodeMirror-container-no-gutter pbm">
               <Codemirror value={this.props.template.toString()}

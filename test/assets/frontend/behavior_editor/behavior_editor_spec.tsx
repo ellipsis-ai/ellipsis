@@ -10,6 +10,7 @@ import * as TestUtils from 'react-addons-test-utils';
 import BehaviorEditor from '../../../../app/assets/frontend/behavior_editor/index';
 import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
 import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
+import BehaviorResponseType from '../../../../app/assets/frontend/models/behavior_response_type';
 import ParamType from '../../../../app/assets/frontend/models/param_type';
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
 import {OAuthApplicationRef} from '../../../../app/assets/frontend/models/oauth';
@@ -27,6 +28,16 @@ jsRoutes.controllers.SocialAuthController.authenticateGithub = jest.fn(() => ({ 
 jsRoutes.controllers.BehaviorEditorController.versionInfoFor = jest.fn(() => ({ url: '/mock_version_info' }));
 
 describe('BehaviorEditor', () => {
+  const normalResponseTypeJson = {
+    id: "Normal",
+    displayString: "Respond normally"
+  };
+  const normalResponseType = BehaviorResponseType.fromProps(normalResponseTypeJson);
+  const privateResponseTypeJson = {
+    id: "Private",
+    displayString: "Respond privately"
+  };
+  const privateResponseType = BehaviorResponseType.fromProps(privateResponseTypeJson);
   const groupJson: BehaviorGroupJson = {
     id: '1',
     actionInputs: [],
@@ -45,7 +56,8 @@ describe('BehaviorEditor', () => {
         }],
         config: {
           isDataType: false,
-          isTest: false
+          isTest: false,
+          responseType: normalResponseTypeJson
         },
         groupId: '1'
       }
@@ -125,7 +137,8 @@ describe('BehaviorEditor', () => {
     onForgetSavedAnswerForInput: jest.fn(),
     userId: "1",
     onLinkGithubRepo: jest.fn(),
-    onUpdateFromGithub: jest.fn()
+    onUpdateFromGithub: jest.fn(),
+    "possibleResponseTypes": [normalResponseTypeJson]
   });
 
   const newGroupJson: BehaviorGroupJson = {
@@ -141,7 +154,7 @@ describe('BehaviorEditor', () => {
       "responseTemplate": "",
       "inputIds": [],
       "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false }],
-      "config": { "isDataType": false, "isTest": false }
+      "config": { "isDataType": false, "isTest": false, responseType: normalResponseTypeJson }
     }],
     "libraryVersions": [],
     "requiredAWSConfigs": [],
@@ -232,7 +245,8 @@ describe('BehaviorEditor', () => {
       simpleTokenApis: config.simpleTokenApis.map(SimpleTokenApiRef.fromJson),
       builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson),
       onDeploy: jest.fn(),
-      botName: "TestBot"
+      botName: "TestBot",
+      possibleResponseTypes: [normalResponseType]
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
@@ -394,7 +408,8 @@ describe('BehaviorEditor', () => {
             triggers: [],
             config: {
               isDataType: false,
-              isTest: false
+              isTest: false,
+              responseType: normalResponseTypeJson
             },
             groupId: groupId
           },
@@ -407,7 +422,8 @@ describe('BehaviorEditor', () => {
             triggers: [],
             config: {
               isDataType: false,
-              isTest: false
+              isTest: false,
+              responseType: normalResponseTypeJson
             },
             groupId: groupId
           }
@@ -422,14 +438,14 @@ describe('BehaviorEditor', () => {
 
   describe('setConfigProperty', () => {
     it("clones the existing behavior config with updated properties", () => {
-      editorConfig.group.behaviorVersions[0].config.forcePrivateResponse = false;
+      editorConfig.group.behaviorVersions[0].config.responseType = normalResponseType;
       let editor = createEditor(editorConfig);
       editor.setEditableProp = jest.fn();
-      expect(editor.getBehaviorConfig().forcePrivateResponse).toBe(false);
-      editor.setConfigProperty('forcePrivateResponse', true);
+      expect(editor.getBehaviorConfig().responseType.id).toBe(normalResponseType.id);
+      editor.setConfigProperty('responseType', privateResponseType);
       const newConfig = editor.setEditableProp.mock.calls[0][1];
       expect(newConfig.constructor.name).toBe("BehaviorConfig");
-      expect(newConfig.forcePrivateResponse).toBe(true);
+      expect(newConfig.responseType.id).toBe(privateResponseType.id);
     });
   });
 

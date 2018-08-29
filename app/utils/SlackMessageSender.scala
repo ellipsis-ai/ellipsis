@@ -3,6 +3,7 @@ package utils
 import akka.actor.ActorSystem
 import json.Formatting._
 import models.SlackMessageFormatter
+import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
@@ -32,7 +33,7 @@ case class SlackMessageSender(
                                user: String,
                                slackTeamId: String,
                                unformattedText: String,
-                               forcePrivate: Boolean,
+                               responseType: BehaviorResponseType,
                                developerContext: DeveloperContext,
                                originatingChannel: String,
                                channelToUse: String,

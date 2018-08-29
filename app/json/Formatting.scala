@@ -52,6 +52,8 @@ object Formatting {
   lazy implicit val requiredSimpleTokenApiReads = Json.reads[RequiredSimpleTokenApiData]
   lazy implicit val requiredSimpleTokenApiWrites = Json.writes[RequiredSimpleTokenApiData]
 
+  lazy implicit val behaviorResponseTypeDataFormat = Json.format[BehaviorResponseTypeData]
+
   lazy implicit val behaviorConfigReads = Json.reads[BehaviorConfig]
   lazy implicit val behaviorConfigWrites = Json.writes[BehaviorConfig]
 

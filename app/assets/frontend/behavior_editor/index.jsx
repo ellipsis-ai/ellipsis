@@ -1394,6 +1394,10 @@ const BehaviorEditor = React.createClass({
     this.setEditableProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }));
   },
 
+  onSelectResponseType: function(newValue) {
+    this.setConfigProperty('responseType', newValue);
+  },
+
   syncParamNamesAndCount: function(oldName, newName) {
     var numTriggersModified = 0;
 
@@ -1944,6 +1948,14 @@ const BehaviorEditor = React.createClass({
 
   toggleApiAdderDropdown: function() {
     this.toggleActiveDropdown("apiConfigAdderDropdown");
+  },
+
+  responseTypeMenuOpenWhen: function() {
+    return this.getActiveDropdown() === "responseTypeMenu";
+  },
+
+  toggleResponseTypeMenuDropdown: function() {
+    this.toggleActiveDropdown("responseTypeMenu");
   },
 
   renderFooter: function() {
@@ -2569,8 +2581,11 @@ const BehaviorEditor = React.createClass({
                   onChangeTemplate={this.updateTemplate}
                   isFinishedBehavior={this.isFinishedBehavior()}
                   behaviorUsesCode={this.getFunctionBody().length > 0}
-                  shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
-                  onChangeForcePrivateResponse={this.updateForcePrivateResponse}
+                  responseTypeMenuOpenWhen={this.responseTypeMenuOpenWhen()}
+                  toggleResponseTypeMenu={this.toggleResponseTypeMenuDropdown}
+                  responseType={this.getBehaviorConfig().responseType}
+                  possibleResponseTypes={this.props.possibleResponseTypes}
+                  onSelectResponseType={this.onSelectResponseType}
                   onCursorChange={this.ensureCursorVisible}
                   onToggleHelp={this.toggleResponseTemplateHelp}
                   helpVisible={this.props.activePanelName === 'helpForResponseTemplate'}

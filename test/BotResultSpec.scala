@@ -2,7 +2,7 @@ import akka.actor.ActorSystem
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{SlackMessage, SlackMessageEvent}
@@ -103,7 +103,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             invocationJson = JsObject.empty,
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
-            forcePrivateResponse = false,
+            responseType = Normal,
             developerContext = DeveloperContext.default
           )
         val resultTs: String = SlackTimestamp.now
@@ -136,7 +136,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             invocationJson = JsObject.empty,
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
-            forcePrivateResponse = false,
+            responseType = Normal,
             developerContext = DeveloperContext.default
           )
         val resultTs: String = SlackTimestamp.now
@@ -213,7 +213,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             invocationJson = JsObject.empty,
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
-            forcePrivateResponse = false,
+            responseType = Normal,
             developerContext = DeveloperContext.default
           )
 
@@ -261,7 +261,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             invocationJson = JsObject.empty,
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
-            forcePrivateResponse = false,
+            responseType = Normal,
             developerContext = DeveloperContext.default
           )
 

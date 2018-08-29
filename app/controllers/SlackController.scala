@@ -7,6 +7,7 @@ import json.Formatting._
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
@@ -897,7 +898,7 @@ class SlackController @Inject() (
                 slackMessageEvent,
                 maybeConversation,
                 s"_${trimmed}_",
-                forcePrivateResponse = false,
+                responseType = Normal,
                 shouldInterrupt = false
               ))
             },

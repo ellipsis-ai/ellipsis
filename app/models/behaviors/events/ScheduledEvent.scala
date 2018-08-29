@@ -3,6 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import models.behaviors.{ActionChoice, DeveloperContext}
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
 import models.team.Team
@@ -28,16 +29,16 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
   }
 
   def maybeChannelForSendAction(
-                                 forcePrivate: Boolean,
+                                 responseType: BehaviorResponseType,
                                  maybeConversation: Option[Conversation],
                                  services: DefaultServices
                                )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
-    underlying.maybeChannelForSendAction(forcePrivate, maybeConversation, services)
+    underlying.maybeChannelForSendAction(responseType, maybeConversation, services)
   }
 
   def sendMessage(
                    text: String,
-                   forcePrivate: Boolean,
+                   responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
@@ -47,7 +48,7 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                    services: DefaultServices,
                    configuration: Configuration
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    underlying.sendMessage(text, forcePrivate, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, choices, developerContext, services, configuration)
+    underlying.sendMessage(text, responseType, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, choices, developerContext, services, configuration)
   }
 
   override def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {

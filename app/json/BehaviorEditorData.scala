@@ -29,7 +29,8 @@ case class BehaviorEditorData(
                                isLinkedToGithub: Boolean,
                                lastDeployTimestamp: Option[OffsetDateTime],
                                maybeSlackTeamId: Option[String],
-                               botName: String
+                               botName: String,
+                               possibleResponseTypes: Seq[BehaviorResponseTypeData] = BehaviorResponseTypeData.all
                               )
 
 object BehaviorEditorData {

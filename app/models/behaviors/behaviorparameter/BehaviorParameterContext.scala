@@ -39,7 +39,7 @@ case class BehaviorParameterContext(
       event,
       maybeConversation,
       text,
-      behaviorVersion.forcePrivateResponse
+      behaviorVersion.responseType
     )
   }
 

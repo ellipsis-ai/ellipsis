@@ -5,7 +5,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
@@ -161,7 +161,7 @@ trait Event {
   }
 
   def maybeChannelForSendAction(
-                                 forcePrivate: Boolean,
+                                 responseType: BehaviorResponseType,
                                  maybeConversation: Option[Conversation],
                                  services: DefaultServices
                                )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]]
@@ -173,7 +173,7 @@ trait Event {
 
   def sendMessage(
                    text: String,
-                   forcePrivate: Boolean,
+                   responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],

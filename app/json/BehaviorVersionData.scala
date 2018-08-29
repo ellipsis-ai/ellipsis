@@ -6,11 +6,12 @@ import json.Formatting._
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.{Normal, Private}
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.datatypefield.DataTypeFieldForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
 import models.team.Team
-import play.api.libs.json.Json
+import play.api.libs.json._
 import services.DataService
 import slick.dbio.DBIO
 import utils.NameFormatter
@@ -172,7 +173,7 @@ object BehaviorVersionData {
       config = BehaviorConfig(
         None,
         maybeName,
-        None,
+        BehaviorResponseTypeData.normal,
         None,
         isDataType = maybeDataTypeConfig.isDefined,
         Some(isTest),
@@ -194,7 +195,21 @@ object BehaviorVersionData {
                    configString: String,
                    dataService: DataService
                    ): BehaviorVersionData = {
-    val config = Json.parse(configString).validate[BehaviorConfig].get
+    var json = Json.parse(configString)
+    if ((json \ "responseType").isEmpty) {
+      json match {
+        case obj: JsObject => {
+          val isPrivate = (json \ "forcePrivateResponse").getOrElse(JsFalse) == JsTrue
+          val responseType = if (isPrivate) {
+            Private
+          } else {
+            Normal
+          }
+          json = obj ++ Json.obj("responseType" -> Json.toJson(BehaviorResponseTypeData.from(responseType)))
+        }
+      }
+    }
+    val config = json.validate[BehaviorConfig].get
     val configWithDataTypeConfig = if (!config.isDataType || config.dataTypeConfig.isDefined) {
       config
     } else {
@@ -263,7 +278,7 @@ object BehaviorVersionData {
         val config = BehaviorConfig(
           maybeExportId,
           behaviorVersion.maybeName,
-          Some(behaviorVersion.forcePrivateResponse),
+          BehaviorResponseTypeData.from(behaviorVersion.responseType),
           Some(behaviorVersion.canBeMemoized),
           isDataType = maybeEnsuredDataTypeConfigData.isDefined,
           isTest = Some(behaviorVersion.isTest),

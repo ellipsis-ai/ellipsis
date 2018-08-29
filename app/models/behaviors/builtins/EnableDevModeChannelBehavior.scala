@@ -1,6 +1,7 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.DefaultServices
@@ -15,7 +16,7 @@ case class EnableDevModeChannelBehavior(
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     val dataService = services.dataService
-    val problemResponse = SimpleTextResult(event, None, "There was a problem trying to enable dev mode", forcePrivateResponse = false)
+    val problemResponse = SimpleTextResult(event, None, "There was a problem trying to enable dev mode", responseType = Normal)
     event.maybeChannel.map { channel =>
       for {
         maybeTeam <- dataService.teams.find(event.teamId)
@@ -24,10 +25,10 @@ case class EnableDevModeChannelBehavior(
         }.getOrElse(Future.successful(None))
         result <- maybeTeam.map { team =>
           maybeExisting.map { _ =>
-            Future.successful(SimpleTextResult(event, None, s"This channel was already in dev mode, so I left it there", forcePrivateResponse = false))
+            Future.successful(SimpleTextResult(event, None, s"This channel was already in dev mode, so I left it there", responseType = Normal))
           }.getOrElse {
             dataService.devModeChannels.ensureFor(event.context, channel, team).map { _ =>
-              SimpleTextResult(event, None, s"OK, this channel is now in dev mode", forcePrivateResponse = false)
+              SimpleTextResult(event, None, s"OK, this channel is now in dev mode", responseType = Normal)
             }
           }
         }.getOrElse(Future.successful(problemResponse))

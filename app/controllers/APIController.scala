@@ -10,6 +10,7 @@ import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
@@ -720,7 +721,7 @@ class APIController @Inject() (
           context <- ApiMethodContext.createFor(info.token)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
           result <- maybeEvent.map { event =>
-            val botResult = SimpleTextResult(event, None, info.message, forcePrivateResponse = false, shouldInterrupt = false)
+            val botResult = SimpleTextResult(event, None, info.message, responseType = Normal, shouldInterrupt = false)
             botResultService.sendIn(botResult, None).map { _ =>
               Ok(Json.toJson(Seq(botResult.fullText)))
             }

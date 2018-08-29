@@ -21,7 +21,8 @@ case class BehaviorEditorEditConfig(
   showVersions: Option[Boolean],
   lastDeployTimestamp: Option[OffsetDateTime],
   slackTeamId: Option[String],
-  botName: String
+  botName: String,
+  possibleResponseTypes: Seq[BehaviorResponseTypeData]
 )
 
 object BehaviorEditorEditConfig {
@@ -45,7 +46,8 @@ object BehaviorEditorEditConfig {
       maybeShowVersions,
       data.lastDeployTimestamp,
       data.maybeSlackTeamId,
-      data.botName
+      data.botName,
+      data.possibleResponseTypes
     )
   }
 }

@@ -7,6 +7,7 @@ import BrowserUtils from '../lib/browser_utils';
 import BehaviorEditor from './index';
 import BehaviorGroup from '../models/behavior_group';
 import BehaviorGroupDeployment from '../models/behavior_group_deployment';
+import BehaviorResponseType from '../models/behavior_response_type';
 import ParamType from '../models/param_type';
 import {AWSConfigRef} from '../models/aws';
 import {OAuthApplicationRef} from '../models/oauth';
@@ -152,6 +153,7 @@ class BehaviorEditorLoader extends React.Component {
                 lastDeployTimestamp={this.props.lastDeployTimestamp}
                 slackTeamId={this.props.slackTeamId}
                 botName={this.props.botName}
+                possibleResponseTypes={this.props.possibleResponseTypes.map(BehaviorResponseType.fromProps)}
                 {...pageProps}
               />
               )}
@@ -179,7 +181,8 @@ BehaviorEditorLoader.propTypes = {
   showVersions: React.PropTypes.bool,
   lastDeployTimestamp: React.PropTypes.string,
   slackTeamId: React.PropTypes.string,
-  botName: React.PropTypes.string.isRequired
+  botName: React.PropTypes.string.isRequired,
+  possibleResponseTypes: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
 };
 
 ReactDOM.render(
