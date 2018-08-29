@@ -136,7 +136,19 @@ class ScheduledActionsController @Inject()(
       } yield {
         val newArguments = newData.arguments.map(ea => ea.name -> ea.value).toMap
         val maybeChannel = Option(newData.channel).filter(_.trim.nonEmpty)
-        dataService.scheduledBehaviors.createFor(behavior, newArguments, recurrence, user, team, maybeChannel, newData.useDM).map(Some(_))
+        maybeOriginal.map { original =>
+          dataService.scheduledBehaviors.save(original.copy(
+            behavior = behavior,
+            arguments = newArguments,
+            recurrence = recurrence,
+            maybeUser = Some(user),
+            team = team,
+            maybeChannel = maybeChannel,
+            isForIndividualMembers = newData.useDM
+          ))
+        }.getOrElse {
+          dataService.scheduledBehaviors.createFor(behavior, newArguments, recurrence, user, team, maybeChannel, newData.useDM)
+        }.map(Some(_))
       }).getOrElse(Future.successful(None))
     } yield {
       if (maybeNewScheduledBehavior.isDefined) {
@@ -161,14 +173,20 @@ class ScheduledActionsController @Inject()(
         }.getOrElse(Future.successful(None))
         maybeNewScheduledMessage <- maybeNewRecurrence.map { recurrence =>
           val maybeChannel = Option(newData.channel).filter(_.trim.nonEmpty)
-          dataService.scheduledMessages.createFor(trigger, recurrence, user, team, maybeChannel, newData.useDM).map(Some(_))
+          maybeOriginal.map { original =>
+            dataService.scheduledMessages.save(original.copy(
+              text = trigger,
+              recurrence = recurrence,
+              maybeUser = Some(user),
+              team = team,
+              maybeChannel = maybeChannel,
+              isForIndividualMembers = newData.useDM
+            ))
+          }.getOrElse {
+            dataService.scheduledMessages.createFor(trigger, recurrence, user, team, maybeChannel, newData.useDM)
+          }.map(Some(_))
         }.getOrElse(Future.successful(None))
       } yield {
-        if (maybeNewScheduledMessage.isDefined) {
-          maybeOriginal.map { original =>
-            dataService.scheduledMessages.delete(original)
-          }
-        }
         maybeNewScheduledMessage
       }
     }.getOrElse(Future.successful(None))

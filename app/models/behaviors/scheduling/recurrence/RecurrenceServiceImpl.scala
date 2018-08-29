@@ -116,20 +116,12 @@ class RecurrenceServiceImpl @Inject() (
     raw.copy(maybeTimeOfDay = raw.maybeTimeOfDay.map(_.plusNanos(1)))
   }
 
-  private def resetTimesHasRunIfTimesToRunUpdated(existing: RawRecurrence, updated: RawRecurrence): RawRecurrence = {
-    if (updated.maybeTotalTimesToRun == existing.maybeTotalTimesToRun) {
-      updated
-    } else {
-      updated.copy(timesHasRun = 0)
-    }
-  }
-
   def saveAction(recurrence: Recurrence): DBIO[Recurrence] = {
     val newRawRecurrence = ensureAfterMinTimeOfDay(recurrence.toRaw)
     val query = all.filter(_.id === newRawRecurrence.id)
     query.result.flatMap { r =>
       r.headOption.map { existing =>
-        query.update(resetTimesHasRunIfTimesToRunUpdated(existing, newRawRecurrence))
+        query.update(newRawRecurrence)
       }.getOrElse {
         all += newRawRecurrence
       }

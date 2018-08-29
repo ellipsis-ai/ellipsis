@@ -48,9 +48,8 @@ class RecurrenceRepeatEditor extends React.Component<Props> {
   }
 
   toggleTimesToRun(enableTimesToRun: boolean): void {
-    this.props.onChange(this.props.recurrence.clone({
-      totalTimesToRun: enableTimesToRun ? 1 : null
-    }));
+    const newTotal = enableTimesToRun ? (this.props.recurrence.totalTimesToRun || 1) : null;
+    this.setTotalTimesToRun(newTotal);
   }
 
   setIndefiniteRepeat() {
@@ -64,9 +63,16 @@ class RecurrenceRepeatEditor extends React.Component<Props> {
     }
   }
 
-  setTotalTimes(newStringValue: string) {
+  setTotalTimesFromString(newStringValue: string) {
+    const newValue = OptionalInt.fromString(newStringValue).valueWithinRange(1, 99999999);
+    this.setTotalTimesToRun(newValue);
+  }
+
+  setTotalTimesToRun(timesToRun: Option<number>): void {
+    const totalHasChanged = timesToRun !== this.props.recurrence.totalTimesToRun;
     this.props.onChange(this.props.recurrence.clone({
-      totalTimesToRun: OptionalInt.fromString(newStringValue).valueWithinRange(1, 99999999)
+      totalTimesToRun: timesToRun,
+      timesHasRun: totalHasChanged ? 0 : this.props.recurrence.timesHasRun
     }));
   }
 
@@ -144,7 +150,7 @@ class RecurrenceRepeatEditor extends React.Component<Props> {
             <FormInput
               ref={(el) => this.totalTimesInput = el}
               className="width-5 form-input-borderless align-c"
-              onChange={this.setTotalTimes}
+              onChange={this.setTotalTimesFromString}
               value={this.getTotalTimesString()}
               placeholder={"1 or more"}
             />
