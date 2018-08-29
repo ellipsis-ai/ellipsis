@@ -2,68 +2,78 @@ import * as React from 'react';
 import DayOfMonthInput from '../form/day_of_month_input';
 import Select from '../form/select';
 import DayOfWeek from '../models/day_of_week';
-import Recurrence from '../models/recurrence';
+import {RecurrenceEditorProps} from "./recurrence_editor";
+import autobind from "../lib/autobind";
 
-const DayOfMonthEditor = React.createClass({
-    propTypes: {
-      recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
-      onChange: React.PropTypes.func.isRequired
-    },
+type Props = RecurrenceEditorProps;
 
-    isNthWeekdayOfMonth: function() {
-      return Number.isInteger(this.props.recurrence.nthDayOfWeek) || Number.isInteger(this.props.recurrence.dayOfWeek);
-    },
+class DayOfMonthEditor extends React.Component<Props> {
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
 
-    getDay: function() {
-      return [this.props.recurrence.dayOfMonth, this.props.recurrence.nthDayOfWeek].find(Number.isInteger);
-    },
+    isNthWeekdayOfMonth(): boolean {
+      return (typeof this.props.recurrence.nthDayOfWeek === "number" && Number.isInteger(this.props.recurrence.nthDayOfWeek)) ||
+        (typeof this.props.recurrence.dayOfWeek === "number" && Number.isInteger(this.props.recurrence.dayOfWeek));
+    }
 
-    getDayOfWeek: function() {
+    getDay(): Option<number> {
+      return [this.props.recurrence.dayOfMonth, this.props.recurrence.nthDayOfWeek].find((ea) => {
+        return typeof ea === "number" && Number.isInteger(ea);
+      });
+    }
+
+    getDayOfWeek(): Option<number> {
       return this.props.recurrence.dayOfWeek;
-    },
+    }
 
-    getTextDayType: function() {
+    getTextDayType(): string {
       if (this.isNthWeekdayOfMonth()) {
         return new DayOfWeek(this.getDayOfWeek()).toString() || DayOfWeek.MONDAY.toString();
       } else {
         return "dayOfMonth";
       }
-    },
+    }
 
-    onChangeDay: function(newValue) {
+    onChangeDay(newValue: Option<number>) {
       if (this.isNthWeekdayOfMonth()) {
         this.onChangeNthWeekdayOfMonth(newValue);
       } else {
         this.onChangeDayOfMonth(newValue);
       }
-    },
+    }
 
-    onChangeDayOfMonth: function(dayNumber) {
+    onChangeDayOfMonth(dayNumber: Option<number>) {
       this.props.onChange(this.props.recurrence.clone({
         typeName: "monthly_by_day_of_month",
         dayOfMonth: dayNumber,
         nthDayOfWeek: null,
         dayOfWeek: null
       }));
-    },
+    }
 
-    limitNthWeekdayNumber: function(dayNumber) {
-      const lastDigit = dayNumber % 10;
-      const limitMax = Math.min(lastDigit, 5);
-      return Math.max(1, limitMax);
-    },
+    limitNthWeekdayNumber(dayNumber: Option<number>): number {
+      if (typeof dayNumber === "number") {
+        const lastDigit = dayNumber % 10;
+        const limitMax = Math.min(lastDigit, 5);
+        return Math.max(1, limitMax);
+      } else {
+        return 1;
+      }
+    }
 
-    onChangeNthWeekdayOfMonth: function(dayNumber) {
-      const fixedDayNumber = Number.isInteger(dayNumber) ? this.limitNthWeekdayNumber(dayNumber) : null;
+    onChangeNthWeekdayOfMonth(dayNumber: Option<number>): void {
+      const fixedDayNumber = typeof dayNumber === "number" && Number.isInteger(dayNumber) ? this.limitNthWeekdayNumber(dayNumber) : null;
       this.props.onChange(this.props.recurrence.clone({
         typeName: "monthly_by_nth_day_of_week",
         dayOfMonth: null,
         nthDayOfWeek: fixedDayNumber,
         dayOfWeek: this.getDayOfWeek()
       }));
-    },
+    }
 
-    onChangeDayType: function(newValue) {
+    onChangeDayType(newValue: string): void {
       if (newValue === "dayOfMonth") {
         this.props.onChange(this.props.recurrence.clone({
           typeName: "monthly_by_day_of_month",
@@ -79,9 +89,9 @@ const DayOfMonthEditor = React.createClass({
           dayOfWeek: DayOfWeek.fromString(newValue).value
         }));
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <span className="align-button mrm type-s">On the</span>
@@ -100,6 +110,6 @@ const DayOfMonthEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default DayOfMonthEditor;
