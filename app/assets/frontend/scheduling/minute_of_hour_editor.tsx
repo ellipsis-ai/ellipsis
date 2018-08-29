@@ -1,24 +1,27 @@
 import * as React from 'react';
 import MinuteInput from '../form/minute_input';
-import Recurrence from '../models/recurrence';
+import {RecurrenceEditorProps} from "./recurrence_editor";
+import autobind from "../lib/autobind";
 
-const MinuteOfHourEditor = React.createClass({
-    propTypes: {
-      recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
-      onChange: React.PropTypes.func.isRequired
-    },
+class MinuteOfHourEditor extends React.Component<RecurrenceEditorProps> {
+    constructor(props: RecurrenceEditorProps) {
+      super(props);
+      autobind(this);
+    }
 
-    getValue: function() {
+    getValue(): Option<number> {
       return this.props.recurrence.minuteOfHour;
-    },
+    }
 
-    onChange: function(newValue) {
-      this.props.onChange(this.props.recurrence.clone({
-        minuteOfHour: newValue
-      }));
-    },
+    onChange(newValue: Option<number>) {
+      if (typeof newValue === "number") {
+        this.props.onChange(this.props.recurrence.clone({
+          minuteOfHour: newValue
+        }));
+      }
+    }
 
-    getSuffix: function() {
+    getSuffix(): string {
       const value = this.getValue();
       if (!value) {
         return "(on the hour)";
@@ -27,9 +30,9 @@ const MinuteOfHourEditor = React.createClass({
       } else {
         return "minutes past the hour";
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <span className="align-button mrm type-s">At</span>
@@ -38,6 +41,6 @@ const MinuteOfHourEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default MinuteOfHourEditor;

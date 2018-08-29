@@ -1,27 +1,35 @@
 import * as React from 'react';
 import FrequencyEditor from './frequency_editor';
 import TimeOfDayEditor from './time_of_day_editor';
-import Recurrence from '../models/recurrence';
+import WeekdayEditor from './weekday_editor';
+import {RecurrenceEditorProps, RecurrenceEditorTimeZoneProps} from "./recurrence_editor";
+import autobind from "../lib/autobind";
 
-const DailyRecurrenceEditor = React.createClass({
-    propTypes: {
-      recurrence: React.PropTypes.instanceOf(Recurrence).isRequired,
-      onChange: React.PropTypes.func.isRequired,
-      teamTimeZone: React.PropTypes.string.isRequired,
-      teamTimeZoneName: React.PropTypes.string.isRequired
-    },
+type Props = RecurrenceEditorProps & RecurrenceEditorTimeZoneProps
 
-    render: function() {
+class WeeklyRecurrenceEditor extends React.Component<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    render() {
       return (
         <div>
           <div className="mvm">
             <FrequencyEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
-              unit="day"
-              units="days"
+              unit="week"
+              units="weeks"
               min={1}
-              max={3650}
+              max={520}
+            />
+          </div>
+          <div className="mvm">
+            <WeekdayEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
             />
           </div>
           <div className="mvm">
@@ -35,6 +43,6 @@ const DailyRecurrenceEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
-export default DailyRecurrenceEditor;
+export default WeeklyRecurrenceEditor;
