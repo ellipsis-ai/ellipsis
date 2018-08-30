@@ -3,6 +3,7 @@ import FrequencyEditor from './frequency_editor';
 import MinuteOfHourEditor from './minute_of_hour_editor';
 import {RecurrenceEditorProps} from "./recurrence_editor";
 import autobind from "../lib/autobind";
+import RecurrenceTimesToRunEditor from "./recurrence_times_to_run_editor";
 
 class HourlyRecurrenceEditor extends React.Component<RecurrenceEditorProps> {
     constructor(props: RecurrenceEditorProps) {
@@ -15,6 +16,12 @@ class HourlyRecurrenceEditor extends React.Component<RecurrenceEditorProps> {
         <div>
           <div className="mvm">
             <MinuteOfHourEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
+            />
+          </div>
+          <div className="mvm">
+            <RecurrenceTimesToRunEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
             />

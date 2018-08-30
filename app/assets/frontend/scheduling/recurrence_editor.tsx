@@ -1,14 +1,13 @@
 import * as React from 'react';
-import ToggleGroup from '../form/toggle_group';
-import Recurrence, {RecurrenceInterface, RecurrenceType} from '../models/recurrence';
+import Recurrence from '../models/recurrence';
 import MinutelyRecurrenceEditor from './minutely_recurrence_editor';
 import HourlyRecurrenceEditor from './hourly_recurrence_editor';
 import DailyRecurrenceEditor from './daily_recurrence_editor';
 import WeeklyRecurrenceEditor from './weekly_recurrence_editor';
 import MonthlyRecurrenceEditor from './monthly_recurrence_editor';
 import YearlyRecurrenceEditor from './yearly_recurrence_editor';
+import RecurrenceIntervalEditor from "./recurrence_interval_editor";
 import autobind from "../lib/autobind";
-import RecurrenceRepeatEditor from "./recurrence_repeat_editor";
 
 export interface RecurrenceEditorProps {
   recurrence: Recurrence,
@@ -76,7 +75,7 @@ class RecurrenceEditor extends React.Component<Props> {
       return (
         <div>
           <div className="mvm">
-            <RecurrenceRepeatEditor
+            <RecurrenceIntervalEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
               teamTimeZone={this.props.teamTimeZone}
