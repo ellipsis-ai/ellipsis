@@ -76,7 +76,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
       replaceOriginal = None,
       deleteOriginal = None,
       threadTs = maybeThreadId,
-      replyBroadcast = Some(false)
+      replyBroadcast = None
     )).thenReturn({
       Future.successful(resultTs)
     })
