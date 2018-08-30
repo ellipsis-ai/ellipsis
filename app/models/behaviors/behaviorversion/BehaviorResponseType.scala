@@ -26,9 +26,10 @@ sealed trait BehaviorResponseType extends BehaviorResponseType.Value {
   def maybeThreadTsToUseFor(
                              channel: String,
                              originatingChannel: String,
+                             maybeConversation: Option[Conversation],
                              maybeThreadTs: Option[String]
                      ): Option[String] = {
-    maybeThreadTs
+    maybeConversation.flatMap(_.maybeThreadId).orElse(maybeThreadTs)
   }
 }
 
@@ -51,10 +52,11 @@ case object Private extends BehaviorResponseType {
   override def maybeThreadTsToUseFor(
                                      channel: String,
                                      originatingChannel: String,
+                                     maybeConversation: Option[Conversation],
                                      maybeThreadTs: Option[String]
                                    ): Option[String] = {
     if (channel == originatingChannel) {
-      maybeThreadTs
+      super.maybeThreadTsToUseFor(channel, originatingChannel, maybeConversation, maybeThreadTs)
     } else {
       None
     }

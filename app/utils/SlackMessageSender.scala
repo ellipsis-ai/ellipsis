@@ -123,7 +123,7 @@ case class SlackMessageSender(
   }
 
   private def maybeThreadTsToUse(channel: String) = {
-    responseType.maybeThreadTsToUseFor(channel, originatingChannel, maybeThreadId)
+    responseType.maybeThreadTsToUseFor(channel, originatingChannel, maybeConversation, maybeThreadId)
   }
 
   private def channelToUse(maybeChannelToForce: Option[String] = None): String = {
