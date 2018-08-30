@@ -13,20 +13,24 @@ class MinutelyRecurrenceEditor extends React.Component<RecurrenceEditorProps> {
   render() {
     return (
       <div>
-        <div className="mvm">
-          <RecurrenceTimesToRunEditor
-            recurrence={this.props.recurrence}
-            onChange={this.props.onChange}
-          />
+        <div className="mvm pam border bg-white border-radius">
+          <div className="mbm">
+            <RecurrenceTimesToRunEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
+            />
+          </div>
+          <div className="mtm">
+            <FrequencyEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
+              unit="minute"
+              units="minutes"
+              min={1}
+              max={525600}
+            />
+          </div>
         </div>
-        <FrequencyEditor
-          recurrence={this.props.recurrence}
-          onChange={this.props.onChange}
-          unit="minute"
-          units="minutes"
-          min={1}
-          max={525600}
-        />
       </div>
     );
   }

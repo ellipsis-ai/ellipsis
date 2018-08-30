@@ -79,7 +79,7 @@ class RecurrenceTimesToRunEditor extends React.Component<Props> {
     return (
       <div>
         <div className="align-button mrm type-s">
-          How many times
+          Repeat
         </div>
         <div className="align-button mrm">
           <ToggleGroup className="form-toggle-group-s">

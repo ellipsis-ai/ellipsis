@@ -15,15 +15,16 @@ class MonthlyRecurrenceEditor extends React.Component<Props> {
   }
 
   render() {
-      return (
-        <div>
-          <div className="mvm">
+    return (
+      <div>
+        <div className="mvm pam border bg-white border-radius">
+          <div className="mbm">
             <DayOfMonthEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
             />
           </div>
-          <div className="mvm">
+          <div className="mtm">
             <TimeOfDayEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
@@ -31,14 +32,16 @@ class MonthlyRecurrenceEditor extends React.Component<Props> {
               teamTimeZoneName={this.props.teamTimeZoneName}
             />
           </div>
-          <div className="mvm">
+        </div>
+        <div className="mvm pam border bg-white border-radius">
+          <div>
             <RecurrenceTimesToRunEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
             />
           </div>
           {this.props.recurrence.totalTimesToRun === 1 ? null : (
-            <div className="mvm">
+            <div className="mtm">
               <FrequencyEditor
                 recurrence={this.props.recurrence}
                 onChange={this.props.onChange}
@@ -50,8 +53,9 @@ class MonthlyRecurrenceEditor extends React.Component<Props> {
             </div>
           )}
         </div>
-      );
-    }
+      </div>
+    );
+  }
 }
 
 export default MonthlyRecurrenceEditor;

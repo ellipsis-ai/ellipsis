@@ -8,21 +8,22 @@ import autobind from "../lib/autobind";
 type Props = RecurrenceEditorProps & RecurrenceEditorTimeZoneProps
 
 class YearlyRecurrenceEditor extends React.Component<Props> {
-    constructor(props) {
-      super(props);
-      autobind(this);
-    }
+  constructor(props) {
+    super(props);
+    autobind(this);
+  }
 
-    render() {
-      return (
-        <div>
-          <div className="mvm">
+  render() {
+    return (
+      <div>
+        <div className="mvm pam border bg-white border-radius">
+          <div className="mbm">
             <MonthDayEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
             />
           </div>
-          <div className="mvm">
+          <div className="mtm">
             <TimeOfDayEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
@@ -30,21 +31,22 @@ class YearlyRecurrenceEditor extends React.Component<Props> {
               teamTimeZoneName={this.props.teamTimeZoneName}
             />
           </div>
-          {this.props.recurrence.totalTimesToRun === 1 ? null : (
-            <div className="mvm">
-              <FrequencyEditor
-                recurrence={this.props.recurrence}
-                onChange={this.props.onChange}
-                unit="year"
-                units="years"
-                min={1}
-                max={10}
-              />
-            </div>
-          )}
         </div>
-      );
-    }
+        {this.props.recurrence.totalTimesToRun === 1 ? null : (
+          <div className="mvm pam border bg-white border-radius">
+            <FrequencyEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
+              unit="year"
+              units="years"
+              min={1}
+              max={10}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
 }
 
 export default YearlyRecurrenceEditor;

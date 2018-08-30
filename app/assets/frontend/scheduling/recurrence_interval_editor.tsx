@@ -56,7 +56,6 @@ class RecurrenceIntervalEditor extends React.Component<Props> {
     return (
       <div>
         <div className="mvm">
-          <div className="align-button type-s mrm">Interval</div>
           <div className="align-button mrm">
             <ToggleGroup className="form-toggle-group-s">
               <ToggleGroupItem

@@ -25,7 +25,7 @@ class FrequencyEditor extends React.Component<Props> {
       if (this.props.recurrence.totalTimesToRun === 1) {
         return "In";
       } else {
-        return "Repeat every";
+        return "Every";
       }
     }
 

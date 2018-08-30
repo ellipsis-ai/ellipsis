@@ -14,9 +14,10 @@ class DailyRecurrenceEditor extends React.Component<Props> {
   }
 
   render() {
-      return (
-        <div>
-          <div className="mvm">
+    return (
+      <div>
+        <div className="mvm pam border bg-white border-radius">
+          <div>
             <TimeOfDayEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
@@ -24,14 +25,16 @@ class DailyRecurrenceEditor extends React.Component<Props> {
               teamTimeZoneName={this.props.teamTimeZoneName}
             />
           </div>
-          <div className="mvm">
+        </div>
+        <div className="mvm pam border bg-white border-radius">
+          <div>
             <RecurrenceTimesToRunEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
             />
           </div>
           {this.props.recurrence.totalTimesToRun === 1 ? null : (
-            <div className="mvm">
+            <div className="mtm">
               <FrequencyEditor
                 recurrence={this.props.recurrence}
                 onChange={this.props.onChange}
@@ -43,8 +46,9 @@ class DailyRecurrenceEditor extends React.Component<Props> {
             </div>
           )}
         </div>
-      );
-    }
+      </div>
+    );
+  }
 }
 
 export default DailyRecurrenceEditor;
