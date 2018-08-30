@@ -63,7 +63,7 @@ case class RunEvent(
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     for {
       botName <- botName(services)
-      channelToUse <- channelForSend(responseType, maybeConversation, services)
+      maybeDMChannel <- eventualMaybeDMChannel(services)
       maybeTs <- SlackMessageSender(
         services.slackApiService.clientFor(profile),
         user,
@@ -72,7 +72,7 @@ case class RunEvent(
         responseType,
         developerContext,
         channel,
-        channelToUse,
+        maybeDMChannel,
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,

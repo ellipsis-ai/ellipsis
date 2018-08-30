@@ -1,5 +1,6 @@
 package models.behaviors.behaviorversion
 
+import models.behaviors.conversations.conversation.Conversation
 import utils.Enum
 
 object BehaviorResponseType extends Enum[BehaviorResponseType] {
@@ -12,22 +13,14 @@ sealed trait BehaviorResponseType extends BehaviorResponseType.Value {
   val displayName: String
 
   def channelToUseFor(
-                     maybeChannelToForce: Option[String],
-                     originatingChannel: String,
-                     channelToUse: String,
-                     maybeThreadTs: Option[String]
-                     ): String = {
-    maybeChannelToForce.getOrElse {
-      channelToUseFor(originatingChannel, channelToUse, maybeThreadTs)
-    }
-  }
-
-  def channelToUseFor(
                        originatingChannel: String,
-                       channelToUse: String,
-                       maybeThreadTs: Option[String]
+                       maybeConversation: Option[Conversation],
+                       maybeThreadTs: Option[String],
+                       maybeDMChannel: Option[String]
                      ): String = {
-    maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse)
+    maybeThreadTs.map(_ => originatingChannel).orElse {
+      maybeConversation.flatMap(_.maybeChannel)
+    }.getOrElse(originatingChannel)
   }
 
   def maybeThreadTsToUseFor(
@@ -47,10 +40,13 @@ case object Private extends BehaviorResponseType {
   val displayName = "Respond privately"
 
   override def channelToUseFor(
-                               originatingChannel: String,
-                               channelToUse: String,
-                               maybeThreadTs: Option[String]
-                             ): String = channelToUse
+                                originatingChannel: String,
+                                maybeConversation: Option[Conversation],
+                                maybeThreadTs: Option[String],
+                                maybeDMChannel: Option[String]
+                              ): String = {
+    maybeDMChannel.getOrElse(super.channelToUseFor(originatingChannel, maybeConversation, maybeThreadTs, maybeDMChannel))
+  }
 
   override def maybeThreadTsToUseFor(
                                      channel: String,

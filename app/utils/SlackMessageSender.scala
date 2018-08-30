@@ -3,7 +3,7 @@ package utils
 import akka.actor.ActorSystem
 import json.Formatting._
 import models.SlackMessageFormatter
-import models.behaviors.behaviorversion.BehaviorResponseType
+import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
@@ -36,7 +36,7 @@ case class SlackMessageSender(
                                responseType: BehaviorResponseType,
                                developerContext: DeveloperContext,
                                originatingChannel: String,
-                               channelToUse: String,
+                               maybeDMChannel: Option[String],
                                maybeThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
@@ -50,8 +50,6 @@ case class SlackMessageSender(
                                isEphemeral: Boolean,
                                maybeResponseUrl: Option[String]
                              ) {
-
-  val maybeThreadTsToUse = maybeConversation.flatMap(_.maybeThreadId).orElse(maybeThreadId)
 
   val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
     if (choices.isEmpty) {
@@ -124,15 +122,24 @@ case class SlackMessageSender(
     }
   }
 
+  private def maybeThreadTsToUse(channel: String) = {
+    responseType.maybeThreadTsToUseFor(channel, originatingChannel, maybeThreadId)
+  }
+
+  private def channelToUse(maybeChannelToForce: Option[String] = None): String = {
+    maybeChannelToForce.getOrElse {
+      responseType.channelToUseFor(originatingChannel, maybeConversation, maybeThreadId, maybeDMChannel)
+    }
+  }
+
   private def postChatMessage(
                                text: String,
-                               maybeThreadTs: Option[String] = None,
                                maybeReplyBroadcast: Option[Boolean] = None,
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    val channel = responseType.channelToUseFor(maybeChannelToForce, originatingChannel, channelToUse, maybeThreadTs)
-    val maybeThreadTsToUse = responseType.maybeThreadTsToUseFor(channel, originatingChannel, maybeThreadTs)
+    val channel = channelToUse(maybeChannelToForce)
+    val maybeThreadTs = maybeThreadTsToUse(channel)
     maybeResponseUrlToUse(channel).map { responseUrl =>
       client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral)
     }.getOrElse {
@@ -153,7 +160,7 @@ case class SlackMessageSender(
           iconEmoji = None,
           replaceOriginal = None,
           deleteOriginal = None,
-          threadTs = maybeThreadTsToUse,
+          threadTs = maybeThreadTs,
           replyBroadcast = maybeReplyBroadcast
         ).recover {
           case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
@@ -177,20 +184,14 @@ case class SlackMessageSender(
     }
   }
 
-  def sendPreamble(formattedText: String, channelToUse: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+  def sendPreamble(formattedText: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
-        _ <- if (isDirectMessage(channelToUse) && channelToUse != originatingChannel) {
+        _ <- if (responseType == Private && !maybeDMChannel.contains(originatingChannel)) {
           postChatMessage(
             s"<@${user}> I've sent you a private message :sleuth_or_spy:",
-            maybeThreadTs = maybeThreadTsToUse,
             maybeChannelToForce = Some(originatingChannel)
           )
-        } else {
-          Future.successful({})
-        }
-        _ <- if (!isDirectMessage(channelToUse) && channelToUse != originatingChannel) {
-          postChatMessage(s"<@${user}> OK, back to <#${channelToUse}>")
         } else {
           Future.successful({})
         }
@@ -224,7 +225,6 @@ case class SlackMessageSender(
 
         postChatMessage(
           segment,
-          maybeThreadTsToUse,
           maybeReplyBroadcast = Some(false),
           maybeAttachmentsForSegment
         )
@@ -239,7 +239,7 @@ case class SlackMessageSender(
       content = spec.content,
       filetype = spec.filetype,
       filename = spec.filename,
-      channels = Some(Seq(channelToUse))
+      channels = Some(Seq(channelToUse()))
     ).map(_ => {})
   }
 
@@ -254,8 +254,8 @@ case class SlackMessageSender(
       case _ => Seq()
     }
     for {
-      _ <- sendPreamble(formattedText, channelToUse)
-      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, attachments, maybeConversation, None)
+      _ <- sendPreamble(formattedText)
+      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles
     } yield maybeLastTs
   }
