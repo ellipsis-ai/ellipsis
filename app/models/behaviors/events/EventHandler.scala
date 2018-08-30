@@ -166,11 +166,7 @@ class EventHandler @Inject() (
       BuiltinBehavior.maybeFrom(event, services).map { builtin =>
         event.resultReactionHandler(builtin.result.map(Seq(_)), services)
       }.getOrElse {
-        maybeHandleInExpiredThread(event).flatMap { maybeExpiredThreadResult =>
-          maybeExpiredThreadResult.map(r => Future.successful(Seq(r))).getOrElse {
-            startInvokeConversationFor(event)
-          }
-        }
+        startInvokeConversationFor(event)
       }
     }).recover {
       case e: FetchValidValuesBadResultException => Seq(e.result)

@@ -57,7 +57,7 @@ class BotResultServiceImpl @Inject() (
       maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
       maybeSlackTeamIdForUser <- DBIO.from(dataService.users.maybeSlackTeamIdFor(user))
       maybeThreadId <- DBIO.successful(if (botResult.responseType == Threaded) {
-        maybeMessageTs
+        botResult.maybeConversation.flatMap(_.maybeThreadId).orElse(maybeMessageTs)
       } else {
         None
       })

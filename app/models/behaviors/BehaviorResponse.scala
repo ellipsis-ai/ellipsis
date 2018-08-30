@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorVersion, Threaded}
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
@@ -147,10 +147,29 @@ case class BehaviorResponse(
           } else {
             for {
               maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services)
+              maybeThreadId <- if (behaviorVersion.responseType == Threaded) {
+                event.maybeThreadId.map(tid => Future.successful(Some(tid))).getOrElse {
+                  event.sendMessage(
+                    "Thread.",
+                    behaviorVersion.responseType,
+                    maybeShouldUnfurl = None,
+                    None,
+                    attachmentGroups = Seq(),
+                    files = Seq(),
+                    choices = Seq(),
+                    DeveloperContext.default,
+                    services,
+                    services.configuration
+                  )
+                }
+              } else {
+                Future.successful(None)
+              }
               convo <- InvokeBehaviorConversation.createFor(
                 behaviorVersion,
                 event,
                 maybeChannel,
+                maybeThreadId,
                 maybeActivatedTrigger,
                 maybeNewParent,
                 dataService,
