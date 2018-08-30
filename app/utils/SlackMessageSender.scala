@@ -134,7 +134,6 @@ case class SlackMessageSender(
 
   private def postChatMessage(
                                text: String,
-                               maybeReplyBroadcast: Option[Boolean] = None,
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
@@ -161,16 +160,12 @@ case class SlackMessageSender(
           replaceOriginal = None,
           deleteOriginal = None,
           threadTs = maybeThreadTs,
-          replyBroadcast = maybeReplyBroadcast
+          replyBroadcast = None
         ).recover {
           case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
         }
       }
     }
-  }
-
-  private def isDirectMessage(channelId: String): Boolean = {
-    channelId.startsWith("D")
   }
 
   private def messageSegmentsFor(formattedText: String): List[String] = {
@@ -225,7 +220,6 @@ case class SlackMessageSender(
 
         postChatMessage(
           segment,
-          maybeReplyBroadcast = Some(false),
           maybeAttachmentsForSegment
         )
       }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
