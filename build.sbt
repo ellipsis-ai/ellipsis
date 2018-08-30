@@ -38,7 +38,7 @@ libraryDependencies ++= Seq(
   guice,
   "com.github.tminglei" %% "slick-pg" % "0.15.3",
   "com.github.tminglei" %% "slick-pg_play-json" % "0.15.3",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.1" % Test,
   "org.mockito" % "mockito-core" % "1.8.5" % Test,
   "com.mohiva" %% "play-silhouette" % "5.0.0",
   "com.mohiva" %% "play-silhouette-persistence" % "5.0.0",
