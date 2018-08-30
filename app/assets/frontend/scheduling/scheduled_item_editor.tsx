@@ -20,7 +20,8 @@ interface Props {
   slackUserId: string,
   slackBotUserId: string,
   isAdmin: boolean,
-  scheduleUser: Option<User>
+  scheduleUser: Option<User>,
+  csrfToken: string
 }
 
 class ScheduledItemEditor extends React.Component<Props> {
@@ -110,6 +111,7 @@ class ScheduledItemEditor extends React.Component<Props> {
               recurrence={scheduledAction.recurrence}
               teamTimeZone={this.props.teamTimeZone}
               teamTimeZoneName={this.props.teamTimeZoneName}
+              csrfToken={this.props.csrfToken}
             />
           </div>
         </div>

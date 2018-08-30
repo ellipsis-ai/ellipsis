@@ -185,6 +185,7 @@ class SchedulingLoader extends React.Component<Props, State> {
                 isAdmin={this.props.isAdmin}
                 userMap={this.state.userMap}
                 onLoadUserData={this.onLoadUserData}
+                csrfToken={this.props.csrfToken}
                 {...pageProps}
               />
             )} />
