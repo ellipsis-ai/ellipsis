@@ -47,7 +47,7 @@ class MonthDayEditor extends React.Component<Props> {
             <DayOfMonthInput value={this.getDay()} onChange={this.onChangeDay} />
           </span>
           <span className="align-button mrm type-s">of</span>
-          <div className="align-button height-xl">
+          <div className="align-button mrm height-xl">
             <Select className="form-select-s" value={this.getMonthText()} onChange={this.onChangeMonth}>
               {Month.YEAR.map((month) => (
                 <option key={month.name()} value={month.toString()}>{month.name()}</option>

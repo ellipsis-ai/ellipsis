@@ -29,11 +29,17 @@ class WeekdayEditor extends React.Component<Props> {
     onChangeDay(isChecked: boolean, stringValue?: Option<string>): void {
       if (typeof stringValue === "string") {
         const day = DayOfWeek.fromString(stringValue).value;
+        let weekdays: Array<number>;
         if (isChecked && typeof day === "number" && !this.weekdaysInclude(day)) {
-          this.onChange(this.getWeekdays().concat(day));
+          weekdays = this.getWeekdays().concat(day);
         } else {
-          this.onChange(this.getWeekdays().filter((ea) => ea !== day));
+          weekdays = this.getWeekdays().filter((ea) => ea !== day);
         }
+        const timesToRun = this.props.recurrence.totalTimesToRun;
+        if (timesToRun && weekdays.length > timesToRun) {
+          weekdays = weekdays.slice(weekdays.length - timesToRun);
+        }
+        this.onChange(weekdays);
       }
     }
 

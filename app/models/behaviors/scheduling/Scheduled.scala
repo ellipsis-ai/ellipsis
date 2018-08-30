@@ -34,7 +34,13 @@ trait Scheduled {
 
   def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String]
 
-  def followingSentAt: OffsetDateTime = recurrence.nextAfter(nextSentAt)
+  def maybeFollowingSentAt: Option[OffsetDateTime] = {
+    if (recurrence.shouldRunAgainAfterNextRun) {
+      Some(recurrence.nextAfter(nextSentAt))
+    } else {
+      None
+    }
+  }
 
   def successResponse(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     displayText(dataService).map { displayText =>
@@ -129,11 +135,17 @@ trait Scheduled {
   }
 
   def nextRunsString: String = {
-    s"""The next two times will be:
-       | - ${nextRunStringFor(nextSentAt)}
-       | - ${nextRunStringFor(followingSentAt)}
-       |
-     """.stripMargin
+    maybeFollowingSentAt.map { followingSentAt =>
+      s"""The next two times will be:
+         | - ${nextRunStringFor(nextSentAt)}
+         | - ${nextRunStringFor(followingSentAt)}
+         |
+       """.stripMargin
+    }.getOrElse {
+      s"""The next time will be:
+         | - ${nextRunStringFor(nextSentAt)}
+       """.stripMargin
+    }
   }
 
   def botProfileAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[SlackBotProfile]] = {
@@ -274,8 +286,17 @@ trait Scheduled {
     }.getOrElse(Future.successful(Unit))
   }
 
-  def updateNextTriggeredForAction(dataService: DataService): DBIO[Scheduled]
+  def updateOrDeleteScheduleAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Scheduled]] = {
+    if (recurrence.shouldRunAgainAfterNextRun) {
+      updateForNextRunAction(dataService).map(Some(_))
+    } else {
+      deleteAction(dataService).map(_ => None)
+    }
+  }
 
+  def updateForNextRunAction(dataService: DataService): DBIO[Scheduled]
+
+  def deleteAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Unit]
 }
 
 object Scheduled {

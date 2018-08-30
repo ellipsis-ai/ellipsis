@@ -15,6 +15,10 @@ import OptionalInt from './optional_int';
       }
     }
 
+    isValid(): boolean {
+      return DayOfMonth.isValid(this.value);
+    }
+
     static fromString(string): DayOfMonth {
       const parsed = string.substr(-2, 2).match(/(3[0-1]|[1-2][0-9]|[1-9])$/);
       return new DayOfMonth(super.fromString(parsed ? parsed[1] : "").value);

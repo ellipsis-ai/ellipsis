@@ -21,6 +21,22 @@ class FrequencyEditor extends React.Component<Props> {
       return this.props.recurrence.frequency;
     }
 
+    getFrequencyType() {
+      if (this.props.recurrence.totalTimesToRun === 1) {
+        return "In";
+      } else {
+        return "Every";
+      }
+    }
+
+    getFrequencySuffix(): string {
+      if (this.props.recurrence.totalTimesToRun === 1) {
+        return "from now";
+      } else {
+        return "";
+      }
+    }
+
     getTextValue(): string {
       return new OptionalInt(this.getFrequency()).toString();
     }
@@ -39,13 +55,13 @@ class FrequencyEditor extends React.Component<Props> {
     render() {
       return (
         <div>
-          <span className="align-button mrm type-s">Every</span>
+          <span className="align-button mrm type-s">{this.getFrequencyType()}</span>
           <FormInput
             className="width-5 form-input-borderless align-c"
             value={this.getTextValue()}
             onChange={this.onChange}
           />
-          <span className="align-button mlm type-s">{this.getUnit()}</span>
+          <span className="align-button mlm type-s">{this.getUnit()} {this.getFrequencySuffix()}</span>
         </div>
       );
     }

@@ -4,6 +4,7 @@ import FrequencyEditor from './frequency_editor';
 import TimeOfDayEditor from './time_of_day_editor';
 import {RecurrenceEditorProps, RecurrenceEditorTimeZoneProps} from "./recurrence_editor";
 import autobind from "../lib/autobind";
+import RecurrenceTimesToRunEditor from "./recurrence_times_to_run_editor";
 
 type Props = RecurrenceEditorProps & RecurrenceEditorTimeZoneProps
 
@@ -14,25 +15,16 @@ class MonthlyRecurrenceEditor extends React.Component<Props> {
   }
 
   render() {
-      return (
-        <div>
-          <div className="mvm">
-            <FrequencyEditor
-              recurrence={this.props.recurrence}
-              onChange={this.props.onChange}
-              unit="month"
-              units="months"
-              min={1}
-              max={120}
-            />
-          </div>
-          <div className="mvm">
+    return (
+      <div>
+        <div className="mvm pam border bg-white border-radius">
+          <div className="mbm">
             <DayOfMonthEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
             />
           </div>
-          <div className="mvm">
+          <div className="mtm">
             <TimeOfDayEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}
@@ -41,8 +33,29 @@ class MonthlyRecurrenceEditor extends React.Component<Props> {
             />
           </div>
         </div>
-      );
-    }
+        <div className="mvm pam border bg-white border-radius">
+          <div>
+            <RecurrenceTimesToRunEditor
+              recurrence={this.props.recurrence}
+              onChange={this.props.onChange}
+            />
+          </div>
+          {this.props.recurrence.totalTimesToRun === 1 ? null : (
+            <div className="mtm">
+              <FrequencyEditor
+                recurrence={this.props.recurrence}
+                onChange={this.props.onChange}
+                unit="month"
+                units="months"
+                min={1}
+                max={120}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 }
 
 export default MonthlyRecurrenceEditor;

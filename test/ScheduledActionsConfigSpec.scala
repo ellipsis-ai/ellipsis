@@ -43,7 +43,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
   }
 
   def makeScheduleFor(channelId: String, team: Team): ScheduledMessage = {
-    val recurrence = Daily(IDs.next, 1, LocalTime.NOON, ZoneId.of("America/Toronto"))
+    val recurrence = Daily(IDs.next, 1, 0, None, LocalTime.NOON, ZoneId.of("America/Toronto"))
     ScheduledMessage(
       IDs.next,
       ":tada:",

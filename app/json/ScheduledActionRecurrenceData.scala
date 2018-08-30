@@ -14,6 +14,8 @@ case class ScheduledActionRecurrenceData(
                                           id: Option[String],
                                           displayString: String,
                                           frequency: Int,
+                                          timesHasRun: Int,
+                                          totalTimesToRun: Option[Int],
                                           typeName: String,
                                           timeOfDay: Option[ScheduledActionRecurrenceTimeData],
                                           timeZone: Option[String],
@@ -25,6 +27,10 @@ case class ScheduledActionRecurrenceData(
                                           month: Option[Int],
                                           daysOfWeek: Seq[Int]
                                         ) {
+
+  private def getId: String = {
+    id.getOrElse(IDs.next)
+  }
 
   private def maybeValidMinuteOfHour: Option[Int] = {
     minuteOfHour.filter(ea => ea >= 0 && ea <= 59)
@@ -83,7 +89,7 @@ case class ScheduledActionRecurrenceData(
     for {
       _ <- Option(typeName).filter(_ == Minutely.recurrenceType)
     } yield {
-      Minutely(IDs.next, frequency)
+      Minutely(getId, frequency, timesHasRun, totalTimesToRun)
     }
   }
 
@@ -92,7 +98,7 @@ case class ScheduledActionRecurrenceData(
       _ <- Option(typeName).filter(_ == Hourly.recurrenceType)
       validMinuteOfHour <- maybeValidMinuteOfHour
     } yield {
-      Hourly(IDs.next, frequency, validMinuteOfHour)
+      Hourly(getId, frequency, timesHasRun, totalTimesToRun, validMinuteOfHour)
     }
   }
 
@@ -102,7 +108,7 @@ case class ScheduledActionRecurrenceData(
       localTime <- maybeLocalTime
       timeZone <- maybeZoneId
     } yield {
-      Daily(IDs.next, frequency, localTime, timeZone)
+      Daily(getId, frequency, timesHasRun, totalTimesToRun, localTime, timeZone)
     }
   }
 
@@ -113,7 +119,7 @@ case class ScheduledActionRecurrenceData(
       localTime <- maybeLocalTime
       zoneId <- maybeZoneId
     } yield {
-      Weekly(IDs.next, frequency, daysOfWeek, localTime, zoneId)
+      Weekly(getId, frequency, timesHasRun, totalTimesToRun, daysOfWeek, localTime, zoneId)
     }
   }
 
@@ -124,7 +130,7 @@ case class ScheduledActionRecurrenceData(
       localTime <- maybeLocalTime
       zoneId <- maybeZoneId
     } yield {
-      MonthlyByDayOfMonth(IDs.next, frequency, dayOfMonth, localTime, zoneId)
+      MonthlyByDayOfMonth(getId, frequency, timesHasRun, totalTimesToRun, dayOfMonth, localTime, zoneId)
     }
   }
 
@@ -136,7 +142,7 @@ case class ScheduledActionRecurrenceData(
       localTime <- maybeLocalTime
       zoneId <- maybeZoneId
     } yield {
-      MonthlyByNthDayOfWeek(IDs.next, frequency, dayOfWeek, nthDayOfWeek, localTime, zoneId)
+      MonthlyByNthDayOfWeek(getId, frequency, timesHasRun, totalTimesToRun, dayOfWeek, nthDayOfWeek, localTime, zoneId)
     }
   }
 
@@ -147,7 +153,7 @@ case class ScheduledActionRecurrenceData(
       localTime <- maybeLocalTime
       zoneId <- maybeZoneId
     } yield {
-      Yearly(IDs.next, frequency, monthDay, localTime, zoneId)
+      Yearly(getId, frequency, timesHasRun, totalTimesToRun, monthDay, localTime, zoneId)
     }
   }
 
@@ -176,6 +182,8 @@ object ScheduledActionRecurrenceData {
       Some(recurrence.id),
       recurrence.displayString,
       recurrence.frequency,
+      recurrence.timesHasRun,
+      recurrence.maybeTotalTimesToRun,
       recurrence.typeName,
       recurrence.maybeTimeOfDay.map(time => ScheduledActionRecurrenceTimeData(time.getHour, time.getMinute)),
       recurrence.maybeTimeZone.map(_.toString),
