@@ -20,7 +20,7 @@ class RecurrenceSpec extends PlaySpec {
       recurrence <- maybeRecurrence
       otherRecurrence <- maybeOtherRecurrence
     } yield {
-      recurrence.copyWithEmptyId mustBe otherRecurrence.copyWithEmptyId
+      recurrence.copyWithEmptyId mustEqual otherRecurrence.copyWithEmptyId
     }
   }
 
@@ -46,6 +46,16 @@ class RecurrenceSpec extends PlaySpec {
 
     "be created with frequency" in {
       mustMatch(Recurrence.maybeUnsavedFromText("every 5 minutes", timeZone), Some(Minutely(IDs.next, 5, 0, None)))
+    }
+
+    "be created to run once when applicable" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 minutes", timeZone), Some(Minutely(IDs.next, 5, 0, Some(1))))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 minute", timeZone), Some(Minutely(IDs.next, 1, 0, Some(1))))
+    }
+
+    "be created to run N times when applicable" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 minutes, 5 times", timeZone), Some(Minutely(IDs.next, 5, 0, Some(5))))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 minute, 1 time", timeZone), Some(Minutely(IDs.next, 1, 0, Some(1))))
     }
   }
 
@@ -93,6 +103,19 @@ class RecurrenceSpec extends PlaySpec {
       mustMatch(Recurrence.maybeUnsavedFromText("every 4 hours at 15 minutes", timeZone), Some(Hourly(IDs.next, 4, 0, None, 15)))
     }
 
+    "be created to run once when applicable" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), 12)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1)))
+    }
+
+    "be created to run N times when applicable" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), 12)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1)))
+    }
   }
 
   "Daily" should {
@@ -146,6 +169,13 @@ class RecurrenceSpec extends PlaySpec {
     "use the default timezone if not specified in recurrence" in {
       val laTz = ZoneId.of("America/Los_Angeles")
       mustMatch(Recurrence.maybeUnsavedFromText("every 4 days at 3pm", laTz), Some(Daily(IDs.next, 4, 0, None, LocalTime.parse("15:00"), laTz)))
+    }
+
+    "create a one-time recurrence for today or tomorrow" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("today at 12:00:00am", timeZone), None)
+      mustMatch(Recurrence.maybeUnsavedFromText("today at 11:59:59pm", timeZone), Some(Daily(IDs.next, 1, 0, Some(1), LocalTime.parse("23:59:59"), timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("tomorrow at 12:00:00am", timeZone), Some(Daily(IDs.next, 1, 0, Some(1), LocalTime.parse("00:00:00"), timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("tomorrow at 11:59:59pm", timeZone), Some(Daily(IDs.next, 2, 0, Some(1), LocalTime.parse("23:59:59"), timeZone)))
     }
 
   }

@@ -142,13 +142,25 @@ object Minutely {
   def maybeUnsavedFromText(text: String): Option[Minutely] = {
     val singleRegex = """(?i).*every minute.*""".r
     val nRegex = """(?i).*every\s+(\d+)\s*minutes?.*""".r
+    val maybeNTimesRegex = """(?i).*in\s+(\d+)\s*minutes?.*""".r
     val maybeFrequency = text match {
       case singleRegex() => Some(1)
       case nRegex(frequency) => Some(frequency.toInt)
       case _ => None
     }
-    maybeFrequency.map { frequency =>
-      Minutely(IDs.next, frequency, 0, Recurrence.maybeTimesToRunFromText(text))
+    val maybeRunNTimes = text match {
+      case maybeNTimesRegex(frequency) => Some(frequency.toInt)
+      case _ => None
+    }
+    maybeFrequency.orElse(maybeRunNTimes).map { frequency =>
+      val maybeTimesToRun = Recurrence.maybeTimesToRunFromText(text).orElse {
+        if (maybeRunNTimes.isDefined) {
+          Some(1)
+        } else {
+          None
+        }
+      }
+      Minutely(IDs.next, frequency, 0, maybeTimesToRun)
     }
   }
 }
@@ -201,18 +213,30 @@ object Hourly {
   def maybeUnsavedFromText(text: String): Option[Hourly] = {
     val singleRegex = """(?i).*every hour.*""".r
     val nRegex = """(?i).*every\s+(\d+)\s+hours?.*""".r
+    val maybeNTimesRegex = """(?i).*in\s+(\d+)\s*hours?.*""".r
     val maybeFrequency = text match {
       case singleRegex() => Some(1)
       case nRegex(frequency) => Some(frequency.toInt)
       case _ => None
     }
-    maybeFrequency.map { frequency =>
+    val maybeRunNTimes = text match {
+      case maybeNTimesRegex(frequency) => Some(frequency.toInt)
+      case _ => None
+    }
+    maybeFrequency.orElse(maybeRunNTimes).map { frequency =>
       val minutesRegex = """.*at\s+(\d+)\s+minutes?.*""".r
       val maybeMinuteOfHour = text match {
         case minutesRegex(minutes) => Some(minutes.toInt)
         case _ => None
       }
-      Hourly(IDs.next, frequency, 0, Recurrence.maybeTimesToRunFromText(text), maybeMinuteOfHour.getOrElse(OffsetDateTime.now.getMinute))
+      val maybeTimesToRun = Recurrence.maybeTimesToRunFromText(text).orElse {
+        if (maybeRunNTimes.isDefined) {
+          Some(1)
+        } else {
+          None
+        }
+      }
+      Hourly(IDs.next, frequency, 0, maybeTimesToRun, maybeMinuteOfHour.getOrElse(OffsetDateTime.now.getMinute))
     }
   }
 }
@@ -289,14 +313,35 @@ object Daily {
   def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[Daily] = {
     val singleRegex = """(?i)every day.*""".r
     val nRegex = """(?i)every\s+(\d+)\s+days?.*""".r
+    val todayOrTomorrowRegex = """(?i)(today|tomorrow)\s+at.*""".r
     val maybeFrequency = text match {
       case singleRegex() => Some(1)
       case nRegex(frequency) => Some(frequency.toInt)
       case _ => None
     }
+    val maybeTodayOrTomorrow = text match {
+      case todayOrTomorrowRegex(todayOrTomorrow) => Some(todayOrTomorrow.toLowerCase)
+      case _ => None
+    }
+    val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
+    val maybeTimesToRun = Recurrence.maybeTimesToRunFromText(text)
     maybeFrequency.map { frequency =>
-      val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
-      Daily(IDs.next, frequency, 0, Recurrence.maybeTimesToRunFromText(text), maybeTime.getOrElse(Recurrence.currentAdjustedTime(defaultTimeZone)), defaultTimeZone)
+      Daily(IDs.next, frequency, 0, maybeTimesToRun, maybeTime.getOrElse(Recurrence.currentAdjustedTime(defaultTimeZone)), defaultTimeZone)
+    }.orElse {
+      (for {
+        todayOrTomorrow <- maybeTodayOrTomorrow
+        time <- maybeTime
+      } yield {
+        val now = LocalTime.now(defaultTimeZone)
+        if (todayOrTomorrow == "today" && time.isAfter(now)) {
+          Some(Daily(IDs.next, 1, 0, Some(1), time, defaultTimeZone))
+        } else if (todayOrTomorrow == "tomorrow") {
+          val frequency = if (time.isAfter(now)) { 2 } else { 1 }
+          Some(Daily(IDs.next, frequency, 0, Some(1), time, defaultTimeZone))
+        } else {
+          None
+        }
+      }).flatten
     }
   }
 }
