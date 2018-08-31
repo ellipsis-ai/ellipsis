@@ -16,7 +16,7 @@ class DailyRecurrenceEditor extends React.Component<Props> {
   render() {
     return (
       <div>
-        <div className="mvm pam border bg-white border-radius">
+        <div className="mvm pam border bg-white">
           <div>
             <TimeOfDayEditor
               recurrence={this.props.recurrence}
@@ -26,7 +26,7 @@ class DailyRecurrenceEditor extends React.Component<Props> {
             />
           </div>
         </div>
-        <div className="mvm pam border bg-white border-radius">
+        <div className="mvm pam border bg-white">
           <div>
             <RecurrenceTimesToRunEditor
               recurrence={this.props.recurrence}

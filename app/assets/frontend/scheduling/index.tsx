@@ -38,7 +38,8 @@ export interface SchedulingProps {
   newAction: Option<boolean>,
   isAdmin: boolean,
   userMap: UserMap,
-  onLoadUserData: (userId: string) => void
+  onLoadUserData: (userId: string) => void,
+  csrfToken: string
 }
 
 type Props = SchedulingProps & PageRequiredProps
@@ -475,6 +476,7 @@ class Scheduling extends React.Component<Props, State> {
               slackBotUserId={this.props.slackBotUserId || ""}
               isAdmin={this.props.isAdmin}
               scheduleUser={selectedItem && selectedItem.userId ? this.lookupUser(selectedItem.userId) : null}
+              csrfToken={this.props.csrfToken}
             />
           </Collapsible>
 

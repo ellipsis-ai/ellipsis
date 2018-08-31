@@ -16,7 +16,7 @@ class YearlyRecurrenceEditor extends React.Component<Props> {
   render() {
     return (
       <div>
-        <div className="mvm pam border bg-white border-radius">
+        <div className="mvm pam border bg-white">
           <div className="mbm">
             <MonthDayEditor
               recurrence={this.props.recurrence}
@@ -33,7 +33,7 @@ class YearlyRecurrenceEditor extends React.Component<Props> {
           </div>
         </div>
         {this.props.recurrence.totalTimesToRun === 1 ? null : (
-          <div className="mvm pam border bg-white border-radius">
+          <div className="mvm pam border bg-white">
             <FrequencyEditor
               recurrence={this.props.recurrence}
               onChange={this.props.onChange}

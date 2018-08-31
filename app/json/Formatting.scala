@@ -123,6 +123,8 @@ object Formatting {
   lazy implicit val scheduledActionRecurrenceDataReads = Json.reads[ScheduledActionRecurrenceData]
   lazy implicit val scheduledActionRecurrenceDataWrites = Json.writes[ScheduledActionRecurrenceData]
 
+  lazy implicit val scheduledActionNextRecurrencesData = Json.writes[ScheduledActionValidatedRecurrenceData]
+
   lazy implicit val scheduledActionDataReads = Json.reads[ScheduledActionData]
   lazy implicit val scheduledActionDataWrites = Json.writes[ScheduledActionData]
 
