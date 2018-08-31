@@ -1,7 +1,7 @@
 import React from 'react';
 import BehaviorResponseType from '../models/behavior_response_type';
 import Codemirror from '../shared_ui/react-codemirror';
-import DropdownMenu from '../shared_ui/dropdown_menu';
+import ToggleGroup from '../form/toggle_group';
 import HelpButton from '../help/help_button';
 import ResponseTemplate from '../models/response_template';
 import SectionHeading from '../shared_ui/section_heading';
@@ -36,21 +36,16 @@ const ResponseTemplateConfiguration = React.createClass({
             </SectionHeading>
 
             <div className="border-top border-left border-right border-light pas">
-              <DropdownMenu
-                openWhen={this.props.responseTypeMenuOpenWhen}
-                label={this.props.responseType.displayString}
-                menuClassName="popup-dropdown-menu-right"
-                toggle={this.props.toggleResponseTypeMenu}
-              >
+              <ToggleGroup className="form-toggle-group-s align-m">
                 {this.props.possibleResponseTypes.map((ea, index) => (
-                  <DropdownMenu.Item
+                  <ToggleGroup.Item
                     key={"response-type-" + index}
-                    checkedWhen={this.props.responseType.id === ea.id}
+                    activeWhen={this.props.responseType.id === ea.id}
                     onClick={this.props.onSelectResponseType.bind(null, ea)}
                     label={ea.displayString}
                   />
                 ))}
-              </DropdownMenu>
+              </ToggleGroup>
             </div>
             <div className="position-relative CodeMirror-container-no-gutter pbm">
               <Codemirror value={this.props.template.toString()}
