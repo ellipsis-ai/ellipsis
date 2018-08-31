@@ -150,7 +150,7 @@ case class BehaviorResponse(
               maybeThreadId <- if (behaviorVersion.responseType == Threaded) {
                 event.maybeThreadId.map(tid => Future.successful(Some(tid))).getOrElse {
                   event.sendMessage(
-                    "Thread.",
+                    "Let's continue this in a thread :speech_balloon:",
                     behaviorVersion.responseType,
                     maybeShouldUnfurl = None,
                     None,
