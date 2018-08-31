@@ -439,7 +439,7 @@ class APIController @Inject() (
                 arguments = Some(info.arguments),
                 recurrence = scheduled.recurrence.displayString,
                 firstRecurrence = Some(scheduled.nextSentAt),
-                secondRecurrence = Some(scheduled.followingSentAt),
+                secondRecurrence = scheduled.maybeFollowingSentAt,
                 useDM = scheduled.isForIndividualMembers,
                 channel = scheduled.maybeChannel.getOrElse("(missing)")
               )),
@@ -477,7 +477,7 @@ class APIController @Inject() (
             arguments = None,
             recurrence = scheduled.recurrence.displayString,
             firstRecurrence = Some(scheduled.nextSentAt),
-            secondRecurrence = Some(scheduled.followingSentAt),
+            secondRecurrence = scheduled.maybeFollowingSentAt,
             useDM = scheduled.isForIndividualMembers,
             channel = scheduled.maybeChannel.getOrElse("(missing)")
           )),

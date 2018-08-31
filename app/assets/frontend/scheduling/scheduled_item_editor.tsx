@@ -104,7 +104,7 @@ class ScheduledItemEditor extends React.Component<Props> {
             />
           </div>
           <div className="container container-wide pvxxl">
-            <SectionHeading number="3">When to repeat</SectionHeading>
+            <SectionHeading number="3">When to do it</SectionHeading>
             <RecurrenceEditor
               onChange={this.updateRecurrence}
               recurrence={scheduledAction.recurrence}

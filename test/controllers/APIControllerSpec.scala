@@ -417,7 +417,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
                 team,
                 Some(defaultChannel),
                 isForIndividualMembers = false,
-                Daily(IDs.next, 1, LocalTime.of(12, 0, 0), team.timeZone),
+                Daily(IDs.next, 1, 0, None, LocalTime.of(12, 0, 0), team.timeZone),
                 OffsetDateTime.now,
                 OffsetDateTime.now
               )
@@ -452,7 +452,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
                 team,
                 Some(defaultChannel),
                 isForIndividualMembers = false,
-                Daily(IDs.next, 1, LocalTime.of(12, 0, 0), team.timeZone),
+                Daily(IDs.next, 1, 0, None, LocalTime.of(12, 0, 0), team.timeZone),
                 OffsetDateTime.now,
                 OffsetDateTime.now
               )
@@ -599,7 +599,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
           team,
           Some(defaultChannel),
           isForIndividualMembers = false,
-          Daily(IDs.next, 1, LocalTime.of(12, 0, 0), team.timeZone),
+          Daily(IDs.next, 1, 0, None, LocalTime.of(12, 0, 0), team.timeZone),
           OffsetDateTime.now,
           OffsetDateTime.now
         )
@@ -655,7 +655,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
           team,
           Some(defaultChannel),
           isForIndividualMembers = false,
-          Daily(IDs.next, 1, LocalTime.of(12, 0, 0), team.timeZone),
+          Daily(IDs.next, 1, 0, None, LocalTime.of(12, 0, 0), team.timeZone),
           OffsetDateTime.now,
           OffsetDateTime.now
         )

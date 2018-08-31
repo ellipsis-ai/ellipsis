@@ -25,7 +25,7 @@ trait ScheduledMessageService {
 
   def save(message: ScheduledMessage): Future[ScheduledMessage]
 
-  def updateNextTriggeredForAction(message: ScheduledMessage): DBIO[ScheduledMessage]
+  def updateForNextRunAction(message: ScheduledMessage): DBIO[ScheduledMessage]
 
   def maybeCreateWithRecurrenceText(
                       text: String,
@@ -46,6 +46,8 @@ trait ScheduledMessageService {
                ): Future[ScheduledMessage]
 
   def deleteFor(text: String, team: Team): Future[Boolean]
+
+  def deleteAction(scheduledBehavior: ScheduledMessage): DBIO[Option[ScheduledMessage]]
 
   def delete(scheduledMessage: ScheduledMessage): Future[Option[ScheduledMessage]]
 

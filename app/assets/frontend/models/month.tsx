@@ -30,13 +30,21 @@ import OptionalInt from './optional_int';
       return typeof this.value === "number" && this.isValid() ? Month.MAX_DAYS[this.value - 1] : null;
     }
 
-    limitDaytoMax(day: number): Option<number> {
+    limitDaytoMax(day: Option<number>): Option<number> {
       const days = this.maxDays();
-      return days ? Math.min(days, day) : day;
+      return days && day ? Math.min(days, day) : day;
     }
 
     isValid(): boolean {
       return this.is((int) => int >= 1 && int <= 12);
+    }
+
+    valueForJSDate(): Option<number> {
+      if (this.isValid() && typeof this.value === "number") {
+        return this.value - 1;
+      } else {
+        return null;
+      }
     }
 
     static fromString(string): Month {

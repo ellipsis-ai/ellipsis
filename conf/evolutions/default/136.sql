@@ -2,11 +2,16 @@
 
 BEGIN;
 
-ALTER TABLE behavior_versions ADD COLUMN response_type TEXT NOT NULL DEFAULT 'Normal';
-UPDATE behavior_versions SET response_type = 'Private' WHERE private_response = TRUE;
+ALTER TABLE recurrences ADD COLUMN times_has_run INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE recurrences ADD COLUMN total_times_to_run INTEGER DEFAULT NULL;
 
 COMMIT;
 
 # --- !Downs
 
-ALTER TABLE behavior_versions DROP COLUMN response_type;
+BEGIN;
+
+ALTER TABLE recurrences DROP COLUMN times_has_run;
+ALTER TABLE recurrences DROP COLUMN total_times_to_run;
+
+COMMIT;

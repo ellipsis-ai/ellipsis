@@ -43,7 +43,7 @@ class ScheduledActor @Inject()(
             DBIO.from(dataService.linkedAccounts.maybeSlackUserIdFor(user))
           }.getOrElse(DBIO.successful(None))
           _ <- maybeProfile.map { profile =>
-            scheduled.updateNextTriggeredForAction(dataService).flatMap { _ =>
+            scheduled.updateOrDeleteScheduleAction(dataService).flatMap { _ =>
               DBIO.from(scheduled.send(eventHandler, profile, services, displayText).recover {
                 case t: Throwable => {
                   val user = scheduled.maybeUser.map { user =>
