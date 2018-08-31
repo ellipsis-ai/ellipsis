@@ -115,8 +115,10 @@ case class SlackMessageSender(
   }
 
   private def maybeResponseUrlToUse(channel: String): Option[String] = {
-    // Using the response url in a thread results in a message back in the main channel, for <%= reason %>
-    if (channel == originatingChannel && maybeThreadId.isEmpty) {
+    // We can't always use the response url, as it's a bit quirky:
+    // - using the response url in a thread results in a message back in the main channel, for <%= reason %>
+    // - posts to the response url don't give back a message ts
+    if (channel == originatingChannel && maybeThreadId.isEmpty && isEphemeral) {
       maybeResponseUrl
     } else {
       None

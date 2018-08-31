@@ -52,7 +52,7 @@ case class ActionChoice(
                          allowOthers: Option[Boolean],
                          allowMultipleSelections: Option[Boolean],
                          userId: Option[String],
-                         groupVersionId: Option[String]
+                         originatingBehaviorVersionId: Option[String]
                        ) extends WithActionArgs {
 
   val areOthersAllowed: Boolean = allowOthers.contains(true)
@@ -64,9 +64,10 @@ case class ActionChoice(
   }
 
   private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    groupVersionId.map { gvid =>
+    originatingBehaviorVersionId.map { bvid =>
       for {
-        maybeGroupVersion <- dataService.behaviorGroupVersions.findWithoutAccessCheck(gvid)
+        maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(bvid)
+        maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
         maybeActionChoiceSlackTeamId <- maybeGroupVersion.map { gv =>
           dataService.slackBotProfiles.allFor(gv.team).map(_.headOption.map(_.slackTeamId))
         }.getOrElse(Future.successful(None))
@@ -286,7 +287,7 @@ case class SuccessResult(
         choices.map { ea =>
           ea.copy(
             userId = Some(user.id),
-            groupVersionId = Some(behaviorVersion.groupVersion.id)
+            originatingBehaviorVersionId = Some(behaviorVersion.id)
           )
         }
       }
