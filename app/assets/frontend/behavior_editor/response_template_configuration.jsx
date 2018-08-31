@@ -45,6 +45,7 @@ const ResponseTemplateConfiguration = React.createClass({
                 {this.props.possibleResponseTypes.map((ea, index) => (
                   <DropdownMenu.Item
                     key={"response-type-" + index}
+                    checkedWhen={this.props.responseType.id === ea.id}
                     onClick={this.props.onSelectResponseType.bind(null, ea)}
                     label={ea.displayString}
                   />
