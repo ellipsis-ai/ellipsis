@@ -792,8 +792,8 @@ describe('diffs', () => {
               },
               {
                 "label": "Response type",
-                "modified": "Respond privately",
-                "original": "Respond normally",
+                "modified": "Private",
+                "original": "Normal",
               },
               {
                 "item": {
