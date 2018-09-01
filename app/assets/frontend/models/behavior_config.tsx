@@ -4,7 +4,7 @@ import DataTypeConfig, {DataTypeConfigJson} from './data_type_config';
 export interface BehaviorConfigJson {
   exportId?: Option<string>;
   name?: Option<string>;
-  responseType: BehaviorResponseTypeJson;
+  responseTypeId: string;
   canBeMemoized?: Option<boolean>;
   isDataType: boolean;
   isTest: boolean;
@@ -13,7 +13,7 @@ export interface BehaviorConfigJson {
 
 interface BehaviorConfigInterface extends BehaviorConfigJson {
   dataTypeConfig?: Option<DataTypeConfig>;
-  responseType: BehaviorResponseType;
+  responseTypeId: string;
   canBeMemoized: boolean;
 }
 
@@ -21,7 +21,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
   constructor(
     readonly exportId: Option<string>,
     readonly name: Option<string>,
-    readonly responseType: BehaviorResponseType,
+    readonly responseTypeId: string,
     readonly canBeMemoized: boolean,
     readonly isDataType: boolean,
     readonly isTest: boolean,
@@ -30,7 +30,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
       Object.defineProperties(this, {
         exportId: { value: exportId, enumerable: true },
         name: { value: name, enumerable: true },
-        responseType: { value: responseType, enumerable: true },
+        responseTypeId: { value: responseTypeId, enumerable: true },
         canBeMemoized: { value: Boolean(canBeMemoized), enumerable: true },
         isDataType: { value: isDataType, enumerable: true },
         isTest: { value: isTest, enumerable: true },
@@ -55,7 +55,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
       return new BehaviorConfig(
         props.exportId,
         props.name,
-        props.responseType,
+        props.responseTypeId,
         props.canBeMemoized,
         props.isDataType,
         props.isTest,
@@ -66,8 +66,7 @@ class BehaviorConfig implements BehaviorConfigInterface {
     static fromJson(props: BehaviorConfigJson): BehaviorConfig {
       const materializedProps = Object.assign({}, props, {
         canBeMemoized: Boolean(props.canBeMemoized),
-        dataTypeConfig: props.dataTypeConfig ? DataTypeConfig.fromJson(props.dataTypeConfig) : null,
-        responseType: BehaviorResponseType.fromProps(props.responseType)
+        dataTypeConfig: props.dataTypeConfig ? DataTypeConfig.fromJson(props.dataTypeConfig) : null
       });
       return BehaviorConfig.fromProps(materializedProps);
     }

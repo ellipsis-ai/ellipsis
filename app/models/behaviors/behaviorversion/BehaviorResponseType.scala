@@ -10,6 +10,7 @@ object BehaviorResponseType extends Enum[BehaviorResponseType] {
 }
 
 sealed trait BehaviorResponseType extends BehaviorResponseType.Value {
+  val id: String = toString
   val displayName: String
 
   def channelToUseFor(

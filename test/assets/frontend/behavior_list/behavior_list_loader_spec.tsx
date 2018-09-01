@@ -28,10 +28,8 @@ describe('BehaviorListApp', () => {
   jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get', absoluteURL: absoluteUrl });
   jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get', absoluteURL: absoluteUrl });
 
-  const normalResponseTypeJson = {
-    id: "Normal",
-    displayString: "Respond normally"
-  };
+  const normalResponseType= "Normal";
+  const normalResponseTypeJson = { id: normalResponseType, displayString: "Display normally" };
 
   const behaviorVersionTask1: BehaviorVersionJson = {
     "teamId": "abcdef",
@@ -53,7 +51,7 @@ describe('BehaviorListApp', () => {
     "config": {
       isDataType: false,
       isTest: false,
-      responseType: normalResponseTypeJson
+      responseTypeId: normalResponseType
     },
     "createdAt": 1468338136532,
     inputIds: []
@@ -73,7 +71,7 @@ describe('BehaviorListApp', () => {
     "config": {
       isDataType: false,
       isTest: false,
-      responseType: normalResponseTypeJson
+      responseTypeId: normalResponseType
     },
     "createdAt": 1468359271138,
     inputIds: []
@@ -88,7 +86,7 @@ describe('BehaviorListApp', () => {
     "config": {
       isDataType: false,
       isTest: false,
-      responseType: normalResponseTypeJson
+      responseTypeId: normalResponseType
     },
     "createdAt": 1466109904858,
     inputIds: []

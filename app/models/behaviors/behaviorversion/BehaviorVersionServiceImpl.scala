@@ -283,7 +283,7 @@ class BehaviorVersionServiceImpl @Inject() (
         maybeDescription = data.description,
         maybeFunctionBody = Some(data.functionBody),
         maybeResponseTemplate = Some(data.responseTemplate),
-        responseType = BehaviorResponseType.definitelyFind(data.config.responseType.id),
+        responseType = BehaviorResponseType.definitelyFind(data.config.responseTypeId),
         canBeMemoized = data.config.canBeMemoized.exists(identity)
       ))
       inputs <- DBIO.sequence(data.inputIds.map { inputId =>

@@ -10,10 +10,7 @@ describe('BehaviorList', () => {
   jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get' });
   jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get' });
 
-  const normalResponseTypeJson = {
-    id: "Normal",
-    displayString: "Respond normally"
-  };
+  const normalResponseType = "Normal";
 
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",
@@ -35,7 +32,7 @@ describe('BehaviorList', () => {
       "caseSensitive": false
     }],
     "config": {
-      "responseType": normalResponseTypeJson
+      "responseTypeId": normalResponseType
     },
     "createdAt": 1468338136532
   });
@@ -54,7 +51,7 @@ describe('BehaviorList', () => {
       "caseSensitive": false
     }],
     "config": {
-      "responseType": normalResponseTypeJson
+      "responseTypeId": normalResponseType
     },
     "createdAt": 1468359271138
   });
@@ -73,7 +70,7 @@ describe('BehaviorList', () => {
       "caseSensitive": false
     }],
     "config": {
-      "responseType": normalResponseTypeJson
+      "responseTypeId": normalResponseType
     },
     "createdAt": 1511817369237
   });
@@ -87,7 +84,7 @@ describe('BehaviorList', () => {
     "params": [],
     "triggers": [],
     "config": {
-      "responseType": normalResponseTypeJson
+      "responseTypeId": normalResponseType
     },
     "createdAt": 1466109904858
   });
@@ -101,7 +98,7 @@ describe('BehaviorList', () => {
     "params": [],
     "triggers": [],
     "config": {
-      "responseType": normalResponseTypeJson
+      "responseTypeId": normalResponseType
     },
     "createdAt": 1511816895686
   });

@@ -1395,7 +1395,7 @@ const BehaviorEditor = React.createClass({
   },
 
   onSelectResponseType: function(newValue) {
-    this.setConfigProperty('responseType', newValue);
+    this.setConfigProperty('responseTypeId', newValue);
   },
 
   syncParamNamesAndCount: function(oldName, newName) {
@@ -1948,14 +1948,6 @@ const BehaviorEditor = React.createClass({
 
   toggleApiAdderDropdown: function() {
     this.toggleActiveDropdown("apiConfigAdderDropdown");
-  },
-
-  responseTypeMenuOpenWhen: function() {
-    return this.getActiveDropdown() === "responseTypeMenu";
-  },
-
-  toggleResponseTypeMenuDropdown: function() {
-    this.toggleActiveDropdown("responseTypeMenu");
   },
 
   renderFooter: function() {
@@ -2581,9 +2573,7 @@ const BehaviorEditor = React.createClass({
                   onChangeTemplate={this.updateTemplate}
                   isFinishedBehavior={this.isFinishedBehavior()}
                   behaviorUsesCode={this.getFunctionBody().length > 0}
-                  responseTypeMenuOpenWhen={this.responseTypeMenuOpenWhen()}
-                  toggleResponseTypeMenu={this.toggleResponseTypeMenuDropdown}
-                  responseType={this.getBehaviorConfig().responseType}
+                  responseTypeId={this.getBehaviorConfig().responseTypeId}
                   possibleResponseTypes={this.props.possibleResponseTypes}
                   onSelectResponseType={this.onSelectResponseType}
                   onCursorChange={this.ensureCursorVisible}

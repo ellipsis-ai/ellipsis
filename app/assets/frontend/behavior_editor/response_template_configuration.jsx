@@ -12,9 +12,7 @@ const ResponseTemplateConfiguration = React.createClass({
       onChangeTemplate: React.PropTypes.func.isRequired,
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       behaviorUsesCode: React.PropTypes.bool.isRequired,
-      toggleResponseTypeMenu: React.PropTypes.func.isRequired,
-      responseTypeMenuOpenWhen: React.PropTypes.bool.isRequired,
-      responseType: React.PropTypes.instanceOf(BehaviorResponseType).isRequired,
+      responseTypeId: React.PropTypes.string.isRequired,
       possibleResponseTypes: React.PropTypes.arrayOf(BehaviorResponseType).isRequired,
       onSelectResponseType: React.PropTypes.func.isRequired,
       onCursorChange: React.PropTypes.func.isRequired,
@@ -40,8 +38,8 @@ const ResponseTemplateConfiguration = React.createClass({
                 {this.props.possibleResponseTypes.map((ea, index) => (
                   <ToggleGroup.Item
                     key={"response-type-" + index}
-                    activeWhen={this.props.responseType.id === ea.id}
-                    onClick={this.props.onSelectResponseType.bind(null, ea)}
+                    activeWhen={this.props.responseTypeId === ea.id}
+                    onClick={this.props.onSelectResponseType.bind(null, ea.id)}
                     label={ea.displayString}
                   />
                 ))}

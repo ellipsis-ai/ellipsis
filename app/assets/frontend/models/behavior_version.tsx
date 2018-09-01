@@ -113,7 +113,8 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         isCode: true
       }, {
         name: "Response type",
-        value: this.config.responseType.displayString
+        value: this.config.responseTypeId,
+        isCategorical: true
       }, {
         name: "Cache results",
         value: Boolean(this.config.canBeMemoized)

@@ -23,15 +23,9 @@ const requiredTrelloConfigId = 'requiredTrello123456';
 const requiredGithubConfigId = 'requiredGithub123456';
 const requiredPivotalTrackerConfigId = 'requiredPivotalTracker123456';
 
-const normalResponseTypeJson = {
-  id: "Normal",
-  displayString: "Respond normally"
-};
+const normalResponseType = "Normal";
 
-const privateResponseTypeJson = {
-  id: "Private",
-  displayString: "Respond privately"
-};
+const privateResponseType = "Private";
 
 const behaviorVersion1: BehaviorVersionJson = Object.freeze({
   "id": "abcdef",
@@ -57,7 +51,7 @@ const behaviorVersion1: BehaviorVersionJson = Object.freeze({
   }],
   "inputIds": [inputId, inputId2],
   "config": {
-    responseType: normalResponseTypeJson,
+    responseTypeId: normalResponseType,
     isDataType: false,
     isTest: false,
     exportId: null,
@@ -92,7 +86,7 @@ const behaviorVersion2: BehaviorVersionJson = Object.freeze({
   }],
   "inputIds": [inputId2, inputId],
   "config": {
-    responseType: privateResponseTypeJson,
+    responseTypeId: privateResponseType,
     isDataType: false,
     isTest: false,
     exportId: null,
@@ -336,7 +330,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
       "name": "Agenda",
-      "responseType": normalResponseTypeJson,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -365,7 +359,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "V-LAjv1AS4CoFimMANnxpg",
       "name": "Deactivate",
-      "responseType": normalResponseTypeJson,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -384,7 +378,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "J0uB9LvZTo6_L-spEBrtqg",
       "name": "Help",
-      "responseType": normalResponseTypeJson,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -408,7 +402,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "SBH4IfDzTGO8P7kV02yECw",
       "name": "Reminders",
-      "responseType": normalResponseTypeJson,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -432,7 +426,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "ioHMv3b3T4utFwwH0cwjLg",
       "name": "Setup",
-      "responseType": normalResponseTypeJson,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -512,7 +506,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "V-LAjv1AS4CoFimMANnxpg",
       "name": "Deactivate",
-      "responseType": normalResponseTypeJson,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -533,7 +527,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "J0uB9LvZTo6_L-spEBrtqg",
       "name": "Help",
-      "responseType": normalResponseTypeJson,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -559,7 +553,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "ioHMv3b3T4utFwwH0cwjLg",
       "name": "Setup",
-      "responseType": normalResponseTypeJson,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -585,7 +579,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "SBH4IfDzTGO8P7kV02yECw",
       "name": "Reminders",
-      "responseType": normalResponseTypeJson,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -611,7 +605,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
       "name": "Agenda",
-      "responseType": normalResponseTypeJson,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },

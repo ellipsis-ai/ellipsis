@@ -28,16 +28,9 @@ jsRoutes.controllers.SocialAuthController.authenticateGithub = jest.fn(() => ({ 
 jsRoutes.controllers.BehaviorEditorController.versionInfoFor = jest.fn(() => ({ url: '/mock_version_info' }));
 
 describe('BehaviorEditor', () => {
-  const normalResponseTypeJson = {
-    id: "Normal",
-    displayString: "Respond normally"
-  };
-  const normalResponseType = BehaviorResponseType.fromProps(normalResponseTypeJson);
-  const privateResponseTypeJson = {
-    id: "Private",
-    displayString: "Respond privately"
-  };
-  const privateResponseType = BehaviorResponseType.fromProps(privateResponseTypeJson);
+  const normalResponseType = "Normal";
+  const normalResponseTypeJson = { id: normalResponseType, displayString: "Response normally" };
+  const privateResponseType = "Private";
   const groupJson: BehaviorGroupJson = {
     id: '1',
     actionInputs: [],
@@ -57,7 +50,7 @@ describe('BehaviorEditor', () => {
         config: {
           isDataType: false,
           isTest: false,
-          responseType: normalResponseTypeJson
+          responseTypeId: normalResponseType
         },
         groupId: '1'
       }
@@ -154,7 +147,7 @@ describe('BehaviorEditor', () => {
       "responseTemplate": "",
       "inputIds": [],
       "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false }],
-      "config": { "isDataType": false, "isTest": false, responseType: normalResponseTypeJson }
+      "config": { "isDataType": false, "isTest": false, responseTypeId: normalResponseType }
     }],
     "libraryVersions": [],
     "requiredAWSConfigs": [],
@@ -246,7 +239,7 @@ describe('BehaviorEditor', () => {
       builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson),
       onDeploy: jest.fn(),
       botName: "TestBot",
-      possibleResponseTypes: [normalResponseType]
+      possibleResponseTypes: [normalResponseTypeJson]
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
@@ -409,7 +402,7 @@ describe('BehaviorEditor', () => {
             config: {
               isDataType: false,
               isTest: false,
-              responseType: normalResponseTypeJson
+              responseTypeId: normalResponseType
             },
             groupId: groupId
           },
@@ -423,7 +416,7 @@ describe('BehaviorEditor', () => {
             config: {
               isDataType: false,
               isTest: false,
-              responseType: normalResponseTypeJson
+              responseTypeId: normalResponseType
             },
             groupId: groupId
           }
@@ -438,14 +431,14 @@ describe('BehaviorEditor', () => {
 
   describe('setConfigProperty', () => {
     it("clones the existing behavior config with updated properties", () => {
-      editorConfig.group.behaviorVersions[0].config.responseType = normalResponseType;
+      editorConfig.group.behaviorVersions[0].config.responseTypeId = normalResponseType;
       let editor = createEditor(editorConfig);
       editor.setEditableProp = jest.fn();
-      expect(editor.getBehaviorConfig().responseType.id).toBe(normalResponseType.id);
-      editor.setConfigProperty('responseType', privateResponseType);
+      expect(editor.getBehaviorConfig().responseTypeId).toBe(normalResponseType);
+      editor.setConfigProperty('responseTypeId', privateResponseType);
       const newConfig = editor.setEditableProp.mock.calls[0][1];
       expect(newConfig.constructor.name).toBe("BehaviorConfig");
-      expect(newConfig.responseType.id).toBe(privateResponseType.id);
+      expect(newConfig.responseTypeId).toBe(privateResponseType);
     });
   });
 

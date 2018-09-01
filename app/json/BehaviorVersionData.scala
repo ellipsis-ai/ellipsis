@@ -173,7 +173,7 @@ object BehaviorVersionData {
       config = BehaviorConfig(
         None,
         maybeName,
-        BehaviorResponseTypeData.normal,
+        BehaviorResponseTypeData.normal.id,
         None,
         isDataType = maybeDataTypeConfig.isDefined,
         Some(isTest),
@@ -279,7 +279,7 @@ object BehaviorVersionData {
         val config = BehaviorConfig(
           maybeExportId,
           behaviorVersion.maybeName,
-          BehaviorResponseTypeData.from(behaviorVersion.responseType),
+          behaviorVersion.responseType.id,
           Some(behaviorVersion.canBeMemoized),
           isDataType = maybeEnsuredDataTypeConfigData.isDefined,
           isTest = Some(behaviorVersion.isTest),
