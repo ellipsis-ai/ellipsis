@@ -196,7 +196,7 @@ object BehaviorVersionData {
                    dataService: DataService
                    ): BehaviorVersionData = {
     var json = Json.parse(configString)
-    if ((json \ "responseType").isEmpty) {
+    if ((json \ "responseTypeId").isEmpty) {
       json match {
         case obj: JsObject => {
           val isPrivate = (json \ "forcePrivateResponse").getOrElse(JsFalse) == JsTrue
@@ -205,7 +205,7 @@ object BehaviorVersionData {
           } else {
             Normal
           }
-          json = obj ++ Json.obj("responseType" -> Json.toJson(BehaviorResponseTypeData.from(responseType)))
+          json = obj ++ Json.obj("responseTypeId" -> JsString(responseType.id))
         }
         case _ =>
       }
