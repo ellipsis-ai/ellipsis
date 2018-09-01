@@ -13,7 +13,7 @@ const ResponseTemplateConfiguration = React.createClass({
       isFinishedBehavior: React.PropTypes.bool.isRequired,
       behaviorUsesCode: React.PropTypes.bool.isRequired,
       responseTypeId: React.PropTypes.string.isRequired,
-      possibleResponseTypes: React.PropTypes.arrayOf(BehaviorResponseType).isRequired,
+      possibleResponseTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorResponseType)).isRequired,
       onSelectResponseType: React.PropTypes.func.isRequired,
       onCursorChange: React.PropTypes.func.isRequired,
       onToggleHelp: React.PropTypes.func.isRequired,
