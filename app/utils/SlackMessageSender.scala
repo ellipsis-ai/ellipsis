@@ -231,12 +231,14 @@ case class SlackMessageSender(
 
   def sendFile(spec: UploadFileSpec)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val file = File.makeTemp().jfile
+    val channel = channelToUse()
     client.uploadFile(
       file,
       content = spec.content,
       filetype = spec.filetype,
       filename = spec.filename,
-      channels = Some(Seq(channelToUse()))
+      channels = Some(Seq(channel)),
+      maybeThreadTs = maybeThreadTsToUse(channel)
     ).map(_ => {})
   }
 
