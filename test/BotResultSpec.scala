@@ -2,7 +2,7 @@ import akka.actor.ActorSystem
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{SlackMessage, SlackMessageEvent}
@@ -57,7 +57,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
     val groupVersion = newSavedGroupVersionFor(group, user)
     val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
 
-    runNow(InvokeBehaviorConversation.createFor(behaviorVersion, newEventFor(profile), Some(event.channel), None, None, dataService, cacheService))
+    runNow(InvokeBehaviorConversation.createFor(behaviorVersion, newEventFor(profile), Some(event.channel), None, None, None, dataService, cacheService))
   }
 
   def mockPostChatMessage(text: String, event: SlackMessageEvent, client: SlackApiClient, resultTs: String, maybeThreadId: Option[String]): Unit = {
@@ -76,7 +76,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
       replaceOriginal = None,
       deleteOriginal = None,
       threadTs = maybeThreadId,
-      replyBroadcast = Some(false)
+      replyBroadcast = None
     )).thenReturn({
       Future.successful(resultTs)
     })
@@ -103,7 +103,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             invocationJson = JsObject.empty,
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
-            forcePrivateResponse = false,
+            responseType = Normal,
             developerContext = DeveloperContext.default
           )
         val resultTs: String = SlackTimestamp.now
@@ -136,7 +136,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             invocationJson = JsObject.empty,
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
-            forcePrivateResponse = false,
+            responseType = Normal,
             developerContext = DeveloperContext.default
           )
         val resultTs: String = SlackTimestamp.now
@@ -213,7 +213,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             invocationJson = JsObject.empty,
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
-            forcePrivateResponse = false,
+            responseType = Normal,
             developerContext = DeveloperContext.default
           )
 
@@ -261,7 +261,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             invocationJson = JsObject.empty,
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
-            forcePrivateResponse = false,
+            responseType = Normal,
             developerContext = DeveloperContext.default
           )
 

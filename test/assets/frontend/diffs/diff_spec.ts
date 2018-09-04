@@ -23,6 +23,10 @@ const requiredTrelloConfigId = 'requiredTrello123456';
 const requiredGithubConfigId = 'requiredGithub123456';
 const requiredPivotalTrackerConfigId = 'requiredPivotalTracker123456';
 
+const normalResponseType = "Normal";
+
+const privateResponseType = "Private";
+
 const behaviorVersion1: BehaviorVersionJson = Object.freeze({
   "id": "abcdef",
   teamId: "1",
@@ -47,7 +51,7 @@ const behaviorVersion1: BehaviorVersionJson = Object.freeze({
   }],
   "inputIds": [inputId, inputId2],
   "config": {
-    "forcePrivateResponse": false,
+    responseTypeId: normalResponseType,
     isDataType: false,
     isTest: false,
     exportId: null,
@@ -82,7 +86,7 @@ const behaviorVersion2: BehaviorVersionJson = Object.freeze({
   }],
   "inputIds": [inputId2, inputId],
   "config": {
-    "forcePrivateResponse": true,
+    responseTypeId: privateResponseType,
     isDataType: false,
     isTest: false,
     exportId: null,
@@ -326,7 +330,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
       "name": "Agenda",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -355,7 +359,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "V-LAjv1AS4CoFimMANnxpg",
       "name": "Deactivate",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -374,7 +378,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "J0uB9LvZTo6_L-spEBrtqg",
       "name": "Help",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -398,7 +402,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "SBH4IfDzTGO8P7kV02yECw",
       "name": "Reminders",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -422,7 +426,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "ioHMv3b3T4utFwwH0cwjLg",
       "name": "Setup",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -502,7 +506,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "V-LAjv1AS4CoFimMANnxpg",
       "name": "Deactivate",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -523,7 +527,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "J0uB9LvZTo6_L-spEBrtqg",
       "name": "Help",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -549,7 +553,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "ioHMv3b3T4utFwwH0cwjLg",
       "name": "Setup",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -575,7 +579,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "SBH4IfDzTGO8P7kV02yECw",
       "name": "Reminders",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -601,7 +605,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "config": {
       "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
       "name": "Agenda",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
@@ -787,9 +791,9 @@ describe('diffs', () => {
                 ]]
               },
               {
-                "label": "Always responds privately",
-                "modified": true,
-                "original": false
+                "label": "Response type",
+                "modified": "Private",
+                "original": "Normal",
               },
               {
                 "item": {

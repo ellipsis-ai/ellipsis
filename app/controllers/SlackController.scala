@@ -7,6 +7,7 @@ import json.Formatting._
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.{Normal, Threaded}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
@@ -445,6 +446,7 @@ class SlackController @Inject() (
   case class OriginalMessageInfo(
                                   text: String,
                                   attachments: Seq[AttachmentInfo],
+                                  ts: String,
                                   response_type: Option[String],
                                   replace_original: Option[Boolean],
                                   thread_ts: Option[String],
@@ -827,45 +829,59 @@ class SlackController @Inject() (
                                                        actionChoice: ActionChoice,
                                                        maybeGroupVersion: Option[BehaviorGroupVersion],
                                                        info: ActionsTriggeredInfo,
-                                                       botProfile: SlackBotProfile
+                                                       botProfile: SlackBotProfile,
+                                                       maybeInstantResponseTs: Option[String]
                                                      ): Future[Unit] = {
-    dataService.slackBotProfiles.sendResultWithNewEvent(
-      s"run action named ${actionChoice.actionName}",
-      event => for {
-        maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
-          dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
-        }.getOrElse(Future.successful(None))
-        params <- maybeBehaviorVersion.map { behaviorVersion =>
-          dataService.behaviorParameters.allFor(behaviorVersion)
-        }.getOrElse(Future.successful(Seq()))
-        invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
-          params.find(_.name == name).map { param =>
-            (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+    for {
+      maybeThreadIdToUse <- info.maybeOriginalMessageThreadId.map(tid => Future.successful(Some(tid))).getOrElse {
+        actionChoice.originatingBehaviorVersionId.map { bvid =>
+          dataService.behaviorVersions.findWithoutAccessCheck(bvid).map { maybeOriginatingBehaviorVersion =>
+            if (maybeOriginatingBehaviorVersion.exists(_.responseType == Threaded)) {
+              maybeInstantResponseTs.orElse(info.original_message.map(_.ts))
+            } else {
+              None
+            }
           }
-        })
-        maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-          dataService.behaviorResponses.buildFor(
-            event,
-            behaviorVersion,
-            invocationParams,
-            None,
-            None,
-            None
-          ).map(Some(_))
         }.getOrElse(Future.successful(None))
-        maybeResult <- maybeResponse.map { response =>
-          response.result.map(Some(_))
-        }.getOrElse(Future.successful(None))
-      } yield maybeResult,
-      info.slackTeamIdToUse,
-      botProfile,
-      info.channel.id,
-      info.user.id,
-      info.message_ts,
-      info.maybeOriginalMessageThreadId,
-      info.isEphemeral,
-      Some(info.response_url)
-    ).map(_ => {})
+      }
+      _ <- dataService.slackBotProfiles.sendResultWithNewEvent(
+        s"run action named ${actionChoice.actionName}",
+        event => for {
+          maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+            dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
+          }.getOrElse(Future.successful(None))
+          params <- maybeBehaviorVersion.map { behaviorVersion =>
+            dataService.behaviorParameters.allFor(behaviorVersion)
+          }.getOrElse(Future.successful(Seq()))
+          invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
+            params.find(_.name == name).map { param =>
+              (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+            }
+          })
+          maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+            dataService.behaviorResponses.buildFor(
+              event,
+              behaviorVersion,
+              invocationParams,
+              None,
+              None,
+              None
+            ).map(Some(_))
+          }.getOrElse(Future.successful(None))
+          maybeResult <- maybeResponse.map { response =>
+            response.result.map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield maybeResult,
+        info.slackTeamIdToUse,
+        botProfile,
+        info.channel.id,
+        info.user.id,
+        info.message_ts,
+        maybeThreadIdToUse,
+        info.isEphemeral,
+        Some(info.response_url)
+      )
+    } yield {}
   }
 
   trait ActionPermission {
@@ -880,13 +896,10 @@ class SlackController @Inject() (
     }
     implicit val request: Request[AnyContent]
 
-    def instantBackgroundResponse(responseText: String): Future[Unit] = {
+    def instantBackgroundResponse(responseText: String): Future[Option[String]] = {
       for {
         maybeBotProfile <- info.maybeBotProfile
-      } yield {
-        (for {
-          botProfile <- maybeBotProfile
-        } yield {
+        maybeTs <- maybeBotProfile.map { botProfile =>
           dataService.slackBotProfiles.sendResultWithNewEvent(
             "Message acknowledging response to Slack action",
             slackMessageEvent => for {
@@ -897,7 +910,7 @@ class SlackController @Inject() (
                 slackMessageEvent,
                 maybeConversation,
                 s"_${trimmed}_",
-                forcePrivateResponse = false,
+                responseType = Normal,
                 shouldInterrupt = false
               ))
             },
@@ -910,17 +923,19 @@ class SlackController @Inject() (
             info.isEphemeral,
             Some(info.response_url)
           )
-        }).getOrElse(Future.successful({}))
-      }
+        }.getOrElse(Future.successful(None))
+      } yield maybeTs
     }
 
-    def runInBackground: Unit
+    def runInBackground(maybeInstantResponseTs: Future[Option[String]]): Unit
 
     def result: Result = {
 
       // respond immediately by sending a new message
-      maybeResultText.foreach(instantBackgroundResponse)
-      runInBackground
+      maybeResultText.map(instantBackgroundResponse).map { maybeInstantResponseTs =>
+        runInBackground(maybeInstantResponseTs)
+      }
+
 
       val updated = if (shouldRemoveActions) {
         info.original_message.map { originalMessage =>
@@ -975,10 +990,13 @@ class SlackController @Inject() (
 
     override val shouldRemoveActions: Boolean = !actionChoice.allowMultipleSelections.exists(identity) && canBeTriggered
 
-    def runInBackground = {
+    def runInBackground(maybeInstantResponseTs: Future[Option[String]]) = {
       if (canBeTriggered) {
         if (isActive) {
-          processTriggerableAndActiveActionChoice(actionChoice, maybeGroupVersion, info, botProfile)
+          for {
+            maybeTs <- maybeInstantResponseTs
+            result <- processTriggerableAndActiveActionChoice(actionChoice, maybeGroupVersion, info, botProfile, maybeTs)
+          } yield result
         }
       } else {
         sendCannotBeTriggeredFor(actionChoice, maybeGroupVersion, info)
@@ -996,9 +1014,10 @@ class SlackController @Inject() (
 
     def buildFor(actionChoice: ActionChoice, info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[ActionChoicePermission] = {
       for {
-        maybeGroupVersion <- actionChoice.groupVersionId.map { groupVersionId =>
-          dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
+        maybeOriginatingBehaviorVersion <- actionChoice.originatingBehaviorVersionId.map { behaviorVersionId =>
+          dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
         }.getOrElse(Future.successful(None))
+        maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
         maybeActiveGroupVersion <- maybeGroupVersion.map { groupVersion =>
           dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(groupVersion.group, Conversation.SLACK_CONTEXT, info.channel.id)
         }.getOrElse(Future.successful(None))
@@ -1037,7 +1056,7 @@ class SlackController @Inject() (
     val maybeResultText = Some(s"$slackUser chose $choice")
     val shouldRemoveActions = true
 
-    def runInBackground = {
+    def runInBackground(maybeInstantResponseTs: Future[Option[String]]) = {
       if (isConversationDone) {
         updateActionsMessageFor(info, Some(s"This conversation is no longer active"), shouldRemoveActions = true)
       } else if (isIncorrectUser) {
@@ -1118,7 +1137,7 @@ class SlackController @Inject() (
 
     def runForCorrectTeam: Unit
 
-    def runInBackground: Unit = {
+    def runInBackground(maybeInstantResponseTs: Future[Option[String]]): Unit = {
       if (isIncorrectTeam) {
         dataService.teams.find(botProfile.teamId).flatMap { maybeTeam =>
           val teamText = maybeTeam.map { team => s" ${team.name}"}.getOrElse("")
@@ -1327,7 +1346,7 @@ class SlackController @Inject() (
 
     def runForCorrectUser(): Unit
 
-    def runInBackground: Unit = {
+    def runInBackground(maybeInstantResponseTs: Future[Option[String]]): Unit = {
       if (isCorrectUser) {
         runForCorrectUser()
       } else {
@@ -1496,7 +1515,7 @@ class SlackController @Inject() (
       )
     }
 
-    def runInBackground: Unit = {
+    def runInBackground(maybeInstantResponseTs: Future[Option[String]]): Unit = {
       if (canBeTriggered) {
         if (isActive) {
           runIt()

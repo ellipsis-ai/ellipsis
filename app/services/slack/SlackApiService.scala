@@ -162,7 +162,8 @@ case class SlackApiClient(
                   filename: Option[String] = None,
                   title: Option[String] = None,
                   initialComment: Option[String] = None,
-                  channels: Option[Seq[String]] = None
+                  channels: Option[Seq[String]] = None,
+                  maybeThreadTs: Option[String] = None
                 ): Future[SlackFile] = {
     val params = Map(
       "content" -> content,
@@ -170,7 +171,8 @@ case class SlackApiClient(
       "filename" -> filename,
       "title" -> title,
       "initial_comment" -> initialComment,
-      "channels" -> channels.map(_.mkString(","))
+      "channels" -> channels.map(_.mkString(",")),
+      "thread_ts" -> maybeThreadTs
     )
     postResponseFor("files.upload", params).map { res =>
       extract[SlackFile](res, "file")

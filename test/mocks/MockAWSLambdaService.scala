@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.amazonaws.services.lambda.AWSLambdaAsyncClient
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.BehaviorParameter
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.library.LibraryVersion
@@ -39,7 +39,7 @@ class MockAWSLambdaService @Inject() (
       invocationJson = JsObject.empty,
       maybeResponseTemplate = None,
       maybeLogResult = None,
-      forcePrivateResponse = false,
+      responseType = Normal,
       DeveloperContext.default
     )
   }

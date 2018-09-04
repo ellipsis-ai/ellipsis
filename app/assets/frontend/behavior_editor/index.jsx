@@ -1394,6 +1394,10 @@ const BehaviorEditor = React.createClass({
     this.setEditableProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }));
   },
 
+  onSelectResponseType: function(newValue) {
+    this.setConfigProperty('responseTypeId', newValue);
+  },
+
   syncParamNamesAndCount: function(oldName, newName) {
     var numTriggersModified = 0;
 
@@ -2569,8 +2573,9 @@ const BehaviorEditor = React.createClass({
                   onChangeTemplate={this.updateTemplate}
                   isFinishedBehavior={this.isFinishedBehavior()}
                   behaviorUsesCode={this.getFunctionBody().length > 0}
-                  shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
-                  onChangeForcePrivateResponse={this.updateForcePrivateResponse}
+                  responseTypeId={this.getBehaviorConfig().responseTypeId}
+                  possibleResponseTypes={this.props.possibleResponseTypes}
+                  onSelectResponseType={this.onSelectResponseType}
                   onCursorChange={this.ensureCursorVisible}
                   onToggleHelp={this.toggleResponseTemplateHelp}
                   helpVisible={this.props.activePanelName === 'helpForResponseTemplate'}

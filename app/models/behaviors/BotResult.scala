@@ -8,7 +8,7 @@ import models.accounts.oauth1application.OAuth1Application
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.behaviors.ResultType.ResultType
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Normal, Private}
 import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
@@ -52,7 +52,7 @@ case class ActionChoice(
                          allowOthers: Option[Boolean],
                          allowMultipleSelections: Option[Boolean],
                          userId: Option[String],
-                         groupVersionId: Option[String]
+                         originatingBehaviorVersionId: Option[String]
                        ) extends WithActionArgs {
 
   val areOthersAllowed: Boolean = allowOthers.contains(true)
@@ -64,9 +64,10 @@ case class ActionChoice(
   }
 
   private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    groupVersionId.map { gvid =>
+    originatingBehaviorVersionId.map { bvid =>
       for {
-        maybeGroupVersion <- dataService.behaviorGroupVersions.findWithoutAccessCheck(gvid)
+        maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(bvid)
+        maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
         maybeActionChoiceSlackTeamId <- maybeGroupVersion.map { gv =>
           dataService.slackBotProfiles.allFor(gv.team).map(_.headOption.map(_.slackTeamId))
         }.getOrElse(Future.successful(None))
@@ -97,7 +98,7 @@ case class ActionChoice(
 
 sealed trait BotResult {
   val resultType: ResultType.Value
-  val forcePrivateResponse: Boolean
+  val responseType: BehaviorResponseType
   val event: Event
   val maybeConversation: Option[Conversation]
   val maybeBehaviorVersion: Option[BehaviorVersion]
@@ -146,7 +147,7 @@ sealed trait BotResult {
   }
 
   def maybeChannelForSendAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
-    event.maybeChannelForSendAction(forcePrivateResponse, maybeConversation, services)
+    event.maybeChannelForSendAction(responseType, maybeConversation, services)
   }
 
   val interruptionPrompt = {
@@ -258,7 +259,7 @@ case class SuccessResult(
                           invocationJson: JsObject,
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
-                          forcePrivateResponse: Boolean,
+                          override val responseType: BehaviorResponseType,
                           developerContext: DeveloperContext
                         ) extends BotResultWithLogResult {
 
@@ -286,7 +287,7 @@ case class SuccessResult(
         choices.map { ea =>
           ea.copy(
             userId = Some(user.id),
-            groupVersionId = Some(behaviorVersion.groupVersion.id)
+            originatingBehaviorVersionId = Some(behaviorVersion.id)
           )
         }
       }
@@ -303,7 +304,7 @@ case class SimpleTextResult(
                              event: Event,
                              maybeConversation: Option[Conversation],
                              simpleText: String,
-                             forcePrivateResponse: Boolean,
+                             override val responseType: BehaviorResponseType,
                              override val shouldInterrupt: Boolean = true
                            ) extends BotResult {
 
@@ -321,7 +322,7 @@ case class TextWithAttachmentsResult(
                                       event: Event,
                                       maybeConversation: Option[Conversation],
                                       simpleText: String,
-                                      forcePrivateResponse: Boolean,
+                                      override val responseType: BehaviorResponseType,
                                       override val attachmentGroups: Seq[MessageAttachmentGroup]
                                     ) extends BotResult {
   val resultType = ResultType.TextWithActions
@@ -344,7 +345,7 @@ case class NoResponseResult(
   val developerContext: DeveloperContext = DeveloperContext.default
 
   val resultType = ResultType.NoResponse
-  val forcePrivateResponse = false // N/A
+  val responseType: BehaviorResponseType = Normal // N/A
   override val shouldInterrupt = false
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
@@ -360,7 +361,7 @@ trait WithBehaviorLink {
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
   val dataService: DataService
   val configuration: Configuration
-  val forcePrivateResponse = behaviorVersion.forcePrivateResponse
+  val responseType: BehaviorResponseType = behaviorVersion.responseType
   val team: Team = behaviorVersion.team
 
   def link: String = dataService.behaviors.editLinkFor(behaviorVersion.group.id, Some(behaviorVersion.behavior.id), configuration)
@@ -514,6 +515,7 @@ case class AdminSkillErrorNotificationResult(
                                             ) extends BotResult {
 
   val resultType = ResultType.AdminSkillErrorNotification
+  val responseType: BehaviorResponseType = Normal
 
   override def shouldIncludeLogs: Boolean = true
 
@@ -545,7 +547,6 @@ case class AdminSkillErrorNotificationResult(
   lazy val maybeConversation: Option[Conversation] = None
   lazy val maybeBehaviorVersion: Option[BehaviorVersion] = originalResult.maybeBehaviorVersion
   override def maybeLogFile: Option[UploadFileSpec] = originalResult.maybeLogFile
-  val forcePrivateResponse: Boolean = false
 
 }
 
@@ -588,7 +589,7 @@ case class AWSDownResult(
                         ) extends BotResult {
 
   val resultType = ResultType.AWSDown
-  val forcePrivateResponse = false
+  val responseType: BehaviorResponseType = Normal
 
   val developerContext: DeveloperContext = DeveloperContext.default
 
@@ -621,7 +622,7 @@ trait OAuthTokenMissing {
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
-  val forcePrivateResponse = true
+  val responseType: BehaviorResponseType = Private
 
   val redirectPath: Call
 
@@ -682,7 +683,7 @@ case class OAuth2TokenMissing(
 
 trait RequiredApiNotReady {
   val resultType: ResultType = ResultType.RequiredApiNotReady
-  val forcePrivateResponse = true
+  val responseType: BehaviorResponseType = Private
 
   val behaviorVersion: BehaviorVersion
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)

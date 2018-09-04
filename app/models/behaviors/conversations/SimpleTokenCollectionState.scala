@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import models.accounts.linkedsimpletoken.LinkedSimpleToken
 import models.accounts.simpletokenapi.SimpleTokenApi
 import models.accounts.user.User
+import models.behaviors.behaviorversion.Private
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
@@ -59,7 +60,7 @@ case class SimpleTokenCollectionState(
       }.getOrElse {
         "All done!"
       }
-      SimpleTextResult(event, Some(conversation), prompt, forcePrivateResponse = true)
+      SimpleTextResult(event, Some(conversation), prompt, responseType = Private)
     }
   }
 

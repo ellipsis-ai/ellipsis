@@ -2,7 +2,7 @@ package models.behaviors
 
 import javax.inject.Inject
 import akka.actor.ActorSystem
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorVersion, Threaded}
 import models.behaviors.events.{Event, EventHandler, RunEvent}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
@@ -42,7 +42,7 @@ class BotResultServiceImpl @Inject() (
     } yield result
   }
 
-  private def runNextAction(nextAction: NextAction, botResult: BotResult)(implicit actorSystem: ActorSystem): DBIO[Unit] = {
+  private def runNextAction(nextAction: NextAction, botResult: BotResult, maybeMessageTs: Option[String])(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
       maybeSlackChannelId <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
         DBIO.from(botResult.event.maybeChannelToUseFor(behaviorVersion, services))
@@ -56,6 +56,11 @@ class BotResultServiceImpl @Inject() (
       user <- botResult.event.ensureUserAction(dataService)
       maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
       maybeSlackTeamIdForUser <- DBIO.from(dataService.users.maybeSlackTeamIdFor(user))
+      maybeThreadId <- DBIO.successful(if (botResult.responseType == Threaded) {
+        botResult.maybeConversation.flatMap(_.maybeThreadId).orElse(maybeMessageTs)
+      } else {
+        None
+      })
       maybeEvent <- DBIO.successful(
         for {
           botProfile <- maybeBotProfile
@@ -69,7 +74,7 @@ class BotResultServiceImpl @Inject() (
           behaviorVersion,
           nextAction.argumentsMap,
           channel,
-          None,
+          maybeThreadId,
           linkedAccount.loginInfo.providerKey,
           SlackTimestamp.now,
           Some(botResult.event.eventType),
@@ -81,7 +86,7 @@ class BotResultServiceImpl @Inject() (
         runBehaviorFor(maybeEvent, botResult.maybeBehaviorVersion)
       } else {
         val text = s"Can't run action named `${nextAction.actionName}` in this skill"
-        val result = SimpleTextResult(botResult.event, botResult.maybeConversation, text, botResult.forcePrivateResponse)
+        val result = SimpleTextResult(botResult.event, botResult.maybeConversation, text, botResult.responseType)
         sendInAction(result, None)
       }
     } yield {}
@@ -97,7 +102,6 @@ class BotResultServiceImpl @Inject() (
     botResult.beforeSend
     val event = botResult.event
     val maybeConversation = botResult.maybeConversation
-    val forcePrivateResponse = botResult.forcePrivateResponse
     for {
       didInterrupt <- if (botResult.shouldInterrupt) {
         botResult.interruptOngoingConversationsForAction(services)
@@ -108,14 +112,14 @@ class BotResultServiceImpl @Inject() (
         DBIO.successful(botResult.files)
       } catch {
         case e: InvalidFilesException => {
-          sendInAction(SimpleTextResult(event, maybeConversation, e.responseText, forcePrivateResponse), None).map(_ => Seq())
+          sendInAction(SimpleTextResult(event, maybeConversation, e.responseText, botResult.responseType), None).map(_ => Seq())
         }
       }
       maybeChoices <- botResult.maybeChoicesAction(dataService)
       sendResult <- DBIO.from(
         event.sendMessage(
           botResult.fullText,
-          forcePrivateResponse,
+          botResult.responseType,
           maybeShouldUnfurl,
           maybeConversation,
           botResult.attachmentGroups,
@@ -127,7 +131,7 @@ class BotResultServiceImpl @Inject() (
         )
       )
       _ <- botResult.maybeNextAction.map { nextAction =>
-        runNextAction(nextAction, botResult)
+        runNextAction(nextAction, botResult, sendResult)
       }.getOrElse(DBIO.successful({}))
     } yield sendResult
   }

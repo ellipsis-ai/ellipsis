@@ -29,13 +29,18 @@ case class RawBehaviorVersion(
                                maybeName: Option[String],
                                maybeFunctionBody: Option[String],
                                maybeResponseTemplate: Option[String],
-                               forcePrivateResponse: Boolean,
+                               responseType: BehaviorResponseType,
                                canBeMemoized: Boolean,
                                isTest: Boolean,
                                createdAt: OffsetDateTime
                              )
 
 class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "behavior_versions") {
+
+  implicit val responseTypeColumnType = MappedColumnType.base[BehaviorResponseType, String](
+    { gt => gt.toString },
+    { str => BehaviorResponseType.definitelyFind(str) }
+  )
 
   def id = column[String]("id", O.PrimaryKey)
 
@@ -51,7 +56,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 
   def maybeResponseTemplate = column[Option[String]]("response_template")
 
-  def forcePrivateResponse = column[Boolean]("private_response")
+  def responseType = column[BehaviorResponseType]("response_type")
 
   def canBeMemoized = column[Boolean]("can_be_memoized")
 
@@ -60,7 +65,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, canBeMemoized, isTest, createdAt) <>
+    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, responseType, canBeMemoized, isTest, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -241,7 +246,7 @@ class BehaviorVersionServiceImpl @Inject() (
       None,
       None,
       None,
-      forcePrivateResponse = false,
+      responseType = Normal,
       canBeMemoized = false,
       isTest,
       OffsetDateTime.now
@@ -256,7 +261,7 @@ class BehaviorVersionServiceImpl @Inject() (
         raw.maybeName,
         raw.maybeFunctionBody.map(_.trim),
         raw.maybeResponseTemplate,
-        raw.forcePrivateResponse,
+        raw.responseType,
         raw.canBeMemoized,
         raw.isTest,
         raw.createdAt
@@ -278,7 +283,7 @@ class BehaviorVersionServiceImpl @Inject() (
         maybeDescription = data.description,
         maybeFunctionBody = Some(data.functionBody),
         maybeResponseTemplate = Some(data.responseTemplate),
-        forcePrivateResponse = data.config.forcePrivateResponse.exists(identity),
+        responseType = BehaviorResponseType.definitelyFind(data.config.responseTypeId),
         canBeMemoized = data.config.canBeMemoized.exists(identity)
       ))
       inputs <- DBIO.sequence(data.inputIds.map { inputId =>

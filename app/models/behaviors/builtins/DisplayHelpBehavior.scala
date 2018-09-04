@@ -2,6 +2,7 @@ package models.behaviors.builtins
 
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorVersionData}
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.{BotResult, SuccessResult, TextWithAttachmentsResult}
@@ -85,7 +86,7 @@ case class DisplayHelpBehavior(
     } else {
       Seq(actionsGroup)
     }
-    TextWithAttachmentsResult(event, None, intro, forcePrivateResponse = false, attachments)
+    TextWithAttachmentsResult(event, None, intro, responseType = Normal, attachments)
   }
 
   def generalHelpText(botPrefix: String): String = {
@@ -211,14 +212,14 @@ case class DisplayHelpBehavior(
 
     val actionsGroup = SlackMessageActionsGroup(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, None, Some(Color.BLUE_LIGHT), None)
 
-    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(actionsGroup))
+    TextWithAttachmentsResult(event, None, resultText, responseType = Normal, Seq(actionsGroup))
   }
 
   def emptyResult(botPrefix: String): BotResult = {
     val actionList = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
     val resultText = s"I don’t know anything$matchString."
     val actionsGroup = SlackMessageActionsGroup("help_no_result", actionList, None, None, Some(Color.PINK))
-    TextWithAttachmentsResult(event, None, resultText, forcePrivateResponse = false, Seq(generalHelpGroup(botPrefix), actionsGroup))
+    TextWithAttachmentsResult(event, None, resultText, responseType = Normal, Seq(generalHelpGroup(botPrefix), actionsGroup))
   }
 
   def searchedHelp: Boolean = maybeHelpSearch.isDefined

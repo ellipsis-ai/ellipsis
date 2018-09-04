@@ -3,6 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.team.Team
@@ -83,7 +84,7 @@ case class SlashCommandEvent(
 
   def sendMessage(
                    unformattedText: String,
-                   forcePrivate: Boolean,
+                   responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
@@ -95,17 +96,17 @@ case class SlashCommandEvent(
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
 
     for {
-      channelToUse <- channelForSend(forcePrivate, maybeConversation, services)
+      maybeDMChannel <- eventualMaybeDMChannel(services)
       botName <- botName(services)
       maybeTs <- SlackMessageSender(
         services.slackApiService.clientFor(profile),
         user,
         profile.slackTeamId,
         unformattedText,
-        forcePrivate = forcePrivate,
+        responseType,
         developerContext,
         channel,
-        channelToUse,
+        maybeDMChannel,
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,

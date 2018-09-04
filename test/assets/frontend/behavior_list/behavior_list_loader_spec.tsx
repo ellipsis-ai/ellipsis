@@ -28,6 +28,9 @@ describe('BehaviorListApp', () => {
   jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get', absoluteURL: absoluteUrl });
   jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get', absoluteURL: absoluteUrl });
 
+  const normalResponseType= "Normal";
+  const normalResponseTypeJson = { id: normalResponseType, displayString: "Display normally" };
+
   const behaviorVersionTask1: BehaviorVersionJson = {
     "teamId": "abcdef",
     "groupId": "sfgsdf",
@@ -47,7 +50,8 @@ describe('BehaviorListApp', () => {
     }],
     "config": {
       isDataType: false,
-      isTest: false
+      isTest: false,
+      responseTypeId: normalResponseType
     },
     "createdAt": 1468338136532,
     inputIds: []
@@ -66,7 +70,8 @@ describe('BehaviorListApp', () => {
     }],
     "config": {
       isDataType: false,
-      isTest: false
+      isTest: false,
+      responseTypeId: normalResponseType
     },
     "createdAt": 1468359271138,
     inputIds: []
@@ -80,7 +85,8 @@ describe('BehaviorListApp', () => {
     "triggers": [],
     "config": {
       isDataType: false,
-      isTest: false
+      isTest: false,
+      responseTypeId: normalResponseType
     },
     "createdAt": 1466109904858,
     inputIds: []
@@ -153,7 +159,8 @@ describe('BehaviorListApp', () => {
     slackTeamId: "1",
     teamTimeZone: "America/Toronto",
     branchName: null,
-    botName: "TestBot"
+    botName: "TestBot",
+    possibleResponseTypes: [normalResponseTypeJson]
   };
 
   function createBehaviorListLoader(config) {

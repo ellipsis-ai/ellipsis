@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import com.rockymadden.stringmetric.similarity.RatcliffObershelpMetric
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.{NewParentConversation, ParentConversation}
@@ -263,7 +264,7 @@ object YesNoType extends BuiltInType {
         superPromptResult.event,
         superPromptResult.maybeConversation,
         superPromptResult.fullText,
-        superPromptResult.forcePrivateResponse,
+        superPromptResult.responseType,
         Seq(actionsGroup)
       )
     }
@@ -561,7 +562,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                            )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     context.event.sendMessage(
       "",
-      forcePrivate = false,
+      responseType = Normal,
       maybeShouldUnfurl = None,
       context.maybeConversation,
       Seq(),
@@ -722,7 +723,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         context.event,
         context.maybeConversation,
         text,
-        context.behaviorVersion.forcePrivateResponse,
+        context.behaviorVersion.responseType,
         Seq(actionsGroup)
       )
     }
@@ -773,7 +774,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
             SlackMessageActionsGroup(context.dataTypeChoiceCallbackId, actionsList, None, None, Some(Color.BLUE_LIGHT))
           )
           promptTextForAction(None, context, None, false).map { text =>
-            TextWithAttachmentsResult(context.event, context.maybeConversation, text, context.behaviorVersion.forcePrivateResponse, groups)
+            TextWithAttachmentsResult(context.event, context.maybeConversation, text, context.behaviorVersion.responseType, groups)
           }
         }
       }

@@ -112,8 +112,9 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         value: this.getFunctionBody(),
         isCode: true
       }, {
-        name: "Always responds privately",
-        value: Boolean(this.config.forcePrivateResponse)
+        name: "Response type",
+        value: this.config.responseTypeId,
+        isCategorical: true
       }, {
         name: "Cache results",
         value: Boolean(this.config.canBeMemoized)

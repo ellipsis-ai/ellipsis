@@ -2,6 +2,7 @@ package models.behaviors.events
 
 import javax.inject._
 import models.behaviors.behaviorparameter.FetchValidValuesBadResultException
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
@@ -52,7 +53,7 @@ class EventHandler @Inject() (
       Future.sequence((conversation :: ancestors).map { ea =>
         dataService.run(ea.cancelAction(dataService))
       }).map { _ =>
-        SimpleTextResult(event, Some(conversation), withMessage, forcePrivateResponse = false)
+        SimpleTextResult(event, Some(conversation), withMessage, responseType = Normal)
       }
     }
   }
@@ -104,7 +105,7 @@ class EventHandler @Inject() (
               Some(event.messageUserDataList(Some(updatedConvo), services)),
               Some(Color.PINK)
             )
-            TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actions))
+            TextWithAttachmentsResult(event, Some(updatedConvo), prompt, responseType = Normal, Seq(actions))
           }
         } else {
           val eventualResult = dataService.run(updatedConvo.resultForAction(event, services))
@@ -131,7 +132,7 @@ class EventHandler @Inject() (
                     s"<#$channel>"
                   }.getOrElse("the main channel")
                 }
-                Some(SimpleTextResult(event, Some(convo), s"This conversation is either done or has expired. You can start a new one back in $channelText.", forcePrivateResponse = false))
+                Some(SimpleTextResult(event, Some(convo), s"This conversation is either done or has expired. You can start a new one back in $channelText.", responseType = Normal))
               } else {
                 None
               }
@@ -165,11 +166,7 @@ class EventHandler @Inject() (
       BuiltinBehavior.maybeFrom(event, services).map { builtin =>
         event.resultReactionHandler(builtin.result.map(Seq(_)), services)
       }.getOrElse {
-        maybeHandleInExpiredThread(event).flatMap { maybeExpiredThreadResult =>
-          maybeExpiredThreadResult.map(r => Future.successful(Seq(r))).getOrElse {
-            startInvokeConversationFor(event)
-          }
-        }
+        startInvokeConversationFor(event)
       }
     }).recover {
       case e: FetchValidValuesBadResultException => Seq(e.result)

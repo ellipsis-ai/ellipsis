@@ -2,13 +2,13 @@ package models.behaviors.testing
 
 import akka.actor.ActorSystem
 import models.accounts.user.User
-import models.behaviors.{ActionChoice, DeveloperContext, UserInfo}
+import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
+import models.behaviors.{ActionChoice, DeveloperContext, UserInfo}
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
-import services.caching.CacheService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
@@ -43,7 +43,7 @@ case class TestEvent(
   lazy val maybeThreadId = None
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
   def maybeChannelForSendAction(
-                                 forcePrivate: Boolean,
+                                 responseType: BehaviorResponseType,
                                  maybeConversation: Option[Conversation],
                                  services: DefaultServices
                                )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = DBIO.successful(None)
@@ -55,7 +55,7 @@ case class TestEvent(
 
   def sendMessage(
                    text: String,
-                   forcePrivate: Boolean,
+                   responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],

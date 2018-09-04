@@ -86,7 +86,7 @@ case class ParamCollectionState(
         val paramContext = BehaviorParameterContext(event, Some(conversation), param, services)
         param.promptResultAction(maybeValue, paramContext, this, isReminding)
       }.getOrElse {
-        DBIO.successful(SimpleTextResult(event, Some(conversation), "All done!", conversation.behaviorVersion.forcePrivateResponse))
+        DBIO.successful(SimpleTextResult(event, Some(conversation), "All done!", conversation.behaviorVersion.responseType))
       }
     } yield result
   }
