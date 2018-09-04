@@ -2,7 +2,6 @@ import * as React from 'react';
 import * as TestUtils from "react-addons-test-utils";
 import RecurrenceTimesToRunEditor from "../../../../app/assets/frontend/scheduling/recurrence_times_to_run_editor";
 import Recurrence, {RecurrenceInterface} from "../../../../app/assets/frontend/models/recurrence";
-import clearAllMocks = jest.clearAllMocks;
 
 const onChangeSpy = jest.fn();
 
@@ -45,7 +44,7 @@ describe("RecurrenceTimesToRunEditor", () => {
 
   describe("setTotalTimesToRun", () => {
     beforeEach(() => {
-      clearAllMocks();
+      jest.resetAllMocks();
     });
 
     it("resets frequency to 1 if totalTimesToRun is set to 1", () => {

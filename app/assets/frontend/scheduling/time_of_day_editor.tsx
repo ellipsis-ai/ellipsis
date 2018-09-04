@@ -126,12 +126,10 @@ class TimeOfDayEditor extends React.Component<Props, State> {
     onChangeHour(newValue: string): void {
       const hourObj = Hour.fromString(newValue);
       let newHourValue;
-      if (this.isAM()) {
-        newHourValue = hourObj.convertToAMValue();
-      } else if (this.isPM()) {
+      if (this.isPM()) {
         newHourValue = hourObj.convertToPMValue();
       } else {
-        newHourValue = hourObj.value;
+        newHourValue = hourObj.convertToAMValue();
       }
       if (typeof newHourValue === "number") {
         this.setHour(newHourValue);
