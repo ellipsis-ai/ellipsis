@@ -262,6 +262,18 @@ class RecurrenceSpec extends PlaySpec {
         Some(Weekly(IDs.next, 2, 0, None, mwf, LocalTime.parse("15:00"), timeZone)))
     }
 
+    "create a one-time instance for single days of the week at a defined time" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" on Monday at 12pm""", timeZone),
+        Some(Weekly(IDs.next, 1, 0, Some(1), justMonday, LocalTime.parse("12:00"), timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" next Wednesday at 5pm""", timeZone),
+        Some(Weekly(IDs.next, 1, 0, Some(1), justWednesday, LocalTime.parse("17:00"), timeZone)))
+    }
+
+    "create an N-time instance for multiple days of the week at a defined time" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" on Monday, Wednesday and Friday at 9:30am""", timeZone),
+        Some(Weekly(IDs.next, 1, 0, Some(3), mwf, LocalTime.parse("09:30"), timeZone)))
+    }
+
   }
 
   "MonthlyByDayOfMonth" should {
@@ -449,6 +461,21 @@ class RecurrenceSpec extends PlaySpec {
     "be created for every second January 14th with no time specified" in {
       val time = Recurrence.currentAdjustedTime(timeZone)
       mustMatch(Recurrence.maybeUnsavedFromText("every 2nd year on January 14", timeZone), Some(Yearly(IDs.next, 2, 0, None, MonthDay.of(1, 14), time, timeZone)))
+    }
+
+    "create a one-time recurrence for a single date/time" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" on January 1 at 12pm""", timeZone),
+        Some(Yearly(IDs.next, 1, 0, Some(1), MonthDay.of(1, 1), LocalTime.parse("12:00"), timeZone)))
+    }
+
+    "create a one-time recurrence for a future year's date/time" in {
+      val now = LocalDateTime.now(timeZone)
+      val tomorrowMidnight = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
+      val fiveYearsLater = tomorrowMidnight.plusYears(5)
+      val formatted = fiveYearsLater.format(Recurrence.dateFormatter)
+      val desiredMonthDay = MonthDay.of(fiveYearsLater.getMonth, fiveYearsLater.getDayOfMonth)
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on ${formatted} at 9am""", timeZone),
+        Some(Yearly(IDs.next, 6, 0, Some(1), desiredMonthDay, LocalTime.parse("09:00"), timeZone)))
     }
 
   }

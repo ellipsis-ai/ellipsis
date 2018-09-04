@@ -313,7 +313,7 @@ object Daily {
   val TODAY = "today"
   val TOMORROW = "tomorrow"
 
-  def maybeNextInstanceForTodayOrTomorrow(todayOrTomorrow: String, desiredTime: LocalTime, currentTime: LocalTime) = {
+  def maybeNextInstanceForTodayOrTomorrow(todayOrTomorrow: String, desiredTime: LocalTime, currentTime: LocalTime): Option[Int] = {
     val isLaterThanNow = desiredTime.isAfter(currentTime) || desiredTime.equals(currentTime)
     if (isLaterThanNow && todayOrTomorrow == TOMORROW) {
       Some(2)
@@ -449,21 +449,22 @@ object Weekly {
       case nRegex(frequency) => Some(frequency.toInt)
       case _ => None
     }
+    var daysOfWeek = Recurrence.daysOfWeekFrom(text)
+    val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
+    val maybeTimesToRun = Recurrence.maybeTimesToRunFromText(text)
     maybeFrequency.map { frequency =>
-      var daysOfWeek = Recurrence.daysOfWeekFrom(text)
       if (daysOfWeek.isEmpty) {
         daysOfWeek = Seq(OffsetDateTime.now.getDayOfWeek)
       }
-      val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
-      Weekly(
-        IDs.next,
-        frequency,
-        0,
-        Recurrence.maybeTimesToRunFromText(text),
-        daysOfWeek,
-        maybeTime.getOrElse(Recurrence.currentAdjustedTime(defaultTimeZone)),
-        defaultTimeZone
-      )
+      Weekly(IDs.next, frequency, 0, maybeTimesToRun, daysOfWeek, maybeTime.getOrElse(Recurrence.currentAdjustedTime(defaultTimeZone)), defaultTimeZone)
+    }.orElse {
+      if (daysOfWeek.length > 0 && Recurrence.maybeMonthlyFrequencyFrom(text).isEmpty) {
+        maybeTime.map { timeOfDay =>
+          Weekly(IDs.next, 1, 0, Some(daysOfWeek.length), daysOfWeek, timeOfDay, defaultTimeZone)
+        }
+      } else {
+        None
+      }
     }
   }
 }
@@ -719,6 +720,31 @@ object Yearly {
         Recurrence.ensureTimeFrom(text, defaultTimeZone),
         defaultTimeZone
       )
+    }.orElse {
+      for {
+        localDate <- Recurrence.maybeLocalDateFrom(text, defaultTimeZone)
+        timeOfDay <- Recurrence.maybeTimeFrom(text, defaultTimeZone)
+        frequency <- {
+          val now = LocalDateTime.now(defaultTimeZone)
+          val desiredTime = LocalDateTime.of(localDate, timeOfDay)
+          if (desiredTime.isBefore(now)) {
+            Some(1)
+          } else {
+            var frequency = 1
+            while (desiredTime.isAfter(now.plusYears(frequency)) && frequency < 10) {
+              frequency = frequency + 1
+            }
+            if (frequency == 10 && desiredTime.isAfter(now.plusYears(frequency))) {
+              None
+            } else {
+              Some(frequency)
+            }
+          }
+        }
+      } yield {
+        val monthDay = MonthDay.of(localDate.getMonth, localDate.getDayOfMonth)
+        Yearly(IDs.next, frequency, 0, Some(1), monthDay, timeOfDay, defaultTimeZone)
+      }
     }
   }
 }
@@ -755,6 +781,7 @@ object Recurrence {
   val timeFormatter = DateTimeFormatter.ofPattern("h:mma")
   val timeFormatterWithZone = DateTimeFormatter.ofPattern("h:mma z")
   val monthDayFormatter = DateTimeFormatter.ofPattern("MMMM d")
+  val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy")
 
   def zoneOffsetAt(when: OffsetDateTime, timeZone: ZoneId): ZoneOffset = {
     timeZone.getRules.getOffset(when.toInstant);
@@ -783,17 +810,33 @@ object Recurrence {
     }
   }
 
-  def maybeMonthDayFrom(text: String, defaultTimeZone: ZoneId): Option[MonthDay] = {
+  private def maybeCalendarFrom(text: String, defaultTimeZone: ZoneId): Option[Calendar] = {
     val monthDayRegex = """(?i).*on\s+(.*?)(at.*)?$""".r
     text match {
       case monthDayRegex(monthDay, _) => maybeDateFrom(monthDay, defaultTimeZone).map { date =>
         val calendar = Calendar.getInstance(TimeZone.getTimeZone(defaultTimeZone))
         calendar.setTime(date)
-        val javaMonth = calendar.get(Calendar.MONTH)
-        val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
-        MonthDay.of(javaMonth + 1, dayOfMonth)
+        calendar
       }
       case _ => None
+    }
+  }
+
+
+  def maybeMonthDayFrom(text: String, defaultTimeZone: ZoneId): Option[MonthDay] = {
+    maybeCalendarFrom(text, defaultTimeZone).map { calendar =>
+      val javaMonth = calendar.get(Calendar.MONTH)
+      val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
+      MonthDay.of(javaMonth + 1, dayOfMonth)
+    }
+  }
+
+  def maybeLocalDateFrom(text: String, defaultTimeZone: ZoneId): Option[LocalDate] = {
+    maybeCalendarFrom(text, defaultTimeZone).map { calendar =>
+      val year = calendar.get(Calendar.YEAR)
+      val javaMonth = calendar.get(Calendar.MONTH)
+      val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
+      LocalDate.of(year, javaMonth + 1, dayOfMonth)
     }
   }
 
