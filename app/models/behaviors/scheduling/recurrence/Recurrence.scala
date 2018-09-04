@@ -727,7 +727,21 @@ object Yearly {
         frequency <- {
           val now = LocalDateTime.now(defaultTimeZone)
           val desiredTime = LocalDateTime.of(localDate, timeOfDay)
-          if (desiredTime.isBefore(now)) {
+          /* TODO:
+            The parser we use is relaxed about what information is included, so a month and day without
+            a year will give you that date in the current year.
+
+            It would be nice, however, if we differentiated between text missing the year,
+            (where we can assume it means "the next [Month Day]"), and text that includes the current year,
+            since some dates in the current year have already passed.
+
+            e.g. if today is September 4, 2018, "September 3, 2018", "September 3", and "September 3, 2019"
+            will all result in the same schedule. Ideally, the first one would result in nothing scheduled.
+          */
+          val isBeforeNow = desiredTime.isBefore(now)
+          if (isBeforeNow && desiredTime.getYear < now.getYear) {
+            None
+          } else if (isBeforeNow) {
             Some(1)
           } else {
             var frequency = 1
@@ -811,9 +825,9 @@ object Recurrence {
   }
 
   private def maybeCalendarFrom(text: String, defaultTimeZone: ZoneId): Option[Calendar] = {
-    val monthDayRegex = """(?i).*on\s+(.*?)(at.*)?$""".r
+    val onDateAndTimeRegex = """(?i).*on\s+(.*?)(at.*)?$""".r
     text match {
-      case monthDayRegex(monthDay, _) => maybeDateFrom(monthDay, defaultTimeZone).map { date =>
+      case onDateAndTimeRegex(date, _) => maybeDateFrom(date, defaultTimeZone).map { date =>
         val calendar = Calendar.getInstance(TimeZone.getTimeZone(defaultTimeZone))
         calendar.setTime(date)
         calendar

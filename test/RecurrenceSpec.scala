@@ -466,16 +466,38 @@ class RecurrenceSpec extends PlaySpec {
     "create a one-time recurrence for a single date/time" in {
       mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" on January 1 at 12pm""", timeZone),
         Some(Yearly(IDs.next, 1, 0, Some(1), MonthDay.of(1, 1), LocalTime.parse("12:00"), timeZone)))
+
     }
 
     "create a one-time recurrence for a future year's date/time" in {
       val now = LocalDateTime.now(timeZone)
+      val nextYear = now.getYear + 1
+
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on January 1, ${nextYear.toString} at 12am""", timeZone),
+        Some(Yearly(IDs.next, 1, 0, Some(1), MonthDay.of(1, 1), LocalTime.parse("00:00"), timeZone)))
+
       val tomorrowMidnight = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
       val fiveYearsLater = tomorrowMidnight.plusYears(5)
       val formatted = fiveYearsLater.format(Recurrence.dateFormatter)
       val desiredMonthDay = MonthDay.of(fiveYearsLater.getMonth, fiveYearsLater.getDayOfMonth)
       mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on ${formatted} at 9am""", timeZone),
         Some(Yearly(IDs.next, 6, 0, Some(1), desiredMonthDay, LocalTime.parse("09:00"), timeZone)))
+    }
+
+    "not create a one-time recurrence for a past year's date/time" in {
+      val now = LocalDateTime.now(timeZone)
+      val lastYearToday = now.minusYears(1)
+      val formatted = lastYearToday.format(Recurrence.dateFormatter)
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on ${formatted} at 9am""", timeZone), None)
+    }
+
+    // TODO: The date parser doesn't differentiate between dates with and without a year, so there's no
+    // good way to ignore dates in the past but in the current year
+    "not create a one-time recurrence for this year in the past" ignore {
+      val now = LocalDateTime.now(timeZone)
+      val thisYear = now.getYear
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on January 1, ${thisYear.toString} at 12am""", timeZone),
+        None)
     }
 
   }
