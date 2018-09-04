@@ -38,9 +38,9 @@ class TimeOfDayEditor extends React.Component<Props, State> {
     }
 
     updateLastValidHour(): void {
-      const hour = this.getHour();
-      if (typeof hour === "number" && Number.isInteger(hour)) {
-        this.lastValidHour = hour;
+      const hourValue = this.getHour();
+      if (typeof hourValue === "number" && Number.isInteger(hourValue)) {
+        this.lastValidHour = hourValue;
       }
     }
 
@@ -53,28 +53,28 @@ class TimeOfDayEditor extends React.Component<Props, State> {
     }
 
     isAM(): boolean {
-      const hour = this.getHour() || this.lastValidHour;
-      return Boolean(hour && Hour.isAM(hour));
+      const hourValue = this.getHour() || this.lastValidHour;
+      return Boolean(typeof hourValue === "number" && Hour.isAM(hourValue));
     }
 
     setAM(): void {
-      const hour = this.getHour();
-      if (hour) {
-        const newHour = Hour.convertToAM(hour);
-        this.setHour(newHour);
+      const hourValue = this.getHour();
+      if (typeof hourValue === "number") {
+        const newHourValue = Hour.convertToAM(hourValue);
+        this.setHour(newHourValue);
       }
     }
 
     isPM(): boolean {
-      const hour = this.getHour() || this.lastValidHour;
-      return Boolean(hour && Hour.isPM(hour));
+      const hourValue = this.getHour() || this.lastValidHour;
+      return Boolean(typeof hourValue === "number" && Hour.isPM(hourValue));
     }
 
     setPM(): void {
-      const hour = this.getHour();
-      if (hour) {
-        const newHour = Hour.convertToPM(hour);
-        this.setHour(newHour);
+      const hourValue = this.getHour();
+      if (typeof hourValue === "number") {
+        const newHourValue = Hour.convertToPM(hourValue);
+        this.setHour(newHourValue);
       }
     }
 
@@ -82,25 +82,25 @@ class TimeOfDayEditor extends React.Component<Props, State> {
       return this.props.recurrence.timeOfDay ? this.props.recurrence.timeOfDay.hour : null;
     }
 
-    setHour(newHour: number): void {
-      const minute = this.getMinute();
-      if (typeof minute === "number") {
+    setHour(newHourValue: number): void {
+      const minuteValue = this.getMinute();
+      if (typeof minuteValue === "number") {
         this.props.onChange(this.props.recurrence.clone({
           timeOfDay: {
-            hour: newHour,
-            minute: minute
+            hour: newHourValue,
+            minute: minuteValue
           }
         }));
       }
     }
 
-    setMinute(newMinute: Option<number>): void {
-      const hour = this.getHour();
-      if (typeof hour === "number" && typeof newMinute === "number") {
+    setMinute(newMinuteValue: Option<number>): void {
+      const hourValue = this.getHour();
+      if (typeof hourValue === "number" && typeof newMinuteValue === "number") {
         this.props.onChange(this.props.recurrence.clone({
           timeOfDay: {
-            hour: hour,
-            minute: newMinute
+            hour: hourValue,
+            minute: newMinuteValue
           }
         }));
       }
@@ -124,17 +124,15 @@ class TimeOfDayEditor extends React.Component<Props, State> {
     }
 
     onChangeHour(newValue: string): void {
-      const hour = Hour.fromString(newValue);
-      let newHour;
-      if (this.isAM() && hour) {
-        newHour = hour.convertToAMValue();
-      } else if (this.isPM()) {
-        newHour = hour.convertToPMValue();
+      const hourObj = Hour.fromString(newValue);
+      let newHourValue;
+      if (this.isPM()) {
+        newHourValue = hourObj.convertToPMValue();
       } else {
-        newHour = hour.value;
+        newHourValue = hourObj.convertToAMValue();
       }
-      if (newHour) {
-        this.setHour(newHour);
+      if (typeof newHourValue === "number") {
+        this.setHour(newHourValue);
       }
     }
 

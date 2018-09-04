@@ -63,7 +63,8 @@ import OptionalInt from './optional_int';
 
     static fromString(string: string): Hour {
       const parsed = string.substr(-2, 2).match(/^(1[0-2]|[1-9])$/) ||
-        string.substr(-1, 1).match(/^([1-9])$/);
+        string.substr(-1, 1).match(/^([1-9])$/) ||
+        string.match(/^(0)$/);
       return new Hour(parsed ? super.fromString(parsed[1]).value : null);
     }
   }
