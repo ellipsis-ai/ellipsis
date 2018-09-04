@@ -13,7 +13,7 @@ class MinutelyRecurrenceEditor extends React.Component<RecurrenceEditorProps> {
   render() {
     return (
       <div>
-        <div className="mvm pam border bg-white border-radius">
+        <div className="mvm pam border bg-white">
           <div className="mbm">
             <RecurrenceTimesToRunEditor
               recurrence={this.props.recurrence}

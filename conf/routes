@@ -77,6 +77,7 @@ POST        /settings/aws_configs                     @controllers.web.settings.
 GET         /scheduling                               @controllers.ScheduledActionsController.index(selectedId: Option[String] ?= None, newSchedule: Option[Boolean] ?= None, teamId: Option[String] ?= None, forceAdmin: Option[Boolean] ?= None)
 POST        /save_schedule                            @controllers.ScheduledActionsController.save
 POST        /delete_schedule                          @controllers.ScheduledActionsController.delete
+POST        /validate_recurrence                      @controllers.ScheduledActionsController.validateRecurrence
 
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)

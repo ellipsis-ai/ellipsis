@@ -55,7 +55,8 @@ declare var jsRoutes: {
     ScheduledActionsController: {
       delete: () => JsRoute,
       index: (selectedId?: Option<string>, isNewSchedule?: Option<boolean>, teamId?: Option<string>, forceAdmin?: Option<boolean>) => JsRoute,
-      save: () => JsRoute
+      save: () => JsRoute,
+      validateRecurrence: () => JsRoute
     },
     SocialAuthController: {
       authenticateGithub: (redirectUrl?: Option<string>, teamId?: Option<string>, channelId?: Option<string>) => JsRoute

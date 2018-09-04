@@ -10,7 +10,6 @@ import ScheduleChannel, {ScheduleChannelInterface} from '../../../../app/assets/
 import ID from '../../../../app/assets/frontend/lib/id';
 import Page from '../../../../app/assets/frontend/shared_ui/page';
 import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
-import {Component} from "react";
 
 jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test", method: "get", absoluteURL: () => "https://nope/" });
 
@@ -64,7 +63,8 @@ const emptyConfig: SchedulingProps = {
   newAction: false,
   isAdmin: false,
   userMap: {},
-  onLoadUserData: emptyFn
+  onLoadUserData: emptyFn,
+  csrfToken: "FANCY_TOKEN"
 };
 
 function newSchedule(props?: Partial<ScheduledActionInterface>) {

@@ -71,14 +71,14 @@ sealed trait Recurrence {
     maybeTotalTimesToRun.map { timesToRun =>
       val timesRemaining = timesToRun - timesHasRun
       if (timesToRun == 1) {
-        ", one time"
+        ", once"
       } else if (timesToRun > 1 && timesRemaining == 1) {
         s", for the last time (out of ${timesToRun} total)"
       } else if (timesRemaining > 1) {
         if (timesRemaining < timesToRun) {
-          s", for ${timesRemaining} more times (out of ${timesToRun} total)"
+          s", ${timesRemaining} more times (out of ${timesToRun} total)"
         } else {
-          s", for ${timesToRun} times"
+          s", ${timesToRun} times"
         }
       } else {
         ""
@@ -341,7 +341,7 @@ case class Weekly(
 
   def displayString: String = {
     if (maybeTotalTimesToRun.contains(1)) {
-      val frequencyString = if (frequency == 1) { s"the next $daysOfWeekString" } else { s"in $frequency weeks on each $daysOfWeekString"}
+      val frequencyString = if (frequency == 1) { s"next $daysOfWeekString" } else { s"in $frequency weeks on each $daysOfWeekString"}
       s"$frequencyString at $timeOfDayFormatted, once"
     } else {
       val frequencyString = if (frequency == 1) {daysOfWeekString} else {s"$frequency weeks on $daysOfWeekString"}
