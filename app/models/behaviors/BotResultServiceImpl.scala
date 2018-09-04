@@ -68,21 +68,19 @@ class BotResultServiceImpl @Inject() (
           linkedAccount <- maybeSlackLinkedAccount
           behaviorVersion <- maybeBehaviorVersion
           channel <- maybeSlackChannelId
-        } yield {
-          RunEvent(
-            botProfile,
-            slackTeamIdForUser,
-            behaviorVersion,
-            nextAction.argumentsMap,
-            channel,
-            maybeThreadId,
-            linkedAccount.loginInfo.providerKey,
-            maybeMessageTs.getOrElse(SlackTimestamp.now),
-            Some(botResult.event.eventType),
-            botResult.event.isEphemeral,
-            botResult.event.maybeResponseUrl
-          )
-        }
+        } yield RunEvent(
+          botProfile,
+          slackTeamIdForUser,
+          behaviorVersion,
+          nextAction.argumentsMap,
+          channel,
+          maybeThreadId,
+          linkedAccount.loginInfo.providerKey,
+          maybeMessageTs.getOrElse(SlackTimestamp.now),
+          Some(botResult.event.eventType),
+          botResult.event.isEphemeral,
+          botResult.event.maybeResponseUrl
+        )
       )
       _ <- if (maybeBehaviorVersion.isDefined) {
         runBehaviorFor(maybeEvent, botResult.maybeBehaviorVersion)
