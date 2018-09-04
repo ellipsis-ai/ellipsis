@@ -91,6 +91,10 @@ trait Event {
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 
+  def maybePermaLinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    Future.successful(None)
+  }
+
   def navLinkList(lambdaService: AWSLambdaService): Seq[(String, String)] = {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(teamId))

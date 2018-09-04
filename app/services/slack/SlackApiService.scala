@@ -93,6 +93,18 @@ case class SlackApiClient(
       }
   }
 
+  def permaLinkFor(channel: String, messageTs: String): Future[Option[String]] = {
+    val params = Seq(("channel", channel), ("message_ts", messageTs))
+    getResponseFor("chat.getPermalink", params).
+      map(r => Some(extract[String](r, "permalink"))).
+      recover {
+        case SlackApiError(err) => {
+          Logger.error(s"Failed to retrieve permalink: $err")
+          None
+        }
+      }
+  }
+
   def listConversations(maybeCursor: Option[String] = None): Future[Seq[SlackConversation]] = {
     val params = Seq(
       ("types", "public_channel, private_channel, mpim, im"),
