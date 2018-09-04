@@ -32,18 +32,16 @@ class YearlyRecurrenceEditor extends React.Component<Props> {
             />
           </div>
         </div>
-        {this.props.recurrence.totalTimesToRun === 1 ? null : (
-          <div className="mvm pam border bg-white">
-            <FrequencyEditor
-              recurrence={this.props.recurrence}
-              onChange={this.props.onChange}
-              unit="year"
-              units="years"
-              min={1}
-              max={10}
-            />
-          </div>
-        )}
+        <div className="mvm pam border bg-white">
+          <FrequencyEditor
+            recurrence={this.props.recurrence}
+            onChange={this.props.onChange}
+            unit="year"
+            units="years"
+            min={1}
+            max={10}
+          />
+        </div>
       </div>
     );
   }
