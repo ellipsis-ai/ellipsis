@@ -93,7 +93,7 @@ case class SlackApiClient(
       }
   }
 
-  def permaLinkFor(channel: String, messageTs: String): Future[Option[String]] = {
+  def permalinkFor(channel: String, messageTs: String): Future[Option[String]] = {
     val params = Seq(("channel", channel), ("message_ts", messageTs))
     getResponseFor("chat.getPermalink", params).
       map(r => Some(extract[String](r, "permalink"))).

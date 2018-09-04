@@ -45,9 +45,9 @@ case class RunEvent(
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
 
-  override def maybePermaLinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+  override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val client = services.slackApiService.clientFor(profile)
-    client.permaLinkFor(channel, ts)
+    client.permalinkFor(channel, ts)
   }
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {

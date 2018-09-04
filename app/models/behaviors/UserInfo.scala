@@ -34,7 +34,7 @@ case class MessageInfo(
                         userId: String,
                         details: JsObject,
                         usersMentioned: Set[MessageUserData],
-                        permaLink: Option[String]
+                        permalink: Option[String]
                       )
 
 object MessageInfo {
@@ -46,7 +46,7 @@ object MessageInfo {
               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
     for {
       details <- event.detailsFor(services)
-      maybePermaLink <- event.maybePermaLinkFor(services)
+      maybePermalink <- event.maybePermalinkFor(services)
     } yield {
       MessageInfo(
         event.name,
@@ -54,7 +54,7 @@ object MessageInfo {
         event.userIdForContext,
         details,
         event.messageUserDataList(maybeConversation, services),
-        maybePermaLink
+        maybePermalink
       )
     }
   }
