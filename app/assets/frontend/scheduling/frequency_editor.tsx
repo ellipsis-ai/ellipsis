@@ -17,12 +17,18 @@ class FrequencyEditor extends React.Component<Props> {
     autobind(this);
   }
 
+    isYearlyOnce(): boolean {
+      return this.props.recurrence.typeName === "yearly" && this.props.recurrence.totalTimesToRun === 1;
+    }
+
     getFrequency(): Option<number> {
       return this.props.recurrence.frequency;
     }
 
     getFrequencyType() {
-      if (this.props.recurrence.totalTimesToRun === 1) {
+      if (this.isYearlyOnce()) {
+        return "Within the next"
+      } else if (this.props.recurrence.totalTimesToRun === 1) {
         return "In";
       } else {
         return "Every";
@@ -30,7 +36,7 @@ class FrequencyEditor extends React.Component<Props> {
     }
 
     getFrequencySuffix(): string {
-      if (this.props.recurrence.totalTimesToRun === 1) {
+      if (!this.isYearlyOnce() && this.props.recurrence.totalTimesToRun === 1) {
         return "from now";
       } else {
         return "";

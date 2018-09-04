@@ -20,7 +20,7 @@ class RecurrenceSpec extends PlaySpec {
       recurrence <- maybeRecurrence
       otherRecurrence <- maybeOtherRecurrence
     } yield {
-      recurrence.copyWithEmptyId mustBe otherRecurrence.copyWithEmptyId
+      recurrence.copyWithEmptyId mustEqual otherRecurrence.copyWithEmptyId
     }
   }
 
@@ -46,6 +46,16 @@ class RecurrenceSpec extends PlaySpec {
 
     "be created with frequency" in {
       mustMatch(Recurrence.maybeUnsavedFromText("every 5 minutes", timeZone), Some(Minutely(IDs.next, 5, 0, None)))
+    }
+
+    "be created to run once when applicable" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 minutes", timeZone), Some(Minutely(IDs.next, 5, 0, Some(1))))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 minute", timeZone), Some(Minutely(IDs.next, 1, 0, Some(1))))
+    }
+
+    "be created to run N times when applicable" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 minutes, 5 times", timeZone), Some(Minutely(IDs.next, 5, 0, Some(5))))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 minute, 1 time", timeZone), Some(Minutely(IDs.next, 1, 0, Some(1))))
     }
   }
 
@@ -93,6 +103,19 @@ class RecurrenceSpec extends PlaySpec {
       mustMatch(Recurrence.maybeUnsavedFromText("every 4 hours at 15 minutes", timeZone), Some(Hourly(IDs.next, 4, 0, None, 15)))
     }
 
+    "be created to run once when applicable" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), 12)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1)))
+    }
+
+    "be created to run N times when applicable" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), 12)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1)))
+    }
   }
 
   "Daily" should {
@@ -146,6 +169,31 @@ class RecurrenceSpec extends PlaySpec {
     "use the default timezone if not specified in recurrence" in {
       val laTz = ZoneId.of("America/Los_Angeles")
       mustMatch(Recurrence.maybeUnsavedFromText("every 4 days at 3pm", laTz), Some(Daily(IDs.next, 4, 0, None, LocalTime.parse("15:00"), laTz)))
+    }
+
+    "create a one-time recurrence for today or tomorrow" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("today at 00:00:00.0000", timeZone), None)
+      mustMatch(Recurrence.maybeUnsavedFromText("today at 23:59:59.9999", timeZone), Some(Daily(IDs.next, 1, 0, Some(1), LocalTime.parse("23:59:59"), timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("tomorrow at 00:00:00.0000", timeZone), Some(Daily(IDs.next, 1, 0, Some(1), LocalTime.parse("00:00:00"), timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("tomorrow at 23:59:59.9999", timeZone), Some(Daily(IDs.next, 2, 0, Some(1), LocalTime.parse("23:59:59"), timeZone)))
+    }
+
+    "maybeNextInstanceForTodayOrTomorrow" should {
+      "be none if a time before now for today is requested" in {
+        Daily.maybeNextInstanceForTodayOrTomorrow("today", LocalTime.of(5, 0), LocalTime.of(6, 0)) mustBe None
+      }
+      "be 1 if a time after now for today is requested" in {
+        Daily.maybeNextInstanceForTodayOrTomorrow("today", LocalTime.of(6, 0), LocalTime.of(5, 0)) mustBe Some(1)
+      }
+      "be none if it is neither today or tomorrow" in {
+        Daily.maybeNextInstanceForTodayOrTomorrow("yesterday", LocalTime.of(6, 0), LocalTime.of(5, 0)) mustBe None
+      }
+      "be 1 if a time before now for tomorrow is requested" in {
+        Daily.maybeNextInstanceForTodayOrTomorrow("tomorrow", LocalTime.of(5, 0), LocalTime.of(6, 0)) mustBe Some(1)
+      }
+      "be 2 if a time after now for tomorrow is requested" in {
+        Daily.maybeNextInstanceForTodayOrTomorrow("tomorrow", LocalTime.of(7, 0), LocalTime.of(5, 0)) mustBe Some(2)
+      }
     }
 
   }
@@ -212,6 +260,18 @@ class RecurrenceSpec extends PlaySpec {
     "be created with frequency, multiple days of week and time" in {
       mustMatch(Recurrence.maybeUnsavedFromText("every 2 weeks on Monday Wednesday Friday at 3pm", timeZone),
         Some(Weekly(IDs.next, 2, 0, None, mwf, LocalTime.parse("15:00"), timeZone)))
+    }
+
+    "create a one-time instance for single days of the week at a defined time" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" on Monday at 12pm""", timeZone),
+        Some(Weekly(IDs.next, 1, 0, Some(1), justMonday, LocalTime.parse("12:00"), timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" next Wednesday at 5pm""", timeZone),
+        Some(Weekly(IDs.next, 1, 0, Some(1), justWednesday, LocalTime.parse("17:00"), timeZone)))
+    }
+
+    "create an N-time instance for multiple days of the week at a defined time" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" on Monday, Wednesday and Friday at 9:30am""", timeZone),
+        Some(Weekly(IDs.next, 1, 0, Some(3), mwf, LocalTime.parse("09:30"), timeZone)))
     }
 
   }
@@ -401,6 +461,43 @@ class RecurrenceSpec extends PlaySpec {
     "be created for every second January 14th with no time specified" in {
       val time = Recurrence.currentAdjustedTime(timeZone)
       mustMatch(Recurrence.maybeUnsavedFromText("every 2nd year on January 14", timeZone), Some(Yearly(IDs.next, 2, 0, None, MonthDay.of(1, 14), time, timeZone)))
+    }
+
+    "create a one-time recurrence for a single date/time" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" on January 1 at 12pm""", timeZone),
+        Some(Yearly(IDs.next, 1, 0, Some(1), MonthDay.of(1, 1), LocalTime.parse("12:00"), timeZone)))
+
+    }
+
+    "create a one-time recurrence for a future year's date/time" in {
+      val now = LocalDateTime.now(timeZone)
+      val nextYear = now.getYear + 1
+
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on January 1, ${nextYear.toString} at 12am""", timeZone),
+        Some(Yearly(IDs.next, 1, 0, Some(1), MonthDay.of(1, 1), LocalTime.parse("00:00"), timeZone)))
+
+      val tomorrowMidnight = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
+      val fiveYearsLater = tomorrowMidnight.plusYears(5)
+      val formatted = fiveYearsLater.format(Recurrence.dateFormatter)
+      val desiredMonthDay = MonthDay.of(fiveYearsLater.getMonth, fiveYearsLater.getDayOfMonth)
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on ${formatted} at 9am""", timeZone),
+        Some(Yearly(IDs.next, 6, 0, Some(1), desiredMonthDay, LocalTime.parse("09:00"), timeZone)))
+    }
+
+    "not create a one-time recurrence for a past year's date/time" in {
+      val now = LocalDateTime.now(timeZone)
+      val lastYearToday = now.minusYears(1)
+      val formatted = lastYearToday.format(Recurrence.dateFormatter)
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on ${formatted} at 9am""", timeZone), None)
+    }
+
+    // TODO: The date parser doesn't differentiate between dates with and without a year, so there's no
+    // good way to ignore dates in the past but in the current year
+    "not create a one-time recurrence for this year in the past" ignore {
+      val now = LocalDateTime.now(timeZone)
+      val thisYear = now.getYear
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on January 1, ${thisYear.toString} at 12am""", timeZone),
+        None)
     }
 
   }
