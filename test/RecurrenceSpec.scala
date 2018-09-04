@@ -172,10 +172,28 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "create a one-time recurrence for today or tomorrow" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("today at 12:00:00am", timeZone), None)
-      mustMatch(Recurrence.maybeUnsavedFromText("today at 11:59:59pm", timeZone), Some(Daily(IDs.next, 1, 0, Some(1), LocalTime.parse("23:59:59"), timeZone)))
-      mustMatch(Recurrence.maybeUnsavedFromText("tomorrow at 12:00:00am", timeZone), Some(Daily(IDs.next, 1, 0, Some(1), LocalTime.parse("00:00:00"), timeZone)))
-      mustMatch(Recurrence.maybeUnsavedFromText("tomorrow at 11:59:59pm", timeZone), Some(Daily(IDs.next, 2, 0, Some(1), LocalTime.parse("23:59:59"), timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("today at 00:00:00.0000", timeZone), None)
+      mustMatch(Recurrence.maybeUnsavedFromText("today at 23:59:59.9999", timeZone), Some(Daily(IDs.next, 1, 0, Some(1), LocalTime.parse("23:59:59"), timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("tomorrow at 00:00:00.0000", timeZone), Some(Daily(IDs.next, 1, 0, Some(1), LocalTime.parse("00:00:00"), timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("tomorrow at 23:59:59.9999", timeZone), Some(Daily(IDs.next, 2, 0, Some(1), LocalTime.parse("23:59:59"), timeZone)))
+    }
+
+    "maybeNextInstanceForTodayOrTomorrow" should {
+      "be none if a time before now for today is requested" in {
+        Daily.maybeNextInstanceForTodayOrTomorrow("today", LocalTime.of(5, 0), LocalTime.of(6, 0)) mustBe None
+      }
+      "be 1 if a time after now for today is requested" in {
+        Daily.maybeNextInstanceForTodayOrTomorrow("today", LocalTime.of(6, 0), LocalTime.of(5, 0)) mustBe Some(1)
+      }
+      "be none if it is neither today or tomorrow" in {
+        Daily.maybeNextInstanceForTodayOrTomorrow("yesterday", LocalTime.of(6, 0), LocalTime.of(5, 0)) mustBe None
+      }
+      "be 1 if a time before now for tomorrow is requested" in {
+        Daily.maybeNextInstanceForTodayOrTomorrow("tomorrow", LocalTime.of(5, 0), LocalTime.of(6, 0)) mustBe Some(1)
+      }
+      "be 2 if a time after now for tomorrow is requested" in {
+        Daily.maybeNextInstanceForTodayOrTomorrow("tomorrow", LocalTime.of(7, 0), LocalTime.of(5, 0)) mustBe Some(2)
+      }
     }
 
   }

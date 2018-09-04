@@ -310,17 +310,33 @@ case class Daily(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesTo
 object Daily {
   val recurrenceType = "daily"
 
+  val TODAY = "today"
+  val TOMORROW = "tomorrow"
+
+  def maybeNextInstanceForTodayOrTomorrow(todayOrTomorrow: String, desiredTime: LocalTime, currentTime: LocalTime) = {
+    val isLaterThanNow = desiredTime.isAfter(currentTime) || desiredTime.equals(currentTime)
+    if (isLaterThanNow && todayOrTomorrow == TOMORROW) {
+      Some(2)
+    } else if (!isLaterThanNow && todayOrTomorrow == TOMORROW || isLaterThanNow && todayOrTomorrow == TODAY) {
+      Some(1)
+    } else {
+      None
+    }
+  }
+
   def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[Daily] = {
     val singleRegex = """(?i)every day.*""".r
     val nRegex = """(?i)every\s+(\d+)\s+days?.*""".r
-    val todayOrTomorrowRegex = """(?i)(today|tomorrow)\s+at.*""".r
+    val todayRegex = """(?i)today\s+at.*""".r
+    val tomorrowRegex = """(?i)tomorrow\s+at.*""".r
     val maybeFrequency = text match {
       case singleRegex() => Some(1)
       case nRegex(frequency) => Some(frequency.toInt)
       case _ => None
     }
     val maybeTodayOrTomorrow = text match {
-      case todayOrTomorrowRegex(todayOrTomorrow) => Some(todayOrTomorrow.toLowerCase)
+      case todayRegex() => Some(TODAY)
+      case tomorrowRegex() => Some(TOMORROW)
       case _ => None
     }
     val maybeTime = Recurrence.maybeTimeFrom(text, defaultTimeZone)
@@ -328,20 +344,13 @@ object Daily {
     maybeFrequency.map { frequency =>
       Daily(IDs.next, frequency, 0, maybeTimesToRun, maybeTime.getOrElse(Recurrence.currentAdjustedTime(defaultTimeZone)), defaultTimeZone)
     }.orElse {
-      (for {
+      for {
         todayOrTomorrow <- maybeTodayOrTomorrow
-        time <- maybeTime
+        desiredTime <- maybeTime
+        nextInstance <- maybeNextInstanceForTodayOrTomorrow(todayOrTomorrow, desiredTime, LocalTime.now(defaultTimeZone))
       } yield {
-        val now = LocalTime.now(defaultTimeZone)
-        if (todayOrTomorrow == "today" && time.isAfter(now)) {
-          Some(Daily(IDs.next, 1, 0, Some(1), time, defaultTimeZone))
-        } else if (todayOrTomorrow == "tomorrow") {
-          val frequency = if (time.isAfter(now)) { 2 } else { 1 }
-          Some(Daily(IDs.next, frequency, 0, Some(1), time, defaultTimeZone))
-        } else {
-          None
-        }
-      }).flatten
+        Daily(IDs.next, nextInstance, 0, Some(1), desiredTime, defaultTimeZone)
+      }
     }
   }
 }
