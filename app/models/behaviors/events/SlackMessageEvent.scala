@@ -29,6 +29,11 @@ case class SlackMessageEvent(
 
   val eventType: EventType = EventType.chat
 
+  override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    val client = services.slackApiService.clientFor(profile)
+    client.permalinkFor(channel, ts)
+  }
+
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {
     this.copy(maybeOriginalEventType = Some(originalEventType), isUninterruptedConversation = isUninterrupted)
   }

@@ -33,7 +33,8 @@ case class MessageInfo(
                         channel: Option[String],
                         userId: String,
                         details: JsObject,
-                        usersMentioned: Set[MessageUserData]
+                        usersMentioned: Set[MessageUserData],
+                        permalink: Option[String]
                       )
 
 object MessageInfo {
@@ -43,8 +44,18 @@ object MessageInfo {
                 maybeConversation: Option[Conversation],
                 services: DefaultServices
               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
-    event.detailsFor(services).map { details =>
-      MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details, event.messageUserDataList(maybeConversation, services))
+    for {
+      details <- event.detailsFor(services)
+      maybePermalink <- event.maybePermalinkFor(services)
+    } yield {
+      MessageInfo(
+        event.name,
+        event.maybeChannel,
+        event.userIdForContext,
+        details,
+        event.messageUserDataList(maybeConversation, services),
+        maybePermalink
+      )
     }
   }
 

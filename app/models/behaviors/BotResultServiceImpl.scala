@@ -1,7 +1,7 @@
 package models.behaviors
 
-import javax.inject.Inject
 import akka.actor.ActorSystem
+import javax.inject.Inject
 import models.behaviors.behaviorversion.{BehaviorVersion, Threaded}
 import models.behaviors.events.{Event, EventHandler, RunEvent}
 import play.api.{Configuration, Logger}
@@ -76,7 +76,7 @@ class BotResultServiceImpl @Inject() (
           channel,
           maybeThreadId,
           linkedAccount.loginInfo.providerKey,
-          SlackTimestamp.now,
+          maybeMessageTs.getOrElse(SlackTimestamp.now),
           Some(botResult.event.eventType),
           botResult.event.isEphemeral,
           botResult.event.maybeResponseUrl
