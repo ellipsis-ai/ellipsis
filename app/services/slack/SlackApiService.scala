@@ -4,6 +4,7 @@ import java.io.File
 
 import _root_.models.accounts.slack.botprofile.SlackBotProfile
 import akka.actor.ActorSystem
+import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
 import play.api.Logger
@@ -16,7 +17,10 @@ import utils.{SlackConversation, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class MalformedResponseException(message: String) extends Exception(message)
+trait InvalidResponseException
+
+case class ErrorResponseException(status: Int, statusText: String) extends Exception(s"${status}: ${statusText}") with InvalidResponseException
+case class MalformedResponseException(message: String) extends Exception(message) with InvalidResponseException
 case class SlackApiError(code: String) extends Exception(code)
 
 
@@ -38,8 +42,32 @@ case class SlackApiClient(
 
   private def urlFor(method: String): String = s"$API_BASE_URL/$method"
 
+  private def responseToJson(response: WSResponse, maybeField: Option[String] = None): JsValue = {
+    if (response.status == 200) {
+      try {
+        response.body[JsValue]
+      } catch {
+        case j: JsonParseException => throw MalformedResponseException(
+          s"""Slack API returned a non-JSON response${
+            maybeField.map(field => s" while retrieving field ${field}").getOrElse(".")
+          }
+             |Ellipsis team ID: ${profile.teamId}
+             |Slack team ID: ${profile.slackTeamId}
+             |Error:
+             |${j.getMessage}
+             |
+             |Truncated response:
+             |${response.body.slice(0, 1024)}
+             |""".stripMargin
+        )
+      }
+    } else {
+      throw ErrorResponseException(response.status, response.statusText)
+    }
+  }
+
   private def extract[T](response: WSResponse, field: String)(implicit fmt: Format[T]): T = {
-    val json = response.json
+    val json = responseToJson(response, Some(field))
     (json \ field).validate[T] match {
       case JsSuccess(v, _) => v
       case JsError(_) => {
@@ -113,7 +141,7 @@ case class SlackApiClient(
     ) ++ maybeCursor.map(c => Seq(("cursor", c))).getOrElse(Seq())
     getResponseFor("conversations.list", params).
       flatMap { response =>
-        val json = response.json
+        val json = responseToJson(response, Some("channels"))
         val batch = (json \ "channels").validate[Seq[SlackConversation]] match {
           case JsSuccess(data, _) => data
           case JsError(err) => {
@@ -132,14 +160,14 @@ case class SlackApiClient(
   def conversationMembers(convoId: String): Future[Seq[String]] = {
     postResponseFor("conversations.members", Map("channel" -> convoId)).
       map { response =>
-        (response.json \ "members").asOpt[Seq[String]].getOrElse(Seq())
+        (responseToJson(response, Some("members")) \ "members").asOpt[Seq[String]].getOrElse(Seq())
       }
   }
 
   def openConversationFor(slackUserId: String): Future[String] = {
     postResponseFor("conversations.open", Map("users" -> slackUserId)).
       map { response =>
-        val json = response.json
+        val json = responseToJson(response, Some("channel.id"))
         if ((json \ "ok").as[Boolean]) {
           (json \ "channel" \ "id").validate[String] match {
             case JsSuccess(id, _) => id
