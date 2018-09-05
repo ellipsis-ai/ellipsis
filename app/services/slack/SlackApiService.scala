@@ -45,7 +45,7 @@ case class SlackApiClient(
   private def responseToJson(response: WSResponse, maybeField: Option[String] = None): JsValue = {
     if (response.status == 200) {
       try {
-        response.body[JsValue]
+        response.json
       } catch {
         case j: JsonParseException => throw MalformedResponseException(
           s"""Slack API returned a non-JSON response${
