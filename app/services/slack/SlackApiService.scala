@@ -126,8 +126,15 @@ case class SlackApiClient(
     getResponseFor("chat.getPermalink", params).
       map(r => Some(extract[String](r, "permalink"))).
       recover {
+        case SlackApiError("message_not_found") => None // happens for simulated timestamps in RunEvents
         case SlackApiError(err) => {
-          Logger.error(s"Failed to retrieve permalink: $err")
+          Logger.error(
+            s"""
+               |Failed to retrieve permalink: $err
+               |
+               |Channel: $channel
+               |Message timestamp: $messageTs
+             """.stripMargin)
           None
         }
       }
