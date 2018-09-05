@@ -90,7 +90,24 @@ class SlackEventServiceImpl @Inject()(
   def fetchSlackUserDataFn(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: (SlackApiError => Option[SlackUser])): SlackUserDataCacheKey => Future[Option[SlackUserData]] = {
     key: SlackUserDataCacheKey => {
       for {
-        maybeInfo <- client.getUserInfo(key.slackUserId)
+        maybeInfo <- client.getUserInfo(key.slackUserId).map { maybeSlackUser =>
+          maybeSlackUser.foreach { slackUser =>
+            cacheService.cacheFallbackSlackUser(slackUserId, slackTeamId, slackUser)
+          }
+          maybeSlackUser
+        }.recover {
+          case e: InvalidResponseException => {
+            Logger.error(s"Invalid response while fetching user info for Slack user ID ${slackUserId} on Slack team ${slackTeamId}. Trying fallback cache...", e)
+            val maybeSlackUser = cacheService.getFallbackSlackUser(slackUserId, slackTeamId)
+            if (maybeSlackUser.isDefined) {
+              Logger.error(s"Slack user ID ${slackUserId} on Slack team ${slackTeamId} found in fallback cache")
+              maybeSlackUser
+            } else {
+              Logger.error(s"Slack user ID ${slackUserId} on Slack team ${slackTeamId} not found in fallback cache. Giving up.")
+              throw e
+            }
+          }
+        }
       } yield {
         maybeInfo.map(info => slackUserDataFromSlackUser(info, slackTeamId))
       }

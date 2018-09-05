@@ -7,6 +7,7 @@ import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.{Event, MessageUserData, SlackMessageEvent}
 import sangria.schema.Schema
+import services.slack.apiModels.SlackUser
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -50,6 +51,10 @@ trait CacheService {
                                key: SlackUserDataByEmailCacheKey,
                                dataFn: SlackUserDataByEmailCacheKey => Future[Option[SlackUserData]]
                              ): Future[Option[SlackUserData]]
+
+  def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Unit
+
+  def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Option[SlackUser]
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
 

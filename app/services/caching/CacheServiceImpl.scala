@@ -20,6 +20,7 @@ import play.api.cache.SyncCacheApi
 import play.api.libs.json._
 import sangria.schema.Schema
 import services.slack.SlackEventService
+import services.slack.apiModels.{SlackUser, SlackUserProfile}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -198,6 +199,30 @@ class CacheServiceImpl @Inject() (
 
   def getSlackUserDataByEmail(key: SlackUserDataByEmailCacheKey, dataFn: SlackUserDataByEmailCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]] = {
     slackUserDataByEmailCache.getOrLoad(key, dataFn)
+  }
+
+  implicit val slackUserProfileJsonFormat = Json.format[SlackUserProfile]
+  implicit val slackUserJsonFormat = Json.format[SlackUser]
+
+  private def fallbackSlackUserCacheKey(slackUserId: String, slackTeamId: String): String = {
+    s"fallbackCacheForSlackUserId-${slackUserId}-slackTeamId-${slackTeamId}-v1"
+  }
+
+  def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser) = {
+    set(fallbackSlackUserCacheKey(slackUserId, slackTeamId), Json.toJson(slackUser))
+  }
+
+  def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Option[SlackUser] = {
+    val key = fallbackSlackUserCacheKey(slackUserId, slackTeamId)
+    get[JsValue](key).flatMap { json =>
+      json.validate[SlackUser] match {
+        case JsSuccess(slackUser, _) => Some(slackUser)
+        case JsError(_) => {
+          remove(key)
+          None
+        }
+      }
+    }
   }
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {

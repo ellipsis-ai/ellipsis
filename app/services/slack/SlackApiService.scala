@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait InvalidResponseException
 
-case class ErrorResponseException(status: Int, statusText: String, body: String) extends Exception(s"${status}: ${statusText}\n${body}") with InvalidResponseException
+case class ErrorResponseException(status: Int, statusText: String) extends Exception(s"Slack API returned ${status}: ${statusText}") with InvalidResponseException
 case class MalformedResponseException(message: String) extends Exception(message) with InvalidResponseException
 case class SlackApiError(code: String) extends Exception(code)
 
@@ -43,9 +43,9 @@ case class SlackApiClient(
   private def urlFor(method: String): String = s"$API_BASE_URL/$method"
 
   private def responseToJson(response: WSResponse, maybeField: Option[String] = None): JsValue = {
-    if (response.status == 200) {
+    if (response.status < 400) {
       try {
-        response.body[JsValue]
+        response.json
       } catch {
         case j: JsonParseException => throw MalformedResponseException(
           s"""Slack API returned a non-JSON response${
@@ -56,13 +56,20 @@ case class SlackApiClient(
              |Error:
              |${j.getMessage}
              |
-             |Truncated response:
-             |${response.body.slice(0, 1024)}
+             |Truncated body:
+             |${response.body.slice(0, 500)}
              |""".stripMargin
         )
       }
     } else {
-      throw ErrorResponseException(response.status, response.statusText, response.body)
+      Logger.error(
+        s"""Received irregular response from Slack API:
+           |${response.status}: ${response.statusText}
+           |
+           |Truncated body:
+           |${response.body.slice(0, 500)}
+         """.stripMargin)
+      throw ErrorResponseException(response.status, response.statusText)
     }
   }
 
