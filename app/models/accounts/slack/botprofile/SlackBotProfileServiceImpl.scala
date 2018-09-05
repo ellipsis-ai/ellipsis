@@ -223,7 +223,7 @@ class SlackBotProfileServiceImpl @Inject() (
       userId,
       SlackMessage.blank,
       None,
-      SlackTimestamp.now,
+      maybeThreadTs.getOrElse(originalMessageTs),
       None,
       isUninterruptedConversation = false,
       isEphemeral,
