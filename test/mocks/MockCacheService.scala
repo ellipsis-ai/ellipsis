@@ -10,6 +10,7 @@ import models.behaviors.events.{Event, MessageUserData, SlackMessageEvent}
 import org.scalatest.mock.MockitoSugar
 import sangria.schema.Schema
 import services.caching._
+import services.slack.apiModels.SlackUser
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -56,6 +57,10 @@ class MockCacheService extends CacheService with MockitoSugar {
                                key: SlackUserDataByEmailCacheKey,
                                dataFn: SlackUserDataByEmailCacheKey => Future[Option[SlackUserData]]
                              ): Future[Option[SlackUserData]] = dataFn(key)
+
+  def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Unit = {}
+
+  def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Option[SlackUser] = None
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {}
 

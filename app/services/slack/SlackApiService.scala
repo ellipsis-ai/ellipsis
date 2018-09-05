@@ -43,7 +43,7 @@ case class SlackApiClient(
   private def urlFor(method: String): String = s"$API_BASE_URL/$method"
 
   private def responseToJson(response: WSResponse, maybeField: Option[String] = None): JsValue = {
-    if (response.status == 200) {
+    if (response.status < 400) {
       try {
         response.json
       } catch {
