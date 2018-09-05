@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait InvalidResponseException
 
-case class ErrorResponseException(status: Int, statusText: String) extends Exception(s"${status}: ${statusText}") with InvalidResponseException
+case class ErrorResponseException(status: Int, statusText: String, body: String) extends Exception(s"${status}: ${statusText}\n${body}") with InvalidResponseException
 case class MalformedResponseException(message: String) extends Exception(message) with InvalidResponseException
 case class SlackApiError(code: String) extends Exception(code)
 
@@ -62,7 +62,7 @@ case class SlackApiClient(
         )
       }
     } else {
-      throw ErrorResponseException(response.status, response.statusText)
+      throw ErrorResponseException(response.status, response.statusText, response.body)
     }
   }
 
