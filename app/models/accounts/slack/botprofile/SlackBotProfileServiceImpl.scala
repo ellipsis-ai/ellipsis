@@ -13,7 +13,7 @@ import models.team.Team
 import play.api.Logger
 import play.api.libs.ws.WSClient
 import services.caching.CacheService
-import services.slack.{MalformedResponseException, SlackApiService, SlackEventService}
+import services.slack._
 import services.DataService
 import slick.dbio.DBIO
 import utils._
@@ -171,8 +171,8 @@ class SlackBotProfileServiceImpl @Inject() (
         cacheService.getBotName(teamId)
       }
     }.recover {
-      case e: MalformedResponseException => {
-        Logger.warn("Couldn’t retrieve bot user data from Slack API because of an invalid response; using fallback cache", e)
+      case e: InvalidResponseException => {
+        Logger.warn("Couldn’t retrieve bot user data from Slack API because of an invalid/error response; using fallback cache", e)
         cacheService.getBotName(teamId)
       }
     }
