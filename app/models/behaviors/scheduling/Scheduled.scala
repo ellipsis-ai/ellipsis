@@ -9,7 +9,8 @@ import drivers.SlickPostgresDriver.api._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.BotResult
+import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -186,7 +187,7 @@ trait Scheduled {
       maybeEvent <- eventFor(channel, slackUserId, profile, services)
       _ <- maybeEvent.map { event =>
         eventHandler.handle(event, None).flatMap { results =>
-          FutureSequencer.sequence(results, sendResultFn(event, services))
+          FutureSequencer.sequence(results, sendResultFn(event, slackUserId, profile, services))
         }
       }.getOrElse(Future.successful(Seq()))
     } yield {}
@@ -248,9 +249,37 @@ trait Scheduled {
 
   def sendResultFn(
                     event: ScheduledEvent,
+                    slackUserId: String,
+                    profile: SlackBotProfile,
                     services: DefaultServices
                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): BotResult => Future[Unit] = {
-    result: BotResult => sendResult(result, event, services)
+    result: BotResult => {
+      sendResult(result, event, services).recover {
+        case apiError: SlackApiError => {
+          if (apiError.code == "is_archived" && slackUserId != profile.userId) {
+            val message = s"I tried to run something on schedule for you, but the specified channel${event.maybeChannel.map(channel =>
+              s" <#${channel}>"
+            ).getOrElse("")} has been archived."
+            services.dataService.slackBotProfiles.sendResultWithNewEvent(
+              "Notifying user of scheduled item in archived channel",
+              (newEvent) => Future.successful(Some(
+                SimpleTextResult(newEvent, None, message, Private, shouldInterrupt = false)
+              )),
+              profile.slackTeamId,
+              profile,
+              slackUserId,
+              slackUserId,
+              OffsetDateTime.now.toString,
+              None,
+              isEphemeral = false,
+              None
+            )
+          } else {
+            throw apiError
+          }
+        }
+      }
+    }
   }
 
   def send(

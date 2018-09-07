@@ -5,10 +5,14 @@ import java.time.OffsetDateTime
 import akka.actor.{Actor, ActorSystem}
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
+import models.behaviors.SimpleTextResult
 import models.behaviors.events.EventHandler
 import models.behaviors.scheduling.Scheduled
+import org.bouncycastle.asn1.x509.DisplayText
 import play.api.Logger
+import services.slack.SlackApiError
 import services.{DataService, DefaultServices}
+import utils.SlackMessageSenderException
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,21 +48,8 @@ class ScheduledActor @Inject()(
           }.getOrElse(DBIO.successful(None))
           _ <- maybeProfile.map { profile =>
             scheduled.updateOrDeleteScheduleAction(dataService).flatMap { _ =>
-              DBIO.from(scheduled.send(eventHandler, profile, services, displayText).recover {
-                case t: Throwable => {
-                  val user = scheduled.maybeUser.map { user =>
-                    s"Ellipsis ID ${user.id} / Slack ID ${maybeSlackUserId.getOrElse("(unknown)")}"
-                  }.getOrElse("(none)")
-                  val message =
-                    s"""Exception handling scheduled message:
-                       |Team: ${scheduled.team.name} (${scheduled.team.id})
-                       |User: $user
-                       |Channel: ${scheduled.maybeChannel.getOrElse("(missing)")}
-                       |Send privately: ${scheduled.isForIndividualMembers.toString}
-                       |Summary: $displayText
-                       |""".stripMargin
-                  Logger.error(message, t)
-                }
+              DBIO.from(scheduled.send(eventHandler, profile, services, displayText).recoverWith {
+                case t: Throwable => logError(t, scheduled, displayText, maybeSlackUserId)
               })
             }
           }.getOrElse(DBIO.successful({}))
@@ -72,6 +63,21 @@ class ScheduledActor @Inject()(
         Future.successful({})
       }
     }
+  }
+
+  def logError(t: Throwable, scheduled: Scheduled, displayText: String, maybeSlackUserId: Option[String]): Future[Unit] = {
+    val user = scheduled.maybeUser.map { user =>
+      s"Ellipsis ID ${user.id} / Slack ID ${maybeSlackUserId.getOrElse("(unknown)")}"
+    }.getOrElse("(none)")
+    val message =
+      s"""Exception handling scheduled message:
+         |Team: ${scheduled.team.name} (${scheduled.team.id})
+         |User: $user
+         |Channel: ${scheduled.maybeChannel.getOrElse("(missing)")}
+         |Send privately: ${scheduled.isForIndividualMembers.toString}
+         |Summary: $displayText
+         |""".stripMargin
+    Future.successful(Logger.error(message, t))
   }
 
   def receive = {
