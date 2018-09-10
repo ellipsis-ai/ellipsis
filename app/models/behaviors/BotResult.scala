@@ -3,6 +3,7 @@ package models.behaviors
 import akka.actor.ActorSystem
 import json.Formatting._
 import models.IDs
+import models.accounts.OAuth2State
 import models.accounts.logintoken.LoginToken
 import models.accounts.oauth1application.OAuth1Application
 import models.accounts.oauth2application.OAuth2Application
@@ -676,7 +677,9 @@ case class OAuth2TokenMissing(
   val apiApplicationId: String = oAuth2Application.id
   val apiApplicationName: String = oAuth2Application.name
 
-  val redirectPath: Call = controllers.routes.APIAccessController.linkCustomOAuth2Service(apiApplicationId, None, None, Some(key), None)
+  val state: String = OAuth2State(IDs.next, Some(key), None).encodedString
+
+  val redirectPath: Call = controllers.routes.APIAccessController.linkCustomOAuth2Service(apiApplicationId, None, Some(state))
 
   override def beforeSend: Unit = super.beforeSend
 }
