@@ -5,14 +5,10 @@ import java.time.OffsetDateTime
 import akka.actor.{Actor, ActorSystem}
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
-import models.behaviors.SimpleTextResult
 import models.behaviors.events.EventHandler
 import models.behaviors.scheduling.Scheduled
-import org.bouncycastle.asn1.x509.DisplayText
 import play.api.Logger
-import services.slack.SlackApiError
 import services.{DataService, DefaultServices}
-import utils.SlackMessageSenderException
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

@@ -9,13 +9,13 @@ import drivers.SlickPostgresDriver.api._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.behaviorversion.{BehaviorResponseType, Normal, Private}
-import models.behaviors.{BotResult, SimpleTextResult}
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.{Configuration, Logger}
-import services.slack.{SlackApiClient, SlackApiError}
+import services.slack.SlackApiError
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.{FutureSequencer, SlackChannels, SlackMessageSenderException}
