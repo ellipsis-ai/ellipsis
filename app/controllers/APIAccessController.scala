@@ -5,7 +5,7 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import javax.inject.Inject
-import models.IDs
+import models.accounts.OAuth2State
 import models.accounts.linkedoauth1token.LinkedOAuth1Token
 import models.accounts.linkedoauth2token.{LinkedOAuth2Token, LinkedOAuth2TokenInfo}
 import models.accounts.oauth2application.OAuth2Application
@@ -14,7 +14,6 @@ import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
-import play.api.libs.json.{JsValue, Json}
 import play.api.libs.oauth._
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, RequestHeader, Result}
@@ -70,28 +69,17 @@ class APIAccessController @Inject() (
     }
   }
 
-  private def parseState(state: String): JsValue = {
-    Json.parse(java.net.URLDecoder.decode(state, "utf-8"))
-  }
-
-  private def oauthStateFromStateOpt(stateOpt: Option[String]): String = {
-    stateOpt.flatMap { state =>
-      val json = parseState(state)
-      (json \ "oauthState").asOpt[String]
-    }.getOrElse(IDs.next)
-  }
-
   private def resultForStep1(
                             application: OAuth2Application,
                             stateOpt: Option[String]
                             )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-    val oauthState = oauthStateFromStateOpt(stateOpt)
+    val oauthState = OAuth2State.fromEncodedString(stateOpt.get)
     val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None).absoluteURL(secure = true)
     val maybeRedirect = application.maybeAuthorizationRequestFor(stateOpt.get, redirectParam, ws).map { r =>
       r.uri.toString
     }
     val result = maybeRedirect.map { redirect =>
-      val sessionState = Seq("oauth-state" -> oauthState)
+      val sessionState = Seq("oauth-state" -> oauthState.id)
       Redirect(redirect).withSession(sessionState: _*)
     }.getOrElse(BadRequest("Doesn't use authorization code"))
     Future.successful(result)
@@ -104,14 +92,12 @@ class APIAccessController @Inject() (
                             user: User,
                             application: OAuth2Application
                             )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-    val stateJson = parseState(state)
-    if ((stateJson \ "oauthState").asOpt[String].contains(oauthState)) {
+    val oauth2StateObj = OAuth2State.fromEncodedString(state)
+    if (oauth2StateObj.id == oauthState) {
       val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None).absoluteURL(secure = true)
       getToken(code, application, user, redirect).flatMap { maybeLinkedToken =>
-        val maybeInvocationId = (stateJson \ "invocationId").asOpt[String]
-        val maybeRedirectAfterAuth = (stateJson \ "redirectAfterAuth").asOpt[String]
         maybeLinkedToken.
-          map(_ => resultWithToken(maybeInvocationId, maybeRedirectAfterAuth)).
+          map(_ => resultWithToken(oauth2StateObj.maybeInvocationId, oauth2StateObj.maybeRedirectAfterAuth)).
           getOrElse(Future.successful(BadRequest("boom")))
       }
     } else {
