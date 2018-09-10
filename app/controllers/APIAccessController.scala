@@ -14,6 +14,7 @@ import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
+import play.api.libs.json.{JsValue, Json}
 import play.api.libs.oauth._
 import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, RequestHeader, Result}
@@ -69,18 +70,28 @@ class APIAccessController @Inject() (
     }
   }
 
+  private def parseState(state: String): JsValue = {
+    Json.parse(java.net.URLDecoder.decode(state, "utf-8"))
+  }
+
+  private def oauthStateFromStateOpt(stateOpt: Option[String]): String = {
+    stateOpt.flatMap { state =>
+      val json = parseState(state)
+      (json \ "oauthState").asOpt[String]
+    }.getOrElse(IDs.next)
+  }
+
   private def resultForStep1(
                             application: OAuth2Application,
-                            maybeRedirectAfterAuth: Option[String],
-                            maybeInvocationId: Option[String]
+                            stateOpt: Option[String]
                             )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-    val state = IDs.next
-    val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId, maybeRedirectAfterAuth).absoluteURL(secure = true)
-    val maybeRedirect = application.maybeAuthorizationRequestFor(state, redirectParam, ws).map { r =>
+    val oauthState = oauthStateFromStateOpt(stateOpt)
+    val redirectParam = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None).absoluteURL(secure = true)
+    val maybeRedirect = application.maybeAuthorizationRequestFor(stateOpt.get, redirectParam, ws).map { r =>
       r.uri.toString
     }
     val result = maybeRedirect.map { redirect =>
-      val sessionState = Seq("oauth-state" -> state)
+      val sessionState = Seq("oauth-state" -> oauthState)
       Redirect(redirect).withSession(sessionState: _*)
     }.getOrElse(BadRequest("Doesn't use authorization code"))
     Future.successful(result)
@@ -91,13 +102,14 @@ class APIAccessController @Inject() (
                             oauthState: String,
                             code: String,
                             user: User,
-                            application: OAuth2Application,
-                            maybeInvocationId: Option[String],
-                            maybeRedirectAfterAuth: Option[String]
+                            application: OAuth2Application
                             )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-    if (state == oauthState) {
-      val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None, maybeInvocationId, maybeRedirectAfterAuth).absoluteURL(secure = true)
+    val stateJson = parseState(state)
+    if ((stateJson \ "oauthState").asOpt[String].contains(oauthState)) {
+      val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None).absoluteURL(secure = true)
       getToken(code, application, user, redirect).flatMap { maybeLinkedToken =>
+        val maybeInvocationId = (stateJson \ "invocationId").asOpt[String]
+        val maybeRedirectAfterAuth = (stateJson \ "redirectAfterAuth").asOpt[String]
         maybeLinkedToken.
           map(_ => resultWithToken(maybeInvocationId, maybeRedirectAfterAuth)).
           getOrElse(Future.successful(BadRequest("boom")))
@@ -111,16 +123,14 @@ class APIAccessController @Inject() (
                                    codeOpt: Option[String],
                                    stateOpt: Option[String],
                                    user: User,
-                                   application: OAuth2Application,
-                                   maybeInvocationId: Option[String],
-                                   maybeRedirectAfterAuth: Option[String]
+                                   application: OAuth2Application
                                  )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[Future[Result]] = {
     for {
       code <- codeOpt
       state <- stateOpt
       oauthState <- request.session.get("oauth-state")
     } yield {
-      resultForStep2(state, oauthState, code, user, application, maybeInvocationId, maybeRedirectAfterAuth)
+      resultForStep2(state, oauthState, code, user, application)
     }
   }
 
@@ -133,9 +143,7 @@ class APIAccessController @Inject() (
   def linkCustomOAuth2Service(
                                applicationId: String,
                                codeOpt: Option[String],
-                               stateOpt: Option[String],
-                               maybeInvocationId: Option[String],
-                               maybeRedirectAfterAuth: Option[String]
+                               stateOpt: Option[String]
                                ) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
@@ -143,8 +151,8 @@ class APIAccessController @Inject() (
       result <- maybeApplication.map { application =>
         dataService.teams.find(application.teamId, user).map(_.isDefined).flatMap { isLoggedInToCorrectTeam =>
           if (application.isShared || isLoggedInToCorrectTeam) {
-            maybeResultForStep2(codeOpt, stateOpt, user, application, maybeInvocationId, maybeRedirectAfterAuth).getOrElse {
-              resultForStep1(application, maybeRedirectAfterAuth, maybeInvocationId)
+            maybeResultForStep2(codeOpt, stateOpt, user, application).getOrElse {
+              resultForStep1(application, stateOpt)
             }
           } else {
             reAuthFor(request, maybeApplication.map(_.teamId))

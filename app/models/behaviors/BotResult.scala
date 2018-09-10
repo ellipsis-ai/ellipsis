@@ -676,7 +676,14 @@ case class OAuth2TokenMissing(
   val apiApplicationId: String = oAuth2Application.id
   val apiApplicationName: String = oAuth2Application.name
 
-  val redirectPath: Call = controllers.routes.APIAccessController.linkCustomOAuth2Service(apiApplicationId, None, None, Some(key), None)
+  val state: Option[String] = Some(
+    java.net.URLEncoder.encode(Json.obj(
+    "oauthState" -> IDs.next,
+    "invocationId" -> key
+    ).toString, "utf-8")
+  )
+
+  val redirectPath: Call = controllers.routes.APIAccessController.linkCustomOAuth2Service(apiApplicationId, None, state)
 
   override def beforeSend: Unit = super.beforeSend
 }
