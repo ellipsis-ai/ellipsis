@@ -18,7 +18,7 @@ import play.api.{Configuration, Logger}
 import services.slack.SlackApiError
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.{FutureSequencer, SlackChannels, SlackMessageSenderException}
+import utils.{FutureSequencer, SlackChannels, SlackMessageSenderChannelException, SlackMessageSenderException}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -49,11 +49,11 @@ trait Scheduled {
     }
   }
 
-  def scheduleLinkFor(configuration: Configuration, scheduleId: String, teamId: String, editText: String = "✎ Edit"): String = {
+  def maybeEditScheduleUrlFor(configuration: Configuration): Option[String] = {
     configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(Some(scheduleId), None, Some(teamId))
-      s"_[${editText}]($baseUrl$path)_"
-    }.getOrElse("")
+      val path = controllers.routes.ScheduledActionsController.index(Some(id), None, Some(team.id))
+      baseUrl + path
+    }
   }
 
   def isScheduledForDirectMessage: Boolean = {
@@ -103,7 +103,9 @@ trait Scheduled {
     } else {
       recurrence.displayString.trim ++ recipientDetails
     }
-    val scheduleLink = scheduleLinkFor(configuration, scheduleId, teamId)
+    val scheduleLink = maybeEditScheduleUrlFor(configuration).map { url =>
+      s"_[✎ Edit]($url)_"
+    }.getOrElse("")
     displayText(dataService).map { desc =>
       s"""
         |
@@ -255,47 +257,22 @@ trait Scheduled {
                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): BotResult => Future[Unit] = {
     result: BotResult => {
       sendResult(result, event, services).recover {
-        case e: SlackMessageSenderException => {
-          e.underlying match {
-            case apiError: SlackApiError => {
-              val channelLink = event.maybeChannel.map(channel =>
-                s" <#${channel}>"
-              ).getOrElse("")
-              val maybeChannelReason = apiError.code match {
-                case "is_archived" => Some(s"the specified channel${channelLink} has been archived.")
-                case "channel_not_found" => Some(s"the channel specified could not be found. It may have been deleted.")
-                case "not_in_channel" => Some(s"I need to be invited to the channel${channelLink}.")
-                case _ => None
-              }
-              if (slackUserId != profile.userId && maybeChannelReason.isDefined) {
-                maybeChannelReason.map { channelReason =>
-                  val editLink = scheduleLinkFor(services.configuration, id, profile.teamId, "Edit schedule")
-                  displayText(services.dataService).flatMap { scheduledDisplayText =>
-                    val message =
-                      s"""Hello, <@${slackUserId}>.
-                         |
-                         |I tried to run ${scheduledDisplayText} on schedule for you, but ${channelReason}
-                         |
-                         |${editLink}""".stripMargin
-                    services.dataService.slackBotProfiles.sendResultWithNewEvent(
-                      "Notifying user of scheduled item in archived channel",
-                      (newEvent) => Future.successful(Some(SimpleTextResult(newEvent, None, message, Normal, shouldInterrupt = false))),
-                      profile.slackTeamId,
-                      profile,
-                      slackUserId,
-                      slackUserId,
-                      OffsetDateTime.now.toString,
-                      None,
-                      isEphemeral = false,
-                      None
-                    )
-                  }
-                }
-              } else {
-                throw apiError
-              }
+        case c: SlackMessageSenderChannelException => {
+          if (slackUserId != profile.userId) {
+            val editLink = maybeEditScheduleUrlFor(services.configuration).map { url =>
+              s"[✎ Edit schedule]($url)"
+            }.getOrElse("")
+            displayText(services.dataService).flatMap { scheduledDisplayText =>
+              val message =
+                s"""Hello, <@${slackUserId}>
+                   |
+                   |I was unable to run ${scheduledDisplayText} on schedule for you. ${c.channelReason}
+                   |
+                   |${editLink}""".stripMargin
+              services.dataService.slackBotProfiles.sendDMWarningMessage(profile, slackUserId, message)
             }
-            case _ => throw e
+          } else {
+            throw c
           }
         }
       }

@@ -27,7 +27,7 @@ import play.api.{Configuration, Logger}
 import services.caching.CacheService
 import services.slack.{SlackApiError, SlackEventService}
 import services.{AWSLambdaService, DataService}
-import utils.{SlackFileMap, SlackTimestamp}
+import utils.{SlackFileMap, SlackMessageSenderChannelException, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -215,7 +215,19 @@ class APIController @Inject() (
           result <- eventHandler.handle(event, None).map { results =>
             results.foreach { result =>
               botResultService.sendIn(result, None).map { _ =>
-                Logger.info(event.logTextFor(result, Some("in response to /api/post_message")))
+                Logger.info(event.logTextFor(result, Some("in response to API run request")))
+              }.recover {
+                case c: SlackMessageSenderChannelException => {
+                  (for {
+                    botProfile <- context.maybeBotProfile
+                    slackUserProfile <- context.maybeSlackProfile
+                  } yield {
+                    val message = s"""I was unable to complete an action you initiated in the channel requested. ${c.channelReason}"""
+                    dataService.slackBotProfiles.sendDMWarningMessage(botProfile, slackUserProfile.loginInfo.providerKey, message)
+                  }).getOrElse {
+                    throw c
+                  }
+                }
               }
             }
             Ok(Json.toJson(results.map(_.fullText)))

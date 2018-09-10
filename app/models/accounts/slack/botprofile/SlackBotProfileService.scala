@@ -2,11 +2,12 @@ package models.accounts.slack.botprofile
 
 import java.time.OffsetDateTime
 
-import models.behaviors.BotResult
+import models.behaviors.behaviorversion.Normal
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events.{EventType, SlackMessageEvent}
 import models.team.Team
 import slick.dbio.DBIO
-import utils.SlackChannels
+import utils.{SlackChannels, SlackMessageSenderChannelException}
 
 import scala.concurrent.Future
 
@@ -48,4 +49,23 @@ trait SlackBotProfileService {
     isEphemeral: Boolean,
     maybeResponseUrl: Option[String]
   ): Future[Option[String]]
+
+  def sendDMWarningMessage(profile: SlackBotProfile, slackUserId: String, message: String): Future[Option[String]] = {
+    if (slackUserId != profile.userId) {
+      sendResultWithNewEvent(
+        "Warning user via DM",
+        (newEvent) => Future.successful(Some(SimpleTextResult(newEvent, None, message, Normal, shouldInterrupt = false))),
+        profile.slackTeamId,
+        profile,
+        slackUserId,
+        slackUserId,
+        OffsetDateTime.now.toString,
+        None,
+        isEphemeral = false,
+        None
+      )
+    } else {
+      Future.successful(None)
+    }
+  }
 }

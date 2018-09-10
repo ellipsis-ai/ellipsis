@@ -11,11 +11,39 @@ import models.behaviors.{ActionChoice, DeveloperContext}
 import play.api.Configuration
 import play.api.libs.json.Json
 import services.DefaultServices
-import services.slack.SlackApiClient
+import services.slack.{SlackApiClient, SlackApiError}
 import services.slack.apiModels._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
+
+trait SlackMessageSenderChannelException extends Exception {
+  val channel: String
+  val channelLink = s"<#$channel>"
+  val slackTeamId: String
+  val userId: String
+  val text: String
+  val channelReason: String
+  val message: String =  s"""Could not send to channel ID $channel while sending a message to user $userId on team $slackTeamId because $channelReason
+                    |Message:
+                    |$text
+                    |""".stripMargin
+
+
+  override def getMessage: String = message
+}
+
+case class ArchivedChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  val channelReason = s"The specified channel ${channelLink} has been archived."
+}
+
+case class NotInvitedToChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  val channelReason = s"The bot needs to be invited to the channel ${channelLink}."
+}
+
+case class ChannelNotFoundException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  val channelReason = s"The channel specified could not be found. It may have been deleted."
+}
 
 case class SlackMessageSenderException(underlying: Throwable, channel: String, slackTeamId: String, userId: String, text: String)
   extends Exception(
@@ -110,6 +138,14 @@ case class SlackMessageSender(
       linkNames = None,
       attachments = maybeAttachments
     ).recover {
+      case apiError: SlackApiError => {
+        apiError.code match {
+          case "is_archived" => throw ArchivedChannelException(channel, slackTeamId, user, text)
+          case "channel_not_found" => throw ChannelNotFoundException(channel, slackTeamId, user, text)
+          case "not_in_channel" => throw NotInvitedToChannelException(channel, slackTeamId, user, text)
+          case _ => throw SlackMessageSenderException(apiError, channel, slackTeamId, user, text)
+        }
+      }
       case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
     }
   }
