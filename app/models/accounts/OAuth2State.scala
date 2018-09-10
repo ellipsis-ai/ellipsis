@@ -3,7 +3,7 @@ package models.accounts
 import java.net.URLDecoder
 
 import models.IDs
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json
 
 case class OAuth2State(
                         id: String,
@@ -12,12 +12,11 @@ case class OAuth2State(
                       ) {
 
   def unencodedString: String = {
-    val data = Seq(
-      Some("oauthState" -> Json.toJson(id)),
-      maybeInvocationId.map(v => "invocationId" -> Json.toJson(v)),
-      maybeRedirectAfterAuth.map(v => "redirect" -> Json.toJson(v))
-    ).flatten
-    JsObject(data).toString
+    Json.obj(
+      "oauthState" -> id,
+      "invocationId" -> maybeInvocationId,
+      "redirect" -> maybeRedirectAfterAuth
+    ).toString
   }
 
   def encodedString: String = java.net.URLEncoder.encode(unencodedString, "utf-8")
