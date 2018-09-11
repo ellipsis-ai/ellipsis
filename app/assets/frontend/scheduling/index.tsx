@@ -62,6 +62,10 @@ type ScheduleGroup = {
   actions: Array<ScheduledAction>
 }
 
+type SchedulesGroupedByName = {
+  [groupName: string]: ScheduleGroup | undefined
+}
+
 class Scheduling extends React.Component<Props, State> {
 
     static defaultProps: PageRequiredProps;
@@ -188,14 +192,12 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     getScheduleByChannel(): Array<ScheduleGroup> {
-      const groupsByName: {
-        [groupName: string]: ScheduleGroup
-      } = {};
+      const groupsByName: SchedulesGroupedByName = {};
       this.props.scheduledActions.forEach((action) => {
         const channel = this.findChannelFor(action.channel);
         const channelName = channel ? channel.getFormattedName() : null;
         const groupName = channelName || "[unknown]";
-        const group: ScheduleGroup = groupsByName[groupName] ? groupsByName[groupName] : {
+        const group: ScheduleGroup = groupsByName[groupName] || {
           channel: channel,
           channelName: channelName,
           channelId: channel ? channel.id : "unknown",
@@ -209,7 +211,14 @@ class Scheduling extends React.Component<Props, State> {
       });
       const channelNames = Object.keys(groupsByName);
       const sortedNames = Sort.arrayAlphabeticalBy(channelNames, (ea) => ea);
-      return sortedNames.map((channelName) => groupsByName[channelName]);
+      const sortedGroups: Array<ScheduleGroup> = [];
+      sortedNames.forEach((channelName) => {
+        const group = groupsByName[channelName];
+        if (group) {
+          sortedGroups.push(group);
+        }
+      });
+      return sortedGroups;
     }
 
     shouldShowChannel(channelId: string): boolean {
