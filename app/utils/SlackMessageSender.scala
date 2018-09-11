@@ -143,17 +143,7 @@ case class SlackMessageSender(
       parse = None,
       linkNames = None,
       attachments = maybeAttachments
-    ).recover {
-      case apiError: SlackApiError => {
-        apiError.code match {
-          case "is_archived" => throw ArchivedChannelException(channel, slackTeamId, user, text)
-          case "channel_not_found" => throw ChannelNotFoundException(channel, slackTeamId, user, text)
-          case "not_in_channel" => throw NotInvitedToChannelException(channel, slackTeamId, user, text)
-          case _ => throw SlackMessageSenderException(apiError, channel, slackTeamId, user, text)
-        }
-      }
-      case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
-    }
+    ).recover(postErrorRecovery(channel, text))
   }
 
   private def maybeResponseUrlToUse(channel: String): Option[String] = {
