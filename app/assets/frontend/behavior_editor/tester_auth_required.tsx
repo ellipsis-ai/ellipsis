@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {OAuthApplicationRef, RequiredOAuthApplication} from '../models/oauth';
 import autobind from "../lib/autobind";
+import ID from "../lib/id";
 
 interface Props {
   groupId: string,
@@ -16,7 +17,8 @@ class TesterAuthRequired extends React.Component<Props> {
 
   renderAuthRequiredFor(config: OAuthApplicationRef) {
       const editUrl = jsRoutes.controllers.BehaviorEditorController.edit(this.props.groupId, this.props.behaviorId).absoluteURL(true);
-      const url = jsRoutes.controllers.APIAccessController.linkCustomOAuth2Service(config.id, null, null, null, editUrl).absoluteURL(true);
+      const state = JSON.stringify({ oauthState: ID.next(), redirect: editUrl });
+      const url = jsRoutes.controllers.APIAccessController.linkCustomOAuth2Service(config.id, null, state).absoluteURL(true);
       return (
         <a href={url}>{config.displayName || "(Unnamed)"}</a>
       );

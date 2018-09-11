@@ -1,6 +1,6 @@
 package models.accounts.oauth2application
 
-import models.accounts.OAuthApplication
+import models.accounts.{OAuth2State, OAuthApplication}
 import models.accounts.oauth2api.OAuth2Api
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
@@ -25,13 +25,13 @@ case class OAuth2Application(
   val accessTokenUrl = api.accessTokenUrl
   val scopeString = maybeScope.getOrElse("")
 
-  def maybeAuthorizationRequestFor(state: String, redirectUrl: String, ws: WSClient): Option[WSRequest] = {
+  def maybeAuthorizationRequestFor(state: OAuth2State, redirectUrl: String, ws: WSClient): Option[WSRequest] = {
     maybeAuthorizationUrl.map { authorizationUrl =>
       ws.url(authorizationUrl).withQueryStringParameters(
         "client_id" -> clientId,
         "redirect_uri" -> redirectUrl,
         "scope" -> scopeString,
-        "state" -> state,
+        "state" -> state.encodedString,
         "access_type" -> "offline",
         "response_type" -> "code",
         "prompt" -> "consent",

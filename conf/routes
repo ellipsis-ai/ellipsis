@@ -92,7 +92,7 @@ POST        /slack/action                             @controllers.SlackControll
 POST        /slack/command                            @controllers.SlackController.command
 
 GET         /link_oauth1/:configId                    @controllers.APIAccessController.linkCustomOAuth1Service(configId: String, invocationId: Option[String], redirect: Option[String])
-GET         /link_oauth2/:configId                    @controllers.APIAccessController.linkCustomOAuth2Service(configId: String, code: Option[String], state: Option[String], invocationId: Option[String], redirect: Option[String])
+GET         /link_oauth2/:configId                    @controllers.APIAccessController.linkCustomOAuth2Service(configId: String, code: Option[String], state: Option[String])
 GET         /authenticated/:message                   @controllers.APIAccessController.authenticated(message: String)
 
 GET         /admin/lambdas                            @controllers.admin.LambdasController.list()
