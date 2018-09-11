@@ -28,14 +28,13 @@ trait SlackMessageSenderChannelException extends Exception {
   val userId: String
   val text: String
   val channelReason: String
-  val message: String =
+  override def getMessage: String = {
     s"""Could not send to channel ID $channel while sending a message to user $userId on team $slackTeamId because $channelReason
        |
        |Message:
        |$text
        |""".stripMargin
-
-  override def getMessage: String = message
+  }
 }
 
 case class ArchivedChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
