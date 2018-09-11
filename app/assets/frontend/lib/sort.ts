@@ -1,5 +1,5 @@
 const Sort = {
-    arrayAlphabeticalBy: function(array: Array<any>, mapItemToProperty: (item: any) => Option<string>) {
+    arrayAlphabeticalBy: function<T>(array: Array<T>, mapItemToProperty: (item: T) => Option<string>) {
       var copy = array.slice();
       return copy.sort((a, b) => {
         const aLower = (mapItemToProperty(a) || "").toLowerCase();
