@@ -89,7 +89,7 @@ object ScheduledActionData {
         maybeConversationList.map { conversationList =>
           val convoIds = conversationList.map(_.id)
           allScheduledActions.filter { action =>
-            convoIds.contains(action.channel)
+            action.userId.contains(teamAccess.user.id) || convoIds.contains(action.channel)
           }
         }.getOrElse(Seq())
       }

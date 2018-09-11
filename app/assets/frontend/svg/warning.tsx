@@ -1,20 +1,21 @@
 import * as React from 'react';
 
-const SVGWarning = React.createClass({
-  propTypes: {
-    label: React.PropTypes.string,
-    inverted: React.PropTypes.bool
-  },
-  label: function() {
+interface Props {
+  label?: Option<string>,
+  inverted?: Option<boolean>
+}
+
+class SVGWarning extends React.PureComponent<Props> {
+  label(): string {
     return this.props.label || '!';
-  },
-  getShapeColor: function() {
+  }
+  getShapeColor(): string {
     return this.props.inverted ? 'currentColor' : '#FFFFFF';
-  },
-  getBackgroundColor: function() {
+  }
+  getBackgroundColor(): string {
     return this.props.inverted ? '#FFFFFF' : 'currentColor';
-  },
-  render: function() {
+  }
+  render() {
     return (
       <svg role="img" aria-label={this.label()} height="100%" viewBox="0 0 22 24">
         <title>{this.label()}</title>
@@ -28,6 +29,6 @@ const SVGWarning = React.createClass({
       </svg>
     );
   }
-});
+}
 
 export default SVGWarning;
