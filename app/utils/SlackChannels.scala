@@ -34,7 +34,7 @@ case class SlackChannels(client: SlackApiClient) {
     getInfoFor(unformattedChannelLikeIdOrName).flatMap { maybeChannelLike =>
       maybeChannelLike.map(c => Future.successful(Some(c.id))).getOrElse {
         getList.map { infos =>
-          infos.find(_.name == unformattedChannelLikeIdOrName).map(_.id)
+          infos.find(_.name.contains(unformattedChannelLikeIdOrName)).map(_.id)
         }
       }
     }

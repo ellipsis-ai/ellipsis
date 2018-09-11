@@ -19,7 +19,11 @@ import scala.reflect.io.File
 
 trait SlackMessageSenderChannelException extends Exception {
   val channel: String
-  val channelLink = s"<#$channel>"
+  val channelLink: String = if (channel.startsWith("#")) {
+    channel
+  } else {
+    s"<#$channel>"
+  }
   val slackTeamId: String
   val userId: String
   val text: String
@@ -200,9 +204,7 @@ case class SlackMessageSender(
           deleteOriginal = None,
           threadTs = maybeThreadTs,
           replyBroadcast = None
-        ).recover {
-          case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
-        }
+        ).recover(postErrorRecovery(channel, text))
       }
     }
   }
@@ -293,6 +295,18 @@ case class SlackMessageSender(
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles
     } yield maybeLastTs
+  }
+
+  private def postErrorRecovery[U](channel: String, text: String): PartialFunction[Throwable, U] = {
+    case apiError: SlackApiError => {
+      apiError.code match {
+        case "is_archived" => throw ArchivedChannelException(channel, slackTeamId, user, text)
+        case "channel_not_found" => throw ChannelNotFoundException(channel, slackTeamId, user, text)
+        case "not_in_channel" => throw NotInvitedToChannelException(channel, slackTeamId, user, text)
+        case _ => throw SlackMessageSenderException(apiError, channel, slackTeamId, user, text)
+      }
+    }
+    case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
   }
 }
 

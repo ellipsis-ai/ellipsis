@@ -9,16 +9,15 @@ import drivers.SlickPostgresDriver.api._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.behaviorversion.Normal
+import models.behaviors.BotResult
 import models.behaviors.events.{EventHandler, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
-import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.{Configuration, Logger}
 import services.slack.SlackApiError
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.{FutureSequencer, SlackChannels, SlackMessageSenderChannelException, SlackMessageSenderException}
+import utils.{FutureSequencer, SlackChannels, SlackMessageSenderChannelException}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -264,12 +263,16 @@ trait Scheduled {
             }.getOrElse("")
             displayText(services.dataService).flatMap { scheduledDisplayText =>
               val message =
-                s"""Hello, <@${slackUserId}>
+                s"""---
                    |
-                   |I was unable to run ${scheduledDisplayText} on schedule for you. ${c.channelReason}
+                   |**Note: I was unable to run ${scheduledDisplayText} on schedule for you.** ${c.channelReason}
                    |
-                   |${editLink}""".stripMargin
-              services.dataService.slackBotProfiles.sendDMWarningMessage(profile, slackUserId, message)
+                   |${editLink}
+                   |
+                   |---
+                   |
+                   |""".stripMargin
+              services.dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, profile, slackUserId, message)
             }
           } else {
             throw c
