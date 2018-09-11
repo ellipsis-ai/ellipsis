@@ -215,8 +215,7 @@ class APIController @Inject() (
   private def runBehaviorFor(
                               maybeEvent: Option[Event],
                               context: ApiMethodContext,
-                              maybeOriginatingBehaviorVersion: Option[BehaviorVersion],
-                              maybeTriggerText: Option[String]
+                              eitherOriginatingBehaviorOrTriggerText: Either[BehaviorVersion, String]
                             ) = {
     for {
       result <- maybeEvent.map { event =>
@@ -231,7 +230,7 @@ class APIController @Inject() (
                     botProfile <- context.maybeBotProfile
                     slackUserProfile <- context.maybeSlackProfile
                   } yield {
-                    val description = descriptionForResult(result, maybeOriginatingBehaviorVersion, maybeTriggerText)
+                    val description = descriptionForResult(result, eitherOriginatingBehaviorOrTriggerText)
                     val messageStart = if (maybeEvent.map(_.originalEventType).contains(EventType.scheduled)) {
                       s"**I was unable to complete a scheduled action in the specified channel** — $description"
                     } else {
@@ -258,23 +257,22 @@ class APIController @Inject() (
     } yield result
   }
 
-  private def descriptionForResult(result: BotResult, maybeOriginatingBehaviorVersion: Option[BehaviorVersion], maybeTriggerText: Option[String]): String = {
+  private def descriptionForResult(result: BotResult, eitherOriginatingBehaviorOrTriggerText: Either[BehaviorVersion, String]): String = {
     val maybeActionName = result.maybeBehaviorVersion.flatMap(_.maybeName)
     val actionBeingRun = maybeActionName.map(name =>
       s"the action named `$name`"
     ).getOrElse("an action")
 
-    val maybeOriginatingActionText = maybeOriginatingBehaviorVersion.map { originatingAction =>
-      originatingAction.maybeName.map(name =>
-        s", triggered by `$name`,"
-      ).getOrElse(", triggered by another action,")
-    }
-
-    val maybeOriginatingTriggerText = maybeTriggerText.map { triggerText =>
-      s", triggered by the message `$triggerText`"
-    }
-
-    val originatingText = maybeOriginatingActionText.orElse(maybeOriginatingTriggerText).getOrElse("")
+    val originatingText = eitherOriginatingBehaviorOrTriggerText.fold(
+      behaviorVersion => {
+        behaviorVersion.maybeName.
+          map(name => s", triggered by `$name`,").
+          getOrElse(", triggered by another action,")
+      },
+      triggerText => {
+        s", triggered by the message `$triggerText`"
+      }
+    )
 
     val maybeGroupName = result.maybeBehaviorVersion.map(_.groupVersion.name)
     val skillName = maybeGroupName.map(groupName =>
@@ -370,9 +368,12 @@ class APIController @Inject() (
           None
         )
       )
-      result <- if (maybeBehaviorVersion.isDefined) {
-        runBehaviorFor(maybeEvent, context, maybeOriginatingBehaviorVersion, None)
-      } else {
+      result <- (for {
+        originatingBehaviorVersion <- maybeOriginatingBehaviorVersion
+        behaviorVersion <- maybeBehaviorVersion
+      } yield {
+        runBehaviorFor(maybeEvent, context, Left(originatingBehaviorVersion))
+      }).getOrElse {
         Future.successful(notFound(APIErrorData(s"Action named `$actionName` not found", Some("actionName")), Json.toJson(info)))
       }
     } yield result
@@ -385,7 +386,7 @@ class APIController @Inject() (
                        )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
       maybeEvent <- context.maybeMessageEventFor(trigger, info.channel, EventType.maybeFrom(info.originalEventType))
-      result <- runBehaviorFor(maybeEvent, context, None, Some(trigger))
+      result <- runBehaviorFor(maybeEvent, context, Right(trigger))
     } yield result
   }
 
@@ -739,7 +740,7 @@ class APIController @Inject() (
         val eventualResult = for {
           context <- ApiMethodContext.createFor(info.token)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
-          result <- runBehaviorFor(maybeEvent, context, None, Some(info.message))
+          result <- runBehaviorFor(maybeEvent, context, Right(info.message))
         } yield result
 
         eventualResult.recover {
