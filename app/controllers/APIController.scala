@@ -26,7 +26,7 @@ import play.api.{Configuration, Logger}
 import services.caching.CacheService
 import services.slack.{SlackApiError, SlackEventService}
 import services.{AWSLambdaService, DataService, DefaultServices}
-import utils.{SlackFileMap, SlackMessageSenderChannelException, SlackTimestamp}
+import utils.{SlackFileMap, SlackMessageSenderChannelException, SlackMessageSenderException, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -792,13 +792,21 @@ class APIController @Inject() (
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => invalidTokenRequest(info)
-          case c: SlackMessageSenderChannelException => {
-            badRequest(Some(APIErrorData(s"""Error: ${c.rawChannelReason}""", Some("channel"))), None, Json.toJson(info))
+          case invalidTokenException: InvalidTokenException => invalidTokenRequest(info)
+          case channelException: SlackMessageSenderChannelException => {
+            badRequest(Some(APIErrorData(s"""Error: ${channelException.rawChannelReason}""", Some("channel"))), None, Json.toJson(info))
           }
-          case a: SlackApiError => {
-            // TODO: 400 seems like maybe the wrong kind of error here
-            badRequest(Some(APIErrorData(s"Slack API error: ${a.code}\n", None)), None, Json.toJson(info))
+          case slackException: SlackMessageSenderException => {
+            slackException.underlying match {
+              // TODO: 400 seems like maybe the wrong kind of error here
+              case apiError: SlackApiError => {
+                badRequest(Some(APIErrorData(s"Slack API error: ${apiError.code}\n", None)), None, Json.toJson(info))
+              }
+              case _ => {
+                badRequest(Some(APIErrorData(s"Unknown error while attempting to send message to Slack", None)), None, Json.toJson(info))
+              }
+            }
+
           }
         }
       }
