@@ -82,6 +82,7 @@ trait SlackBotProfileService {
         }.getOrElse(Future.successful(None))
       } yield maybeTs
     } else {
+      Logger.error(s"Bot cannot send DM warning to itself. Original message: $message")
       Future.successful(None)
     }
   }
