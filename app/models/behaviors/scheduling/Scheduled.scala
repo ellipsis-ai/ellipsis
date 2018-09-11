@@ -263,14 +263,9 @@ trait Scheduled {
             }.getOrElse("")
             displayText(services.dataService).flatMap { scheduledDisplayText =>
               val message =
-                s"""---
-                   |
-                   |**Note: I was unable to run ${scheduledDisplayText} on schedule for you.** ${c.channelReason}
+                s"""**I was unable to run ${scheduledDisplayText} on schedule for you in the specified channel.** ${c.channelReason}
                    |
                    |${editLink}
-                   |
-                   |---
-                   |
                    |""".stripMargin
               services.dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, profile, slackUserId, message)
             }

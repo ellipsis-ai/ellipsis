@@ -56,12 +56,20 @@ trait SlackBotProfileService {
   def sendDMWarningMessageFor(event: Event, services: DefaultServices, profile: SlackBotProfile, slackUserId: String, message: String)
                              (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     if (slackUserId != profile.userId) {
+      val wholeMessage =
+        s"""---
+           |
+           |**Warning:** $message
+           |
+           |---
+           |
+         """.stripMargin
       for {
         maybeDmChannel <- maybeDmChannelFor(event, services)
         maybeTs <- maybeDmChannel.map { dmChannel =>
           sendResultWithNewEvent(
             "Warning message to user via DM",
-            (newEvent) => Future.successful(Some(SimpleTextResult(newEvent, None, message, Normal, shouldInterrupt = false))),
+            (newEvent) => Future.successful(Some(SimpleTextResult(newEvent, None, wholeMessage, Normal, shouldInterrupt = false))),
             profile.slackTeamId,
             profile,
             dmChannel,

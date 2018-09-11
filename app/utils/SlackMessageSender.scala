@@ -38,7 +38,7 @@ trait SlackMessageSenderChannelException extends Exception {
 }
 
 case class ArchivedChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
-  val channelReason = s"The specified channel ${channelLink} has been archived."
+  val channelReason = s"The channel ${channelLink} has been archived."
 }
 
 case class NotInvitedToChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
@@ -46,7 +46,7 @@ case class NotInvitedToChannelException(channel: String, slackTeamId: String, us
 }
 
 case class ChannelNotFoundException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
-  val channelReason = s"The channel specified could not be found. It may have been deleted."
+  val channelReason = s"The channel could not be found. It may have been deleted."
 }
 
 case class SlackMessageSenderException(underlying: Throwable, channel: String, slackTeamId: String, userId: String, text: String)

@@ -233,19 +233,14 @@ class APIController @Inject() (
                   } yield {
                     val description = descriptionForResult(result, maybeOriginatingBehaviorVersion, maybeTriggerText)
                     val messageStart = if (maybeEvent.map(_.originalEventType).contains(EventType.scheduled)) {
-                      s"I was unable to complete ${description}, which ran on schedule."
+                      s"**I was unable to complete a scheduled action in the specified channel** — $description"
                     } else {
-                      s"I was unable to complete ${description}, which you initiated."
+                      s"**I was unable to complete an action in the specified channel** — $description"
                     }
                     val message =
-                      s"""
-                         |---
+                      s"""${messageStart}
                          |
-                         |**Note: ${messageStart}** ${c.channelReason}
-                         |
-                         |---
-                         |
-                         |""".stripMargin
+                         |${c.channelReason}""".stripMargin
                     dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, botProfile, slackUserProfile.loginInfo.providerKey, message)
                   }).getOrElse {
                     throw c
@@ -264,22 +259,29 @@ class APIController @Inject() (
   }
 
   private def descriptionForResult(result: BotResult, maybeOriginatingBehaviorVersion: Option[BehaviorVersion], maybeTriggerText: Option[String]): String = {
-    val actionBeingRun = result.maybeBehaviorVersion.flatMap(_.maybeName).map(name =>
+    val maybeActionName = result.maybeBehaviorVersion.flatMap(_.maybeName)
+    val actionBeingRun = maybeActionName.map(name =>
       s"the action named `$name`"
     ).getOrElse("an action")
-    val originatingAction = maybeOriginatingBehaviorVersion.map { origBehaviorVersion =>
-      origBehaviorVersion.maybeName.map(name =>
-        s" (triggered by `$name`)"
-      ).getOrElse(" (triggered by another action)")
-    }.orElse {
-      maybeTriggerText.map { triggerText =>
-        s" (triggered by the message `$triggerText`)"
-      }
-    }.getOrElse("")
-    val skillName = result.maybeBehaviorVersion.map(_.groupVersion.name).map(groupName =>
-      s", in the skill `${groupName}`"
+
+    val maybeOriginatingActionText = maybeOriginatingBehaviorVersion.map { originatingAction =>
+      originatingAction.maybeName.map(name =>
+        s", triggered by `$name`,"
+      ).getOrElse(", triggered by another action,")
+    }
+
+    val maybeOriginatingTriggerText = maybeTriggerText.map { triggerText =>
+      s", triggered by the message `$triggerText`"
+    }
+
+    val originatingText = maybeOriginatingActionText.orElse(maybeOriginatingTriggerText).getOrElse("")
+
+    val maybeGroupName = result.maybeBehaviorVersion.map(_.groupVersion.name)
+    val skillName = maybeGroupName.map(groupName =>
+      s" in the skill `${groupName}`"
     ).getOrElse("")
-    actionBeingRun + originatingAction + skillName
+
+    actionBeingRun + originatingText + skillName
   }
 
   trait ApiMethodWithActionInfo extends ApiMethodInfo {
