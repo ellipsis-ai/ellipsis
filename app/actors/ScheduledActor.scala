@@ -44,8 +44,21 @@ class ScheduledActor @Inject()(
           }.getOrElse(DBIO.successful(None))
           _ <- maybeProfile.map { profile =>
             scheduled.updateOrDeleteScheduleAction(dataService).flatMap { _ =>
-              DBIO.from(scheduled.send(eventHandler, profile, services, displayText).recoverWith {
-                case t: Throwable => logError(t, scheduled, displayText, maybeSlackUserId)
+              DBIO.from(scheduled.send(eventHandler, profile, services, displayText).recover {
+                case t: Throwable => {
+                  val user = scheduled.maybeUser.map { user =>
+                    s"Ellipsis ID ${user.id} / Slack ID ${maybeSlackUserId.getOrElse("(unknown)")}"
+                  }.getOrElse("(none)")
+                  val message =
+                    s"""Exception handling scheduled message:
+                       |Team: ${scheduled.team.name} (${scheduled.team.id})
+                       |User: $user
+                       |Channel: ${scheduled.maybeChannel.getOrElse("(missing)")}
+                       |Send privately: ${scheduled.isForIndividualMembers.toString}
+                       |Summary: $displayText
+                       |""".stripMargin
+                  Logger.error(message, t)
+                }
               })
             }
           }.getOrElse(DBIO.successful({}))
@@ -59,21 +72,6 @@ class ScheduledActor @Inject()(
         Future.successful({})
       }
     }
-  }
-
-  def logError(t: Throwable, scheduled: Scheduled, displayText: String, maybeSlackUserId: Option[String]): Future[Unit] = {
-    val user = scheduled.maybeUser.map { user =>
-      s"Ellipsis ID ${user.id} / Slack ID ${maybeSlackUserId.getOrElse("(unknown)")}"
-    }.getOrElse("(none)")
-    val message =
-      s"""Exception handling scheduled message:
-         |Team: ${scheduled.team.name} (${scheduled.team.id})
-         |User: $user
-         |Channel: ${scheduled.maybeChannel.getOrElse("(missing)")}
-         |Send privately: ${scheduled.isForIndividualMembers.toString}
-         |Summary: $displayText
-         |""".stripMargin
-    Future.successful(Logger.error(message, t))
   }
 
   def receive = {
