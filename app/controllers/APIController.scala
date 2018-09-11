@@ -239,7 +239,7 @@ class APIController @Inject() (
                     val message =
                       s"""${messageStart}
                          |
-                         |${c.channelReason}""".stripMargin
+                         |${c.formattedChannelReason}""".stripMargin
                     dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, botProfile, slackUserProfile.loginInfo.providerKey, message)
                   }).getOrElse {
                     throw c
@@ -793,11 +793,12 @@ class APIController @Inject() (
 
         eventualResult.recover {
           case e: InvalidTokenException => invalidTokenRequest(info)
-          case e: SlackApiError => if (e.code == "channel_not_found") {
-            badRequest(Some(APIErrorData(s"""Error: the channel "${info.channel}" could not be found.""", Some("channel"))), None, Json.toJson(info))
-          } else {
+          case c: SlackMessageSenderChannelException => {
+            badRequest(Some(APIErrorData(s"""Error: ${c.rawChannelReason}""", Some("channel"))), None, Json.toJson(info))
+          }
+          case a: SlackApiError => {
             // TODO: 400 seems like maybe the wrong kind of error here
-            badRequest(Some(APIErrorData(s"Slack API error: ${e.code}\n", None)), None, Json.toJson(info))
+            badRequest(Some(APIErrorData(s"Slack API error: ${a.code}\n", None)), None, Json.toJson(info))
           }
         }
       }

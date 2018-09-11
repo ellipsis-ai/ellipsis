@@ -263,7 +263,7 @@ trait Scheduled {
             }.getOrElse("")
             displayText(services.dataService).flatMap { scheduledDisplayText =>
               val message =
-                s"""**I was unable to run ${scheduledDisplayText} on schedule for you in the specified channel.** ${c.channelReason}
+                s"""**I was unable to run ${scheduledDisplayText} on schedule for you in the specified channel.** ${c.formattedChannelReason}
                    |
                    |${editLink}
                    |""".stripMargin

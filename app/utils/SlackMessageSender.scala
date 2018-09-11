@@ -27,9 +27,11 @@ trait SlackMessageSenderChannelException extends Exception {
   val slackTeamId: String
   val userId: String
   val text: String
-  val channelReason: String
+  protected def channelReason(channelIdOrLink: String): String
+  def formattedChannelReason = channelReason(channelLink)
+  def rawChannelReason = channelReason(channel)
   override def getMessage: String = {
-    s"""Could not send to channel ID $channel while sending a message to user $userId on team $slackTeamId because $channelReason
+    s"""Could not send to channel ID $channel while sending a message to user $userId on team $slackTeamId. $rawChannelReason
        |
        |Message:
        |$text
@@ -38,15 +40,15 @@ trait SlackMessageSenderChannelException extends Exception {
 }
 
 case class ArchivedChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
-  val channelReason = s"The channel ${channelLink} has been archived."
+  def channelReason(channelIdOrLink: String) = s"The channel ${channelIdOrLink} has been archived."
 }
 
 case class NotInvitedToChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
-  val channelReason = s"The bot needs to be invited to the channel ${channelLink}."
+  def channelReason(channelIdOrLink: String) = s"The bot needs to be invited to the channel ${channelIdOrLink}."
 }
 
 case class ChannelNotFoundException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
-  val channelReason = s"The channel could not be found. It may have been deleted."
+  def channelReason(channelIdOrLink: String) = s"The channel could not be found. It may have been deleted."
 }
 
 case class SlackMessageSenderException(underlying: Throwable, channel: String, slackTeamId: String, userId: String, text: String)
