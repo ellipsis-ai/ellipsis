@@ -18,7 +18,7 @@ interface State {
 }
 
 class BehaviorCodeHelp extends React.Component<Props, State> {
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     autobind(this);
     this.state = {
@@ -26,41 +26,41 @@ class BehaviorCodeHelp extends React.Component<Props, State> {
     };
   }
 
-  getExpandedItems() {
+  getExpandedItems(): Array<string> {
     return this.state.expandedItems;
   }
-  hasExpandedItem(itemName) {
+  hasExpandedItem(itemName: string): boolean {
     return this.getExpandedItems().includes(itemName);
   }
-  toggleExpandedItem(itemName) {
+  toggleExpandedItem(itemName: string): void {
     const hasExpanded = this.hasExpandedItem(itemName);
     const newItems = hasExpanded ?
       this.getExpandedItems().filter((ea) => ea !== itemName) :
       this.getExpandedItems().concat(itemName);
     this.setState({ expandedItems: newItems });
   }
-  toggleSuccessExamples() {
+  toggleSuccessExamples(): void {
     this.toggleExpandedItem('success');
   }
-  toggleErrorExamples() {
+  toggleErrorExamples(): void {
     this.toggleExpandedItem('error');
   }
-  toggleEnvVariables() {
+  toggleEnvVariables(): void {
     this.toggleExpandedItem('envVariables');
   }
-  toggleApiAccessTokens() {
+  toggleApiAccessTokens(): void {
     this.toggleExpandedItem('apiAccessTokens');
   }
-  toggleUserInfo() {
+  toggleUserInfo(): void {
     this.toggleExpandedItem('userInfo');
   }
-  toggleEllipsisObject() {
+  toggleEllipsisObject(): void {
     this.toggleExpandedItem('ellipsisObject');
   }
-  toggleDataTypeSuccessExamples() {
+  toggleDataTypeSuccessExamples(): void {
     this.toggleExpandedItem('dataTypeSuccess');
   }
-  renderExpandLabelFor(labelText, itemName) {
+  renderExpandLabelFor(labelText: string, itemName: string) {
     return (
       <span>
         <span className="display-inline-block" style={{ width: '0.8em' }}>
@@ -87,7 +87,7 @@ class BehaviorCodeHelp extends React.Component<Props, State> {
     }
   }
 
-  getAllApiAccessTokens() {
+  getAllApiAccessTokens(): Array<RequiredOAuthApplication> {
     return this.props.oauthApiAccessTokens || [];
   }
 
