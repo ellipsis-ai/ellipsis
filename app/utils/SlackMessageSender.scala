@@ -290,14 +290,9 @@ case class SlackMessageSender(
   }
 
   private def postErrorRecovery[U](channel: String, text: String): PartialFunction[Throwable, U] = {
-    case apiError: SlackApiError => {
-      apiError.code match {
-        case "is_archived" => throw ArchivedChannelException(channel, slackTeamId, user, text)
-        case "channel_not_found" => throw ChannelNotFoundException(channel, slackTeamId, user, text)
-        case "not_in_channel" => throw NotInvitedToChannelException(channel, slackTeamId, user, text)
-        case _ => throw SlackMessageSenderException(apiError, channel, slackTeamId, user, text)
-      }
-    }
+    case SlackApiError("is_archived") => throw ArchivedChannelException(channel, slackTeamId, user, text)
+    case SlackApiError("channel_not_found") => throw ChannelNotFoundException(channel, slackTeamId, user, text)
+    case SlackApiError("not_in_channel") => throw NotInvitedToChannelException(channel, slackTeamId, user, text)
     case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
   }
 }
