@@ -1752,7 +1752,8 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
-    window.addEventListener('focus', this.checkForUpdates, false);
+    this.checkForUpdateTimer = null;
+    window.addEventListener('focus', () => this.checkForUpdatesLater(2000), false);
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
     this.loadTestResults();
@@ -1785,12 +1786,13 @@ const BehaviorEditor = React.createClass({
               errorReachingServer: null
             }, this.resetNotificationsEventually);
           }
-          this.checkForUpdatesLater();
         })
         .catch((err) => {
           this.setState({
             errorReachingServer: err
           }, this.resetNotificationsEventually);
+        })
+        .finally(() => {
           this.checkForUpdatesLater();
         });
     } else {
@@ -1798,8 +1800,9 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  checkForUpdatesLater: function() {
-    setTimeout(this.checkForUpdates, 30000);
+  checkForUpdatesLater: function(overrideDuration) {
+    clearTimeout(this.checkForUpdateTimer);
+    this.checkForUpdateTimer = setTimeout(this.checkForUpdates, overrideDuration || 30000);
   },
 
   getInitialEnvVariables: function() {
