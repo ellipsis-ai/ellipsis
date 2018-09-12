@@ -44,6 +44,8 @@ abstract class RequiredApiConfig implements RequiredApiConfigJson {
 
     abstract codePath(): string
 
+    abstract codePathPrefix(): string
+
     abstract isConfigured(): boolean
   }
 

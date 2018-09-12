@@ -1,11 +1,12 @@
 import Formatter from '../lib/formatter';
+import RequiredApiConfig from "./required_api_config";
 
 export interface ApiConfigRefJson {
   id: string;
   displayName: string;
 }
 
-class ApiConfigRef implements ApiConfigRefJson {
+abstract class ApiConfigRef implements ApiConfigRefJson {
   constructor(
     readonly id: string,
     readonly displayName: string
@@ -16,9 +17,11 @@ class ApiConfigRef implements ApiConfigRefJson {
       });
   }
 
-    defaultNameInCode(): string {
-      return Formatter.formatCamelCaseIdentifier(this.displayName);
-    }
+  defaultNameInCode(): string {
+    return Formatter.formatCamelCaseIdentifier(this.displayName);
+  }
+
+  abstract newRequired(): RequiredApiConfig
 }
 
 export default ApiConfigRef;

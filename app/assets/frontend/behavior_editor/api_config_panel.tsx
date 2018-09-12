@@ -8,35 +8,44 @@ import Button from '../form/button';
 import RequiredApiConfig from '../models/required_api_config';
 import Select from '../form/select';
 import Sort from '../lib/sort';
+import autobind from "../lib/autobind";
+import RequiredApiConfigWithConfig from "../models/required_api_config_with_config";
 
-const ApiConfigPanel = React.createClass({
-    propTypes: {
-      openWhen: React.PropTypes.bool.isRequired,
-      requiredConfig: React.PropTypes.instanceOf(RequiredApiConfig),
-      allConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ApiConfigRef)),
-      onAddConfig: React.PropTypes.func,
-      onAddNewConfig: React.PropTypes.func,
-      onRemoveConfig: React.PropTypes.func,
-      onUpdateConfig: React.PropTypes.func,
-      getApiLogoUrlForConfig: React.PropTypes.func,
-      getApiNameForConfig: React.PropTypes.func,
-      getApiConfigName: React.PropTypes.func,
-      toggle: React.PropTypes.func.isRequired,
-      onDoneClick: React.PropTypes.func.isRequired,
-      addNewAWSConfig: React.PropTypes.func.isRequired,
-      addNewOAuthApplication: React.PropTypes.func.isRequired,
-      animationDisabled: React.PropTypes.bool
-    },
+interface Props {
+  openWhen: boolean,
+  requiredConfig: RequiredApiConfigWithConfig,
+  allConfigs: Array<ApiConfigRef>,
+  onAddConfig: (config: RequiredApiConfig) => void,
+  onAddNewConfig: (config: RequiredApiConfig) => void,
+  onRemoveConfig: (config: RequiredApiConfig) => void,
+  onUpdateConfig: (config: RequiredApiConfig) => void,
+  getApiLogoUrlForConfig: (config: RequiredApiConfigWithConfig | ApiConfigRef) => string,
+  getApiNameForConfig: (config: RequiredApiConfigWithConfig) => string,
+  getApiConfigName: (config: ApiConfigRef) => string,
+  toggle: () => void,
+  onDoneClick: () => void,
+  addNewAWSConfig: () => void,
+  addNewOAuthApplication: () => void,
+  animationDisabled?: boolean
+}
 
-    getAllConfigs: function() {
+const ADD_NEW_CONFIG_KEY = "add_new_config";
+
+class ApiConfigPanel extends React.Component<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    getAllConfigs(): Array<ApiConfigRef> {
       return Sort.arrayAlphabeticalBy(this.props.allConfigs, (ea) => ea.displayName);
-    },
+    }
 
-    getApiLogoUrlForConfig: function(config) {
+    getApiLogoUrlForConfig(config: RequiredApiConfigWithConfig | ApiConfigRef): string {
       return this.props.getApiLogoUrlForConfig(config);
-    },
+    }
 
-    getSelectorLabelForConfig: function(config) {
+    getSelectorLabelForConfig(config: ApiConfigRef) {
       return (
         <div className="columns columns-elastic">
           {ifPresent(this.getApiLogoUrlForConfig(config), url => {
@@ -51,18 +60,18 @@ const ApiConfigPanel = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    onAddNewRequiredFor: function(config) {
+    onAddNewRequiredFor(config: ApiConfigRef): void {
       this.props.onAddConfig(config.newRequired());
-    },
+    }
 
-    onDeleteRequired: function() {
+    onDeleteRequired(): void {
       this.props.onRemoveConfig(this.props.requiredConfig);
       this.props.onDoneClick();
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div className="box-action phn">
           <div className="container">
@@ -79,9 +88,9 @@ const ApiConfigPanel = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderAdder: function() {
+    renderAdder() {
       return (
         <DropdownMenu
           openWhen={this.props.openWhen}
@@ -108,9 +117,9 @@ const ApiConfigPanel = React.createClass({
           />
         </DropdownMenu>
       );
-    },
+    }
 
-    renderConfigChoice: function() {
+    renderConfigChoice() {
       const required = this.props.requiredConfig;
       if (required.canHaveConfig()) {
         return (
@@ -126,22 +135,22 @@ const ApiConfigPanel = React.createClass({
                 value={required.config ? required.config.id : undefined}
                 onChange={this.onConfigChange}
               >
-                <option key="config-choice-none" value={null}>None selected</option>
+                <option key="config-choice-none">None selected</option>
                 {this.getAllConfigs().map(ea => (
                   <option key={`config-choice-${ea.id}`} value={ea.id}>{ea.displayName}</option>
                 ))}
-                <option key="config-choice-new" value={this.ADD_NEW_CONFIG_KEY}>Add a new configuration…</option>
+                <option key="config-choice-new" value={ADD_NEW_CONFIG_KEY}>Add a new configuration…</option>
               </Select>
             </div>
           </div>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    ADD_NEW_CONFIG_KEY: "add_new_config",
-
-    onConfigChange: function(newConfigId) {
-      if (newConfigId === this.ADD_NEW_CONFIG_KEY) {
+    onConfigChange(newConfigId: string): void {
+      if (newConfigId === ADD_NEW_CONFIG_KEY) {
         this.props.onAddNewConfig(this.props.requiredConfig);
       } else {
         const newConfig = this.getAllConfigs().find(ea => ea.id === newConfigId);
@@ -149,15 +158,15 @@ const ApiConfigPanel = React.createClass({
           config: newConfig
         }));
       }
-    },
+    }
 
-    onNameInCodeChange: function(newNameInCode) {
+    onNameInCodeChange(newNameInCode: string): void {
       this.props.onUpdateConfig(this.props.requiredConfig.clone({
         nameInCode: newNameInCode
       }));
-    },
+    }
 
-    renderNameInCode: function() {
+    renderNameInCode() {
       return (
         <div className="type-s">
           <h5 className="mtn position-relative"><span>Set code path</span></h5>
@@ -179,9 +188,9 @@ const ApiConfigPanel = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderConfig: function() {
+    renderConfig() {
       const hasConfig = Boolean(this.props.requiredConfig);
       const imageUrl = hasConfig ? this.getApiLogoUrlForConfig(this.props.requiredConfig) : null;
       return (
@@ -213,9 +222,9 @@ const ApiConfigPanel = React.createClass({
           </Collapsible>
         </div>
       );
-    },
+    }
 
-    renderButtons: function() {
+    renderButtons() {
       return (
         <div className="mtxl">
           <Button className="button-primary mbs mrs" onClick={this.props.onDoneClick}>
@@ -228,7 +237,7 @@ const ApiConfigPanel = React.createClass({
       );
     }
 
-});
+}
 
 export default ApiConfigPanel;
 
