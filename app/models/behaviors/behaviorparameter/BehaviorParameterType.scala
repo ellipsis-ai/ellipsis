@@ -1,8 +1,8 @@
 package models.behaviors.behaviorparameter
 
-import java.time.format.DateTimeFormatter
+import java.time.format.{DateTimeFormatter, TextStyle}
 import java.time.{OffsetDateTime, ZoneId}
-import java.util.{Date, TimeZone}
+import java.util.{Date, Locale, TimeZone}
 
 import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
@@ -222,6 +222,11 @@ object DateTimeType extends BuiltInType {
   val outputName: String = "String"
 
   override val mayRequireTypedAnswer: Boolean = true
+
+  override def questionTextFor(context: BehaviorParameterContext, paramCount: Int, maybeRoot: Option[ParentConversation]): String = {
+    val tz = context.behaviorVersion.team.timeZone.getDisplayName(TextStyle.SHORT, Locale.getDefault(Locale.Category.DISPLAY))
+    super.questionTextFor(context, paramCount, maybeRoot) ++ s""" (using $tz)"""
+  }
 
   private def maybeDateFrom(text: String, defaultTimeZone: ZoneId): Option[Date] = {
     val parser = new Parser(TimeZone.getTimeZone(defaultTimeZone))
