@@ -1,7 +1,7 @@
 import * as React from 'react';
 import BehaviorConfig from '../models/behavior_config';
 import CodeEditor from './code_editor';
-import DropdownMenu from '../shared_ui/dropdown_menu';
+import DropdownMenu, {DropdownMenuItem} from '../shared_ui/dropdown_menu';
 import HelpButton from '../help/help_button';
 import Input from '../models/input';
 import Notifications from '../notifications/notifications';
@@ -274,7 +274,7 @@ class CodeConfiguration extends React.Component<Props, State> {
                 menuClassName="popup-dropdown-menu-right"
                 toggle={this.toggleEditorSettingsMenu}
               >
-                <DropdownMenu.Item
+                <DropdownMenuItem
                   onClick={this.props.onToggleCodeEditorLineWrapping}
                   checkedWhen={this.props.useLineWrapping}
                   label="Enable line wrap"
