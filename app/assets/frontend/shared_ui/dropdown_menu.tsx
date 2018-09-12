@@ -1,5 +1,5 @@
 import * as React from 'react';
-import Event from '../lib/event';
+import Event, {AnyKeyboardEvent} from '../lib/event';
 import autobind from "../lib/autobind";
 
 export interface DropdownMenuProps {
@@ -19,7 +19,7 @@ class DropdownMenu extends React.Component<DropdownMenuProps> {
   menuItems: Array<Option<HTMLLIElement>>;
   container: Option<HTMLDivElement>;
 
-  constructor(props) {
+  constructor(props: DropdownMenuProps) {
     super(props);
     autobind(this);
     this.button = null;
@@ -27,32 +27,31 @@ class DropdownMenu extends React.Component<DropdownMenuProps> {
     this.menuItems = [];
   }
 
-  toggle() {
+  toggle(): void {
     this.props.toggle();
   }
 
-  onMouseDown() {
+  onMouseDown(): void {
     this.toggle();
   }
 
   // Next two handlers needed to prevent clicks bubbling to the document which
   // might close an open dropdown
 
-  onClick(event) {
+  onClick(event: MouseEvent): void {
     event.stopPropagation();
   }
 
-  onItemClick(event) {
+  onItemClick(event: MouseEvent): void {
     event.stopPropagation();
   }
 
-  onItemMouseUp(event) {
+  onItemMouseUp(): void {
     this.toggle();
-    event.target.blur();
     this.focus();
   }
 
-  onKeyDown(event) {
+  onKeyDown(event: KeyboardEvent): void {
     if (Event.keyPressWasEnter(event) || Event.keyPressWasSpace(event)) {
       this.toggle();
     } else if (Event.keyPressWasUp(event) && this.props.onUpArrow) {
@@ -64,23 +63,23 @@ class DropdownMenu extends React.Component<DropdownMenuProps> {
     }
   }
 
-  onItemKeyDown(event) {
+  onItemKeyDown(event: KeyboardEvent): void {
     this.onKeyDown(event);
   }
 
-  blur() {
+  blur(): void {
     if (this.button) {
       this.button.blur();
     }
   }
 
-  focus() {
+  focus(): void {
     if (this.button) {
       this.button.focus();
     }
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     // Add click events the old-fashioned way so that propagation up to the document
     // can be stopped. (React events don't bubble up outside of React.)
     if (this.button) {
@@ -147,7 +146,7 @@ interface MenuItemState {
 }
 
 class DropdownMenuItem extends React.Component<DropdownMenuItemProps, MenuItemState> {
-  constructor(props) {
+  constructor(props: DropdownMenuItemProps) {
     super(props);
     autobind(this);
     this.state = {
@@ -155,31 +154,31 @@ class DropdownMenuItem extends React.Component<DropdownMenuItemProps, MenuItemSt
     };
   }
 
-  onMouseEnter() {
+  onMouseEnter(): void {
     this.setState({
       hover: true
     });
   }
 
-  onMouseLeave() {
+  onMouseLeave(): void {
     this.setState({
       hover: false
     });
   }
 
-  onMouseUp() {
+  onMouseUp(): void {
     if (this.props.onClick) {
       this.props.onClick();
     }
   }
 
-  onKeyPress(event) {
+  onKeyPress(event: AnyKeyboardEvent): void {
     if (Event.keyPressWasEnter(event) || Event.keyPressWasSpace(event)) {
       this.onMouseUp();
     }
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps: DropdownMenuItemProps, nextState: MenuItemState): boolean {
     return this.props.checkedWhen !== nextProps.checkedWhen ||
       this.props.label !== nextProps.label ||
       this.state.hover !== nextState.hover;
@@ -192,7 +191,6 @@ class DropdownMenuItem extends React.Component<DropdownMenuItemProps, MenuItemSt
   render() {
     return (
       <button
-        ref="button"
         type="button"
         className={"button-dropdown-item " + (this.state.hover ? "button-dropdown-item-hover" : "")}
         onMouseUp={this.onMouseUp}

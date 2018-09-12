@@ -48,8 +48,10 @@ describe('DropdownMenu', () => {
     it('toggles the menu when clicking on the label', () => {
       const dropdown = createDropdown(config, itemConfig);
       expect(toggled).toBe(false);
-      TestUtils.Simulate.mouseDown(dropdown.refs.button, eventData);
-      TestUtils.Simulate.mouseUp(dropdown.refs.button, eventData);
+      if (dropdown.button) {
+        TestUtils.Simulate.mouseDown(dropdown.button, eventData);
+        TestUtils.Simulate.mouseUp(dropdown.button, eventData);
+      }
       expect(toggled).toBe(true);
     });
   });
@@ -78,7 +80,9 @@ describe('DropdownMenu', () => {
       const itemButton = TestUtils.findRenderedDOMComponentWithClass(dropdown, 'button-dropdown-item');
       dropdown.onItemMouseUp = jest.fn();
       expect(toggled).toBe(false);
-      TestUtils.Simulate.mouseDown(dropdown.refs.button, eventData);
+      if (dropdown.button) {
+        TestUtils.Simulate.mouseDown(dropdown.button, eventData);
+      }
       expect(toggled).toBe(true);
       TestUtils.Simulate.mouseUp(itemButton, eventData);
       expect(toggled).toBe(false);
