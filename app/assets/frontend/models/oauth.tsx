@@ -7,7 +7,7 @@ import {RequiredApiConfigJson} from "./required_api_config";
 
 type callback = () => void
 
-type RequiredOAuthEditor = {
+export interface RequiredOAuthEditor {
   onAddOAuthApplication: (r: RequiredOAuthApplication, c?: Option<callback>) => void,
   addNewOAuthApplication: (r?: Option<RequiredOAuthApplication>) => void,
   onRemoveOAuthApplication: (r: RequiredOAuthApplication, c?: Option<callback>) => void,
