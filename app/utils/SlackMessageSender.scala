@@ -11,11 +11,45 @@ import models.behaviors.{ActionChoice, DeveloperContext}
 import play.api.Configuration
 import play.api.libs.json.Json
 import services.DefaultServices
-import services.slack.SlackApiClient
+import services.slack.{SlackApiClient, SlackApiError}
 import services.slack.apiModels._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
+
+trait SlackMessageSenderChannelException extends Exception {
+  val channel: String
+  val channelLink: String = if (channel.startsWith("#")) {
+    channel
+  } else {
+    s"<#$channel>"
+  }
+  val slackTeamId: String
+  val userId: String
+  val text: String
+  protected def channelReason(channelIdOrLink: String): String
+  def formattedChannelReason = channelReason(channelLink)
+  def rawChannelReason = channelReason(channel)
+  override def getMessage: String = {
+    s"""Could not send to channel ID $channel while sending a message to user $userId on team $slackTeamId. $rawChannelReason
+       |
+       |Message:
+       |$text
+       |""".stripMargin
+  }
+}
+
+case class ArchivedChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  def channelReason(channelIdOrLink: String) = s"The channel ${channelIdOrLink} has been archived."
+}
+
+case class NotInvitedToChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  def channelReason(channelIdOrLink: String) = s"The bot needs to be invited to the channel ${channelIdOrLink}."
+}
+
+case class ChannelNotFoundException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  def channelReason(channelIdOrLink: String) = s"The channel could not be found. It may have been deleted."
+}
 
 case class SlackMessageSenderException(underlying: Throwable, channel: String, slackTeamId: String, userId: String, text: String)
   extends Exception(
@@ -109,9 +143,7 @@ case class SlackMessageSender(
       parse = None,
       linkNames = None,
       attachments = maybeAttachments
-    ).recover {
-      case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
-    }
+    ).recover(postErrorRecovery(channel, text))
   }
 
   private def maybeResponseUrlToUse(channel: String): Option[String] = {
@@ -164,9 +196,7 @@ case class SlackMessageSender(
           deleteOriginal = None,
           threadTs = maybeThreadTs,
           replyBroadcast = None
-        ).recover {
-          case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
-        }
+        ).recover(postErrorRecovery(channel, text))
       }
     }
   }
@@ -257,6 +287,13 @@ case class SlackMessageSender(
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles
     } yield maybeLastTs
+  }
+
+  private def postErrorRecovery[U](channel: String, text: String): PartialFunction[Throwable, U] = {
+    case SlackApiError("is_archived") => throw ArchivedChannelException(channel, slackTeamId, user, text)
+    case SlackApiError("channel_not_found") => throw ChannelNotFoundException(channel, slackTeamId, user, text)
+    case SlackApiError("not_in_channel") => throw NotInvitedToChannelException(channel, slackTeamId, user, text)
+    case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
   }
 }
 

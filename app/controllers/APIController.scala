@@ -10,14 +10,13 @@ import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.behaviorversion.Normal
+import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.events._
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
-import models.behaviors.{BotResultService, SimpleTextResult}
+import models.behaviors.{BotResult, BotResultService, SimpleTextResult}
 import models.team.Team
-import play.api.data.Form
-import play.api.data.FormError
+import play.api.data.{Form, FormError}
 import play.api.data.Forms._
 import play.api.http.HttpEntity
 import play.api.libs.json._
@@ -26,26 +25,28 @@ import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
 import services.slack.{SlackApiError, SlackEventService}
-import services.{AWSLambdaService, DataService}
-import utils.{SlackFileMap, SlackTimestamp}
+import services.{AWSLambdaService, DataService, DefaultServices}
+import utils.{SlackFileMap, SlackMessageSenderChannelException, SlackMessageSenderException, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class APIController @Inject() (
-                                val configuration: Configuration,
-                                val dataService: DataService,
-                                val cacheService: CacheService,
-                                val lambdaService: AWSLambdaService,
-                                val ws: WSClient,
-                                val slackService: SlackEventService,
+                                val services: DefaultServices,
                                 val eventHandler: EventHandler,
-                                val botResultService: BotResultService,
                                 val assetsProvider: Provider[RemoteAssets],
-                                val slackFileMap: SlackFileMap,
                                 implicit val actorSystem: ActorSystem,
                                 implicit val ec: ExecutionContext
                               )
   extends EllipsisController {
+
+  val ws: WSClient = services.ws
+  val configuration: Configuration = services.configuration
+  val dataService: DataService = services.dataService
+  val cacheService: CacheService = services.cacheService
+  val lambdaService: AWSLambdaService = services.lambdaService
+  val slackService: SlackEventService = services.slackEventService
+  val botResultService: BotResultService = services.botResultService
+  val slackFileMap: SlackFileMap = services.slackFileMap
 
   class InvalidTokenException extends Exception
 
@@ -110,11 +111,14 @@ class APIController @Inject() (
       }.getOrElse(Future.successful(None))
     }
 
-    def maybeBehaviorVersionFor(actionName: String) = {
+    def maybeOriginatingBehaviorVersion: Future[Option[BehaviorVersion]] = {
+      maybeInvocationToken.map { invocationToken =>
+        dataService.behaviorVersions.findWithoutAccessCheck(invocationToken.behaviorVersionId)
+      }.getOrElse(Future.successful(None))
+    }
+
+    def maybeBehaviorVersionFor(actionName: String, maybeOriginatingBehaviorVersion: Option[BehaviorVersion]) = {
       for {
-        maybeOriginatingBehaviorVersion <- maybeInvocationToken.map { invocationToken =>
-          dataService.behaviorVersions.findWithoutAccessCheck(invocationToken.behaviorVersionId)
-        }.getOrElse(Future.successful(None))
         maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
         maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
           dataService.behaviorVersions.findByName(actionName, groupVersion)
@@ -208,14 +212,39 @@ class APIController @Inject() (
 
   }
 
-  private def runBehaviorFor(maybeEvent: Option[Event], context: ApiMethodContext) = {
+  private def runBehaviorFor(
+                              maybeEvent: Option[Event],
+                              context: ApiMethodContext,
+                              eitherOriginatingBehaviorOrTriggerText: Either[BehaviorVersion, String]
+                            ) = {
     for {
       result <- maybeEvent.map { event =>
         for {
           result <- eventHandler.handle(event, None).map { results =>
             results.foreach { result =>
               botResultService.sendIn(result, None).map { _ =>
-                Logger.info(event.logTextFor(result, Some("in response to /api/post_message")))
+                Logger.info(event.logTextFor(result, Some("in response to API run request")))
+              }.recover {
+                case c: SlackMessageSenderChannelException => {
+                  (for {
+                    botProfile <- context.maybeBotProfile
+                    slackUserProfile <- context.maybeSlackProfile
+                  } yield {
+                    val description = descriptionForResult(result, eitherOriginatingBehaviorOrTriggerText)
+                    val messageStart = if (maybeEvent.map(_.originalEventType).contains(EventType.scheduled)) {
+                      s"**I was unable to complete a scheduled action in the specified channel** — $description"
+                    } else {
+                      s"**I was unable to complete an action in the specified channel** — $description"
+                    }
+                    val message =
+                      s"""${messageStart}
+                         |
+                         |${c.formattedChannelReason}""".stripMargin
+                    dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, botProfile, slackUserProfile.loginInfo.providerKey, message)
+                  }).getOrElse {
+                    throw c
+                  }
+                }
               }
             }
             Ok(Json.toJson(results.map(_.fullText)))
@@ -226,6 +255,31 @@ class APIController @Inject() (
         Future.successful(InternalServerError("Request failed.\n"))
       }
     } yield result
+  }
+
+  private def descriptionForResult(result: BotResult, eitherOriginatingBehaviorOrTriggerText: Either[BehaviorVersion, String]): String = {
+    val maybeActionName = result.maybeBehaviorVersion.flatMap(_.maybeName)
+    val actionBeingRun = maybeActionName.map(name =>
+      s"the action named `$name`"
+    ).getOrElse("an action")
+
+    val originatingText = eitherOriginatingBehaviorOrTriggerText.fold(
+      behaviorVersion => {
+        behaviorVersion.maybeName.
+          map(name => s", triggered by `$name`,").
+          getOrElse(", triggered by another action,")
+      },
+      triggerText => {
+        s", triggered by the message `$triggerText`"
+      }
+    )
+
+    val maybeGroupName = result.maybeBehaviorVersion.map(_.groupVersion.name)
+    val skillName = maybeGroupName.map(groupName =>
+      s" in the skill `${groupName}`"
+    ).getOrElse("")
+
+    actionBeingRun + originatingText + skillName
   }
 
   trait ApiMethodWithActionInfo extends ApiMethodInfo {
@@ -293,7 +347,8 @@ class APIController @Inject() (
                        )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
       maybeSlackChannelId <- context.maybeSlackChannelIdFor(info.channel)
-      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName)
+      maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
+      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
       maybeEvent <- Future.successful(
         for {
           botProfile <- context.maybeBotProfile
@@ -313,9 +368,12 @@ class APIController @Inject() (
           None
         )
       )
-      result <- if (maybeBehaviorVersion.isDefined) {
-        runBehaviorFor(maybeEvent, context)
-      } else {
+      result <- (for {
+        originatingBehaviorVersion <- maybeOriginatingBehaviorVersion
+        behaviorVersion <- maybeBehaviorVersion
+      } yield {
+        runBehaviorFor(maybeEvent, context, Left(originatingBehaviorVersion))
+      }).getOrElse {
         Future.successful(notFound(APIErrorData(s"Action named `$actionName` not found", Some("actionName")), Json.toJson(info)))
       }
     } yield result
@@ -328,7 +386,7 @@ class APIController @Inject() (
                        )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
       maybeEvent <- context.maybeMessageEventFor(trigger, info.channel, EventType.maybeFrom(info.originalEventType))
-      result <- runBehaviorFor(maybeEvent, context)
+      result <- runBehaviorFor(maybeEvent, context, Right(trigger))
     } yield result
   }
 
@@ -414,7 +472,8 @@ class APIController @Inject() (
                            )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
       maybeSlackChannelId <- context.maybeSlackChannelIdFor(info.channel)
-      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName)
+      maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
+      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
       result <- (for {
         slackProfile <- context.maybeSlackProfile
         behaviorVersion <- maybeBehaviorVersion
@@ -545,7 +604,8 @@ class APIController @Inject() (
       maybeSlackChannelId <- info.channel.map { channel =>
         context.maybeSlackChannelIdFor(channel)
       }.getOrElse(Future.successful(info.channel))
-      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName)
+      maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
+      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
       maybeUser <- info.userId.map { userId =>
         dataService.users.find(userId)
       }.getOrElse(Future.successful(None))
@@ -680,7 +740,7 @@ class APIController @Inject() (
         val eventualResult = for {
           context <- ApiMethodContext.createFor(info.token)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
-          result <- runBehaviorFor(maybeEvent, context)
+          result <- runBehaviorFor(maybeEvent, context, Right(info.message))
         } yield result
 
         eventualResult.recover {
@@ -732,12 +792,21 @@ class APIController @Inject() (
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => invalidTokenRequest(info)
-          case e: SlackApiError => if (e.code == "channel_not_found") {
-            badRequest(Some(APIErrorData(s"""Error: the channel "${info.channel}" could not be found.""", Some("channel"))), None, Json.toJson(info))
-          } else {
-            // TODO: 400 seems like maybe the wrong kind of error here
-            badRequest(Some(APIErrorData(s"Slack API error: ${e.code}\n", None)), None, Json.toJson(info))
+          case invalidTokenException: InvalidTokenException => invalidTokenRequest(info)
+          case channelException: SlackMessageSenderChannelException => {
+            badRequest(Some(APIErrorData(s"""Error: ${channelException.rawChannelReason}""", Some("channel"))), None, Json.toJson(info))
+          }
+          case slackException: SlackMessageSenderException => {
+            slackException.underlying match {
+              // TODO: 400 seems like maybe the wrong kind of error here
+              case apiError: SlackApiError => {
+                badRequest(Some(APIErrorData(s"Slack API error: ${apiError.code}\n", None)), None, Json.toJson(info))
+              }
+              case _ => {
+                badRequest(Some(APIErrorData(s"Unknown error while attempting to send message to Slack", None)), None, Json.toJson(info))
+              }
+            }
+
           }
         }
       }
