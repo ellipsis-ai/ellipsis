@@ -1,43 +1,58 @@
 import * as React from 'react';
 import Event from '../lib/event';
+import autobind from "../lib/autobind";
 
-const BehaviorEditorDropdownMenu = React.createClass({
-  propTypes: {
-    children: React.PropTypes.node.isRequired,
-    labelClassName: React.PropTypes.string,
-    label: React.PropTypes.node.isRequired,
-    onDownArrow: React.PropTypes.func,
-    onUpArrow: React.PropTypes.func,
-    openWhen: React.PropTypes.bool.isRequired,
-    menuClassName: React.PropTypes.string,
-    toggle: React.PropTypes.func.isRequired
-  },
-  toggle: function() {
+export interface DropdownMenuProps {
+  children: React.ReactNode,
+  labelClassName?: Option<string>,
+  label: React.ReactChild,
+  onDownArrow?: Option<() => void>,
+  onUpArrow?: Option<() => void>,
+  openWhen: boolean,
+  menuClassName?: Option<string>,
+  toggle: () => void
+}
+
+class DropdownMenu extends React.Component<DropdownMenuProps> {
+  static Item: typeof DropdownMenuItem;
+  button: Option<HTMLButtonElement>;
+  menuItems: Array<Option<HTMLLIElement>>;
+  container: Option<HTMLDivElement>;
+
+  constructor(props) {
+    super(props);
+    autobind(this);
+    this.button = null;
+    this.container = null;
+    this.menuItems = [];
+  }
+
+  toggle() {
     this.props.toggle();
-  },
+  }
 
-  onMouseDown: function() {
+  onMouseDown() {
     this.toggle();
-  },
+  }
 
   // Next two handlers needed to prevent clicks bubbling to the document which
   // might close an open dropdown
 
-  onClick: function(event) {
+  onClick(event) {
     event.stopPropagation();
-  },
+  }
 
-  onItemClick: function(event) {
+  onItemClick(event) {
     event.stopPropagation();
-  },
+  }
 
-  onItemMouseUp: function(event) {
+  onItemMouseUp(event) {
     this.toggle();
     event.target.blur();
     this.focus();
-  },
+  }
 
-  onKeyDown: function(event) {
+  onKeyDown(event) {
     if (Event.keyPressWasEnter(event) || Event.keyPressWasSpace(event)) {
       this.toggle();
     } else if (Event.keyPressWasUp(event) && this.props.onUpArrow) {
@@ -47,43 +62,50 @@ const BehaviorEditorDropdownMenu = React.createClass({
       this.props.onDownArrow();
       event.preventDefault();
     }
-  },
+  }
 
-  onItemKeyDown: function(event) {
+  onItemKeyDown(event) {
     this.onKeyDown(event);
-  },
+  }
 
-  blur: function() {
-    this.refs.button.blur();
-  },
+  blur() {
+    if (this.button) {
+      this.button.blur();
+    }
+  }
 
-  focus: function() {
-    this.refs.button.focus();
-  },
+  focus() {
+    if (this.button) {
+      this.button.focus();
+    }
+  }
 
-  componentDidMount: function() {
+  componentDidMount() {
     // Add click events the old-fashioned way so that propagation up to the document
     // can be stopped. (React events don't bubble up outside of React.)
-    this.refs.button.addEventListener('click', this.onClick, false);
-    this.refs.button.addEventListener('keydown', this.onKeyDown, false);
-    var itemKeys = Object.keys(this.refs).filter(function(key) { return key.match(/^menuItem/); });
-    itemKeys.forEach(function(key) {
-      this.refs[key].addEventListener('click', this.onItemClick, false);
-      this.refs[key].addEventListener('keydown', this.onItemKeyDown, false);
-    }, this);
-  },
+    if (this.button) {
+      this.button.addEventListener('click', this.onClick, false);
+      this.button.addEventListener('keydown', this.onKeyDown, false);
+    }
+    this.menuItems.forEach((item) => {
+      if (item) {
+        item.addEventListener('click', this.onItemClick, false);
+        item.addEventListener('keydown', this.onItemKeyDown, false);
+      }
+    });
+  }
 
-  render: function() {
+  render() {
     // "container" ref is used for testing
     return (
-      <div ref="container" className="display-inline-block">
+      <div ref={(el) => this.container = el} className="display-inline-block">
         <button type="button"
           className={
             "button-dropdown-trigger " +
             (this.props.openWhen ? " button-dropdown-trigger-menu-open " : "") +
             (this.props.labelClassName || "")
           }
-          ref="button"
+          ref={(el) => this.button = el}
           onMouseDown={this.onMouseDown}
         >
           {this.props.label}
@@ -94,74 +116,80 @@ const BehaviorEditorDropdownMenu = React.createClass({
             (this.props.menuClassName || "") +
             (this.props.openWhen ? " fade-in " : " display-none ")
           }>
-            {React.Children.map(this.props.children, function(child, index) {
+            {React.Children.map(this.props.children, (child, index) => {
               if (child) {
+                const props = typeof child !== "string" && typeof child !== "number" ? child.props : null;
                 return (
-                  <li ref={"menuItem" + index} onMouseUp={this.onItemMouseUp} className={child.props.className || ""}>
+                  <li ref={"menuItem" + index} onMouseUp={this.onItemMouseUp} className={props.className || ""}>
                     {child}
                   </li>
                 );
               } else {
                 return null;
               }
-            }, this)}
+            })}
           </ul>
         </div>
       </div>
     );
   }
-});
+}
 
-BehaviorEditorDropdownMenu.Item = React.createClass({
-  displayName: "DropdownMenuItem",
-  propTypes: {
-    checkedWhen: React.PropTypes.bool,
-    label: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.object]).isRequired,
-    onClick: React.PropTypes.func,
-    className: React.PropTypes.string
-  },
+export interface DropdownMenuItemProps {
+  checkedWhen?: Option<boolean>,
+  label: React.ReactChild,
+  onClick?: () => void,
+  className?: Option<string>
+}
 
-  getInitialState: function() {
-    return {
+interface MenuItemState {
+  hover: boolean
+}
+
+class DropdownMenuItem extends React.Component<DropdownMenuItemProps, MenuItemState> {
+  constructor(props) {
+    super(props);
+    autobind(this);
+    this.state = {
       hover: false
     };
-  },
+  }
 
-  onMouseEnter: function() {
+  onMouseEnter() {
     this.setState({
       hover: true
     });
-  },
+  }
 
-  onMouseLeave: function() {
+  onMouseLeave() {
     this.setState({
       hover: false
     });
-  },
+  }
 
-  onMouseUp: function() {
+  onMouseUp() {
     if (this.props.onClick) {
       this.props.onClick();
     }
-  },
+  }
 
-  onKeyPress: function(event) {
+  onKeyPress(event) {
     if (Event.keyPressWasEnter(event) || Event.keyPressWasSpace(event)) {
       this.onMouseUp();
     }
-  },
+  }
 
-  shouldComponentUpdate: function(nextProps, nextState) {
+  shouldComponentUpdate(nextProps, nextState) {
     return this.props.checkedWhen !== nextProps.checkedWhen ||
       this.props.label !== nextProps.label ||
       this.state.hover !== nextState.hover;
-  },
+  }
 
-  visibleWhen: function(condition) {
+  visibleWhen(condition) {
     return " visibility " + (condition ? "visibility-visible" : "visibility-hidden") + " ";
-  },
+  }
 
-  render: function() {
+  render() {
     return (
       <button
         ref="button"
@@ -185,7 +213,9 @@ BehaviorEditorDropdownMenu.Item = React.createClass({
       </button>
     );
   }
-});
+}
 
-export default BehaviorEditorDropdownMenu;
+DropdownMenu.Item = DropdownMenuItem;
 
+export default DropdownMenu;
+export {DropdownMenu, DropdownMenuItem};

@@ -1,11 +1,14 @@
-import React from 'react';
-import TestUtils from 'react-addons-test-utils';
-import DropdownMenu from '../../../../app/assets/frontend/shared_ui/dropdown_menu';
+import * as React from 'react';
+import * as TestUtils from 'react-addons-test-utils';
+import DropdownMenu, {
+  DropdownMenuItemProps,
+  DropdownMenuProps
+} from '../../../../app/assets/frontend/shared_ui/dropdown_menu';
 
 describe('DropdownMenu', () => {
   let toggled = false;
 
-  const defaultConfig = {
+  const defaultConfig: Partial<DropdownMenuProps> = {
     labelClassName: '',
     label: 'A menu',
     openWhen: false,
@@ -13,7 +16,7 @@ describe('DropdownMenu', () => {
     toggle: function() { toggled = !toggled; }
   };
 
-  const defaultItemConfig = {
+  const defaultItemConfig: DropdownMenuItemProps = {
     onClick: function() { return; },
     label: "item label"
   };
@@ -27,11 +30,11 @@ describe('DropdownMenu', () => {
       <DropdownMenu {...config}>
         <DropdownMenu.Item {...itemConfig} />
       </DropdownMenu>
-    );
+    ) as DropdownMenu;
   }
 
-  let config = {};
-  let itemConfig = {};
+  let config: Partial<DropdownMenuProps> = {};
+  let itemConfig: Partial<DropdownMenuItemProps> = {};
   let eventData = {};
 
   beforeEach(() => {
@@ -57,15 +60,20 @@ describe('DropdownMenu', () => {
       var onContainerClick = jest.fn();
       // We have to use an actual DOM event here, and add a real listener for it
       var evt = new Event("click", {"bubbles": true, "cancelable": true});
-      dropdown.refs.container.addEventListener('click', onContainerClick, false);
-      dropdown.refs.button.dispatchEvent(evt);
+      if (dropdown.container) {
+        dropdown.container.addEventListener('click', onContainerClick, false);
+      }
+      if (dropdown.button) {
+        dropdown.button.dispatchEvent(evt);
+      }
       expect(onContainerClick.mock.calls.length).toBe(0);
     });
   });
 
   describe('mousedown on menu, mouseup on item', () => {
     it('fires the item’s onclick handler and re-hides the menu', () => {
-      itemConfig.onClick = jest.fn();
+      const onClick = jest.fn();
+      itemConfig.onClick = onClick;
       const dropdown = createDropdown(config, itemConfig);
       const itemButton = TestUtils.findRenderedDOMComponentWithClass(dropdown, 'button-dropdown-item');
       dropdown.onItemMouseUp = jest.fn();
@@ -74,7 +82,7 @@ describe('DropdownMenu', () => {
       expect(toggled).toBe(true);
       TestUtils.Simulate.mouseUp(itemButton, eventData);
       expect(toggled).toBe(false);
-      expect(itemConfig.onClick.mock.calls.length).toBe(1);
+      expect(onClick.mock.calls.length).toBe(1);
     });
   });
 });
