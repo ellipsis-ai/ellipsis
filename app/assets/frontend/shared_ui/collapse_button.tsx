@@ -1,5 +1,6 @@
 import * as React from 'react';
 import SVGCollapse from '../svg/collapse';
+import autobind from "../lib/autobind";
 
 interface Props {
   direction?: Option<string>
@@ -7,6 +8,11 @@ interface Props {
 }
 
 class CollapseButton extends React.PureComponent<Props> {
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
+
     onClick() {
       this.props.onClick();
     }

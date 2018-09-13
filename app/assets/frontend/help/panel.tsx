@@ -1,5 +1,6 @@
 import * as React from 'react';
 import CollapseButton from '../shared_ui/collapse_button';
+import autobind from "../lib/autobind";
 
 interface Props {
   children: React.ReactNode,
@@ -8,6 +9,11 @@ interface Props {
 }
 
 class HelpPanel extends React.Component<Props> {
+  constructor(props) {
+    super(props);
+    autobind(this);
+  }
+
   render() {
     return (
       <div className="box-help type-s ptn mobile-position-fixed-bottom-full container container-wide mbneg1">

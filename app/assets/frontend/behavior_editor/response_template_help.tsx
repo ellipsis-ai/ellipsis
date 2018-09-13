@@ -2,6 +2,7 @@ import * as React from 'react';
 import Checklist, {ChecklistItem} from './checklist';
 import HelpPanel from '../help/panel';
 import ResponseTemplate from '../models/response_template';
+import autobind from "../lib/autobind";
 
 interface Props {
   firstParamName?: Option<string>
@@ -10,6 +11,11 @@ interface Props {
 }
 
 class ResponseTemplateHelp extends React.Component<Props> {
+  constructor(props) {
+    super(props);
+    autobind(this);
+  }
+
   getUserParamTemplateHelp() {
     return (
       <ChecklistItem checkedWhen={this.props.template && this.props.template.includesAnyParam()}>
