@@ -6,7 +6,7 @@ interface Props {
   result: InvocationTestResult
 }
 
-class BehaviorTesterInvocationResult extends React.Component<Props> {
+class BehaviorTesterInvocationResult extends React.PureComponent<Props> {
     containerClassNames(): string {
       const result = this.props.result;
       if (result.wasSuccessful()) {

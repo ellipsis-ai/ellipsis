@@ -6,7 +6,7 @@ interface Props {
   content?: Option<string>
 }
 
-class BehaviorTesterInvocationResultFile extends React.Component<Props> {
+class BehaviorTesterInvocationResultFile extends React.PureComponent<Props> {
     contentWasTruncated(): boolean {
       return Boolean(this.props.content && this.props.content.length > 1000);
     }
