@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 interface ChecklistProps {
-  children: React.ReactChildren,
+  children: React.ReactNode,
   className?: Option<string>,
   disabledWhen?: Option<boolean>
 }
@@ -22,7 +22,7 @@ class Checklist extends React.Component<ChecklistProps> {
 }
 
 interface ChecklistItemProps {
-  children: React.ReactChildren,
+  children: React.ReactNode,
   checkedWhen?: Option<boolean>,
   hiddenWhen?: Option<boolean>
 }

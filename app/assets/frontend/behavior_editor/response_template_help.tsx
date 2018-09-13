@@ -1,68 +1,70 @@
 import * as React from 'react';
-import Checklist from './checklist';
+import Checklist, {ChecklistItem} from './checklist';
 import HelpPanel from '../help/panel';
 import ResponseTemplate from '../models/response_template';
 
-const ResponseTemplateHelp = React.createClass({
-  propTypes: {
-    firstParamName: React.PropTypes.string,
-    template: React.PropTypes.instanceOf(ResponseTemplate),
-    onCollapseClick: React.PropTypes.func.isRequired
-  },
+interface Props {
+  firstParamName?: Option<string>
+  template?: Option<ResponseTemplate>,
+  onCollapseClick: () => void
+}
 
-  getUserParamTemplateHelp: function() {
+class ResponseTemplateHelp extends React.Component<Props> {
+  getUserParamTemplateHelp() {
     return (
-      <Checklist.Item checkedWhen={this.props.template && this.props.template.includesAnyParam()}>
+      <ChecklistItem checkedWhen={this.props.template && this.props.template.includesAnyParam()}>
         Repeat back user input:<br />
         <div className="box-code-example">
           You said {this.getExampleParamName()}
         </div>
-      </Checklist.Item>
+      </ChecklistItem>
     );
-  },
+  }
 
-  getExampleParamName: function() {
+  getExampleParamName(): string {
     return this.props.firstParamName ? `{${this.props.firstParamName}}` : "{exampleParamName}";
-  },
+  }
 
-  getSuccessResultTemplateHelp: function() {
+  getSuccessResultTemplateHelp() {
     return (
-      <Checklist.Item checkedWhen={this.props.template && this.props.template.includesSuccessResult()}>
-        Say the result provided to <code>ellipsis.success</code>, if it’s a string:<br />
-        <div className="box-code-example">
-          The answer is {"{successResult}"}
+      <ChecklistItem checkedWhen={Boolean(this.props.template && this.props.template.includesSuccessResult())}>
+        <div>
+          Say the result provided to <code>ellipsis.success</code>, if it’s a string:<br />
+          <div className="box-code-example">
+            The answer is {"{successResult}"}
+          </div>
         </div>
-      </Checklist.Item>
+      </ChecklistItem>
     );
-  },
+  }
 
-  getPathTemplateHelp: function() {
+  getPathTemplateHelp() {
     return (
-      <Checklist.Item checkedWhen={this.props.template && this.props.template.includesPath()}>
+      <ChecklistItem checkedWhen={this.props.template && this.props.template.includesPath()}>
         Include properties of the result if it’s an object:<br />
         <div className="box-code-example">
           Name: {"{successResult.user.name}"}
         </div>
-      </Checklist.Item>
+      </ChecklistItem>
     );
-  },
+  }
 
-  getIterationTemplateHelp: function() {
+  getIterationTemplateHelp() {
     return (
-      <Checklist.Item checkedWhen={this.props.template && this.props.template.includesIteration()}>
+      <ChecklistItem checkedWhen={this.props.template && this.props.template.includesIteration()}>
         Iterate through a list/array of items:<br />
         <pre className="box-code-example">{
 `{for item in successResult.items}
 * {item}
 {endfor}`
         }</pre>
-      </Checklist.Item>
+      </ChecklistItem>
     );
-  },
+  }
 
-  getLogicHelp: function() {
+  getLogicHelp() {
     return (
-      <Checklist.Item checkedWhen={this.props.template && this.props.template.includesIfLogic()}>
+      <ChecklistItem checkedWhen={this.props.template && this.props.template.includesIfLogic()}>
         Use if/else logic with strict boolean values:<br />
         <pre className="box-code-example">{
 `{if successResult.booleanValue}
@@ -71,11 +73,11 @@ It worked
 Something went wrong.
 {endif}`
         }</pre>
-      </Checklist.Item>
+      </ChecklistItem>
     );
-  },
+  }
 
-  render: function() {
+  render() {
     return (
       <HelpPanel
         heading="Response template"
@@ -99,6 +101,6 @@ Something went wrong.
       </HelpPanel>
     );
   }
-});
+}
 
 export default ResponseTemplateHelp;
