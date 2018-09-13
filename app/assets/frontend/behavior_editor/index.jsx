@@ -17,7 +17,6 @@ import ConfirmActionPanel from '../panels/confirm_action';
 import CollapseButton from '../shared_ui/collapse_button';
 import {DataRequest} from '../lib/data_request';
 import DataTypeEditor from './data_type_editor';
-import DataTypePromptHelp from './data_type_prompt_help';
 import DataTypeSourceHelp from './data_type_source_help';
 import DefaultStorageAdder from './default_storage_adder';
 import DefaultStorageBrowser from './default_storage_browser';
@@ -2069,10 +2068,6 @@ const BehaviorEditor = React.createClass({
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForDataTypeSource'} onChange={this.layoutDidUpdate}>
             <DataTypeSourceHelp onCollapseClick={this.props.onClearActivePanel} />
-          </Collapsible>
-
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForDataTypePrompt'} onChange={this.layoutDidUpdate}>
-            <DataTypePromptHelp usesSearch={this.hasInputNamed('searchQuery')} onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForLibraryCode'} onChange={this.layoutDidUpdate}>
