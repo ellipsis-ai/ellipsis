@@ -377,13 +377,22 @@ class BehaviorCodeHelp extends React.Component<Props, State> {
                       </div>
                       <Collapsible revealWhen={this.hasExpandedItem('userInfo')}>
                         <pre className="type-black">{
-`    ellipsisUserId
+`    context
+    userName
+    ellipsisUserId
+    userIdForContext
+    fullName
+    email
+    timeZone
     messageInfo {
       medium
       channel
       userId
+      usersMentioned[]
+      permalink
       details {
         channelMembers[]
+        channelName
         name
         profile {
           firstName
