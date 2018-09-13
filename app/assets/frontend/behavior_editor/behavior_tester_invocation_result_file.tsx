@@ -1,11 +1,17 @@
 import * as React from 'react';
 
-class BehaviorTesterInvocationResultFile extends React.Component {
-    contentWasTruncated() {
-      return this.props.content && this.props.content.length > 1000;
+interface Props {
+  filename?: Option<string>,
+  filetype?: Option<string>,
+  content?: Option<string>
+}
+
+class BehaviorTesterInvocationResultFile extends React.PureComponent<Props> {
+    contentWasTruncated(): boolean {
+      return Boolean(this.props.content && this.props.content.length > 1000);
     }
 
-    contentIsEmpty() {
+    contentIsEmpty(): boolean {
       return !this.props.content || this.props.content.length === 0;
     }
 
@@ -29,12 +35,6 @@ class BehaviorTesterInvocationResultFile extends React.Component {
       );
     }
 }
-
-BehaviorTesterInvocationResultFile.propTypes = {
-  filename: React.PropTypes.string,
-  filetype: React.PropTypes.string,
-  content: React.PropTypes.string
-};
 
 export default BehaviorTesterInvocationResultFile;
 

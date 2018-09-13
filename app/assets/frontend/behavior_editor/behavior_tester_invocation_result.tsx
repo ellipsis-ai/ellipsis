@@ -2,8 +2,12 @@ import * as React from 'react';
 import InvocationTestResult from '../models/behavior_invocation_result';
 import BehaviorTesterInvocationResultFile from './behavior_tester_invocation_result_file';
 
-class BehaviorTesterInvocationResult extends React.Component {
-    containerClassNames() {
+interface Props {
+  result: InvocationTestResult
+}
+
+class BehaviorTesterInvocationResult extends React.PureComponent<Props> {
+    containerClassNames(): string {
       const result = this.props.result;
       if (result.wasSuccessful()) {
         return "border-green";
@@ -84,6 +88,8 @@ class BehaviorTesterInvocationResult extends React.Component {
             ))}
           </div>
         );
+      } else {
+        return null;
       }
     }
 
@@ -101,10 +107,6 @@ class BehaviorTesterInvocationResult extends React.Component {
       );
     }
 }
-
-BehaviorTesterInvocationResult.propTypes = {
-  result: React.PropTypes.instanceOf(InvocationTestResult).isRequired
-};
 
 export default BehaviorTesterInvocationResult;
 
