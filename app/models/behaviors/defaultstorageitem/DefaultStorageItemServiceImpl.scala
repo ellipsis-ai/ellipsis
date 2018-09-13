@@ -12,6 +12,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BuiltInType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.datatypefield.DataTypeField
+import models.team.Team
 import play.api.libs.json._
 import sangria.execution.UserFacingError
 import services.DataService
@@ -100,7 +101,7 @@ class DefaultStorageItemServiceImpl @Inject() (
   private def filterForBehaviorVersionAction(behaviorVersion: BehaviorVersion, filter: JsValue): DBIO[Seq[DefaultStorageItem]] = {
     for {
       fields <- fieldsForBehaviorVersionAction(behaviorVersion)
-      filterWithIds <- dataWithFieldIdsFor(filter, fields)
+      filterWithIds <- dataWithFieldIdsFor(filter, fields, behaviorVersion.team)
       result <- filterQuery(behaviorVersion.behavior.id, filterWithIds).result
       items <- DBIO.sequence(result.map(tuple2Item))
     } yield items
@@ -154,18 +155,18 @@ class DefaultStorageItemServiceImpl @Inject() (
     dataService.run(countForAction(behavior))
   }
 
-  private def fieldValueWithIdsFor(field: DataTypeField, fieldValue: JsValue): DBIO[JsValue] = {
+  private def fieldValueWithIdsFor(field: DataTypeField, fieldValue: JsValue, team: Team): DBIO[JsValue] = {
     field.fieldType match {
-      case t: BuiltInType => DBIO.successful(t.prepareJsValue(fieldValue))
+      case t: BuiltInType => DBIO.successful(t.prepareJsValue(fieldValue, team))
       case t: BehaviorBackedDataType => {
         fieldsForBehaviorVersionAction(t.behaviorVersion).flatMap { fields =>
-          dataWithFieldIdsFor(fieldValue, fields)
+          dataWithFieldIdsFor(fieldValue, fields, team)
         }
       }
     }
   }
 
-  private def dataWithFieldIdsFor(data: JsValue, fields: Seq[DataTypeField]): DBIO[JsValue] = {
+  private def dataWithFieldIdsFor(data: JsValue, fields: Seq[DataTypeField], team: Team): DBIO[JsValue] = {
     data match {
       case obj: JsObject => {
         val initial: DBIO[JsObject] = DBIO.successful(Json.obj())
@@ -173,7 +174,7 @@ class DefaultStorageItemServiceImpl @Inject() (
           case (eventualAcc, (fieldName, fieldValue)) => {
             eventualAcc.flatMap { acc =>
               fields.find(_.name == fieldName).map { field =>
-                fieldValueWithIdsFor(field, fieldValue).map { resolvedValue =>
+                fieldValueWithIdsFor(field, fieldValue, team).map { resolvedValue =>
                   acc + (field.fieldId, resolvedValue)
                 }
               }.getOrElse(DBIO.successful(acc))
@@ -249,7 +250,7 @@ class DefaultStorageItemServiceImpl @Inject() (
         case _ => data
       })
       fields <- fieldsForBehaviorVersionAction(behaviorVersion)
-      newDataWithFieldIds <- dataWithFieldIdsFor(newData, fields)
+      newDataWithFieldIds <- dataWithFieldIdsFor(newData, fields, team)
       newInstanceToSave <- DBIO.successful(DefaultStorageItem(idToUse, behaviorVersion.behavior, OffsetDateTime.now, user.id, newDataWithFieldIds))
       _ <- DBIO.successful(println(s"saving $newInstanceToSave"))
       _ <- maybeExistingId.map { existingId =>

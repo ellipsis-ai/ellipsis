@@ -1,8 +1,13 @@
 package models.behaviors.behaviorparameter
 
+import java.time.format.{DateTimeFormatter, TextStyle}
+import java.time.{OffsetDateTime, ZoneId}
+import java.util.{Date, Locale, TimeZone}
+
 import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonMappingException
+import com.joestelmach.natty.Parser
 import com.rockymadden.stringmetric.similarity.RatcliffObershelpMetric
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -14,6 +19,7 @@ import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
+import models.team.Team
 import play.api.libs.json._
 import services.AWSLambdaConstants._
 import services.caching.DataTypeBotResultsCacheKey
@@ -150,9 +156,9 @@ trait BuiltInType extends BehaviorParameterType {
   def resolvedValueForAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[String]] = {
     DBIO.successful(Some(text))
   }
-  def prepareValue(text: String): JsValue
-  def prepareJsValue(value: JsValue): JsValue
-  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = DBIO.successful(prepareValue(text))
+  def prepareValue(text: String, team: Team): JsValue
+  def prepareJsValue(value: JsValue, team: Team): JsValue
+  def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = DBIO.successful(prepareValue(text, context.behaviorVersion.team))
 }
 
 object TextType extends BuiltInType {
@@ -164,8 +170,8 @@ object TextType extends BuiltInType {
 
   def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = DBIO.successful(true)
 
-  def prepareValue(text: String) = JsString(text)
-  def prepareJsValue(value: JsValue): JsValue = {
+  def prepareValue(text: String, team: Team) = JsString(text)
+  def prepareJsValue(value: JsValue, team: Team): JsValue = {
     value match {
       case s: JsString => s
       case JsNull => JsNull
@@ -193,21 +199,73 @@ object NumberType extends BuiltInType {
     }
   }
 
-  def prepareValue(text: String): JsValue = try {
+  def prepareValue(text: String, team: Team): JsValue = try {
     JsNumber(BigDecimal(text))
   } catch {
     case e: NumberFormatException => JsString(text)
   }
 
-  def prepareJsValue(value: JsValue): JsValue = {
+  def prepareJsValue(value: JsValue, team: Team): JsValue = {
     value match {
       case n: JsNumber => n
-      case s: JsString => prepareValue(s.value)
+      case s: JsString => prepareValue(s.value, team)
       case v => v
     }
   }
 
   val invalidPromptModifier: String = s"I need a number to answer this. $stopInstructions"
+}
+
+object DateTimeType extends BuiltInType {
+  val name: String = "Date & Time"
+
+  val outputName: String = "String"
+
+  override val mayRequireTypedAnswer: Boolean = true
+
+  override def questionTextFor(context: BehaviorParameterContext, paramCount: Int, maybeRoot: Option[ParentConversation]): String = {
+    val tz = context.behaviorVersion.team.timeZone.getDisplayName(TextStyle.SHORT, Locale.getDefault(Locale.Category.DISPLAY))
+    super.questionTextFor(context, paramCount, maybeRoot) ++ s""" (using $tz)"""
+  }
+
+  private def maybeDateFrom(text: String, defaultTimeZone: ZoneId): Option[Date] = {
+    val parser = new Parser(TimeZone.getTimeZone(defaultTimeZone))
+    val groups = parser.parse(text)
+    if (groups.isEmpty || groups.get(0).getDates.isEmpty) {
+      None
+    } else {
+      Some(groups.get(0).getDates.get(0))
+    }
+  }
+
+  def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = DBIO.successful {
+    try {
+      maybeDateFrom(text, context.behaviorVersion.team.timeZone).isDefined
+    } catch {
+      case e: NumberFormatException => false
+    }
+  }
+
+  def prepareValue(text: String, team: Team): JsValue = {
+    maybeDateFrom(text, team.timeZone).map { date =>
+      JsString(OffsetDateTime.ofInstant(date.toInstant, team.timeZone).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+    }.getOrElse(JsString(text))
+  }
+
+  def prepareJsValue(value: JsValue, team: Team): JsValue = {
+    value match {
+      case s: JsString => prepareValue(s.value, team)
+      case v => v
+    }
+  }
+
+  override def decorationCodeFor(param: BehaviorParameter): String = {
+    val paramName = param.input.name;
+    raw"""if (!isNaN(Date.parse($paramName))) { $paramName = new Date(Date.parse($paramName)); }"""
+  }
+
+  val invalidPromptModifier: String = s"I need something I can interpret as a date & time to answer this. $stopInstructions"
+
 }
 
 object YesNoType extends BuiltInType {
@@ -234,16 +292,16 @@ object YesNoType extends BuiltInType {
     DBIO.successful(maybeValidValueFor(text).isDefined)
   }
 
-  def prepareValue(text: String) = {
+  def prepareValue(text: String, team: Team) = {
     maybeValidValueFor(text).map { vv =>
       JsBoolean(vv)
     }.getOrElse(JsString(text))
   }
 
-  def prepareJsValue(value: JsValue): JsValue = {
+  def prepareJsValue(value: JsValue, team: Team): JsValue = {
     value match {
       case b: JsBoolean => b
-      case s: JsString => prepareValue(s.value)
+      case s: JsString => prepareValue(s.value, team)
       case v => v
     }
   }
@@ -301,7 +359,7 @@ object FileType extends BuiltInType {
     }
   }
 
-  def prepareValue(text: String) = {
+  def prepareValue(text: String, team: Team) = {
     if (isIntentionallyEmpty(text)) {
       JsNull
     } else {
@@ -309,9 +367,9 @@ object FileType extends BuiltInType {
     }
   }
 
-  def prepareJsValue(value: JsValue): JsValue = {
+  def prepareJsValue(value: JsValue, team: Team): JsValue = {
     value match {
-      case s: JsString => prepareValue(s.value)
+      case s: JsString => prepareValue(s.value, team)
       case v => v
     }
   }
@@ -874,6 +932,7 @@ object BehaviorParameterType {
     TextType,
     NumberType,
     YesNoType,
+    DateTimeType,
     FileType
   )
 
