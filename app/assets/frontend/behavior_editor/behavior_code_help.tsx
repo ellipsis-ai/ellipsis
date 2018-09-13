@@ -356,6 +356,23 @@ class BehaviorCodeHelp extends React.Component<Props, State> {
               <div className="column-row">
                 <div className="column column-shrink pbl prxl">
                   <pre>{
+                    `  event {
+    originalEventType
+  }`
+                  }</pre>
+                </div>
+                <div className="column column-expand pbl">
+                  <div>
+                    <span>The <code>originalEventType</code> reveals what originally triggered this action, as a string. </span>
+                    <span>Event types include: <code className="type-bold">"scheduled"</code>, <code className="type-bold">"api"</code>, </span>
+                    <span><code className="type-bold">"test"</code>, <code className="type-bold">"chat"</code>, and <code className="type-bold">"web"</code>.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl">
+                  <pre>{
 `  teamInfo {
     timeZone
   }`
@@ -370,52 +387,53 @@ class BehaviorCodeHelp extends React.Component<Props, State> {
 
               <div className="column-row">
                 <div className="column column-shrink pbl prxl">
-                  <button type="button" className="button-block" onClick={this.toggleUserInfo}>
-                    <pre className="type-black">{'  userInfo \u007B'}</pre>
-                      <div className="link plxl">
-                        {this.renderExpandLabelFor('Show list', 'userInfo')}
-                      </div>
-                      <Collapsible revealWhen={this.hasExpandedItem('userInfo')}>
-                        <pre className="type-black">{
-`    context
-    userName
-    ellipsisUserId
-    userIdForContext
-    fullName
-    email
-    timeZone
-    messageInfo {
-      medium
-      channel
-      userId
-      usersMentioned[]
-      permalink
-      details {
-        channelMembers[]
-        channelName
-        name
-        profile {
-          firstName
-          lastName
-          realName
-        }
-      }
-    }`
-                        }</pre>
-                      </Collapsible>
-                    <pre className="type-black">{`  \u007D`}</pre>
-                  </button>
+                  <pre className="type-black">{'  userInfo {}'}</pre>
                 </div>
                 <div className="column column-expand pbl">
                   <div>
-                    <span>The userInfo object contains optional data specific to who runs an action, and where it was run.</span>
+                    <span>The userInfo object contains optional data specific to who runs an action as well as the message they wrote. </span>
+                    <button className="button-raw" type="button" onClick={this.toggleUserInfo}>
+                      {this.renderExpandLabelFor('Show list', 'userInfo')}
+                    </button>
+                  </div>
+
+                  <div>
+                    <Collapsible revealWhen={this.hasExpandedItem('userInfo')}>
+                      <h5>User info properties directly on the userInfo object.</h5>
+                      <pre className="box-code-example">{
+`userInfo {
+  context: string // e.g. "slack"
+  userName: string
+  ellipsisUserId: string
+  userIdForContext: string
+  fullName: string
+  email: string
+  timeZone: string
+}`}</pre>
+
+                      <h5>Message properties:</h5>
+                      <div><pre className="box-code-example">{
+`userInfo {
+  messageInfo {
+    medium: string // e.g. "slack" or "test"
+    channel: string // channel ID
+    usersMentioned: object[] // array of userInfo objects (same as above)
+    permalink: string
+    details: {
+      channelMembers: string[] // array of user IDs
+      channelName: string
+      name: string
+      profile: {
+        firstName: string
+        lastName: string
+        realName: string
+      }
+    }
+  }
+}`}</pre></div>
+                    </Collapsible>
                   </div>
                 </div>
-              </div>
-
-              <div className="column-row">
-                <div className="column column-shrink pbl prxl"><pre>{"\u007D"}</pre></div>
-                <div className="column column-expand pbl"/>
               </div>
             </div>
           </div>
