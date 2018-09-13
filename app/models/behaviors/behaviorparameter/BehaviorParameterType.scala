@@ -259,7 +259,12 @@ object DateTimeType extends BuiltInType {
     }
   }
 
-  val invalidPromptModifier: String = s"I need a date to answer this. $stopInstructions"
+  override def decorationCodeFor(param: BehaviorParameter): String = {
+    val paramName = param.input.name;
+    raw"""if (!isNaN(Date.parse($paramName))) { $paramName = new Date(Date.parse($paramName)); }"""
+  }
+
+  val invalidPromptModifier: String = s"I need something I can interpret as a date & time to answer this. $stopInstructions"
 
 }
 
