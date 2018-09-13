@@ -2,55 +2,65 @@ import * as React from 'react';
 import Collapsible from '../shared_ui/collapsible';
 import * as Constants from '../lib/constants';
 import HelpPanel from '../help/panel';
+import autobind from "../lib/autobind";
+import {RequiredOAuthApplication} from "../models/oauth";
 
-const BehaviorCodeHelp = React.createClass({
-  propTypes: {
-    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string),
-    oauthApiAccessTokens: React.PropTypes.arrayOf(React.PropTypes.object),
-    onAddNewEnvVariable: React.PropTypes.func.isRequired,
-    onCollapseClick: React.PropTypes.func.isRequired,
-    isDataType: React.PropTypes.bool
-  },
-  getInitialState: function() {
-    return {
+interface Props {
+  envVariableNames: Array<string>,
+  oauthApiAccessTokens: Array<RequiredOAuthApplication>,
+  onAddNewEnvVariable: () => void,
+  onCollapseClick: () => void,
+  isDataType: boolean
+}
+
+interface State {
+  expandedItems: Array<string>
+}
+
+class BehaviorCodeHelp extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+    this.state = {
       expandedItems: []
     };
-  },
-  getExpandedItems: function() {
+  }
+
+  getExpandedItems(): Array<string> {
     return this.state.expandedItems;
-  },
-  hasExpandedItem: function(itemName) {
+  }
+  hasExpandedItem(itemName: string): boolean {
     return this.getExpandedItems().includes(itemName);
-  },
-  toggleExpandedItem: function(itemName) {
+  }
+  toggleExpandedItem(itemName: string): void {
     const hasExpanded = this.hasExpandedItem(itemName);
     const newItems = hasExpanded ?
       this.getExpandedItems().filter((ea) => ea !== itemName) :
       this.getExpandedItems().concat(itemName);
     this.setState({ expandedItems: newItems });
-  },
-  toggleSuccessExamples: function() {
+  }
+  toggleSuccessExamples(): void {
     this.toggleExpandedItem('success');
-  },
-  toggleErrorExamples: function() {
+  }
+  toggleErrorExamples(): void {
     this.toggleExpandedItem('error');
-  },
-  toggleEnvVariables: function() {
+  }
+  toggleEnvVariables(): void {
     this.toggleExpandedItem('envVariables');
-  },
-  toggleApiAccessTokens: function() {
+  }
+  toggleApiAccessTokens(): void {
     this.toggleExpandedItem('apiAccessTokens');
-  },
-  toggleUserInfo: function() {
+  }
+  toggleUserInfo(): void {
     this.toggleExpandedItem('userInfo');
-  },
-  toggleEllipsisObject: function() {
+  }
+  toggleEllipsisObject(): void {
     this.toggleExpandedItem('ellipsisObject');
-  },
-  toggleDataTypeSuccessExamples: function() {
+  }
+  toggleDataTypeSuccessExamples(): void {
     this.toggleExpandedItem('dataTypeSuccess');
-  },
-  renderExpandLabelFor: function(labelText, itemName) {
+  }
+  renderExpandLabelFor(labelText: string, itemName: string) {
     return (
       <span>
         <span className="display-inline-block" style={{ width: '0.8em' }}>
@@ -59,8 +69,8 @@ const BehaviorCodeHelp = React.createClass({
         <span> {labelText}</span>
       </span>
     );
-  },
-  renderEnvVarList: function() {
+  }
+  renderEnvVarList() {
     var vars = this.props.envVariableNames;
     if (vars.length > 0) {
       return vars.map((name, index) => (
@@ -75,18 +85,18 @@ const BehaviorCodeHelp = React.createClass({
         <p className="man">There are no environment variables configured.</p>
       );
     }
-  },
+  }
 
-  getAllApiAccessTokens: function() {
+  getAllApiAccessTokens(): Array<RequiredOAuthApplication> {
     return this.props.oauthApiAccessTokens || [];
-  },
+  }
 
-  renderApiAccessTokenList: function() {
+  renderApiAccessTokenList() {
     var tokenList = this.getAllApiAccessTokens();
     if (tokenList.length > 0) {
       return tokenList.map((token, index) => (
         <div key={`accessToken${index}`} className="mbs">
-          <code className="box-code-example">{token.nameInCode}</code> — {token.displayName}
+          <code className="box-code-example">{token.nameInCode}</code> — {token.configName()}
         </div>
       ));
     } else {
@@ -94,8 +104,8 @@ const BehaviorCodeHelp = React.createClass({
         <p className="man">This skill has no API access tokens available.</p>
       );
     }
-  },
-  renderForAction: function() {
+  }
+  renderForAction() {
     return (
       <div>
         <p>
@@ -114,8 +124,8 @@ const BehaviorCodeHelp = React.createClass({
         <div className="box-code-example mvl">ellipsis.noResponse();</div>
       </div>
     );
-  },
-  renderCallbacksForActions: function() {
+  }
+  renderCallbacksForActions() {
     return (
       <div className="column-group">
         <div className="column-row">
@@ -152,9 +162,9 @@ const BehaviorCodeHelp = React.createClass({
         </div>
       </div>
     );
-  },
+  }
 
-  renderForDataType: function() {
+  renderForDataType() {
     return (
       <div>
         <ul>
@@ -220,9 +230,9 @@ const BehaviorCodeHelp = React.createClass({
 
       </div>
     );
-  },
+  }
 
-  renderCallbacksForDataTypes: function() {
+  renderCallbacksForDataTypes() {
     return (
       <div className="column-group">
         <div className="column-row">
@@ -237,9 +247,9 @@ const BehaviorCodeHelp = React.createClass({
 
       </div>
     );
-  },
+  }
 
-  render: function() {
+  render() {
     return (
       <HelpPanel
         heading={this.props.isDataType ? "Data type functions" : "Action functions"}
@@ -346,9 +356,26 @@ const BehaviorCodeHelp = React.createClass({
               <div className="column-row">
                 <div className="column column-shrink pbl prxl">
                   <pre>{
-  `  teamInfo {
-      timeZone
-    }`
+                    `  event {
+    originalEventType
+  }`
+                  }</pre>
+                </div>
+                <div className="column column-expand pbl">
+                  <div>
+                    <span>The <code>originalEventType</code> reveals what originally triggered this action, as a string. </span>
+                    <span>Event types include: <code className="type-bold">"scheduled"</code>, <code className="type-bold">"api"</code>, </span>
+                    <span><code className="type-bold">"test"</code>, <code className="type-bold">"chat"</code>, and <code className="type-bold">"web"</code>.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="column-row">
+                <div className="column column-shrink pbl prxl">
+                  <pre>{
+`  teamInfo {
+    timeZone
+  }`
                 }</pre>
                 </div>
                 <div className="column column-expand pbl">
@@ -360,43 +387,53 @@ const BehaviorCodeHelp = React.createClass({
 
               <div className="column-row">
                 <div className="column column-shrink pbl prxl">
-                  <button type="button" className="button-block" onClick={this.toggleUserInfo}>
-                    <pre className="type-black">{'  userInfo \u007B'}</pre>
-                      <div className="link plxl">
-                        {this.renderExpandLabelFor('Show list', 'userInfo')}
-                      </div>
-                      <Collapsible revealWhen={this.hasExpandedItem('userInfo')}>
-                        <pre className="type-black">{
-  `    ellipsisUserId
-      messageInfo {
-        medium
-        channel
-        userId
-        details {
-          channelMembers[]
-          name
-          profile {
-            firstName
-            lastName
-            realName
-          }
-        }
-      }`
-                        }</pre>
-                      </Collapsible>
-                    <pre className="type-black">{`  \u007D`}</pre>
-                  </button>
+                  <pre className="type-black">{'  userInfo {}'}</pre>
                 </div>
                 <div className="column column-expand pbl">
                   <div>
-                    <span>The userInfo object contains optional data specific to who runs an action, and where it was run.</span>
+                    <span>The userInfo object contains optional data specific to who runs an action as well as the message they wrote. </span>
+                    <button className="button-raw" type="button" onClick={this.toggleUserInfo}>
+                      {this.renderExpandLabelFor('Show list', 'userInfo')}
+                    </button>
+                  </div>
+
+                  <div>
+                    <Collapsible revealWhen={this.hasExpandedItem('userInfo')}>
+                      <h5>User info properties directly on the userInfo object.</h5>
+                      <pre className="box-code-example">{
+`userInfo {
+  context: string // e.g. "slack"
+  userName: string
+  ellipsisUserId: string
+  userIdForContext: string
+  fullName: string
+  email: string
+  timeZone: string
+}`}</pre>
+
+                      <h5>Message properties:</h5>
+                      <div><pre className="box-code-example">{
+`userInfo {
+  messageInfo {
+    medium: string // e.g. "slack" or "test"
+    channel: string // channel ID
+    usersMentioned: object[] // array of userInfo objects (same as above)
+    permalink: string
+    details: {
+      channelMembers: string[] // array of user IDs
+      channelName: string
+      name: string
+      profile: {
+        firstName: string
+        lastName: string
+        realName: string
+      }
+    }
+  }
+}`}</pre></div>
+                    </Collapsible>
                   </div>
                 </div>
-              </div>
-
-              <div className="column-row">
-                <div className="column column-shrink pbl prxl"><pre>{"\u007D"}</pre></div>
-                <div className="column column-expand pbl"/>
               </div>
             </div>
           </div>
@@ -406,6 +443,6 @@ const BehaviorCodeHelp = React.createClass({
       </HelpPanel>
     );
   }
-});
+}
 
 export default BehaviorCodeHelp;
