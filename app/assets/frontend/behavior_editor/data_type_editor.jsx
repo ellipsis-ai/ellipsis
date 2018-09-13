@@ -260,10 +260,7 @@ class DataTypeEditor extends React.Component {
 
             <hr className="man rule-subtle" />
 
-            {this.usesCode() ? this.renderCodeEditor() : null
-            /* Disabled data collection config settings until operative (
-              <DataTypeDataCollectionConfig />
-            )*/}
+            {this.usesCode() ? this.renderCodeEditor() : null}
           </Collapsible>
         </div>
       );

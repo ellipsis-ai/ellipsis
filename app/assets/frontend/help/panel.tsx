@@ -1,13 +1,20 @@
 import * as React from 'react';
 import CollapseButton from '../shared_ui/collapse_button';
+import autobind from "../lib/autobind";
 
-const HelpPanel = React.createClass({
-  propTypes: {
-    children: React.PropTypes.node.isRequired,
-    heading: React.PropTypes.node.isRequired,
-    onCollapseClick: React.PropTypes.func.isRequired
-  },
-  render: function() {
+interface Props {
+  children: React.ReactNode,
+  heading: React.ReactChild,
+  onCollapseClick: () => void
+}
+
+class HelpPanel extends React.Component<Props> {
+  constructor(props) {
+    super(props);
+    autobind(this);
+  }
+
+  render() {
     return (
       <div className="box-help type-s ptn mobile-position-fixed-bottom-full container container-wide mbneg1">
         <div className="columns">
@@ -28,13 +35,13 @@ const HelpPanel = React.createClass({
           </div>
           <div className="column column-page-main prxl">
             <div className="mtl mobile-mtn">
-              {React.Children.map(this.props.children, function(child) { return child; })}
+              {this.props.children}
             </div>
           </div>
         </div>
       </div>
     );
   }
-});
+}
 
 export default HelpPanel;

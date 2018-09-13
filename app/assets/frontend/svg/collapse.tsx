@@ -1,14 +1,15 @@
 import * as React from 'react';
 
-const SVGCollapse = React.createClass({
-    propTypes: {
-      label: React.PropTypes.string,
-      direction: React.PropTypes.string
-    },
-    label: function() {
+interface Props {
+  label?: Option<string>
+  direction?: Option<string>
+}
+
+class SVGCollapse extends React.PureComponent<Props> {
+    label(): string {
       return this.props.label || 'Collapse';
-    },
-    orientation: function() {
+    }
+    orientation(): number {
       var d = this.props.direction ? this.props.direction.toLowerCase() : "";
       if (d === 'down') {
         return 270;
@@ -19,11 +20,11 @@ const SVGCollapse = React.createClass({
       } else {
         return 0;
       }
-    },
-    transform: function() {
+    }
+    transform(): string {
       return `translate(11, 11) rotate(${this.orientation()}) translate(-11, -11) translate(0, 0)`;
-    },
-    render: function() {
+    }
+    render() {
       return (
         <svg role="img" aria-label={this.label()} height="100%" viewBox="0 0 22 22">
           <title>{this.label()}</title>
@@ -38,6 +39,6 @@ const SVGCollapse = React.createClass({
         </svg>
       );
     }
-});
+}
 
 export default SVGCollapse;
