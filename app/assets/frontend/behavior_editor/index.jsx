@@ -2569,8 +2569,6 @@ const BehaviorEditor = React.createClass({
                 <ResponseTemplateConfiguration
                   template={this.getBehaviorTemplate()}
                   onChangeTemplate={this.updateTemplate}
-                  isFinishedBehavior={this.isFinishedBehavior()}
-                  behaviorUsesCode={this.getFunctionBody().length > 0}
                   responseTypeId={this.getBehaviorConfig().responseTypeId}
                   possibleResponseTypes={this.props.possibleResponseTypes}
                   onSelectResponseType={this.onSelectResponseType}

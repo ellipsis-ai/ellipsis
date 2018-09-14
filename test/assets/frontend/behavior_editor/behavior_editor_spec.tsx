@@ -1,7 +1,9 @@
-jest.mock('../../../../app/assets/frontend/behavior_editor/code_editor');
-jest.mock('../../../../app/assets/frontend/shared_ui/react-codemirror', () => function() {
-  return null;
-});
+jest.mock('../../../../app/assets/frontend/behavior_editor/code_configuration', () => (() => (
+  <div/>
+)));
+jest.mock('../../../../app/assets/frontend/behavior_editor/response_template_configuration', () => (() => (
+  <div/>
+)));
 import * as MockDataRequest from '../../../mocks/mock_data_request';
 jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
 

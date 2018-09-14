@@ -1,8 +1,13 @@
-import * as React from 'react';
-import Codemirror from '../shared_ui/react-codemirror';
 import {JSHINT} from 'jshint';
+declare global {
+  interface Window { JSHINT: JSHINT }
+}
 window.JSHINT = JSHINT;
-import 'codemirror';
+
+import * as React from 'react';
+import CodeMirrorWrapper from '../shared_ui/react-codemirror';
+import * as codemirror from 'codemirror';
+import {AsyncLinter, Doc, Editor, Linter} from 'codemirror';
 import 'codemirror/mode/javascript/javascript';
 import 'codemirror/addon/lint/lint';
 import 'codemirror/addon/lint/javascript-lint';
@@ -14,20 +19,24 @@ import 'codemirror/addon/fold/foldgutter';
 import 'codemirror/addon/fold/brace-fold';
 import 'codemirror/addon/comment/comment';
 
-const CodeEditor = React.createClass({
-  propTypes: {
-    firstLineNumber: React.PropTypes.oneOfType([
-      React.PropTypes.number,
-      React.PropTypes.string
-    ]).isRequired,
-    functionParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-    lineWrapping: React.PropTypes.bool,
-    onChange: React.PropTypes.func.isRequired,
-    onCursorChange: React.PropTypes.func.isRequired,
-    value: React.PropTypes.string.isRequired,
-    autocompletions: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
-  },
-  getJsHintOptions: function() {
+declare module "codemirror" {
+  var lint: {
+    javascript: Linter | AsyncLinter
+  }
+}
+
+interface Props {
+  firstLineNumber: number
+  functionParams: Array<string>
+  lineWrapping?: boolean
+  onChange: (newValue: string) => void
+  onCursorChange: (cm: Editor) => void
+  value: string
+  autocompletions: Array<string>
+}
+
+class CodeEditor extends React.Component<Props> {
+  getJsHintOptions() {
     return {
       // Enforcing options
       bitwise: false,
@@ -91,16 +100,16 @@ const CodeEditor = React.createClass({
       wsh: false,
       yui: false
     };
-  },
+  }
 
-  autocompleteParams: function(cm) {
-    var matches = [];
-    var possibleWords = this.props.autocompletions;
+  autocompleteParams(cm: Doc) {
+    const matches: Array<string> = [];
+    const possibleWords = this.props.autocompletions;
 
-    var cursor = cm.getCursor();
-    var line = cm.getLine(cursor.line);
-    var start = cursor.ch;
-    var end = cursor.ch;
+    const cursor = cm.getCursor();
+    const line = cm.getLine(cursor.line);
+    let start = cursor.ch;
+    let end = cursor.ch;
 
     while (start && /\w/.test(line.charAt(start - 1))) {
       --start;
@@ -109,10 +118,10 @@ const CodeEditor = React.createClass({
       ++end;
     }
 
-    var word = line.slice(start, end).toLowerCase();
+    const word = line.slice(start, end).toLowerCase();
 
     possibleWords.forEach(function(w) {
-      var lowercase = w.toLowerCase();
+      const lowercase = w.toLowerCase();
       if (lowercase.indexOf(word) !== -1) {
         matches.push(w);
       }
@@ -123,16 +132,17 @@ const CodeEditor = React.createClass({
       from: { line: cursor.line, ch: start },
       to: { line: cursor.line, ch: end }
     };
-  },
+  }
 
-  replaceTabsWithSpaces: function(cm) {
+  replaceTabsWithSpaces(cm: Editor) {
     var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
-    cm.replaceSelection(spaces);
-  },
+    const doc = cm.getDoc();
+    doc.replaceSelection(spaces);
+  }
 
-  render: function() {
+  render() {
     return (
-      <Codemirror
+      <CodeMirrorWrapper
         value={this.props.value}
         onChange={this.props.onChange}
         onCursorChange={this.props.onCursorChange}
@@ -146,7 +156,10 @@ const CodeEditor = React.createClass({
           lineWrapping: this.props.lineWrapping,
           lineNumbers: true,
           lint: {
-            options: this.getJsHintOptions()
+            getAnnotations: codemirror.lint.javascript,
+            options: this.getJsHintOptions(),
+            async: false,
+            hasGutters: true
           },
           smartIndent: true,
           tabSize: 2,
@@ -163,6 +176,6 @@ const CodeEditor = React.createClass({
       />
     );
   }
-});
+}
 
 export default CodeEditor;

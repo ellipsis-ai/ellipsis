@@ -9,6 +9,7 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@types/codemirror": "0.0.60",
     "@types/diff-match-patch": "^1.0.32",
     "@types/jest": "^19.2.4",
     "@types/react": "^15.6.14",
