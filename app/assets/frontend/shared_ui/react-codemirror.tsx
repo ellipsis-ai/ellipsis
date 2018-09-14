@@ -3,7 +3,15 @@ import * as debounce from 'javascript-debounce';
 import DeepEqual from '../lib/deep_equal';
 import autobind from "../lib/autobind";
 import * as codemirror from 'codemirror';
-import {Editor, EditorChangeLinkedList, EditorConfiguration, EditorFromTextArea} from "codemirror";
+import {Doc, Editor, EditorChangeLinkedList, EditorConfiguration, EditorFromTextArea} from "codemirror";
+
+export type CodeMirrorOptions = EditorConfiguration & {
+  hintOptions?: {
+    hint: (cm: Doc) => void
+  },
+  autoCloseBrackets?: boolean,
+  matchBrackets?: boolean
+}
 
 interface Props {
   onChange: (newValue: string) => void,
@@ -11,7 +19,7 @@ interface Props {
   onScroll?: (scrollInfo: {}) => void,
   onViewportChange?: (cm: Editor, from: number, to: number) => void,
   onCursorChange: (cm: Editor) => void,
-  options: EditorConfiguration,
+  options: CodeMirrorOptions,
   value: string,
   className?: Option<string>
 }
