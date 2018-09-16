@@ -711,6 +711,86 @@ class APIController @Inject() (
     )
   }
 
+  case class AddMessageListenerInfo(
+                                     actionName: String,
+                                     messageInputName: String,
+                                     arguments: Seq[RunActionArgumentInfo],
+                                     userId: String,
+                                     channel: String,
+                                     threadId: Option[String],
+                                     token: String
+                                   ) extends ApiMethodInfo {
+    val argumentsMap: Map[String, String] = {
+      arguments.map { ea =>
+        (ea.name, ea.value)
+      }.toMap
+    }
+  }
+
+  implicit val addMessageListenerInfoWrites = Json.writes[AddMessageListenerInfo]
+
+  private val addMessageListenerForm = Form(
+    mapping(
+      "actionName" -> nonEmptyText,
+      "messageInputName" -> nonEmptyText,
+      "arguments" -> seq(
+        mapping(
+          "name" -> nonEmptyText,
+          "value" -> nonEmptyText
+        )(RunActionArgumentInfo.apply)(RunActionArgumentInfo.unapply)
+      ),
+      "userId" -> nonEmptyText,
+      "channel" -> nonEmptyText,
+      "thread" -> optional(nonEmptyText),
+      "token" -> nonEmptyText
+    )(AddMessageListenerInfo.apply)(AddMessageListenerInfo.unapply)
+  )
+
+  def addMessageListener = Action.async { implicit request =>
+    addMessageListenerForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(resultForFormErrors(formWithErrors))
+      },
+      info => {
+        val eventualResult = for {
+          context <- ApiMethodContext.createFor(info.token)
+          maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
+          maybeBehaviorVersion <- context.maybeBehaviorVersionFor(info.actionName, maybeOriginatingBehaviorVersion)
+          maybeMessageInput <- maybeBehaviorVersion.map { behaviorVersion =>
+            dataService.inputs.findByName(info.messageInputName, behaviorVersion.groupVersion)
+          }.getOrElse(Future.successful(None))
+          result <- (for {
+            slackProfile <- context.maybeSlackProfile
+            behaviorVersion <- maybeBehaviorVersion
+            team <- context.maybeTeam
+            messageInput <- maybeMessageInput
+          } yield {
+            for {
+              user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behaviorVersion.team.id)
+              listener <- dataService.messageListeners.createFor(
+                behaviorVersion.behavior,
+                messageInput,
+                info.argumentsMap,
+                user,
+                team,
+                info.channel,
+                info.threadId
+              )
+            } yield {
+              Ok(listener.id)
+            }
+          }).getOrElse {
+            Future.successful(notFound(APIErrorData(s"Couldn't add listener for action `${info.actionName}` with message input `${info.messageInputName}", Some("actionName")), Json.toJson(info)))
+          }
+        } yield result
+
+        eventualResult.recover {
+          case e: InvalidTokenException => invalidTokenRequest(info)
+        }
+      }
+    )
+  }
+
   case class PostMessageInfo(
                               message: String,
                               responseContext: String,

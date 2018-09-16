@@ -143,6 +143,8 @@ POST        /api/schedule_action                      @controllers.APIController
 #NOCSRF
 POST        /api/unschedule_action                    @controllers.APIController.unscheduleAction
 #NOCSRF
+POST        /api/add_message_listener                 @controllers.APIController.addMessageListener
+#NOCSRF
 POST        /api/say                                  @controllers.APIController.say
 #NOCSRF
 GET         /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)

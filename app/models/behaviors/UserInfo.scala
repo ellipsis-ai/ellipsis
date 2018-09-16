@@ -31,6 +31,7 @@ case class LinkedInfo(externalSystem: String, accessToken: String) {
 case class MessageInfo(
                         medium: String,
                         channel: Option[String],
+                        thread: Option[String],
                         userId: String,
                         details: JsObject,
                         usersMentioned: Set[MessageUserData],
@@ -51,6 +52,7 @@ object MessageInfo {
       MessageInfo(
         event.name,
         event.maybeChannel,
+        event.maybeThreadId,
         event.userIdForContext,
         details,
         event.messageUserDataList(maybeConversation, services),

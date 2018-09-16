@@ -43,6 +43,7 @@ import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
 import models.behaviors.linked_github_repo.LinkedGithubRepoService
 import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroupService
+import models.behaviors.messagelistener.MessageListenerService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
@@ -100,6 +101,7 @@ class MockDataService extends DataService with MockitoSugar {
   val nodeModuleVersions = mock[NodeModuleVersionService]
   val savedAnswers = mock[SavedAnswerService]
   val messageTriggers = mock[MessageTriggerService]
+  val messageListeners = mock[MessageListenerService]
   val awsConfigs = mock[AWSConfigService]
   val requiredAWSConfigs: RequiredAWSConfigService = mock[RequiredAWSConfigService]
   val requiredOAuth1ApiConfigs = mock[RequiredOAuth1ApiConfigService]
