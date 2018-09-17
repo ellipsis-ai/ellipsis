@@ -42,6 +42,7 @@ case class BehaviorResponse(
                              parametersWithValues: Seq[ParameterWithValue],
                              maybeActivatedTrigger: Option[MessageTrigger],
                              maybeNewParent: Option[NewParentConversation],
+                             userExpectsResponse: Boolean,
                              services: DefaultServices
                              ) {
 

@@ -113,7 +113,8 @@ case class RunEvent(
         invocationParams,
         None,
         None,
-        None
+        None,
+        userExpectsResponse = true
       )
     } yield Seq(response)
   }

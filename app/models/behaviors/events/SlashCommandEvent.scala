@@ -68,7 +68,8 @@ case class SlashCommandEvent(
             trigger.invocationParamsFor(this, params),
             Some(trigger),
             None,
-            None
+            None,
+            userExpectsResponse = true
           )
         } yield response
       })

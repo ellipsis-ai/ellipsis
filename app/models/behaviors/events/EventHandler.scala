@@ -32,7 +32,7 @@ class EventHandler @Inject() (
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
       results <- {
         val eventualResults = Future.sequence(responses.map(_.result))
-        if (responses.nonEmpty) {
+        if (responses.exists(_.userExpectsResponse)) {
           event.resultReactionHandler(eventualResults, services)
         }
         eventualResults.flatMap { r =>
