@@ -23,6 +23,7 @@ class MessageListenerSpec extends DBSpec {
           actionInputs = Seq(inputData)
         )
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
+        runNow(dataService.behaviorGroupDeployments.deploy(groupVersion, user.id, None))
 
         val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
 
