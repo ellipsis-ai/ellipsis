@@ -3,7 +3,7 @@ package models.behaviors.messagelistener
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.{User, UserQueries, UsersTable}
 import models.behaviors.behavior.BehaviorQueries
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsObject, JsString}
 
 object MessageListenerQueries {
 
@@ -18,8 +18,9 @@ object MessageListenerQueries {
     val raw = tuple._1._1
     val behavior = BehaviorQueries.tuple2Behavior(tuple._1._2)
     val arguments: Map[String, String] = raw.arguments match {
-      case obj: JsObject => obj.value.map { case(k, v) =>
-        (k, v.toString)
+      case obj: JsObject => obj.value.map {
+        case(k: String, v: JsString) => (k, v.value)
+        case(k, v) => (k, v.toString)
       }.toMap
       case _ => Map[String, String]()
     }
