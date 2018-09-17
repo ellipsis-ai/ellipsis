@@ -41,6 +41,7 @@ import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
 import models.behaviors.linked_github_repo.LinkedGithubRepoService
+import models.behaviors.messagelistener.MessageListenerService
 import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroupService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
@@ -96,6 +97,7 @@ trait DataService {
   val nodeModuleVersions: NodeModuleVersionService
   val savedAnswers: SavedAnswerService
   val messageTriggers: MessageTriggerService
+  val messageListeners: MessageListenerService
   val awsConfigs: AWSConfigService
   val requiredAWSConfigs: RequiredAWSConfigService
   val requiredOAuth1ApiConfigs: RequiredOAuth1ApiConfigService

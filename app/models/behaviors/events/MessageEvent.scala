@@ -24,9 +24,34 @@ trait MessageEvent extends Event {
                             )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
+      listeners <- dataService.messageListeners.allFor(this, maybeTeam, maybeChannel, context)
+      listenerResponses <- Future.sequence(listeners.map { ea =>
+        for {
+          maybeGroupVersion <- dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(ea.behavior.group, ea.medium, ea.channel)
+          maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+            dataService.behaviorVersions.findFor(ea.behavior, groupVersion)
+          }.getOrElse(Future.successful(None))
+          maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+            for {
+              params <- dataService.behaviorParameters.allFor(behaviorVersion)
+              maybeMessageInput <- dataService.inputs.findByInputId(ea.messageInputId, behaviorVersion.groupVersion)
+              maybeResponse <- maybeMessageInput.map { messageInput =>
+                dataService.behaviorResponses.buildFor(
+                  this,
+                  behaviorVersion,
+                  ea.invocationParamsFor(params, messageInput, relevantMessageText),
+                  None,
+                  None,
+                  None
+                ).map(Some(_))
+              }.getOrElse(Future.successful(None))
+            } yield maybeResponse
+          }.getOrElse(Future.successful(None))
+        } yield maybeResponse
+      }).map(_.flatten)
       possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(this, maybeTeam, maybeChannel, context, maybeLimitToBehavior)
       activatedTriggers <- activatedTriggersIn(possibleActivatedTriggers, dataService)
-      responses <- Future.sequence(activatedTriggers.map { trigger =>
+      triggerResponses <- Future.sequence(activatedTriggers.map { trigger =>
         for {
           params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
           response <- dataService.behaviorResponses.buildFor(
@@ -39,7 +64,7 @@ trait MessageEvent extends Event {
           )
         } yield response
       })
-    } yield responses
+    } yield triggerResponses ++ listenerResponses
   }
 
 }

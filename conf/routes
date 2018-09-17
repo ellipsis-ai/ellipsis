@@ -144,10 +144,7 @@ POST        /api/schedule_action                      @controllers.APIController
 POST        /api/unschedule_action                    @controllers.APIController.unscheduleAction
 #NOCSRF
 POST        /api/say                                  @controllers.APIController.say
-#NOCSRF
-GET         /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
-#NOCSRF
-HEAD        /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
+
 #NOCSRF
 GET         /get_action_logs/:actionName/:token       @controllers.InvocationLogController.getLogs(actionName: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None, originalEventType: Option[String] ?= None)
 #NOCSRF
@@ -160,6 +157,12 @@ POST        /api/v1/tokens                            @controllers.APIController
 POST        /api/v1/commands/say                      @controllers.APIController.say
 #NOCSRF
 GET         /api/v1/users                             @controllers.APIController.findUsers(token: String, email: Option[String] ?= None)
+#NOCSRF
+GET         /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
+#NOCSRF
+HEAD        /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
+#NOCSRF
+POST        /api/v1/add_message_listener              @controllers.APIController.addMessageListener
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)
