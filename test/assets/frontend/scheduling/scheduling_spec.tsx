@@ -97,7 +97,8 @@ function newChannel(props?: Partial<ScheduleChannelInterface>) {
     isPrivateChannel: false,
     isPrivateGroup: false,
     isArchived: false,
-    isShared: false
+    isShared: false,
+    isReadOnly: false
   }, props));
 }
 

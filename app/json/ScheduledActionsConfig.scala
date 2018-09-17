@@ -56,7 +56,8 @@ object ScheduledActionsConfig {
         convo.isPrivateChannel,
         convo.isMpim,
         convo.isArchived,
-        convo.isShared
+        convo.isShared,
+        convo.isReadOnly
       )
       maybeIsPrivateMember.map { isPrivateMember =>
         if (convo.isVisibleToUserWhere(isPrivateMember, forceAdmin)) {

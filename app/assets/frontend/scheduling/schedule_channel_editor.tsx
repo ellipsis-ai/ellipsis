@@ -2,7 +2,6 @@ import * as React from 'react';
 import Checkbox from '../form/checkbox';
 import Collapsible from '../shared_ui/collapsible';
 import SearchWithResults from '../form/search_with_results';
-import SVGCheckmark from '../svg/checkmark';
 import ChannelName from './channel_name';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
@@ -130,6 +129,12 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
       return Boolean(channel && channel.isArchived);
     }
 
+    channelReadOnly(): boolean {
+      const channelId = this.props.scheduledAction.channel;
+      const channel = this.findChannelFor(channelId);
+      return Boolean(channel && channel.isReadOnly);
+    }
+
     botMissingFromChannel(): boolean {
       const channelId = this.props.scheduledAction.channel;
       if (channelId && this.props.slackBotUserId) {
@@ -184,6 +189,12 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
         return (
           <span className="type-pink type-bold type-italic">
             Warning: The bot must be invited to this channel to run any action
+          </span>
+        );
+      } else if (this.channelReadOnly()) {
+        return (
+          <span className="type-pink type-bold type-italic">
+            Warning: The bot is restricted from posting to this channel by the admin
           </span>
         );
       } else if (!this.hasChannelList()) {
