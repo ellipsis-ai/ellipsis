@@ -47,7 +47,7 @@ object MessageListenerQueries {
       filter { case(_, user) => user.teamId === teamId }.
       filter { case((listener, _), _) => listener.medium === medium }.
       filter { case((listener, _), _) => listener.channel === channel }.
-      filter { case((listener, _), _) => maybeThreadId.isEmpty || listener.maybeThreadId === maybeThreadId }
+      filter { case((listener, _), _) => listener.maybeThreadId.isEmpty || listener.maybeThreadId === maybeThreadId }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
