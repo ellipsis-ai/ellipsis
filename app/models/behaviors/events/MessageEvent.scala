@@ -27,7 +27,10 @@ trait MessageEvent extends Event {
       listeners <- dataService.messageListeners.allFor(this, maybeTeam, maybeChannel, context)
       listenerResponses <- Future.sequence(listeners.map { ea =>
         for {
-          maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(ea.behavior)
+          maybeGroupVersion <- dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(ea.behavior.group, ea.medium, ea.channel)
+          maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+            dataService.behaviorVersions.findFor(ea.behavior, groupVersion)
+          }.getOrElse(Future.successful(None))
           maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
             for {
               params <- dataService.behaviorParameters.allFor(behaviorVersion)
