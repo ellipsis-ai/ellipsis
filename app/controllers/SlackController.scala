@@ -865,7 +865,8 @@ class SlackController @Inject() (
               invocationParams,
               None,
               None,
-              None
+              None,
+              userExpectsResponse = true
             ).map(Some(_))
           }.getOrElse(Future.successful(None))
           maybeResult <- maybeResponse.map { response =>
@@ -1497,7 +1498,8 @@ class SlackController @Inject() (
               Map(),
               None,
               None,
-              None
+              None,
+              userExpectsResponse = true
             ).map(Some(_))
           }.getOrElse(Future.successful(None))
           maybeResult <- maybeResponse.map { response =>

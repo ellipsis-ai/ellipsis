@@ -26,7 +26,8 @@ trait BehaviorResponseService {
                       paramValues: Map[String, String],
                       maybeActivatedTrigger: Option[MessageTrigger],
                       maybeConversation: Option[Conversation],
-                      maybeNewParent: Option[NewParentConversation]
+                      maybeNewParent: Option[NewParentConversation],
+                      userExpectsResponse: Boolean
                     ): DBIO[BehaviorResponse]
 
   def buildFor(
@@ -35,7 +36,8 @@ trait BehaviorResponseService {
                 paramValues: Map[String, String],
                 maybeActivatedTrigger: Option[MessageTrigger],
                 maybeConversation: Option[Conversation],
-                maybeNewParent: Option[NewParentConversation]
+                maybeNewParent: Option[NewParentConversation],
+                userExpectsResponse: Boolean
               ): Future[BehaviorResponse]
 
   def allFor(

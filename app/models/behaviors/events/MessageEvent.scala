@@ -42,7 +42,8 @@ trait MessageEvent extends Event {
                   ea.invocationParamsFor(params, messageInput, relevantMessageText),
                   None,
                   None,
-                  None
+                  None,
+                  userExpectsResponse = false
                 ).map(Some(_))
               }.getOrElse(Future.successful(None))
             } yield maybeResponse
@@ -60,7 +61,8 @@ trait MessageEvent extends Event {
             trigger.invocationParamsFor(this, params),
             Some(trigger),
             None,
-            None
+            None,
+            userExpectsResponse = true
           )
         } yield response
       })
