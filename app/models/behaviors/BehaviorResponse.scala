@@ -148,8 +148,8 @@ case class BehaviorResponse(
           } else {
             for {
               maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services)
-              maybeThreadId <- if (behaviorVersion.responseType == Threaded) {
-                event.maybeThreadId.map(tid => Future.successful(Some(tid))).getOrElse {
+              maybeThreadId <- event.maybeThreadId.map(tid => Future.successful(Some(tid))).getOrElse {
+                if (behaviorVersion.responseType == Threaded) {
                   event.sendMessage(
                     "Let's continue this in a thread :speech_balloon:",
                     behaviorVersion.responseType,
@@ -162,9 +162,9 @@ case class BehaviorResponse(
                     services,
                     services.configuration
                   )
+                } else {
+                  Future.successful(None)
                 }
-              } else {
-                Future.successful(None)
               }
               convo <- InvokeBehaviorConversation.createFor(
                 behaviorVersion,
