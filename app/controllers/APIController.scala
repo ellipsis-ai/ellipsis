@@ -716,6 +716,7 @@ class APIController @Inject() (
                                      messageInputName: String,
                                      arguments: Seq[RunActionArgumentInfo],
                                      userId: String,
+                                     medium: String,
                                      channel: String,
                                      threadId: Option[String],
                                      token: String
@@ -740,6 +741,7 @@ class APIController @Inject() (
         )(RunActionArgumentInfo.apply)(RunActionArgumentInfo.unapply)
       ),
       "userId" -> nonEmptyText,
+      "medium" -> nonEmptyText,
       "channel" -> nonEmptyText,
       "thread" -> optional(nonEmptyText),
       "token" -> nonEmptyText
@@ -773,6 +775,7 @@ class APIController @Inject() (
                 info.argumentsMap,
                 user,
                 team,
+                info.medium,
                 info.channel,
                 info.threadId
               )

@@ -59,6 +59,7 @@ class MessageListenerServiceImpl @Inject() (
                        arguments: Map[String, String],
                        user: User,
                        team: Team,
+                       medium: String,
                        channel: String,
                        maybeThreadId: Option[String]
                      ): DBIO[MessageListener] = {
@@ -67,7 +68,7 @@ class MessageListenerServiceImpl @Inject() (
       behavior,
       messageInput.inputId,
       arguments,
-      "slack",
+      medium,
       channel,
       maybeThreadId,
       user,
@@ -82,10 +83,11 @@ class MessageListenerServiceImpl @Inject() (
                  arguments: Map[String, String],
                  user: User,
                  team: Team,
+                 medium: String,
                  channel: String,
                  maybeThreadId: Option[String]
                ): Future[MessageListener] = {
-    dataService.run(createForAction(behavior, messageInput, arguments, user, team, channel, maybeThreadId))
+    dataService.run(createForAction(behavior, messageInput, arguments, user, team, medium, channel, maybeThreadId))
   }
 
   def allForAction(

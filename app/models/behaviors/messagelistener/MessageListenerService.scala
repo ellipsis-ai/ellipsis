@@ -16,6 +16,7 @@ trait MessageListenerService {
                  arguments: Map[String, String],
                  user: User,
                  team: Team,
+                 medium: String,
                  channel: String,
                  maybeThreadId: Option[String]
                ): Future[MessageListener]
