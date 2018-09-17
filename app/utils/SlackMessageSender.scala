@@ -51,6 +51,10 @@ case class ChannelNotFoundException(channel: String, slackTeamId: String, userId
   def channelReason(channelIdOrLink: String) = s"The channel could not be found. It may have been deleted."
 }
 
+case class RestrictedFromChannel(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  def channelReason(channelIdOrLink: String) = s"The bot is restricted from posting to the channel ${channelIdOrLink} by the admin."
+}
+
 case class SlackMessageSenderException(underlying: Throwable, channel: String, slackTeamId: String, userId: String, text: String)
   extends Exception(
     s"""Bad response from Slack while sending a message to user $userId in channel $channel on team $slackTeamId
@@ -293,6 +297,7 @@ case class SlackMessageSender(
     case SlackApiError("is_archived") => throw ArchivedChannelException(channel, slackTeamId, user, text)
     case SlackApiError("channel_not_found") => throw ChannelNotFoundException(channel, slackTeamId, user, text)
     case SlackApiError("not_in_channel") => throw NotInvitedToChannelException(channel, slackTeamId, user, text)
+    case SlackApiError("restricted_action") => throw RestrictedFromChannel(channel, slackTeamId, user, text)
     case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
   }
 }

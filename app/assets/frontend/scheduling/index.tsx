@@ -59,6 +59,7 @@ type ScheduleGroup = {
   excludesBot: boolean,
   isArchived: boolean,
   isMissing: boolean,
+  isReadOnly: boolean,
   actions: Array<ScheduledAction>
 }
 
@@ -204,6 +205,7 @@ class Scheduling extends React.Component<Props, State> {
           excludesBot: Boolean(channel && !channel.isDm() && !channel.isBotMember),
           isArchived: Boolean(channel && channel.isArchived),
           isMissing: !channel,
+          isReadOnly: Boolean(channel && channel.isReadOnly),
           actions: []
         };
         group.actions.push(action);
@@ -385,7 +387,7 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     renderGroupWarningIcon(group: ScheduleGroup) {
-      if (group.isArchived || group.excludesBot || group.isMissing) {
+      if (group.isArchived || group.excludesBot || group.isMissing || group.isReadOnly) {
         return (
           <span className="mls display-inline-block type-pink height-xl align-m"><SVGWarning/></span>
         );
@@ -404,13 +406,19 @@ class Scheduling extends React.Component<Props, State> {
       } else if (group.excludesBot) {
         return (
           <span className="type-s type-pink type-bold type-italic">
-            — Warning: Ellipsis must be invited to this channel for any scheduled action to run.
+            — Warning: The bot must be invited to this channel for any scheduled action to run.
           </span>
         );
       } else if (group.isMissing) {
         return (
           <span className="type-s type-pink type-bold type-italic">
             — Warning: No information about this channel was found. It may have been deleted.
+          </span>
+        );
+      } else if (group.isReadOnly) {
+        return (
+          <span className="type-s type-pink type-bold type-italic">
+            — Warning: The bot is restricted from posting to this channel by the admin.
           </span>
         );
       } else {

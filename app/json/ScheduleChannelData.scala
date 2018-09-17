@@ -11,5 +11,6 @@ case class ScheduleChannelData(
                                 isPrivateChannel: Boolean,
                                 isPrivateGroup: Boolean,
                                 isArchived: Boolean,
-                                isShared: Boolean
+                                isShared: Boolean,
+                                isReadOnly: Boolean
                               )
