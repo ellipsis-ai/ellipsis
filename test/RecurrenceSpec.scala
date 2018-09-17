@@ -262,15 +262,22 @@ class RecurrenceSpec extends PlaySpec {
         Some(Weekly(IDs.next, 2, 0, None, mwf, LocalTime.parse("15:00"), timeZone)))
     }
 
+    """be created with implied weekly frequency for "every" days of the week""" in {
+      mustMatch(Recurrence.maybeUnsavedFromText("""every Wednesday at 3pm""", timeZone),
+        Some(Weekly(IDs.next, 1, 0, None, justWednesday, LocalTime.parse("15:00"), timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("""every Monday, Wednesday and Friday at 3pm""", timeZone),
+        Some(Weekly(IDs.next, 1, 0, None, mwf, LocalTime.parse("15:00"), timeZone)))
+    }
+
     "create a one-time instance for single days of the week at a defined time" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" on Monday at 12pm""", timeZone),
+      mustMatch(Recurrence.maybeUnsavedFromText("""on Monday at 12pm""", timeZone),
         Some(Weekly(IDs.next, 1, 0, Some(1), justMonday, LocalTime.parse("12:00"), timeZone)))
-      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" next Wednesday at 5pm""", timeZone),
+      mustMatch(Recurrence.maybeUnsavedFromText("""next Wednesday at 5pm""", timeZone),
         Some(Weekly(IDs.next, 1, 0, Some(1), justWednesday, LocalTime.parse("17:00"), timeZone)))
     }
 
     "create an N-time instance for multiple days of the week at a defined time" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" on Monday, Wednesday and Friday at 9:30am""", timeZone),
+      mustMatch(Recurrence.maybeUnsavedFromText("""on Monday, Wednesday and Friday at 9:30am""", timeZone),
         Some(Weekly(IDs.next, 1, 0, Some(3), mwf, LocalTime.parse("09:30"), timeZone)))
     }
 
@@ -464,7 +471,7 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "create a one-time recurrence for a single date/time" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("""schedule ":tada:" on January 1 at 12pm""", timeZone),
+      mustMatch(Recurrence.maybeUnsavedFromText("""on January 1 at 12pm""", timeZone),
         Some(Yearly(IDs.next, 1, 0, Some(1), MonthDay.of(1, 1), LocalTime.parse("12:00"), timeZone)))
 
     }
@@ -473,14 +480,14 @@ class RecurrenceSpec extends PlaySpec {
       val now = LocalDateTime.now(timeZone)
       val nextYear = now.getYear + 1
 
-      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on January 1, ${nextYear.toString} at 12am""", timeZone),
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""on January 1, ${nextYear.toString} at 12am""", timeZone),
         Some(Yearly(IDs.next, 1, 0, Some(1), MonthDay.of(1, 1), LocalTime.parse("00:00"), timeZone)))
 
       val tomorrowMidnight = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
       val fiveYearsLater = tomorrowMidnight.plusYears(5)
       val formatted = fiveYearsLater.format(Recurrence.dateFormatter)
       val desiredMonthDay = MonthDay.of(fiveYearsLater.getMonth, fiveYearsLater.getDayOfMonth)
-      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on ${formatted} at 9am""", timeZone),
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""on ${formatted} at 9am""", timeZone),
         Some(Yearly(IDs.next, 6, 0, Some(1), desiredMonthDay, LocalTime.parse("09:00"), timeZone)))
     }
 
@@ -488,7 +495,7 @@ class RecurrenceSpec extends PlaySpec {
       val now = LocalDateTime.now(timeZone)
       val lastYearToday = now.minusYears(1)
       val formatted = lastYearToday.format(Recurrence.dateFormatter)
-      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on ${formatted} at 9am""", timeZone), None)
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""on ${formatted} at 9am""", timeZone), None)
     }
 
     // TODO: The date parser doesn't differentiate between dates with and without a year, so there's no
@@ -496,7 +503,7 @@ class RecurrenceSpec extends PlaySpec {
     "not create a one-time recurrence for this year in the past" ignore {
       val now = LocalDateTime.now(timeZone)
       val thisYear = now.getYear
-      mustMatch(Recurrence.maybeUnsavedFromText(s"""schedule ":tada:" on January 1, ${thisYear.toString} at 12am""", timeZone),
+      mustMatch(Recurrence.maybeUnsavedFromText(s"""on January 1, ${thisYear.toString} at 12am""", timeZone),
         None)
     }
 
@@ -533,29 +540,29 @@ class RecurrenceSpec extends PlaySpec {
 
   "Recurrence.maybeTimesToRunFromText" should {
     "return 1 for text that ends in once" in {
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" every minute once""") mustBe Some(1)
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" every year on December 31 at 4:56 once """) mustBe Some(1)
+      Recurrence.maybeTimesToRunFromText("""every minute once""") mustBe Some(1)
+      Recurrence.maybeTimesToRunFromText("""every year on December 31 at 4:56 once """) mustBe Some(1)
     }
 
     "return 2 for text that ends in twice" in {
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" every minute twice""") mustBe Some(2)
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" every year on December 31 at 4:56 twice """) mustBe Some(2)
+      Recurrence.maybeTimesToRunFromText("""every minute twice""") mustBe Some(2)
+      Recurrence.maybeTimesToRunFromText("""every year on December 31 at 4:56 twice """) mustBe Some(2)
     }
 
     "return a number for text that ends in N times" in {
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" every month on the 1st at 5pm, 4 times""") mustBe Some(4)
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" every week on Mondays at 12 1 time """) mustBe Some(1)
+      Recurrence.maybeTimesToRunFromText("""every month on the 1st at 5pm, 4 times""") mustBe Some(4)
+      Recurrence.maybeTimesToRunFromText("""every week on Mondays at 12 1 time """) mustBe Some(1)
     }
 
     "return none for text that ends in 0 or a negative number times" in {
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" every 5 minutes 0 times """) mustBe None
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" every 5 minutes -560 times """) mustBe None
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" every month on the 31st at 9:00 -1 time""") mustBe None
+      Recurrence.maybeTimesToRunFromText("""every 5 minutes 0 times """) mustBe None
+      Recurrence.maybeTimesToRunFromText("""every 5 minutes -560 times """) mustBe None
+      Recurrence.maybeTimesToRunFromText("""every month on the 31st at 9:00 -1 time""") mustBe None
     }
 
     "return none for text that doesn’t have any obvious N times" in {
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" every month on the 31st at the time 4:00""") mustBe None
-      Recurrence.maybeTimesToRunFromText("""schedule ":tada:" once every month on the 1st at 9:50am""") mustBe None
+      Recurrence.maybeTimesToRunFromText("""every month on the 31st at the time 4:00""") mustBe None
+      Recurrence.maybeTimesToRunFromText("""once every month on the 1st at 9:50am""") mustBe None
     }
   }
 
