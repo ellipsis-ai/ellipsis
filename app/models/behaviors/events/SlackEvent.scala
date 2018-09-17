@@ -30,14 +30,20 @@ trait SlackEvent {
   }
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    services.slackApiService.clientFor(profile).openConversationFor(user).map(Some(_)).recover {
-      case e: SlackApiError => {
-        val msg =
-          s"""Couldn't open DM channel to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}
-             |Original event channel: $channel
-           """.stripMargin
-        Logger.error(msg, e)
-        None
+    if (profile.userId == user) {
+      Future.successful(None)
+    } else {
+      services.slackApiService.clientFor(profile).openConversationFor(user).map(Some(_)).recover {
+        case e: SlackApiError => {
+          if (e.code != "cannot_dm_bot") {
+            val msg =
+              s"""Couldn't open DM channel to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}
+                 |Original event channel: $channel
+               """.stripMargin
+            Logger.error(msg, e)
+          }
+          None
+        }
       }
     }
   }
