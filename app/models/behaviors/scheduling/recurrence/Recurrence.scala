@@ -460,7 +460,12 @@ object Weekly {
     }.orElse {
       if (daysOfWeek.length > 0 && Recurrence.maybeMonthlyFrequencyFrom(text).isEmpty) {
         maybeTime.map { timeOfDay =>
-          Weekly(IDs.next, 1, 0, Some(daysOfWeek.length), daysOfWeek, timeOfDay, defaultTimeZone)
+          val maybeTimesToRun = if (text.toLowerCase.contains("every")) {
+            None
+          } else {
+            Some(daysOfWeek.length)
+          }
+          Weekly(IDs.next, 1, 0, maybeTimesToRun, daysOfWeek, timeOfDay, defaultTimeZone)
         }
       } else {
         None
