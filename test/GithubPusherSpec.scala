@@ -26,8 +26,8 @@ import scala.concurrent.Future
 class GithubPusherSpec extends PlaySpec with MockitoSugar {
 
   def listDirsIn(dir: File): Seq[String] = {
-    FileUtils.listFilesAndDirs(dir, new NotFileFilter(TrueFileFilter.INSTANCE), TrueFileFilter.INSTANCE).
-      asScala.toSeq.
+    val list = FileUtils.listFilesAndDirs(dir, new NotFileFilter(TrueFileFilter.INSTANCE), TrueFileFilter.INSTANCE)
+    list.asScala.toSeq.
       filter(file => file != dir).
       map(file => file.getName)
   }
@@ -58,27 +58,28 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar {
         val behaviorVersion2 = behaviorVersion1.copy(maybeName = Some(behaviorVersion2Name))
 
         when(dataService.behaviorGroups.findWithoutAccessCheck(group.id)).thenReturn(Future.successful(Some(group)))
-        when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).thenReturn(
-          Future.successful(Some(groupVersion1)),
-          Future.successful(Some(groupVersion2))
-        )
+        when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).
+          thenReturn(Future.successful(Some(groupVersion1))).
+          thenReturn(Future.successful(Some(groupVersion2))).
+          thenReturn(Future.failed(new Exception("dataService.behaviorGroups.maybeCurrentVersionFor called more than expected!")))
 
         when(dataService.behaviorGroups.find(group.id, user)).thenReturn(Future.successful(Some(group)))
         when(dataService.behaviorGroupVersions.maybeFirstFor(group)).thenReturn(Future.successful(Some(groupVersion1)))
-        when(dataService.behaviorGroupVersions.maybeCurrentFor(group)).thenReturn(
-          Future.successful(Some(groupVersion1)),
-          Future.successful(Some(groupVersion2))
-        )
+
+        when(dataService.behaviorGroupVersions.maybeCurrentFor(group)).
+          thenReturn(Future.successful(Some(groupVersion1))).
+          thenReturn(Future.successful(Some(groupVersion2))).
+          thenReturn(Future.failed(new Exception("dataService.behaviorGroupVersions.maybeCurrentFor called more than expected!")))
 
         when(dataService.behaviors.allForGroup(group)).thenReturn(Future.successful(Seq(behavior)))
         when(dataService.behaviors.find(behavior.id, user)).thenReturn(Future.successful(Some(behavior)))
         when(dataService.behaviorVersions.findFor(behavior, groupVersion1)).thenReturn(Future.successful(Some(behaviorVersion1)))
         when(dataService.behaviorVersions.findFor(behavior, groupVersion2)).thenReturn(Future.successful(Some(behaviorVersion2)))
 
-        when(dataService.behaviors.maybeCurrentVersionFor(behavior)).thenReturn(
-          Future.successful(Some(behaviorVersion1)),
-          Future.successful(Some(behaviorVersion2))
-        )
+        when(dataService.behaviors.maybeCurrentVersionFor(behavior)).
+          thenReturn(Future.successful(Some(behaviorVersion1))).
+          thenReturn(Future.successful(Some(behaviorVersion2))).
+          thenReturn(Future.failed(new Exception("dataService.behaviors.maybeCurrentVersionFor called more than expected!")))
 
         when(dataService.behaviorParameters.allFor(any[BehaviorVersion])).thenReturn(Future.successful(Seq()))
         when(dataService.messageTriggers.allFor(any[BehaviorVersion])).thenReturn(Future.successful(Seq()))
