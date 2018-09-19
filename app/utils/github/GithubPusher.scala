@@ -83,6 +83,7 @@ case class GithubPusher(
                        behaviorGroup: BehaviorGroup,
                        user: User,
                        services: DefaultServices,
+                       maybeRemoteUrlBuilder: Option[(String, String) => String],
                        implicit val ec: ExecutionContext
                        ) {
   val team: Team = behaviorGroup.team
@@ -94,7 +95,9 @@ case class GithubPusher(
   val dataService: DataService = services.dataService
   val cacheService: CacheService = services.cacheService
 
-  val remoteUrl: String = s"https://github.com/$owner/$repoName.git"
+  val remoteUrl: String = maybeRemoteUrlBuilder.map(_(owner, repoName)).getOrElse {
+    "https://github.com/$owner/$repoName.git"
+  }
 
   private val credentialsProvider = new UsernamePasswordCredentialsProvider(repoAccessToken, "")
 
