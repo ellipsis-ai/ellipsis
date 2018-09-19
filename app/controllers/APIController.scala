@@ -713,7 +713,6 @@ class APIController @Inject() (
 
   case class AddMessageListenerInfo(
                                      actionName: String,
-                                     messageInputName: String,
                                      arguments: Seq[RunActionArgumentInfo],
                                      userId: String,
                                      medium: String,
@@ -733,7 +732,6 @@ class APIController @Inject() (
   private val addMessageListenerForm = Form(
     mapping(
       "actionName" -> nonEmptyText,
-      "messageInputName" -> nonEmptyText,
       "arguments" -> seq(
         mapping(
           "name" -> nonEmptyText,
@@ -758,20 +756,15 @@ class APIController @Inject() (
           context <- ApiMethodContext.createFor(info.token)
           maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
           maybeBehaviorVersion <- context.maybeBehaviorVersionFor(info.actionName, maybeOriginatingBehaviorVersion)
-          maybeMessageInput <- maybeBehaviorVersion.map { behaviorVersion =>
-            dataService.inputs.findByName(info.messageInputName, behaviorVersion.groupVersion)
-          }.getOrElse(Future.successful(None))
           result <- (for {
             slackProfile <- context.maybeSlackProfile
             behaviorVersion <- maybeBehaviorVersion
             team <- context.maybeTeam
-            messageInput <- maybeMessageInput
           } yield {
             for {
               user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behaviorVersion.team.id)
               listener <- dataService.messageListeners.createFor(
                 behaviorVersion.behavior,
-                messageInput,
                 info.argumentsMap,
                 user,
                 team,
@@ -783,7 +776,7 @@ class APIController @Inject() (
               Ok(listener.id)
             }
           }).getOrElse {
-            Future.successful(notFound(APIErrorData(s"Couldn't add listener for action `${info.actionName}` with message input `${info.messageInputName}", Some("actionName")), Json.toJson(info)))
+            Future.successful(notFound(APIErrorData(s"Couldn't add listener for action `${info.actionName}`", Some("actionName")), Json.toJson(info)))
           }
         } yield result
 

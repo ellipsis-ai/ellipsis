@@ -29,6 +29,7 @@ case class LinkedInfo(externalSystem: String, accessToken: String) {
 }
 
 case class MessageInfo(
+                        text: String,
                         medium: String,
                         channel: Option[String],
                         thread: Option[String],
@@ -50,6 +51,7 @@ object MessageInfo {
       maybePermalink <- event.maybePermalinkFor(services)
     } yield {
       MessageInfo(
+        event.messageText,
         event.name,
         event.maybeChannel,
         event.maybeThreadId,
