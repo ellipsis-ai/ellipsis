@@ -8,6 +8,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import org.apache.commons.io.FileUtils
+import org.apache.commons.io.filefilter.HiddenFileFilter
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.errors._
 import org.eclipse.jgit.lib.Constants
@@ -18,6 +19,7 @@ import play.api.libs.json.{JsObject, Json}
 import services._
 import services.caching.CacheService
 
+import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
@@ -152,7 +154,12 @@ case class GithubPusher(
   }
 
   private def deleteFiles: Unit = {
-    FileUtils.deleteQuietly(new File(repoDir, "./*"))
+    val files = FileUtils.listFilesAndDirs(repoDir, HiddenFileFilter.VISIBLE, HiddenFileFilter.VISIBLE)
+    files.asScala.foreach { file =>
+      if (file != repoDir) {
+        FileUtils.deleteQuietly(file)
+      }
+    }
   }
 
   private def export: Future[Unit] = {
@@ -167,11 +174,23 @@ case class GithubPusher(
     }
   }
 
+  private def updateOrRemoveExistingFiles(git: Git): Unit = {
+    git.add.
+      setUpdate(true).
+      addFilepattern(".").
+      call
+  }
+
+  private def addAllWithNewFiles(git: Git): Unit = {
+    git.add.
+      addFilepattern(".").
+      call
+  }
+
   private def push(git: Git): Unit = {
     try {
-      git.add.
-        addFilepattern(".").
-        call
+      updateOrRemoveExistingFiles(git)
+      addAllWithNewFiles(git)
       git.commit.
         setAuthor(committerInfo.name, committerInfo.email).
         setMessage(commitMessage).
