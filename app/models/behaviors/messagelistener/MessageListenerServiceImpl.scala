@@ -9,7 +9,6 @@ import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
-import models.behaviors.input.Input
 import models.team.Team
 import play.api.libs.json.JsValue
 import services.DataService
@@ -19,7 +18,6 @@ import scala.concurrent.{ExecutionContext, Future}
 case class RawMessageListener(
                               id: String,
                               behaviorId: String,
-                              messageInputId: String,
                               arguments: JsValue,
                               medium: String,
                               channel: String,
@@ -32,7 +30,6 @@ class MessageListenersTable(tag: Tag) extends Table[RawMessageListener](tag, "me
 
   def id = column[String]("id", O.PrimaryKey)
   def behaviorId = column[String]("behavior_id")
-  def messageInputId = column[String]("message_input_id")
   def arguments = column[JsValue]("arguments")
   def medium = column[String]("medium")
   def channel = column[String]("channel")
@@ -41,7 +38,7 @@ class MessageListenersTable(tag: Tag) extends Table[RawMessageListener](tag, "me
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, messageInputId, arguments, medium, channel, maybeThreadId, userId, createdAt) <> ((RawMessageListener.apply _).tupled, RawMessageListener.unapply _)
+    (id, behaviorId, arguments, medium, channel, maybeThreadId, userId, createdAt) <> ((RawMessageListener.apply _).tupled, RawMessageListener.unapply _)
 }
 
 class MessageListenerServiceImpl @Inject() (
@@ -55,7 +52,6 @@ class MessageListenerServiceImpl @Inject() (
 
   def createForAction(
                        behavior: Behavior,
-                       messageInput: Input,
                        arguments: Map[String, String],
                        user: User,
                        team: Team,
@@ -66,7 +62,6 @@ class MessageListenerServiceImpl @Inject() (
     val newInstance = MessageListener(
       IDs.next,
       behavior,
-      messageInput.inputId,
       arguments,
       medium,
       channel,
@@ -79,7 +74,6 @@ class MessageListenerServiceImpl @Inject() (
 
   def createFor(
                  behavior: Behavior,
-                 messageInput: Input,
                  arguments: Map[String, String],
                  user: User,
                  team: Team,
@@ -87,7 +81,7 @@ class MessageListenerServiceImpl @Inject() (
                  channel: String,
                  maybeThreadId: Option[String]
                ): Future[MessageListener] = {
-    dataService.run(createForAction(behavior, messageInput, arguments, user, team, medium, channel, maybeThreadId))
+    dataService.run(createForAction(behavior, arguments, user, team, medium, channel, maybeThreadId))
   }
 
   def allForAction(

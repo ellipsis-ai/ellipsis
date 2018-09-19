@@ -34,18 +34,15 @@ trait MessageEvent extends Event {
           maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
             for {
               params <- dataService.behaviorParameters.allFor(behaviorVersion)
-              maybeMessageInput <- dataService.inputs.findByInputId(ea.messageInputId, behaviorVersion.groupVersion)
-              maybeResponse <- maybeMessageInput.map { messageInput =>
-                dataService.behaviorResponses.buildFor(
-                  this,
-                  behaviorVersion,
-                  ea.invocationParamsFor(params, messageInput, relevantMessageText),
-                  None,
-                  None,
-                  None,
-                  userExpectsResponse = false
-                ).map(Some(_))
-              }.getOrElse(Future.successful(None))
+              maybeResponse <- dataService.behaviorResponses.buildFor(
+                this,
+                behaviorVersion,
+                ea.invocationParamsFor(params, relevantMessageText),
+                None,
+                None,
+                None,
+                userExpectsResponse = false
+              ).map(Some(_))
             } yield maybeResponse
           }.getOrElse(Future.successful(None))
         } yield maybeResponse

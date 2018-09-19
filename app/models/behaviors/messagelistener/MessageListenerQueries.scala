@@ -28,7 +28,6 @@ object MessageListenerQueries {
     MessageListener(
       raw.id,
       behavior,
-      raw.messageInputId,
       arguments,
       raw.medium,
       raw.channel,
