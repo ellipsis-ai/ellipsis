@@ -32,7 +32,7 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar {
   }
 
   "GithubPusher.run" should {
-    "commit and push changes to origin" in new TestContext {
+    "commit and push, handling renaming an action" in new TestContext {
       running(app) {
         val group = BehaviorGroup(IDs.next, Some(IDs.next), team, OffsetDateTime.now)
         val groupVersion1 = BehaviorGroupVersion(IDs.next, group, "Happy Skill", None, None, None, OffsetDateTime.now)
@@ -117,12 +117,22 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar {
         val maybeExporter = await(BehaviorGroupExporter.maybeFor(group.id, user, dataService, cacheService, Some(parentPath), Some("repo")))
         maybeExporter.get.writeFiles()
 
-        val git: Git = Git.init().setDirectory(origin).call()
+        val git: Git = Git.init().
+          setDirectory(origin).
+          setGitDir(new File(origin, ".git")).
+          call()
         git.add().addFilepattern(".").call()
         git.commit().setAuthor("Test", "test@test.test").
           setMessage("Initial commit").call()
 
         val branchName = "test_branch"
+
+        val actionsDir = new File(origin, "actions")
+        val behaviorVersion1ActionDir = new File(actionsDir, behaviorVersion1Name)
+        val behaviorVersion2ActionDir = new File(actionsDir, behaviorVersion2Name)
+
+        val beforeActionsDirList = listDirsIn(actionsDir)
+        beforeActionsDirList mustBe Seq(behaviorVersion1ActionDir)
 
         await(GithubPusher(
           "test",
@@ -138,19 +148,10 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar {
           ec
         ).run)
 
-        val actionsDir = new File(origin, "actions")
-        val behaviorVersion1ActionDir = new File(actionsDir, behaviorVersion1Name)
-        val behaviorVersion2ActionDir = new File(actionsDir, behaviorVersion2Name)
-
-        val beforeActionsDirList = listDirsIn(actionsDir)
-        beforeActionsDirList.contains(behaviorVersion1ActionDir) mustBe true
-        beforeActionsDirList.contains(behaviorVersion2ActionDir) mustBe false
-
         git.checkout().setName(branchName).call()
 
         val afterActionsDirList = listDirsIn(actionsDir)
-        afterActionsDirList.contains(behaviorVersion1ActionDir) mustBe false
-        afterActionsDirList.contains(behaviorVersion2ActionDir) mustBe true
+        afterActionsDirList mustBe Seq(behaviorVersion2ActionDir)
 
         FileUtils.deleteDirectory(specParentDir)
       }
