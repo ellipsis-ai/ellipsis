@@ -25,10 +25,11 @@ import scala.concurrent.Future
 
 class GithubPusherSpec extends PlaySpec with MockitoSugar {
 
-  def listDirsIn(dir: File): Seq[File] = {
+  def listDirsIn(dir: File): Seq[String] = {
     FileUtils.listFilesAndDirs(dir, new NotFileFilter(TrueFileFilter.INSTANCE), TrueFileFilter.INSTANCE).
       asScala.toSeq.
-      filter(file => file != dir)
+      filter(file => file != dir).
+      map(file => file.getName)
   }
 
   "GithubPusher.run" should {
@@ -128,11 +129,9 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar {
         val branchName = "test_branch"
 
         val actionsDir = new File(origin, "actions")
-        val behaviorVersion1ActionDir = new File(actionsDir, behaviorVersion1Name)
-        val behaviorVersion2ActionDir = new File(actionsDir, behaviorVersion2Name)
 
         val beforeActionsDirList = listDirsIn(actionsDir)
-        beforeActionsDirList mustBe Seq(behaviorVersion1ActionDir)
+        beforeActionsDirList mustBe Seq(behaviorVersion1Name)
 
         await(GithubPusher(
           "test",
@@ -151,7 +150,7 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar {
         git.checkout().setName(branchName).call()
 
         val afterActionsDirList = listDirsIn(actionsDir)
-        afterActionsDirList mustBe Seq(behaviorVersion2ActionDir)
+        afterActionsDirList mustBe Seq(behaviorVersion2Name)
 
         FileUtils.deleteDirectory(specParentDir)
       }
