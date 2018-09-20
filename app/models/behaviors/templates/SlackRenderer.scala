@@ -14,7 +14,7 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
         val str = m.matched
         val replacement = if (str == null || str.isEmpty) {
           ""
-        } else if (str.matches("<[@#].+>")) {
+        } else if (str.matches("<[@#!].+>")) {
           str
         } else {
           str.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
