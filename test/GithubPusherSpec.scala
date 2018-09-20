@@ -27,10 +27,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
 class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll {
-  val uuid = IDs.next
-  val temp = FileUtils.getTempDirectory
-  val specParentDir = new File(temp, s"githubpusherspec-$uuid")
-  val parentPath = specParentDir.getAbsolutePath
+  val specParentDir = new File(FileUtils.getTempDirectory, s"githubpusherspec-${IDs.next}")
   val origin = new File(specParentDir, "repo")
   val behaviorGroupId = IDs.next
   val maybeBehaviorGroupExportId = Some(IDs.next)
@@ -177,17 +174,17 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
           "Commit message",
           "token",
           GithubCommitterInfo("Test", "test@test.test"),
-          group,
+          group2,
           user,
           services,
           Some((_, _) => origin.getAbsolutePath),
           ec
         ).run)
 
-        git.checkout().setName(branchName).call()
+        git.checkout().setName(branchName2).call()
 
         val actionsDirList2 = listDirsIn(actionsDir)
-        actionsDirList2 mustBe Seq(actionName)
+        actionsDirList2 mustBe Seq(actionName2)
 
       }
     }
