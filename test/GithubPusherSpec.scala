@@ -19,12 +19,12 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
-import services.DataService
+import services.{DataService, DefaultServices}
 import support.TestContext
 import utils.github.{GithubCommitterInfo, GithubPusher}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll {
   val specParentDir = new File(FileUtils.getTempDirectory, s"githubpusherspec-${IDs.next}")
@@ -57,6 +57,22 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
     list.asScala.toSeq.
       filter(file => file != dir).
       map(file => file.getName)
+  }
+
+  def runPusherFor(group: BehaviorGroup, branchName: String, commitMessage: String, user: User, services: DefaultServices, ec: ExecutionContext): Unit = {
+    await(GithubPusher(
+      owner = "test",
+      repoName = "test",
+      branch = branchName,
+      commitMessage = "First version of skill",
+      repoAccessToken = "token",
+      committerInfo = GithubCommitterInfo("Test", "test@test.test"),
+      behaviorGroup = group,
+      user = user,
+      services = services,
+      maybeRemoteUrlBuilder = Some((_, _) => origin.getAbsolutePath),
+      ec = ec
+    ).run)
   }
 
   def setupGroup(user: User, team: Team, dataService: DataService): BehaviorGroup = {
@@ -130,61 +146,34 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
   "GithubPusher.run" should {
     "commit and push a skill to an empty repo, then push again with a renamed action" in new TestContext {
       running(app) {
-        val group = setupGroup(user, team, dataService)
-        val groupVersion = setupGroupVersionFor(group, dataService)
-        val behavior = setupBehaviorFor(group, user, dataService)
-        val actionName = "happyAction"
-        val behaviorVersion = setupBehaviorVersionFor(actionName, behavior, groupVersion, dataService)
+        val originalGroup = setupGroup(user, team, dataService)
+        val originalGroupVersion = setupGroupVersionFor(originalGroup, dataService)
+        val originalBehavior = setupBehaviorFor(originalGroup, user, dataService)
+        val originalActionName = "happyAction"
+        val originalBehaviorVersion = setupBehaviorVersionFor(originalActionName, originalBehavior, originalGroupVersion, dataService)
 
-        val branchName = "master"
-        await(GithubPusher(
-          owner = "test",
-          repoName = "test",
-          branch = branchName,
-          commitMessage = "First version of skill",
-          repoAccessToken = "token",
-          committerInfo = GithubCommitterInfo("Test", "test@test.test"),
-          behaviorGroup = group,
-          user = user,
-          services = services,
-          maybeRemoteUrlBuilder = Some((_, _) => origin.getAbsolutePath),
-          ec = ec
-        ).run)
+        runPusherFor(originalGroup, "master", "First version of skill", user, services, ec)
 
         val git = Git.open(origin)
         git.reset().setMode(ResetType.HARD).call()
 
         val actionsDir = new File(origin, "actions")
 
-        val actionsDirList = listDirsIn(actionsDir)
-        actionsDirList mustBe Seq(actionName)
+        listDirsIn(actionsDir) mustBe Seq(originalActionName)
 
-        val group2 = setupGroup(user, team, dataService)
-        val groupVersion2 = setupGroupVersionFor(group2, dataService)
-        val behavior2 = setupBehaviorFor(group2, user, dataService)
-        val actionName2 = "happierAction"
-        val behaviorVersion2 = setupBehaviorVersionFor(actionName2, behavior2, groupVersion2, dataService)
+        val modifiedGroup = setupGroup(user, team, dataService)
+        val modifiedGroupVersion = setupGroupVersionFor(modifiedGroup, dataService)
+        val modifiedBehavior = setupBehaviorFor(modifiedGroup, user, dataService)
+        val modifiedActionName = "happierAction"
+        val modifiedBehaviorVersion = setupBehaviorVersionFor(modifiedActionName, modifiedBehavior, modifiedGroupVersion, dataService)
 
-        val branchName2 = "renamed"
+        val modifiedBranch = "renamed"
 
-        await(GithubPusher(
-          "test",
-          "test",
-          branchName2,
-          "Commit message",
-          "token",
-          GithubCommitterInfo("Test", "test@test.test"),
-          group2,
-          user,
-          services,
-          Some((_, _) => origin.getAbsolutePath),
-          ec
-        ).run)
+        runPusherFor(modifiedGroup, modifiedBranch, "Renamed an action", user, services, ec)
 
-        git.checkout().setName(branchName2).call()
+        git.checkout().setName(modifiedBranch).call()
 
-        val actionsDirList2 = listDirsIn(actionsDir)
-        actionsDirList2 mustBe Seq(actionName2)
+        listDirsIn(actionsDir) mustBe Seq(modifiedActionName)
 
       }
     }
