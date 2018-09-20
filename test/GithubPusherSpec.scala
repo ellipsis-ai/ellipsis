@@ -37,15 +37,10 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
 
   override def beforeAll(): Unit = {
     FileUtils.forceMkdir(origin)
-    FileUtils.touch(new File(origin, "README"))
 
-    val git: Git = Git.init().
+    Git.init().
       setDirectory(origin).
       setGitDir(new File(origin, ".git")).call()
-
-    git.add().addFilepattern(".").call()
-    git.commit().setAuthor("Test", "test@test.test").
-      setMessage("Empty repo").call()
   }
 
   override def afterAll(): Unit = {
