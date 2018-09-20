@@ -58,15 +58,15 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
     await(GithubPusher(
       owner = "test",
       repoName = "test",
-      branch = branchName,
+      branchName,
       commitMessage = "First version of skill",
       repoAccessToken = "token",
-      committerInfo = GithubCommitterInfo("Test", "test@test.test"),
-      behaviorGroup = group,
-      user = user,
-      services = services,
-      maybeRemoteUrlBuilder = Some((_, _) => origin.getAbsolutePath),
-      ec = ec
+      GithubCommitterInfo("Test", "test@test.test"),
+      group,
+      user,
+      services,
+      maybeRemoteUrl = Some(origin.getAbsolutePath),
+      ec
     ).run)
   }
 
