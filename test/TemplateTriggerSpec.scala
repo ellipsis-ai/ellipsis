@@ -5,22 +5,22 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
-import models.behaviors.triggers.TemplateMessageTrigger
+import models.behaviors.triggers.{MessageSent, TemplateTrigger}
 import models.team.Team
 
-class TemplateMessageTriggerSpec extends MessageTriggerSpec {
+class TemplateTriggerSpec extends TriggerSpec {
 
-  def triggerFor(template: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): TemplateMessageTrigger = {
+  def triggerFor(template: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = false): TemplateTrigger = {
     val team = Team("Team!")
     val versionId = IDs.next
     val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
     val groupVersion = BehaviorGroupVersion(IDs.next, group, "", None, None, None, OffsetDateTime.now)
     val behavior = Behavior(IDs.next, team, Some(group), Some(versionId), isDataType = false, OffsetDateTime.now)
     val behaviorVersion = BehaviorVersion(versionId, behavior, groupVersion, None, None, None, None, responseType = Normal, canBeMemoized = false, isTest = false, OffsetDateTime.now)
-    TemplateMessageTrigger(IDs.next, behaviorVersion, template, requiresBotMention, isCaseSensitive)
+    TemplateTrigger(IDs.next, behaviorVersion, MessageSent, template, requiresBotMention, isCaseSensitive)
   }
 
-  "TemplateMessageTrigger" should {
+  "TemplateTrigger" should {
 
     "be activated with one word param" in  {
       val trigger = triggerFor("deploy {version}")

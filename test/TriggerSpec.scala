@@ -3,13 +3,13 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorParameter, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 
-trait MessageTriggerSpec extends PlaySpec with MockitoSugar {
+trait TriggerSpec extends PlaySpec with MockitoSugar {
 
-  def matches(trigger: MessageTrigger, text: String, includesBotMention: Boolean = false): Boolean = {
+  def matches(trigger: Trigger, text: String, includesBotMention: Boolean = false): Boolean = {
     trigger.matches(text, includesBotMention)
   }
 
@@ -24,33 +24,33 @@ trait MessageTriggerSpec extends PlaySpec with MockitoSugar {
 
 }
 
-class MessageTriggerObjectSpec extends PlaySpec {
+class TriggerObjectSpec extends PlaySpec {
   "sortKeyFor" should {
     "sort non-regex triggers before regex triggers" in {
-      val trigger1 = MessageTrigger.sortKeyFor("a", isRegex = true)
-      val trigger2 = MessageTrigger.sortKeyFor("b", isRegex = false)
+      val trigger1 = Trigger.sortKeyFor("a", isRegex = true)
+      val trigger2 = Trigger.sortKeyFor("b", isRegex = false)
       Array(trigger1, trigger2).sorted mustBe Array(trigger2, trigger1)
     }
 
     "sort non-regex triggers that start with an alphanumeric before non-regex triggers that don't" in {
-      val trigger1 = MessageTrigger.sortKeyFor(":tada:", isRegex = false)
-      val trigger2 = MessageTrigger.sortKeyFor("lalala", isRegex = false)
-      val trigger3 = MessageTrigger.sortKeyFor("a is for apple", isRegex = false)
+      val trigger1 = Trigger.sortKeyFor(":tada:", isRegex = false)
+      val trigger2 = Trigger.sortKeyFor("lalala", isRegex = false)
+      val trigger3 = Trigger.sortKeyFor("a is for apple", isRegex = false)
       Array(trigger1, trigger2, trigger3).sorted mustBe Array(trigger3, trigger2, trigger1)
     }
 
     "sort non-regex triggers with params after non-regex triggers without params" in {
-      val trigger1 = MessageTrigger.sortKeyFor("a {fruit}", isRegex = false)
-      val trigger2 = MessageTrigger.sortKeyFor("be fruit", isRegex = false)
+      val trigger1 = Trigger.sortKeyFor("a {fruit}", isRegex = false)
+      val trigger2 = Trigger.sortKeyFor("be fruit", isRegex = false)
       Array(trigger1, trigger2).sorted mustBe Array(trigger2, trigger1)
     }
 
     "sort all permutations of triggers correctly" in {
-      val regex1 = MessageTrigger.sortKeyFor("abc", isRegex = true)
-      val regex2 = MessageTrigger.sortKeyFor(".+", isRegex = true)
-      val nonRegexNonAlphanumeric = MessageTrigger.sortKeyFor(":tada:", isRegex = false)
-      val nonRegexParams = MessageTrigger.sortKeyFor("yyy {zzz}", isRegex = false)
-      val nonRegexNoParams = MessageTrigger.sortKeyFor("zzzz", isRegex = false)
+      val regex1 = Trigger.sortKeyFor("abc", isRegex = true)
+      val regex2 = Trigger.sortKeyFor(".+", isRegex = true)
+      val nonRegexNonAlphanumeric = Trigger.sortKeyFor(":tada:", isRegex = false)
+      val nonRegexParams = Trigger.sortKeyFor("yyy {zzz}", isRegex = false)
+      val nonRegexNoParams = Trigger.sortKeyFor("zzzz", isRegex = false)
       Array(regex1, regex2, nonRegexNonAlphanumeric, nonRegexParams, nonRegexNoParams).sorted mustBe {
         Array(nonRegexNoParams, nonRegexParams, nonRegexNonAlphanumeric, regex2, regex1)
       }

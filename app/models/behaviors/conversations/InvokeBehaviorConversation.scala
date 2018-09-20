@@ -11,7 +11,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.{Event, EventType, SlackEvent, SlackMessageEvent}
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import services.caching.CacheService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class InvokeBehaviorConversation(
                                        id: String,
                                        behaviorVersion: BehaviorVersion,
-                                       maybeTrigger: Option[MessageTrigger],
+                                       maybeTrigger: Option[Trigger],
                                        maybeTriggerMessage: Option[String],
                                        context: String, // Slack, etc
                                        maybeChannel: Option[String],
@@ -173,7 +173,7 @@ object InvokeBehaviorConversation {
                  event: Event,
                  maybeChannel: Option[String],
                  maybeThreadId: Option[String],
-                 maybeActivatedTrigger: Option[MessageTrigger],
+                 maybeActivatedTrigger: Option[Trigger],
                  maybeParent: Option[NewParentConversation],
                  dataService: DataService,
                  cacheService: CacheService

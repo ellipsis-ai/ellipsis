@@ -260,7 +260,7 @@ object BehaviorVersionData {
         }
       }).map(_.toMap)
       maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.messageTriggers.allFor(behaviorVersion).map(Some(_))
+        dataService.triggers.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(Future.successful(None))
       maybeDataTypeConfig <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.dataTypeConfigs.maybeFor(behaviorVersion)

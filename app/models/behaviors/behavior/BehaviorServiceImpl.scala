@@ -71,7 +71,7 @@ class BehaviorServiceImpl @Inject() (
 
   def findByTrigger(trigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
     for {
-      triggers <- dataService.messageTriggers.allActiveFor(group)
+      triggers <- dataService.triggers.allActiveFor(group)
     } yield {
       val activated = triggers.filter(_.matches(trigger, includesBotMention = true))
       activated.map(_.behaviorVersion.behavior).headOption

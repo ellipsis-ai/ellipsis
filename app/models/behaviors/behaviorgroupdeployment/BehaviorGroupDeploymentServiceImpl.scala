@@ -11,7 +11,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.Event
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import models.team.Team
 import services.{AWSLambdaService, DataService}
 
@@ -71,11 +71,11 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
     } yield maybeGroupVersion
   }
 
-  def allActiveTriggersFor(context: String, channel: String, team: Team): Future[Seq[MessageTrigger]] = {
+  def allActiveTriggersFor(context: String, channel: String, team: Team): Future[Seq[Trigger]] = {
     for {
       maybeDevModeChannel <- dataService.devModeChannels.find(context, channel, team)
       triggers <- if (maybeDevModeChannel.nonEmpty) {
-        dataService.messageTriggers.allActiveFor(team)
+        dataService.triggers.allActiveFor(team)
       } else {
         for {
           deployments <- mostRecentForTeam(team)
@@ -86,7 +86,7 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
             dataService.behaviorVersions.allForGroupVersion(ea)
           }).map(_.flatten)
           triggers <- Future.sequence(behaviorVersions.map { ea =>
-            dataService.messageTriggers.allFor(ea)
+            dataService.triggers.allFor(ea)
           }).map(_.flatten)
         } yield triggers
       }
@@ -99,13 +99,13 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
                                      maybeChannel: Option[String],
                                      context: String,
                                      maybeLimitToBehavior: Option[Behavior]
-                                   ): Future[Seq[MessageTrigger]] = {
+                                   ): Future[Seq[Trigger]] = {
     for {
       maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
         dataService.behaviors.maybeCurrentVersionFor(limitToBehavior)
       }.getOrElse(Future.successful(None))
       triggers <- maybeLimitToBehaviorVersion.map { limitToBehaviorVersion =>
-        dataService.messageTriggers.allFor(limitToBehaviorVersion)
+        dataService.triggers.allFor(limitToBehaviorVersion)
       }.getOrElse {
         (for {
           team <- maybeTeam

@@ -5,25 +5,25 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
-import models.behaviors.triggers.RegexMessageTrigger
+import models.behaviors.triggers.{MessageSent, RegexTrigger}
 import models.team.Team
 
-class RegexMessageTriggerSpec extends MessageTriggerSpec {
+class RegexTriggerSpec extends TriggerSpec {
 
-  def triggerFor(pattern: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = true): RegexMessageTrigger = {
+  def triggerFor(pattern: String, requiresBotMention: Boolean = false, isCaseSensitive: Boolean = true): RegexTrigger = {
     val team = Team("Team!")
     val versionId = IDs.next
     val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
     val groupVersion = BehaviorGroupVersion(IDs.next, group, "", None, None, None, OffsetDateTime.now)
     val behavior = Behavior(IDs.next, team, Some(group), Some(versionId), isDataType = false, OffsetDateTime.now)
     val behaviorVersion = BehaviorVersion(versionId, behavior, groupVersion, None, None, None, None, responseType = Normal, canBeMemoized = false, isTest = false, OffsetDateTime.now)
-    RegexMessageTrigger(IDs.next, behaviorVersion, pattern, requiresBotMention, isCaseSensitive)
+    RegexTrigger(IDs.next, behaviorVersion, MessageSent, pattern, requiresBotMention, isCaseSensitive)
   }
 
   val oneParamPattern = """deploy\s+(\S+)"""
   val twoParamPattern = """deploy\s+(\S+)\s+(\S+)"""
 
-  "RegexMessageTrigger" should {
+  "RegexTrigger" should {
 
     "be activated with one word param" in  {
       val trigger = triggerFor(oneParamPattern)

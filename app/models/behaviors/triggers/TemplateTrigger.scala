@@ -2,17 +2,17 @@ package models.behaviors.triggers
 
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.triggers.messagetrigger.MessageTrigger
 
 import scala.util.matching.Regex
 
-case class TemplateMessageTrigger(
+case class TemplateTrigger(
                                 id: String,
                                 behaviorVersion: BehaviorVersion,
+                                triggerType: TriggerType,
                                 template: String,
                                 requiresBotMention: Boolean,
                                 isCaseSensitive: Boolean
-                                ) extends MessageTrigger {
+                                ) extends Trigger {
 
   val shouldTreatAsRegex: Boolean = false
 
@@ -26,7 +26,7 @@ case class TemplateMessageTrigger(
 
   def regex: Regex = {
     var pattern = trimmedPattern
-    pattern = TemplateMessageTriggerUtils.escapeRegexCharactersIn(pattern)
+    pattern = TemplateTriggerUtils.escapeRegexCharactersIn(pattern)
     pattern = paramRegex.replaceAllIn(pattern, """(.+)""")
     pattern = """\s+""".r.replaceAllIn(pattern, """\\s+""")
     pattern = """[“”\"]""".r.replaceAllIn(pattern, """[“”\"]""")
@@ -50,7 +50,7 @@ case class TemplateMessageTrigger(
 
 }
 
-object TemplateMessageTriggerUtils {
+object TemplateTriggerUtils {
 
   // need to deal with \\ first
   val specialCharacters = Seq("\\", "^", "$", "?", "-", "[", "]", "(", ")", "+", "*", ".")

@@ -125,7 +125,7 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
     when(dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersion.id)).thenReturn(Future.successful(Some(behaviorVersion)))
 
     when(dataService.behaviorParameters.allFor(any[BehaviorVersion])).thenReturn(Future.successful(Seq()))
-    when(dataService.messageTriggers.allFor(any[BehaviorVersion])).thenReturn(Future.successful(Seq()))
+    when(dataService.triggers.allFor(any[BehaviorVersion])).thenReturn(Future.successful(Seq()))
     when(dataService.dataTypeConfigs.maybeFor(any[BehaviorVersion])).thenReturn(Future.successful(None))
     when(dataService.inputs.allForGroupVersion(any[BehaviorGroupVersion])).thenReturn(Future.successful(Seq()))
     when(dataService.libraries.allFor(any[BehaviorGroupVersion])).thenReturn(Future.successful(Seq()))

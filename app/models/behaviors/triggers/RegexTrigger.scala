@@ -2,17 +2,17 @@ package models.behaviors.triggers
 
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.triggers.messagetrigger.MessageTrigger
 
 import scala.util.matching.Regex
 
-case class RegexMessageTrigger(
+case class RegexTrigger(
                                 id: String,
                                 behaviorVersion: BehaviorVersion,
+                                triggerType: TriggerType,
                                 pattern: String,
                                 requiresBotMention: Boolean,
                                 isCaseSensitive: Boolean
-                                ) extends MessageTrigger {
+                                ) extends Trigger {
 
   def regex: Regex = {
     if (isCaseSensitive) {

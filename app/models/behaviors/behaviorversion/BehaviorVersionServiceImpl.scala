@@ -295,7 +295,7 @@ class BehaviorVersionServiceImpl @Inject() (
         data.triggers.
           filterNot(_.text.trim.isEmpty)
           map { trigger =>
-          dataService.messageTriggers.createForAction(
+          dataService.triggers.createForAction(
             updated,
             trigger.text,
             trigger.requiresMention,

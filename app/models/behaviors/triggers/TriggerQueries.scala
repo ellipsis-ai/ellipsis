@@ -1,24 +1,23 @@
-package models.behaviors.triggers.messagetrigger
+package models.behaviors.triggers
 
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionQueries
 import models.behaviors.behaviorversion.BehaviorVersionQueries
-import models.behaviors.triggers.{RegexMessageTrigger, TemplateMessageTrigger}
 import models.team.TeamsTable
 
-object MessageTriggerQueries {
+object TriggerQueries {
 
-  val all = TableQuery[MessageTriggersTable]
+  val all = TableQuery[TriggersTable]
   val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithGroupVersion).on(_.behaviorVersionId === _._1._1.id)
 
-  type TupleType = (RawMessageTrigger, BehaviorVersionQueries.TupleType)
-  type TableTupleType = (MessageTriggersTable, BehaviorVersionQueries.TableTupleType)
+  type TupleType = (RawTrigger, BehaviorVersionQueries.TupleType)
+  type TableTupleType = (TriggersTable, BehaviorVersionQueries.TableTupleType)
 
-  def tuple2Trigger(tuple: TupleType): MessageTrigger = {
+  def tuple2Trigger(tuple: TupleType): Trigger = {
     val raw = tuple._1
     val behaviorVersion = BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2)
-    val triggerType = if (raw.shouldTreatAsRegex) RegexMessageTrigger else TemplateMessageTrigger
-    triggerType(raw.id, behaviorVersion, raw.pattern, raw.requiresBotMention, raw.isCaseSensitive)
+    val triggerType = if (raw.shouldTreatAsRegex) RegexTrigger else TemplateTrigger
+    triggerType(raw.id, behaviorVersion, raw.triggerType, raw.pattern, raw.requiresBotMention, raw.isCaseSensitive)
   }
 
   def teamFor(tuple: TableTupleType): TeamsTable = tuple._2._1._2._1._2

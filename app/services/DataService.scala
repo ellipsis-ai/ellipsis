@@ -48,7 +48,7 @@ import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
-import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.behaviors.triggers.TriggerService
 import models.billing.active_user_record.ActiveUserRecordService
 import models.billing.addon.AddonService
 import models.devmodechannel.DevModeChannelService
@@ -96,7 +96,7 @@ trait DataService {
   val libraries: LibraryVersionService
   val nodeModuleVersions: NodeModuleVersionService
   val savedAnswers: SavedAnswerService
-  val messageTriggers: MessageTriggerService
+  val triggers: TriggerService
   val messageListeners: MessageListenerService
   val awsConfigs: AWSConfigService
   val requiredAWSConfigs: RequiredAWSConfigService
