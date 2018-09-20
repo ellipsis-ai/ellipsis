@@ -131,7 +131,7 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
   }
 
   "GithubPusher.run" should {
-    "commit and push a skill to an empty repo" in new TestContext {
+    "commit and push a skill to an empty repo, then push again with a renamed action" in new TestContext {
       running(app) {
         val group = setupGroup(user, team, dataService)
         val groupVersion = setupGroupVersionFor(group, dataService)
@@ -161,23 +161,19 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
 
         val actionsDirList = listDirsIn(actionsDir)
         actionsDirList mustBe Seq(actionName)
-      }
-    }
 
-    "commit and push a skill with a renamed action to an existing repo" in new TestContext {
-      running(app) {
-        val group = setupGroup(user, team, dataService)
-        val groupVersion = setupGroupVersionFor(group, dataService)
-        val behavior = setupBehaviorFor(group, user, dataService)
-        val actionName = "happierAction"
-        val behaviorVersion = setupBehaviorVersionFor(actionName, behavior, groupVersion, dataService)
+        val group2 = setupGroup(user, team, dataService)
+        val groupVersion2 = setupGroupVersionFor(group2, dataService)
+        val behavior2 = setupBehaviorFor(group2, user, dataService)
+        val actionName2 = "happierAction"
+        val behaviorVersion2 = setupBehaviorVersionFor(actionName2, behavior2, groupVersion2, dataService)
 
-        val branchName = "renamed"
+        val branchName2 = "renamed"
 
         await(GithubPusher(
           "test",
           "test",
-          branchName,
+          branchName2,
           "Commit message",
           "token",
           GithubCommitterInfo("Test", "test@test.test"),
@@ -188,12 +184,10 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
           ec
         ).run)
 
-        val git = Git.open(origin)
         git.checkout().setName(branchName).call()
 
-        val actionsDir = new File(origin, "actions")
-        val actionsDirList = listDirsIn(actionsDir)
-        actionsDirList mustBe Seq(actionName)
+        val actionsDirList2 = listDirsIn(actionsDir)
+        actionsDirList2 mustBe Seq(actionName)
 
       }
     }
