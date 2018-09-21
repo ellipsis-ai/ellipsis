@@ -1,10 +1,9 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behavior.Behavior
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.team.Team
@@ -23,7 +22,9 @@ case class RunEvent(
                      maybeThreadId: Option[String],
                      user: String,
                      ts: String,
-                     maybeOriginalEventType: Option[EventType]
+                     maybeOriginalEventType: Option[EventType],
+                     override val isEphemeral: Boolean,
+                     override val maybeResponseUrl: Option[String]
                   ) extends Event with SlackEvent {
 
   val eventType: EventType = EventType.api
@@ -33,6 +34,8 @@ case class RunEvent(
 
   val messageText: String = ""
   val includesBotMention: Boolean = false
+  def messageUserDataList: Set[MessageUserData] = Set.empty
+
   val isResponseExpected: Boolean = false
   val invocationLogText: String = s"Running behavior ${behaviorVersion.id}"
 
@@ -42,13 +45,18 @@ case class RunEvent(
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
 
+  override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    val client = services.slackApiService.clientFor(profile)
+    client.permalinkFor(channel, ts)
+  }
+
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
     dataService.conversations.allOngoingFor(userIdForContext, context, maybeChannel, maybeThreadId, teamId)
   }
 
   def sendMessage(
                    unformattedText: String,
-                   forcePrivate: Boolean,
+                   responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
@@ -60,16 +68,16 @@ case class RunEvent(
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     for {
       botName <- botName(services)
-      channelToUse <- channelForSend(forcePrivate, maybeConversation, services)
+      maybeDMChannel <- eventualMaybeDMChannel(services)
       maybeTs <- SlackMessageSender(
         services.slackApiService.clientFor(profile),
         user,
         profile.slackTeamId,
         unformattedText,
-        forcePrivate = forcePrivate,
+        responseType,
         developerContext,
         channel,
-        channelToUse,
+        maybeDMChannel,
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,
@@ -78,8 +86,10 @@ case class RunEvent(
         choices,
         configuration,
         botName,
-        Set.empty[SlackUserData],
-        services
+        Set.empty[MessageUserData],
+        services,
+        isEphemeral,
+        maybeResponseUrl
       ).send
     } yield maybeTs
   }
@@ -103,7 +113,8 @@ case class RunEvent(
         invocationParams,
         None,
         None,
-        None
+        None,
+        userExpectsResponse = true
       )
     } yield Seq(response)
   }

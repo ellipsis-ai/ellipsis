@@ -1,12 +1,14 @@
 package controllers.web.settings
 
 import javax.inject.Inject
-
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.admin.AdminAuth
 import controllers.{ReAuthable, RemoteAssets}
 import json._
 import json.Formatting._
+import models.accounts.user.{User, UserTeamAccess}
+import models.environmentvariable.TeamEnvironmentVariable
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.data.Form
@@ -23,7 +25,7 @@ class EnvironmentVariablesController @Inject() (
                                                  val configuration: Configuration,
                                                  val assetsProvider: Provider[RemoteAssets],
                                                  implicit val ec: ExecutionContext
-                                               ) extends ReAuthable {
+                                               ) extends ReAuthable with AdminAuth {
 
   case class EnvironmentVariablesInfo(teamId: String, dataJson: String)
 
@@ -34,8 +36,17 @@ class EnvironmentVariablesController @Inject() (
     )(EnvironmentVariablesInfo.apply)(EnvironmentVariablesInfo.unapply)
   )
 
-  private val deleteForm = Form(
+  case class EnvironmentVariablesDeleteInfo(teamId: String, name: String)
+
+  private val legacyDeleteForm = Form(
     "name" -> nonEmptyText
+  )
+
+  private val deleteForm = Form(
+    mapping(
+      "teamId" -> nonEmptyText,
+      "name" -> nonEmptyText
+    )(EnvironmentVariablesDeleteInfo.apply)(EnvironmentVariablesDeleteInfo.unapply)
   )
 
   def list(maybeTeamId: Option[String], maybeNewVarsString: Option[String]) = silhouette.SecuredAction.async { implicit request =>
@@ -44,6 +55,7 @@ class EnvironmentVariablesController @Inject() (
       case Accepts.JavaScript() => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+          isAdmin <- dataService.users.isAdmin(user)
           environmentVariables <- teamAccess.maybeTargetTeam.map { team =>
             dataService.teamEnvironmentVariables.allFor(team)
           }.getOrElse(Future.successful(Seq()))
@@ -66,8 +78,8 @@ class EnvironmentVariablesController @Inject() (
             val config = EnvironmentVariablesListConfig(
               containerId = "environmentVariableList",
               csrfToken = CSRF.getToken(request).map(_.value),
-              teamAccess.isAdminAccess,
-              data = EnvironmentVariablesData(team.id, varsData ++ newVarsData),
+              isAdmin,
+              data = EnvironmentVariablesData(team.id, varsData ++ newVarsData, None),
               focus = maybeNewVars.flatMap(_.headOption)
             )
             Ok(views.js.shared.webpackLoader(
@@ -117,7 +129,8 @@ class EnvironmentVariablesController @Inject() (
                   Json.toJson(
                     EnvironmentVariablesData(
                       data.teamId,
-                      envVars.map( ea => EnvironmentVariableData.withoutValueFor(ea) )
+                      envVars.map(EnvironmentVariableData.withoutValueFor),
+                      None
                     )
                   )
                 )
@@ -132,27 +145,57 @@ class EnvironmentVariablesController @Inject() (
     )
   }
 
+  private def deleteFor(user: User, maybeTeamId: Option[String], name: String) = {
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      isDeleted <- teamAccess.maybeTargetTeam.map { team =>
+        dataService.teamEnvironmentVariables.deleteFor(name, team)
+      }.getOrElse(Future.successful(false))
+    } yield {
+      if (isDeleted) {
+        Ok(Json.toJson("Deleted"))
+      } else {
+        NotFound("Couldn't find env var to delete for this team")
+      }
+    }
+  }
+
   def delete = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     deleteForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+        legacyDeleteForm.bindFromRequest.fold(
+          _ => Future.successful(BadRequest(formWithErrors.errorsAsJson)),
+          name => deleteFor(user, None, name)
+        )
       },
-      name => {
-        for {
-          maybeTeam <- dataService.teams.find(user.teamId)
-          isDeleted <- maybeTeam.map { team =>
-            dataService.teamEnvironmentVariables.deleteFor(name, team)
-          }.getOrElse(Future.successful(false))
-        } yield {
-          if (isDeleted) {
-            Ok("Deleted")
+      info => deleteFor(user, Some(info.teamId), info.name)
+    )
+  }
+
+  def adminLoadValue(teamId: String, envVarName: String) = silhouette.SecuredAction.async { implicit request =>
+    withIsAdminCheck { () =>
+      for {
+        maybeTeam <- dataService.teams.find(teamId)
+        maybeEnvVar <- maybeTeam.map { team =>
+          dataService.teamEnvironmentVariables.find(envVarName, team)
+        }.getOrElse(Future.successful(None))
+      } yield {
+        maybeTeam.map { team =>
+          val envVars = Seq(maybeEnvVar.map { v =>
+            EnvironmentVariableData(v.name, v.value.nonEmpty, Option(v.value).filter(_.nonEmpty))
+          }).flatten
+          val maybeError = if (envVars.isEmpty) {
+            Some(s"Environment variable `${envVarName}` not found")
           } else {
-            NotFound("Couldn't find env var to delete for this team")
+            None
           }
+          Ok(Json.toJson(EnvironmentVariablesData(team.id, envVars, maybeError)))
+        }.getOrElse {
+          NotFound("Team not found")
         }
       }
-    )
+    }
   }
 
 

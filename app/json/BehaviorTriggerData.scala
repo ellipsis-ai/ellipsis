@@ -1,6 +1,6 @@
 package json
 
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import utils.FuzzyMatchPattern
 
 case class BehaviorTriggerData(
@@ -14,7 +14,7 @@ case class BehaviorTriggerData(
 
   import scala.math.Ordered.orderingToOrdered
   def compare(that: BehaviorTriggerData): Int = {
-    MessageTrigger.sortKeyFor(this.text, this.isRegex) compare MessageTrigger.sortKeyFor(that.text, that.isRegex)
+    Trigger.sortKeyFor(this.text, this.isRegex) compare Trigger.sortKeyFor(that.text, that.isRegex)
   }
 
   val maybePattern: Option[String] = {

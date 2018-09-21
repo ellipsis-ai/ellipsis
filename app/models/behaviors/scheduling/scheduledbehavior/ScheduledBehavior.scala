@@ -63,7 +63,9 @@ case class ScheduledBehavior(
             None,
             slackUserId,
             SlackTimestamp.now,
-            Some(EventType.scheduled)
+            Some(EventType.scheduled),
+            isEphemeral = false,
+            None
           ),
           this
         )
@@ -71,12 +73,18 @@ case class ScheduledBehavior(
     }
   }
 
-  def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledBehavior = {
-    this.copy(nextSentAt = recurrence.nextAfter(when))
+  def updatedWithNextRunAfter(when: OffsetDateTime): ScheduledBehavior = {
+    this.copy(nextSentAt = recurrence.nextAfter(when), recurrence = recurrence.incrementTimesHasRun)
   }
 
-  def updateNextTriggeredForAction(dataService: DataService): DBIO[ScheduledBehavior] = {
-    dataService.scheduledBehaviors.updateNextTriggeredForAction(this)
+  def updateForNextRunAction(dataService: DataService): DBIO[ScheduledBehavior] = {
+    dataService.scheduledBehaviors.updateForNextRunAction(this)
+  }
+
+  def deleteAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Unit] = {
+    dataService.scheduledBehaviors.deleteAction(this).map { _ =>
+      {}
+    }
   }
 
   def toRaw: RawScheduledBehavior = {

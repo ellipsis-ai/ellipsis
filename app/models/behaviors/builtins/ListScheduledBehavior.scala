@@ -1,6 +1,7 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.Event
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.{BotResult, SimpleTextResult}
@@ -83,7 +84,7 @@ case class ListScheduledBehavior(
         responseFor(scheduled)
       }
     } yield {
-      SimpleTextResult(event, None, responseText, forcePrivateResponse = false)
+      SimpleTextResult(event, None, responseText, responseType = Normal)
     }
   }
 

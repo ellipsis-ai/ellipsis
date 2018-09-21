@@ -3,10 +3,14 @@ package models.behaviors
 import akka.actor.ActorSystem
 import json.Formatting._
 import models.IDs
+import models.accounts.OAuth2State
 import models.accounts.logintoken.LoginToken
+import models.accounts.oauth1application.OAuth1Application
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.ResultType.ResultType
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Normal, Private}
+import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
@@ -14,6 +18,7 @@ import models.behaviors.templates.TemplateApplier
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json._
+import play.api.mvc.Call
 import services.AWSLambdaConstants._
 import services.caching.CacheService
 import services.{AWSLambdaLogResult, DataService, DefaultServices}
@@ -48,7 +53,7 @@ case class ActionChoice(
                          allowOthers: Option[Boolean],
                          allowMultipleSelections: Option[Boolean],
                          userId: Option[String],
-                         groupVersionId: Option[String]
+                         originatingBehaviorVersionId: Option[String]
                        ) extends WithActionArgs {
 
   val areOthersAllowed: Boolean = allowOthers.contains(true)
@@ -60,9 +65,10 @@ case class ActionChoice(
   }
 
   private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    groupVersionId.map { gvid =>
+    originatingBehaviorVersionId.map { bvid =>
       for {
-        maybeGroupVersion <- dataService.behaviorGroupVersions.findWithoutAccessCheck(gvid)
+        maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(bvid)
+        maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
         maybeActionChoiceSlackTeamId <- maybeGroupVersion.map { gv =>
           dataService.slackBotProfiles.allFor(gv.team).map(_.headOption.map(_.slackTeamId))
         }.getOrElse(Future.successful(None))
@@ -93,7 +99,7 @@ case class ActionChoice(
 
 sealed trait BotResult {
   val resultType: ResultType.Value
-  val forcePrivateResponse: Boolean
+  val responseType: BehaviorResponseType
   val event: Event
   val maybeConversation: Option[Conversation]
   val maybeBehaviorVersion: Option[BehaviorVersion]
@@ -142,7 +148,7 @@ sealed trait BotResult {
   }
 
   def maybeChannelForSendAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
-    event.maybeChannelForSendAction(forcePrivateResponse, maybeConversation, services)
+    event.maybeChannelForSendAction(responseType, maybeConversation, services)
   }
 
   val interruptionPrompt = {
@@ -254,7 +260,7 @@ case class SuccessResult(
                           invocationJson: JsObject,
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
-                          forcePrivateResponse: Boolean,
+                          override val responseType: BehaviorResponseType,
                           developerContext: DeveloperContext
                         ) extends BotResultWithLogResult {
 
@@ -282,7 +288,7 @@ case class SuccessResult(
         choices.map { ea =>
           ea.copy(
             userId = Some(user.id),
-            groupVersionId = Some(behaviorVersion.groupVersion.id)
+            originatingBehaviorVersionId = Some(behaviorVersion.id)
           )
         }
       }
@@ -299,7 +305,7 @@ case class SimpleTextResult(
                              event: Event,
                              maybeConversation: Option[Conversation],
                              simpleText: String,
-                             forcePrivateResponse: Boolean,
+                             override val responseType: BehaviorResponseType,
                              override val shouldInterrupt: Boolean = true
                            ) extends BotResult {
 
@@ -317,7 +323,7 @@ case class TextWithAttachmentsResult(
                                       event: Event,
                                       maybeConversation: Option[Conversation],
                                       simpleText: String,
-                                      forcePrivateResponse: Boolean,
+                                      override val responseType: BehaviorResponseType,
                                       override val attachmentGroups: Seq[MessageAttachmentGroup]
                                     ) extends BotResult {
   val resultType = ResultType.TextWithActions
@@ -340,7 +346,7 @@ case class NoResponseResult(
   val developerContext: DeveloperContext = DeveloperContext.default
 
   val resultType = ResultType.NoResponse
-  val forcePrivateResponse = false // N/A
+  val responseType: BehaviorResponseType = Normal // N/A
   override val shouldInterrupt = false
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
@@ -356,7 +362,7 @@ trait WithBehaviorLink {
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
   val dataService: DataService
   val configuration: Configuration
-  val forcePrivateResponse = behaviorVersion.forcePrivateResponse
+  val responseType: BehaviorResponseType = behaviorVersion.responseType
   val team: Team = behaviorVersion.team
 
   def link: String = dataService.behaviors.editLinkFor(behaviorVersion.group.id, Some(behaviorVersion.behavior.id), configuration)
@@ -510,6 +516,7 @@ case class AdminSkillErrorNotificationResult(
                                             ) extends BotResult {
 
   val resultType = ResultType.AdminSkillErrorNotification
+  val responseType: BehaviorResponseType = Normal
 
   override def shouldIncludeLogs: Boolean = true
 
@@ -541,7 +548,6 @@ case class AdminSkillErrorNotificationResult(
   lazy val maybeConversation: Option[Conversation] = None
   lazy val maybeBehaviorVersion: Option[BehaviorVersion] = originalResult.maybeBehaviorVersion
   override def maybeLogFile: Option[UploadFileSpec] = originalResult.maybeLogFile
-  val forcePrivateResponse: Boolean = false
 
 }
 
@@ -584,7 +590,7 @@ case class AWSDownResult(
                         ) extends BotResult {
 
   val resultType = ResultType.AWSDown
-  val forcePrivateResponse = false
+  val responseType: BehaviorResponseType = Normal
 
   val developerContext: DeveloperContext = DeveloperContext.default
 
@@ -602,6 +608,61 @@ case class AWSDownResult(
 
 }
 
+trait OAuthTokenMissing {
+  val key = IDs.next
+
+  val resultType = ResultType.OAuth2TokenMissing
+
+  val behaviorVersion: BehaviorVersion
+  val loginToken: LoginToken
+  val event: Event
+  val configuration: Configuration
+  val cacheService: CacheService
+  val apiApplicationId: String
+  val apiApplicationName: String
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+
+  val responseType: BehaviorResponseType = Private
+
+  val redirectPath: Call
+
+  def authLink: String = {
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val redirect = s"$baseUrl$redirectPath"
+    val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))
+    s"$baseUrl$authPath"
+  }
+
+  def text: String = {
+    s"""To use this skill, you need to [authenticate with ${apiApplicationName}]($authLink).
+       |
+       |You only need to do this one time for ${apiApplicationName}. You may be prompted to sign in to Ellipsis using your Slack account.
+       |""".stripMargin
+  }
+
+  def beforeSend: Unit = cacheService.cacheEvent(key, event, 5.minutes)
+}
+
+case class OAuth1TokenMissing(
+                               oAuth1Application: OAuth1Application,
+                               event: Event,
+                               behaviorVersion: BehaviorVersion,
+                               maybeConversation: Option[Conversation],
+                               loginToken: LoginToken,
+                               cacheService: CacheService,
+                               configuration: Configuration,
+                               developerContext: DeveloperContext
+                             ) extends BotResult with OAuthTokenMissing {
+
+  val apiApplicationId: String = oAuth1Application.id
+  val apiApplicationName: String = oAuth1Application.name
+
+  val redirectPath: Call = controllers.routes.APIAccessController.linkCustomOAuth1Service(apiApplicationId, Some(key), None)
+
+  override def beforeSend: Unit = super.beforeSend
+}
+
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
                                event: Event,
@@ -611,56 +672,59 @@ case class OAuth2TokenMissing(
                                cacheService: CacheService,
                                configuration: Configuration,
                                developerContext: DeveloperContext
-                             ) extends BotResult {
+                             ) extends BotResult with OAuthTokenMissing {
 
-  val key = IDs.next
+  val apiApplicationId: String = oAuth2Application.id
+  val apiApplicationName: String = oAuth2Application.name
 
-  val resultType = ResultType.OAuth2TokenMissing
+  val state: String = OAuth2State(IDs.next, Some(key), None).encodedString
 
+  val redirectPath: Call = controllers.routes.APIAccessController.linkCustomOAuth2Service(apiApplicationId, None, Some(state))
+
+  override def beforeSend: Unit = super.beforeSend
+}
+
+trait RequiredApiNotReady {
+  val resultType: ResultType = ResultType.RequiredApiNotReady
+  val responseType: BehaviorResponseType = Private
+
+  val behaviorVersion: BehaviorVersion
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+  val dataService: DataService
+  val configuration: Configuration
 
-  val forcePrivateResponse = true
+  val requiredApiName: String
 
-  def authLink: String = {
-    val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val redirectPath = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key), None)
-    val redirect = s"$baseUrl$redirectPath"
-    val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))
-    s"$baseUrl$authPath"
+  def configLink: String = dataService.behaviors.editLinkFor(behaviorVersion.groupVersion.group.id, None, configuration)
+  def configText: String = {
+    s"You first must [configure the ${requiredApiName} API]($configLink)"
   }
 
   def text: String = {
-    s"""To use this skill, you need to [authenticate with ${oAuth2Application.name}]($authLink).
-       |
-       |You only need to do this one time for ${oAuth2Application.name}. You may be prompted to sign in to Ellipsis using your Slack account.
-       |""".stripMargin
+    s"This skill is not ready to use. $configText."
   }
-
-  override def beforeSend: Unit = cacheService.cacheEvent(key, event, 5.minutes)
 }
 
-case class RequiredApiNotReady(
-                                required: RequiredOAuth2ApiConfig,
+case class RequiredOAuth1ApiNotReady(
+                                required: RequiredOAuth1ApiConfig,
                                 event: Event,
                                 behaviorVersion: BehaviorVersion,
                                 maybeConversation: Option[Conversation],
                                 dataService: DataService,
                                 configuration: Configuration,
                                 developerContext: DeveloperContext
-                             ) extends BotResult {
+                             ) extends BotResult with RequiredApiNotReady {
+  val requiredApiName: String = required.api.name
+}
 
-  val resultType = ResultType.RequiredApiNotReady
-  val forcePrivateResponse = true
-
-  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
-
-  def configLink: String = dataService.behaviors.editLinkFor(required.groupVersion.group.id, None, configuration)
-  def configText: String = {
-    s"You first must [configure the ${required.api.name} API]($configLink)"
-  }
-
-  def text: String = {
-    s"This skill is not ready to use. $configText."
-  }
-
+case class RequiredOAuth2ApiNotReady(
+                                      required: RequiredOAuth2ApiConfig,
+                                      event: Event,
+                                      behaviorVersion: BehaviorVersion,
+                                      maybeConversation: Option[Conversation],
+                                      dataService: DataService,
+                                      configuration: Configuration,
+                                      developerContext: DeveloperContext
+                                    ) extends BotResult with RequiredApiNotReady {
+  val requiredApiName: String = required.api.name
 }

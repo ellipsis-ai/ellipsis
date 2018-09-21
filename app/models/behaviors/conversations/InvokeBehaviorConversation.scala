@@ -11,7 +11,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.{Event, EventType, SlackEvent, SlackMessageEvent}
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import services.caching.CacheService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class InvokeBehaviorConversation(
                                        id: String,
                                        behaviorVersion: BehaviorVersion,
-                                       maybeTrigger: Option[MessageTrigger],
+                                       maybeTrigger: Option[Trigger],
                                        maybeTriggerMessage: Option[String],
                                        context: String, // Slack, etc
                                        maybeChannel: Option[String],
@@ -113,7 +113,7 @@ case class InvokeBehaviorConversation(
       collectionStates <- collectionStatesForAction(event, services)
       result <- collectionStates.find(_.name == state).map(_.promptResultForAction(this, isReminding)).getOrElse {
         val paramState = paramStateIn(collectionStates)
-        services.dataService.behaviorResponses.buildForAction(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), None).flatMap { br =>
+        services.dataService.behaviorResponses.buildForAction(event, behaviorVersion, paramState.invocationMap, maybeTrigger, Some(this), None, userExpectsResponse = true).flatMap { br =>
           br.resultForFilledOutAction
         }
       }
@@ -172,7 +172,8 @@ object InvokeBehaviorConversation {
                  behaviorVersion: BehaviorVersion,
                  event: Event,
                  maybeChannel: Option[String],
-                 maybeActivatedTrigger: Option[MessageTrigger],
+                 maybeThreadId: Option[String],
+                 maybeActivatedTrigger: Option[Trigger],
                  maybeParent: Option[NewParentConversation],
                  dataService: DataService,
                  cacheService: CacheService
@@ -192,7 +193,7 @@ object InvokeBehaviorConversation {
         event.maybeMessageText,
         event.name,
         maybeChannel,
-        None,
+        maybeParent.flatMap(_.parent.maybeThreadId).orElse(maybeThreadId),
         event.userIdForContext,
         maybeTeamIdForContext,
         OffsetDateTime.now,
@@ -207,6 +208,7 @@ object InvokeBehaviorConversation {
       maybeChannel.foreach { channel =>
         cacheService.cacheLastConversationId(event.teamId, channel, newInstance.id)
       }
+      cacheService.cacheMessageUserDataList(event.messageUserDataList.toSeq, newInstance.id)
       newInstance
     }
     dataService.run(action.transactionally)

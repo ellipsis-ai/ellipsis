@@ -8,7 +8,7 @@ import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackTimestamp
@@ -18,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait Conversation {
   val id: String
   val behaviorVersion: BehaviorVersion
-  val maybeTrigger: Option[MessageTrigger]
+  val maybeTrigger: Option[Trigger]
   val maybeTriggerMessage: Option[String]
   val maybeOriginalEventType: Option[EventType]
   val maybeParentId: Option[String]
@@ -66,7 +66,9 @@ trait Conversation {
         None,
         SlackTimestamp.now,
         None, // TODO: Pass the original event type down to here if we actually care about it, but it doesn't seem useful at present
-        isUninterruptedConversation = false
+        isUninterruptedConversation = false,
+        isEphemeral = false,
+        None
       )
     }
   }
@@ -126,7 +128,7 @@ trait Conversation {
           val actionList = Seq(SlackMessageActionButton(callbackId, "Stop asking", id))
           val question = result.text
           val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, Some(question), None, None)
-          Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.forcePrivateResponse, Seq(actionsGroup)))
+          Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.responseType, Seq(actionsGroup)))
         }
       }.getOrElse(DBIO.successful(None))
     }

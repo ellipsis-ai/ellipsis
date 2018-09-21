@@ -5,7 +5,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.Event
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import models.team.Team
 import slick.dbio.DBIO
 
@@ -24,18 +24,20 @@ trait BehaviorResponseService {
                       event: Event,
                       behaviorVersion: BehaviorVersion,
                       paramValues: Map[String, String],
-                      maybeActivatedTrigger: Option[MessageTrigger],
+                      maybeActivatedTrigger: Option[Trigger],
                       maybeConversation: Option[Conversation],
-                      maybeNewParent: Option[NewParentConversation]
+                      maybeNewParent: Option[NewParentConversation],
+                      userExpectsResponse: Boolean
                     ): DBIO[BehaviorResponse]
 
   def buildFor(
                 event: Event,
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
-                maybeActivatedTrigger: Option[MessageTrigger],
+                maybeActivatedTrigger: Option[Trigger],
                 maybeConversation: Option[Conversation],
-                maybeNewParent: Option[NewParentConversation]
+                maybeNewParent: Option[NewParentConversation],
+                userExpectsResponse: Boolean
               ): Future[BehaviorResponse]
 
   def allFor(

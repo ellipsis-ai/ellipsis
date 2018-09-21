@@ -1,5 +1,6 @@
 import ApiConfigRef from './api_config_ref';
 import RequiredApiConfig from './required_api_config';
+import {RequiredOAuthEditor} from "./oauth";
 
 abstract class RequiredApiConfigWithConfig extends RequiredApiConfig {
   readonly config?: Option<ApiConfigRef>;
@@ -22,6 +23,10 @@ abstract class RequiredApiConfigWithConfig extends RequiredApiConfig {
     canHaveConfig(): boolean {
       return true;
     }
-  }
+
+    abstract getApiLogoUrl(editor: RequiredOAuthEditor)
+
+    abstract clone(props: Partial<RequiredApiConfigWithConfig>): RequiredApiConfigWithConfig
+}
 
 export default RequiredApiConfigWithConfig;

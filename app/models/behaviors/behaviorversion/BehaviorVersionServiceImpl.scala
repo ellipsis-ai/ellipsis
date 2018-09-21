@@ -29,13 +29,18 @@ case class RawBehaviorVersion(
                                maybeName: Option[String],
                                maybeFunctionBody: Option[String],
                                maybeResponseTemplate: Option[String],
-                               forcePrivateResponse: Boolean,
+                               responseType: BehaviorResponseType,
                                canBeMemoized: Boolean,
                                isTest: Boolean,
                                createdAt: OffsetDateTime
                              )
 
 class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "behavior_versions") {
+
+  implicit val responseTypeColumnType = MappedColumnType.base[BehaviorResponseType, String](
+    { gt => gt.toString },
+    { str => BehaviorResponseType.definitelyFind(str) }
+  )
 
   def id = column[String]("id", O.PrimaryKey)
 
@@ -51,7 +56,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
 
   def maybeResponseTemplate = column[Option[String]]("response_template")
 
-  def forcePrivateResponse = column[Boolean]("private_response")
+  def responseType = column[BehaviorResponseType]("response_type")
 
   def canBeMemoized = column[Boolean]("can_be_memoized")
 
@@ -60,7 +65,7 @@ class BehaviorVersionsTable(tag: Tag) extends Table[RawBehaviorVersion](tag, "be
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, forcePrivateResponse, canBeMemoized, isTest, createdAt) <>
+    (id, behaviorId, groupVersionId, maybeDescription, maybeName, maybeFunctionBody, maybeResponseTemplate, responseType, canBeMemoized, isTest, createdAt) <>
       ((RawBehaviorVersion.apply _).tupled, RawBehaviorVersion.unapply _)
 }
 
@@ -241,7 +246,7 @@ class BehaviorVersionServiceImpl @Inject() (
       None,
       None,
       None,
-      forcePrivateResponse = false,
+      responseType = Normal,
       canBeMemoized = false,
       isTest,
       OffsetDateTime.now
@@ -256,7 +261,7 @@ class BehaviorVersionServiceImpl @Inject() (
         raw.maybeName,
         raw.maybeFunctionBody.map(_.trim),
         raw.maybeResponseTemplate,
-        raw.forcePrivateResponse,
+        raw.responseType,
         raw.canBeMemoized,
         raw.isTest,
         raw.createdAt
@@ -278,7 +283,7 @@ class BehaviorVersionServiceImpl @Inject() (
         maybeDescription = data.description,
         maybeFunctionBody = Some(data.functionBody),
         maybeResponseTemplate = Some(data.responseTemplate),
-        forcePrivateResponse = data.config.forcePrivateResponse.exists(identity),
+        responseType = BehaviorResponseType.definitelyFind(data.config.responseTypeId),
         canBeMemoized = data.config.canBeMemoized.exists(identity)
       ))
       inputs <- DBIO.sequence(data.inputIds.map { inputId =>
@@ -290,7 +295,7 @@ class BehaviorVersionServiceImpl @Inject() (
         data.triggers.
           filterNot(_.text.trim.isEmpty)
           map { trigger =>
-          dataService.messageTriggers.createForAction(
+          dataService.triggers.createForAction(
             updated,
             trigger.text,
             trigger.requiresMention,
@@ -351,9 +356,14 @@ class BehaviorVersionServiceImpl @Inject() (
   def maybeNotReadyResultForAction(behaviorVersion: BehaviorVersion, event: Event): DBIO[Option[BotResult]] = {
     for {
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingInAction(behaviorVersion, dataService)
+      requiredOAuth1ApiConfigs <- dataService.requiredOAuth1ApiConfigs.allForAction(behaviorVersion.groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
-      userInfo <- event.userInfoAction(defaultServices)
+      userInfo <- event.userInfoAction(None, defaultServices)
+      notReadyOAuth1Applications <- DBIO.successful(requiredOAuth1ApiConfigs.filterNot(_.isReady))
       notReadyOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
+      missingOAuth1Applications <- DBIO.successful(requiredOAuth1ApiConfigs.flatMap(_.maybeApplication).filter { app =>
+        !userInfo.links.exists(_.externalSystem == app.name)
+      })
       missingOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
         !userInfo.links.exists(_.externalSystem == app.name)
       })
@@ -373,18 +383,29 @@ class BehaviorVersionServiceImpl @Inject() (
         )
         )
       } else {
-        notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
-          DBIO.successful(Some(RequiredApiNotReady(firstNotReadyOAuth2App, event, behaviorVersion, None,  dataService, configuration, developerContext)
-          ))
+        notReadyOAuth1Applications.headOption.map { firstNotReadyOAuth1App =>
+          DBIO.successful(Some(RequiredOAuth1ApiNotReady(firstNotReadyOAuth1App, event, behaviorVersion, None,  dataService, configuration, developerContext)))
         }.getOrElse {
-          val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
-          missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
-            event.ensureUserAction(dataService).flatMap { user =>
-              dataService.loginTokens.createForAction(user).map { loginToken =>
-                OAuth2TokenMissing(firstMissingOAuth2App, event, behaviorVersion, None, loginToken, cacheService, configuration, developerContext)
-              }
-            }.map(Some(_))
-          }.getOrElse(DBIO.successful(None))
+          notReadyOAuth2Applications.headOption.map { firstNotReadyOAuth2App =>
+            DBIO.successful(Some(RequiredOAuth2ApiNotReady(firstNotReadyOAuth2App, event, behaviorVersion, None,  dataService, configuration, developerContext)))
+          }.getOrElse {
+            missingOAuth1Applications.headOption.map { firstMissingOAuth1App =>
+              event.ensureUserAction(dataService).flatMap { user =>
+                dataService.loginTokens.createForAction(user).map { loginToken =>
+                  OAuth1TokenMissing(firstMissingOAuth1App, event, behaviorVersion, None, loginToken, cacheService, configuration, developerContext)
+                }
+              }.map(Some(_))
+            }.getOrElse {
+              val missingOAuth2ApplicationsRequiringAuth = missingOAuth2Applications.filter(_.api.grantType.requiresAuth)
+              missingOAuth2ApplicationsRequiringAuth.headOption.map { firstMissingOAuth2App =>
+                event.ensureUserAction(dataService).flatMap { user =>
+                  dataService.loginTokens.createForAction(user).map { loginToken =>
+                    OAuth2TokenMissing(firstMissingOAuth2App, event, behaviorVersion, None, loginToken, cacheService, configuration, developerContext)
+                  }
+                }.map(Some(_))
+              }.getOrElse(DBIO.successful(None))
+            }
+          }
         }
       }
     } yield maybeResult

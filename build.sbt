@@ -38,7 +38,7 @@ libraryDependencies ++= Seq(
   guice,
   "com.github.tminglei" %% "slick-pg" % "0.15.3",
   "com.github.tminglei" %% "slick-pg_play-json" % "0.15.3",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.1" % Test,
   "org.mockito" % "mockito-core" % "1.8.5" % Test,
   "com.mohiva" %% "play-silhouette" % "5.0.0",
   "com.mohiva" %% "play-silhouette-persistence" % "5.0.0",
@@ -63,7 +63,9 @@ libraryDependencies ++= Seq(
   "net.logstash.logback" % "logstash-logback-encoder" % "4.11",
   "io.sentry" % "sentry-logback" % "1.5.6",
   "com.chargebee" % "chargebee-java" % "2.3.8",
-  "com.typesafe.akka" %% "akka-http-caching" % "10.1.0-RC2"
+  "com.typesafe.akka" %% "akka-http-caching" % "10.1.0-RC2",
+  "org.eclipse.jgit" % "org.eclipse.jgit" % "5.0.2.201807311906-r",
+  "commons-io" % "commons-io" % "2.6"
 )
 
 // JavaScript configuration begins

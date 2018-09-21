@@ -31,11 +31,13 @@ case class BehaviorVersion(
                             maybeName: Option[String],
                             maybeFunctionBody: Option[String],
                             maybeResponseTemplate: Option[String],
-                            forcePrivateResponse: Boolean,
+                            responseType: BehaviorResponseType,
                             canBeMemoized: Boolean,
                             isTest: Boolean,
                             createdAt: OffsetDateTime
                           ) extends BehaviorVersionForDataTypeSchema {
+
+  val forcePrivateResponse: Boolean = responseType == Private
 
   lazy val jsName: String = s"${BehaviorVersion.dirName}/$id.js"
 
@@ -110,7 +112,7 @@ case class BehaviorVersion(
         invocationJson,
         maybeResponseTemplate,
         logResultOption,
-        forcePrivateResponse,
+        responseType,
         developerContext
       )
     }.getOrElse {
@@ -137,7 +139,7 @@ case class BehaviorVersion(
       maybeName,
       maybeFunctionBody,
       maybeResponseTemplate,
-      forcePrivateResponse,
+      responseType,
       canBeMemoized,
       isTest,
       createdAt

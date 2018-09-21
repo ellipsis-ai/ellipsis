@@ -5,7 +5,7 @@ import BehaviorVersion from '../models/behavior_version';
 import LibraryVersion from '../models/library_version';
 import NodeModuleVersion from '../models/node_module_version';
 import {RequiredAWSConfig} from '../models/aws';
-import {RequiredOAuth2Application} from '../models/oauth2';
+import {RequiredOAuthApplication} from '../models/oauth';
 import {RequiredSimpleTokenApi} from '../models/simple_token';
 import DynamicLabelButton from "../form/dynamic_label_button";
 import Editable from "../models/editable";
@@ -17,6 +17,8 @@ import {ReactNode} from "react";
 import SVGCheckmark from '../svg/checkmark';
 import SVGWarning from '../svg/warning';
 
+export type BehaviorSelectCallback = (optionalGroupId: Option<string>, editableId?: Option<string>, optionalCallback?: Option<() => void>) => void;
+
 interface Props {
   actionBehaviors: Array<BehaviorVersion>,
   dataTypeBehaviors: Array<BehaviorVersion>,
@@ -24,8 +26,8 @@ interface Props {
   tests: Array<BehaviorVersion>,
   nodeModuleVersions: Array<NodeModuleVersion>,
   selectedId?: Option<string>,
-  groupId: string,
-  onSelect: (groupId: string, editableId?: Option<string>) => void,
+  groupId: Option<string>,
+  onSelect: BehaviorSelectCallback,
   addNewAction: () => void,
   addNewDataType: () => void,
   addNewTest: () => void,
@@ -33,7 +35,7 @@ interface Props {
   isModified: (editable: Editable) => boolean,
   onUpdateNodeModules: () => void,
   requiredAWSConfigs: Array<RequiredAWSConfig>,
-  requiredOAuth2Applications: Array<RequiredOAuth2Application>,
+  requiredOAuthApplications: Array<RequiredOAuthApplication>,
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
   onApiConfigClick: (config: RequiredApiConfig) => void,
   onAddApiConfigClick: () => void,
@@ -214,7 +216,7 @@ class BehaviorSwitcher extends React.Component<Props> {
 
             <ApiConfigList
               requiredAWSConfigs={this.props.requiredAWSConfigs}
-              requiredOAuth2Applications={this.props.requiredOAuth2Applications}
+              requiredOAuthApplications={this.props.requiredOAuthApplications}
               requiredSimpleTokenApis={this.props.requiredSimpleTokenApis}
               onApiConfigClick={this.props.onApiConfigClick}
               onAddApiConfigClick={this.props.onAddApiConfigClick}

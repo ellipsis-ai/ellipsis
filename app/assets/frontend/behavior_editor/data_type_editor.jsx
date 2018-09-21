@@ -7,7 +7,7 @@ import DataTypeSchemaConfig from './data_type_schema_config';
 import DataTypeSourceConfig from './data_type_source_config';
 import ID from '../lib/id';
 import {RequiredAWSConfig} from '../models/aws';
-import {RequiredOAuth2Application} from '../models/oauth2';
+import {RequiredOAuthApplication} from '../models/oauth';
 import SequentialName from '../lib/sequential_name';
 import BehaviorConfig from '../models/behavior_config';
 import BehaviorGroup from '../models/behavior_group';
@@ -170,7 +170,7 @@ class DataTypeEditor extends React.Component {
             inputs={this.props.inputs}
             systemParams={this.props.systemParams}
             requiredAWSConfigs={this.props.requiredAWSConfigs}
-            apiApplications={this.props.apiApplications}
+            oauthApiApplications={this.props.oauthApiApplications}
 
             functionBody={this.getSelectedBehavior().getFunctionBody()}
             onChangeFunctionBody={this.props.onChangeCode}
@@ -260,10 +260,7 @@ class DataTypeEditor extends React.Component {
 
             <hr className="man rule-subtle" />
 
-            {this.usesCode() ? this.renderCodeEditor() : null
-            /* Disabled data collection config settings until operative (
-              <DataTypeDataCollectionConfig />
-            )*/}
+            {this.usesCode() ? this.renderCodeEditor() : null}
           </Collapsible>
         </div>
       );
@@ -295,7 +292,7 @@ class DataTypeEditor extends React.Component {
 
     requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
 
-    apiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuth2Application)).isRequired,
+    oauthApiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuthApplication)).isRequired,
 
     onCursorChange: React.PropTypes.func.isRequired,
     useLineWrapping: React.PropTypes.bool.isRequired,

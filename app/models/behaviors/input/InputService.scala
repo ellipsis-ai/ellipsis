@@ -14,6 +14,8 @@ trait InputService {
 
   def findAction(id: String): DBIO[Option[Input]]
 
+  def findByName(name: String, behaviorGroupVersion: BehaviorGroupVersion): Future[Option[Input]]
+
   def createForAction(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Input]
 
   def ensureForAction(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Input]

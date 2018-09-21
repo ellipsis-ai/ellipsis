@@ -44,7 +44,9 @@ case class ScheduledMessage(
             None,
             SlackTimestamp.now,
             Some(EventType.scheduled),
-            isUninterruptedConversation = false
+            isUninterruptedConversation = false,
+            isEphemeral = false,
+            None
           ),
           this
         )
@@ -52,12 +54,18 @@ case class ScheduledMessage(
     )
   }
 
-  def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {
-    this.copy(nextSentAt = recurrence.nextAfter(when))
+  def updatedWithNextRunAfter(when: OffsetDateTime): ScheduledMessage = {
+    this.copy(nextSentAt = recurrence.nextAfter(when), recurrence = recurrence.incrementTimesHasRun)
   }
 
-  def updateNextTriggeredForAction(dataService: DataService): DBIO[ScheduledMessage] = {
-    dataService.scheduledMessages.updateNextTriggeredForAction(this)
+  def updateForNextRunAction(dataService: DataService): DBIO[ScheduledMessage] = {
+    dataService.scheduledMessages.updateForNextRunAction(this)
+  }
+
+  def deleteAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Unit] = {
+    dataService.scheduledMessages.deleteAction(this).map { _ =>
+      {}
+    }
   }
 
   def toRaw: RawScheduledMessage = {

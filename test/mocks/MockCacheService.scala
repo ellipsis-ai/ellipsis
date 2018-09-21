@@ -6,10 +6,11 @@ import models.IDs
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
-import models.behaviors.events.{Event, SlackMessageEvent}
+import models.behaviors.events.{Event, MessageUserData, SlackMessageEvent}
 import org.scalatest.mock.MockitoSugar
 import sangria.schema.Schema
 import services.caching._
+import services.slack.apiModels.SlackUser
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -57,6 +58,10 @@ class MockCacheService extends CacheService with MockitoSugar {
                                dataFn: SlackUserDataByEmailCacheKey => Future[Option[SlackUserData]]
                              ): Future[Option[SlackUserData]] = dataFn(key)
 
+  def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Unit = {}
+
+  def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Option[SlackUser] = None
+
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {}
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = None
@@ -70,4 +75,8 @@ class MockCacheService extends CacheService with MockitoSugar {
   def clearLastConversationId(teamId: String, channelId: String): Unit = {}
 
   def getLastConversationId(teamId: String, channelId: String): Option[String] = None
+
+  def cacheMessageUserDataList(messageUserDataList: Seq[MessageUserData], conversationId: String): Unit = {}
+
+  def getMessageUserDataList(conversationId: String): Option[Seq[MessageUserData]] = None
 }

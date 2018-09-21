@@ -1,7 +1,9 @@
-jest.mock('../../../../app/assets/frontend/behavior_editor/code_editor');
-jest.mock('../../../../app/assets/frontend/shared_ui/react-codemirror', () => function() {
-  return null;
-});
+jest.mock('../../../../app/assets/frontend/behavior_editor/code_configuration', () => (() => (
+  <div/>
+)));
+jest.mock('../../../../app/assets/frontend/behavior_editor/response_template_configuration', () => (() => (
+  <div/>
+)));
 import * as MockDataRequest from '../../../mocks/mock_data_request';
 jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
 
@@ -10,9 +12,10 @@ import * as TestUtils from 'react-addons-test-utils';
 import BehaviorEditor from '../../../../app/assets/frontend/behavior_editor/index';
 import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
 import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
+import BehaviorResponseType from '../../../../app/assets/frontend/models/behavior_response_type';
 import ParamType from '../../../../app/assets/frontend/models/param_type';
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
-import {OAuth2ApplicationRef} from '../../../../app/assets/frontend/models/oauth2';
+import {OAuthApplicationRef} from '../../../../app/assets/frontend/models/oauth';
 import {SimpleTokenApiRef} from '../../../../app/assets/frontend/models/simple_token';
 
 jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
@@ -27,6 +30,9 @@ jsRoutes.controllers.SocialAuthController.authenticateGithub = jest.fn(() => ({ 
 jsRoutes.controllers.BehaviorEditorController.versionInfoFor = jest.fn(() => ({ url: '/mock_version_info' }));
 
 describe('BehaviorEditor', () => {
+  const normalResponseType = "Normal";
+  const normalResponseTypeJson = { id: normalResponseType, displayString: "Response normally" };
+  const privateResponseType = "Private";
   const groupJson: BehaviorGroupJson = {
     id: '1',
     actionInputs: [],
@@ -45,15 +51,15 @@ describe('BehaviorEditor', () => {
         }],
         config: {
           isDataType: false,
-          isTest: false
+          isTest: false,
+          responseTypeId: normalResponseType
         },
-        knownEnvVarsUsed: [],
         groupId: '1'
       }
     ],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     dataTypeInputs: [],
     isManaged: false,
@@ -89,18 +95,30 @@ describe('BehaviorEditor', () => {
       "secretAccessKey": "b",
       "region": "c"
     }],
-    "oauth2Applications": [{
+    "oauthApplications": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "applicationId": "R1-v9CKHTEmaUvgei-GmIg",
+      "scope": "read",
+      "displayName": "Trello"
+    }, {
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
       "scope": "https://www.googleapis.com/auth/calendar",
       "displayName": "Google Calendar"
     }],
-    "oauth2Apis": [{
+    "oauthApis": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "name": "Trello",
+      "newApplicationUrl": "https://trello.com/app-key",
+      "scopeDocumentationUrl": "",
+      "isOAuth1": true
+    }, {
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "name": "Google",
       "requiresAuth": true,
       "newApplicationUrl": "https://console.developers.google.com/apis",
-      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes"
+      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes",
+      "isOAuth1": false
     }],
     "simpleTokenApis": [{
       "apiId": "pivotal-tracker",
@@ -108,13 +126,14 @@ describe('BehaviorEditor', () => {
       "tokenUrl": "https://www.pivotaltracker.com/profile",
       "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
     }],
-    "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
+    "linkedOAuthApplicationIds": ["R1-v9CKHTEmaUvgei-GmIg", "Yy1QcMTcT96tZZmUoYLroQ"],
     onSave: jest.fn(),
     savedAnswers: [],
     onForgetSavedAnswerForInput: jest.fn(),
     userId: "1",
     onLinkGithubRepo: jest.fn(),
-    onUpdateFromGithub: jest.fn()
+    onUpdateFromGithub: jest.fn(),
+    "possibleResponseTypes": [normalResponseTypeJson]
   });
 
   const newGroupJson: BehaviorGroupJson = {
@@ -130,12 +149,11 @@ describe('BehaviorEditor', () => {
       "responseTemplate": "",
       "inputIds": [],
       "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false }],
-      "config": { "isDataType": false, "isTest": false },
-      "knownEnvVarsUsed": []
+      "config": { "isDataType": false, "isTest": false, responseTypeId: normalResponseType }
     }],
     "libraryVersions": [],
     "requiredAWSConfigs": [],
-    "requiredOAuth2ApiConfigs": [],
+    "requiredOAuthApiConfigs": [],
     "requiredSimpleTokenApis": [],
     "createdAt": "2017-09-15T11:58:07.36-04:00",
     "author": { "id": "3", userName: "attaboy" },
@@ -166,18 +184,30 @@ describe('BehaviorEditor', () => {
       "secretAccessKey": "b",
       "region": "c"
     }],
-    "oauth2Applications": [{
+    "oauthApplications": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "applicationId": "R1-v9CKHTEmaUvgei-GmIg",
+      "scope": "read",
+      "displayName": "Trello"
+    }, {
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
       "scope": "https://www.googleapis.com/auth/calendar",
       "displayName": "Google Calendar"
     }],
-    "oauth2Apis": [{
+    "oauthApis": [{
+      "apiId": "7gK5ysNxSjSa9BzfB44yAg",
+      "name": "Trello",
+      "newApplicationUrl": "https://trello.com/app-key",
+      "scopeDocumentationUrl": "",
+      "isOAuth1": true
+    }, {
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "name": "Google",
       "requiresAuth": true,
       "newApplicationUrl": "https://console.developers.google.com/apis",
-      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes"
+      "scopeDocumentationUrl": "https://developers.google.com/identity/protocols/googlescopes",
+      "isOAuth1": false
     }],
     "simpleTokenApis": [{
       "apiId": "pivotal-tracker",
@@ -185,7 +215,7 @@ describe('BehaviorEditor', () => {
       "tokenUrl": "https://www.pivotaltracker.com/profile",
       "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
     }],
-    "linkedOAuth2ApplicationIds": ["Yy1QcMTcT96tZZmUoYLroQ"],
+    "linkedOAuthApplicationIds": ["R1-v9CKHTEmaUvgei-GmIg", "Yy1QcMTcT96tZZmUoYLroQ"],
     "userId": "3",
     selectedId: "2",
     onSave: jest.fn(),
@@ -206,11 +236,12 @@ describe('BehaviorEditor', () => {
     const props = Object.assign({}, config, {
       group: BehaviorGroup.fromJson(config.group),
       awsConfigs: config.awsConfigs.map(AWSConfigRef.fromJson),
-      oauth2Applications: config.oauth2Applications.map(OAuth2ApplicationRef.fromJson),
+      oauthApplications: config.oauthApplications.map(OAuthApplicationRef.fromJson),
       simpleTokenApis: config.simpleTokenApis.map(SimpleTokenApiRef.fromJson),
       builtinParamTypes: config.builtinParamTypes.map(ParamType.fromJson),
       onDeploy: jest.fn(),
-      botName: "TestBot"
+      botName: "TestBot",
+      possibleResponseTypes: [normalResponseTypeJson]
     });
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
@@ -372,9 +403,9 @@ describe('BehaviorEditor', () => {
             triggers: [],
             config: {
               isDataType: false,
-              isTest: false
+              isTest: false,
+              responseTypeId: normalResponseType
             },
-            knownEnvVarsUsed: [],
             groupId: groupId
           },
           {
@@ -386,9 +417,9 @@ describe('BehaviorEditor', () => {
             triggers: [],
             config: {
               isDataType: false,
-              isTest: false
+              isTest: false,
+              responseTypeId: normalResponseType
             },
-            knownEnvVarsUsed: [],
             groupId: groupId
           }
         ].map(ea => BehaviorVersion.fromJson(ea));
@@ -402,14 +433,14 @@ describe('BehaviorEditor', () => {
 
   describe('setConfigProperty', () => {
     it("clones the existing behavior config with updated properties", () => {
-      editorConfig.group.behaviorVersions[0].config.forcePrivateResponse = false;
+      editorConfig.group.behaviorVersions[0].config.responseTypeId = normalResponseType;
       let editor = createEditor(editorConfig);
       editor.setEditableProp = jest.fn();
-      expect(editor.getBehaviorConfig().forcePrivateResponse).toBe(false);
-      editor.setConfigProperty('forcePrivateResponse', true);
+      expect(editor.getBehaviorConfig().responseTypeId).toBe(normalResponseType);
+      editor.setConfigProperty('responseTypeId', privateResponseType);
       const newConfig = editor.setEditableProp.mock.calls[0][1];
       expect(newConfig.constructor.name).toBe("BehaviorConfig");
-      expect(newConfig.forcePrivateResponse).toBe(true);
+      expect(newConfig.responseTypeId).toBe(privateResponseType);
     });
   });
 

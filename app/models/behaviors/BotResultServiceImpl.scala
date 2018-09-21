@@ -1,8 +1,8 @@
 package models.behaviors
 
-import javax.inject.Inject
 import akka.actor.ActorSystem
-import models.behaviors.behaviorversion.BehaviorVersion
+import javax.inject.Inject
+import models.behaviors.behaviorversion.{BehaviorVersion, Threaded}
 import models.behaviors.events.{Event, EventHandler, RunEvent}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
@@ -29,7 +29,7 @@ class BotResultServiceImpl @Inject() (
       result <- maybeEvent.map { event =>
         DBIO.from(eventHandler.handle(event, None)).flatMap { results =>
           DBIO.sequence(results.map { result =>
-            sendInAction(result, None, None, None).map { _ =>
+            sendInAction(result, None).map { _ =>
               val nextActionPart = result.maybeBehaviorVersion.map(_.nameAndIdString).getOrElse("<not found>")
               val originatingActionPart = maybeOriginatingBehaviorVersion.map(_.nameAndIdString).getOrElse("<not found>")
               Logger.info(event.logTextFor(result, Some(s"as next action `${nextActionPart}` from action `${originatingActionPart}`")))
@@ -42,7 +42,7 @@ class BotResultServiceImpl @Inject() (
     } yield result
   }
 
-  private def runNextAction(nextAction: NextAction, botResult: BotResult)(implicit actorSystem: ActorSystem): DBIO[Unit] = {
+  private def runNextAction(nextAction: NextAction, botResult: BotResult, maybeMessageTs: Option[String])(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
       maybeSlackChannelId <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
         DBIO.from(botResult.event.maybeChannelToUseFor(behaviorVersion, services))
@@ -56,6 +56,11 @@ class BotResultServiceImpl @Inject() (
       user <- botResult.event.ensureUserAction(dataService)
       maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
       maybeSlackTeamIdForUser <- DBIO.from(dataService.users.maybeSlackTeamIdFor(user))
+      maybeThreadId <- DBIO.successful(if (botResult.responseType == Threaded) {
+        botResult.maybeConversation.flatMap(_.maybeThreadId).orElse(maybeMessageTs)
+      } else {
+        None
+      })
       maybeEvent <- DBIO.successful(
         for {
           botProfile <- maybeBotProfile
@@ -69,27 +74,27 @@ class BotResultServiceImpl @Inject() (
           behaviorVersion,
           nextAction.argumentsMap,
           channel,
-          None,
+          maybeThreadId,
           linkedAccount.loginInfo.providerKey,
-          SlackTimestamp.now,
-          Some(botResult.event.eventType)
+          maybeMessageTs.getOrElse(SlackTimestamp.now),
+          Some(botResult.event.eventType),
+          botResult.event.isEphemeral,
+          botResult.event.maybeResponseUrl
         )
       )
       _ <- if (maybeBehaviorVersion.isDefined) {
         runBehaviorFor(maybeEvent, botResult.maybeBehaviorVersion)
       } else {
         val text = s"Can't run action named `${nextAction.actionName}` in this skill"
-        val result = SimpleTextResult(botResult.event, botResult.maybeConversation, text, botResult.forcePrivateResponse)
-        sendInAction(result, None, None, None)
+        val result = SimpleTextResult(botResult.event, botResult.maybeConversation, text, botResult.responseType)
+        sendInAction(result, None)
       }
     } yield {}
   }
 
   def sendInAction(
                     botResult: BotResult,
-                    maybeShouldUnfurl: Option[Boolean],
-                    maybeIntro: Option[String] = None,
-                    maybeInterruptionIntro: Option[String] = None
+                    maybeShouldUnfurl: Option[Boolean]
                   )(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
     if (!botResult.shouldSend) {
       return DBIO.successful(None)
@@ -97,36 +102,24 @@ class BotResultServiceImpl @Inject() (
     botResult.beforeSend
     val event = botResult.event
     val maybeConversation = botResult.maybeConversation
-    val forcePrivateResponse = botResult.forcePrivateResponse
     for {
       didInterrupt <- if (botResult.shouldInterrupt) {
         botResult.interruptOngoingConversationsForAction(services)
       } else {
         DBIO.successful(false)
       }
-      _ <- maybeIntro.map { intro =>
-        val introToSend = if (didInterrupt) {
-          maybeInterruptionIntro.getOrElse(intro)
-        } else {
-          intro
-        }
-        val result = SimpleTextResult(event, maybeConversation, introToSend, forcePrivateResponse)
-        sendInAction(result, None)
-      }.getOrElse {
-        DBIO.successful({})
-      }
       files <- try {
         DBIO.successful(botResult.files)
       } catch {
         case e: InvalidFilesException => {
-          sendInAction(SimpleTextResult(event, maybeConversation, e.responseText, forcePrivateResponse), None).map(_ => Seq())
+          sendInAction(SimpleTextResult(event, maybeConversation, e.responseText, botResult.responseType), None).map(_ => Seq())
         }
       }
       maybeChoices <- botResult.maybeChoicesAction(dataService)
       sendResult <- DBIO.from(
         event.sendMessage(
           botResult.fullText,
-          forcePrivateResponse,
+          botResult.responseType,
           maybeShouldUnfurl,
           maybeConversation,
           botResult.attachmentGroups,
@@ -138,18 +131,16 @@ class BotResultServiceImpl @Inject() (
         )
       )
       _ <- botResult.maybeNextAction.map { nextAction =>
-        runNextAction(nextAction, botResult)
+        runNextAction(nextAction, botResult, sendResult)
       }.getOrElse(DBIO.successful({}))
     } yield sendResult
   }
 
   def sendIn(
               botResult: BotResult,
-              maybeShouldUnfurl: Option[Boolean],
-              maybeIntro: Option[String] = None,
-              maybeInterruptionIntro: Option[String] = None
+              maybeShouldUnfurl: Option[Boolean]
             )(implicit actorSystem: ActorSystem): Future[Option[String]] = {
-    dataService.run(sendInAction(botResult, maybeShouldUnfurl, maybeIntro, maybeInterruptionIntro))
+    dataService.run(sendInAction(botResult, maybeShouldUnfurl))
   }
 
 }

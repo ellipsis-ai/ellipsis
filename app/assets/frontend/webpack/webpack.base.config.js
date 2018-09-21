@@ -36,7 +36,7 @@ const webpackConfig = {
     behaviorList: './app/assets/frontend/behavior_list/loader',
     environmentVariables: './app/assets/frontend/settings/environment_variables/loader',
     githubConfig: './app/assets/frontend/github_config/loader',
-    integrationEditor: './app/assets/frontend/settings/oauth2_editor/loader',
+    integrationEditor: './app/assets/frontend/settings/oauth_editor/loader',
     integrationList: './app/assets/frontend/settings/integrations/loader',
     regionalSettings: './app/assets/frontend/settings/regional_settings/loader',
     scheduling: './app/assets/frontend/scheduling/loader',

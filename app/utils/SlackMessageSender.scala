@@ -2,8 +2,8 @@ package utils
 
 import akka.actor.ActorSystem
 import json.Formatting._
-import json.SlackUserData
 import models.SlackMessageFormatter
+import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
@@ -11,11 +11,49 @@ import models.behaviors.{ActionChoice, DeveloperContext}
 import play.api.Configuration
 import play.api.libs.json.Json
 import services.DefaultServices
-import services.slack.SlackApiClient
-import services.slack.apiModels.Attachment
+import services.slack.{SlackApiClient, SlackApiError}
+import services.slack.apiModels._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.io.File
+
+trait SlackMessageSenderChannelException extends Exception {
+  val channel: String
+  val channelLink: String = if (channel.startsWith("#")) {
+    channel
+  } else {
+    s"<#$channel>"
+  }
+  val slackTeamId: String
+  val userId: String
+  val text: String
+  protected def channelReason(channelIdOrLink: String): String
+  def formattedChannelReason = channelReason(channelLink)
+  def rawChannelReason = channelReason(channel)
+  override def getMessage: String = {
+    s"""Could not send to channel ID $channel while sending a message to user $userId on team $slackTeamId. $rawChannelReason
+       |
+       |Message:
+       |$text
+       |""".stripMargin
+  }
+}
+
+case class ArchivedChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  def channelReason(channelIdOrLink: String) = s"The channel ${channelIdOrLink} has been archived."
+}
+
+case class NotInvitedToChannelException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  def channelReason(channelIdOrLink: String) = s"The bot needs to be invited to the channel ${channelIdOrLink}."
+}
+
+case class ChannelNotFoundException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  def channelReason(channelIdOrLink: String) = s"The channel could not be found. It may have been deleted."
+}
+
+case class RestrictedFromChannel(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
+  def channelReason(channelIdOrLink: String) = s"The bot is restricted from posting to the channel ${channelIdOrLink} by the admin."
+}
 
 case class SlackMessageSenderException(underlying: Throwable, channel: String, slackTeamId: String, userId: String, text: String)
   extends Exception(
@@ -33,10 +71,10 @@ case class SlackMessageSender(
                                user: String,
                                slackTeamId: String,
                                unformattedText: String,
-                               forcePrivate: Boolean,
+                               responseType: BehaviorResponseType,
                                developerContext: DeveloperContext,
                                originatingChannel: String,
-                               channelToUse: String,
+                               maybeDMChannel: Option[String],
                                maybeThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
@@ -45,8 +83,10 @@ case class SlackMessageSender(
                                choices: Seq[ActionChoice],
                                configuration: Configuration,
                                botName: String,
-                               slackUserList: Set[SlackUserData],
-                               services: DefaultServices
+                               userDataList: Set[MessageUserData],
+                               services: DefaultServices,
+                               isEphemeral: Boolean,
+                               maybeResponseUrl: Option[String]
                              ) {
 
   val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
@@ -94,41 +134,75 @@ case class SlackMessageSender(
     }
   }
 
-  private def postChatMessage(
-                               text: String,
-                               maybeThreadTs: Option[String] = None,
-                               maybeReplyBroadcast: Option[Boolean] = None,
-                               maybeAttachments: Option[Seq[Attachment]] = None,
-                               maybeChannelToForce: Option[String] = None
-                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    val channel = maybeChannelToForce.getOrElse(maybeThreadTs.map(_ => originatingChannel).getOrElse(channelToUse))
-    client.postChatMessage(
-      channel,
+  private def postEphemeralMessage(
+                                    text: String,
+                                    maybeAttachments: Option[Seq[Attachment]] = None,
+                                    channel: String
+                                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    client.postEphemeralMessage(
       text,
-      username = None,
-      asUser = Some(true),
+      channel,
+      user,
+      asUser = Some(false), // allows it to work in channels where bot is not a member
       parse = None,
       linkNames = None,
-      attachments = maybeAttachments,
-      unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
-      unfurlMedia = Some(true),
-      iconUrl = None,
-      iconEmoji = None,
-      replaceOriginal = None,
-      deleteOriginal = None,
-      threadTs = maybeThreadTs,
-      replyBroadcast = maybeReplyBroadcast
-    ).recover {
-      case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
+      attachments = maybeAttachments
+    ).recover(postErrorRecovery(channel, text))
+  }
+
+  private def maybeResponseUrlToUse(channel: String): Option[String] = {
+    // We can't always use the response url, as it's a bit quirky:
+    // - using the response url in a thread results in a message back in the main channel, for <%= reason %>
+    // - posts to the response url don't give back a message ts
+    if (channel == originatingChannel && maybeThreadId.isEmpty && isEphemeral) {
+      maybeResponseUrl
+    } else {
+      None
     }
   }
 
-  private def isDirectMessage(channelId: String): Boolean = {
-    channelId.startsWith("D")
+  private def maybeThreadTsToUse(channel: String) = {
+    responseType.maybeThreadTsToUseFor(channel, originatingChannel, maybeConversation, maybeThreadId)
   }
 
-  private def isPrivateChannel(channelId: String): Boolean = {
-    channelId.startsWith("G")
+  private def channelToUse(maybeChannelToForce: Option[String] = None): String = {
+    maybeChannelToForce.getOrElse {
+      responseType.channelToUseFor(originatingChannel, maybeConversation, maybeThreadId, maybeDMChannel)
+    }
+  }
+
+  private def postChatMessage(
+                               text: String,
+                               maybeAttachments: Option[Seq[Attachment]] = None,
+                               maybeChannelToForce: Option[String] = None
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    val channel = channelToUse(maybeChannelToForce)
+    val maybeThreadTs = maybeThreadTsToUse(channel)
+    maybeResponseUrlToUse(channel).map { responseUrl =>
+      client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral)
+    }.getOrElse {
+      if (isEphemeral) {
+        postEphemeralMessage(text, maybeAttachments, channel)
+      } else {
+        client.postChatMessage(
+          channel,
+          text,
+          username = None,
+          asUser = Some(true),
+          parse = None,
+          linkNames = None,
+          attachments = maybeAttachments,
+          unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
+          unfurlMedia = Some(true),
+          iconUrl = None,
+          iconEmoji = None,
+          replaceOriginal = None,
+          deleteOriginal = None,
+          threadTs = maybeThreadTs,
+          replyBroadcast = None
+        ).recover(postErrorRecovery(channel, text))
+      }
+    }
   }
 
   private def messageSegmentsFor(formattedText: String): List[String] = {
@@ -142,34 +216,14 @@ case class SlackMessageSender(
     }
   }
 
-  def sendPreamble(formattedText: String, channelToUse: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+  def sendPreamble(formattedText: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     if (formattedText.nonEmpty) {
       for {
-        _ <- if (maybeThreadId.isDefined && maybeConversation.flatMap(_.maybeThreadId).isEmpty) {
-          val channelText = if (isDirectMessage(originatingChannel)) {
-            "the DM channel"
-          } else if (isPrivateChannel(originatingChannel)) {
-            "the private channel"
-          } else {
-            s"<#$originatingChannel>"
-          }
-          postChatMessage(
-            text = s"<@${user}> I've responded back in $channelText.",
-            maybeThreadTs = maybeThreadId
-          )
-        } else {
-          Future.successful({})
-        }
-        _ <- if (isDirectMessage(channelToUse) && channelToUse != originatingChannel) {
+        _ <- if (responseType == Private && !maybeDMChannel.contains(originatingChannel)) {
           postChatMessage(
             s"<@${user}> I've sent you a private message :sleuth_or_spy:",
             maybeChannelToForce = Some(originatingChannel)
           )
-        } else {
-          Future.successful({})
-        }
-        _ <- if (!isDirectMessage(channelToUse) && channelToUse != originatingChannel) {
-          postChatMessage(s"<@${user}> OK, back to <#${channelToUse}>")
         } else {
           Future.successful({})
         }
@@ -200,12 +254,9 @@ case class SlackMessageSender(
         } else {
           None
         }
-        val maybeThreadTsToUse = maybeConversation.flatMap(_.maybeThreadId)
 
         postChatMessage(
           segment,
-          maybeThreadTsToUse,
-          maybeReplyBroadcast = Some(false),
           maybeAttachmentsForSegment
         )
       }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
@@ -214,12 +265,14 @@ case class SlackMessageSender(
 
   def sendFile(spec: UploadFileSpec)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val file = File.makeTemp().jfile
+    val channel = channelToUse()
     client.uploadFile(
       file,
       content = spec.content,
       filetype = spec.filetype,
       filename = spec.filename,
-      channels = Some(Seq(channelToUse))
+      channels = Some(Seq(channel)),
+      maybeThreadTs = maybeThreadTsToUse(channel)
     ).map(_ => {})
   }
 
@@ -228,16 +281,24 @@ case class SlackMessageSender(
   }
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, slackUserList)
+    val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, userDataList)
     val attachments = attachmentGroupsToUse.flatMap {
       case a: SlackMessageAttachmentGroup => a.attachments.map(_.underlying)
       case _ => Seq()
     }
     for {
-      _ <- sendPreamble(formattedText, channelToUse)
-      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), channelToUse, maybeShouldUnfurl, attachments, maybeConversation, None)
+      _ <- sendPreamble(formattedText)
+      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles
     } yield maybeLastTs
+  }
+
+  private def postErrorRecovery[U](channel: String, text: String): PartialFunction[Throwable, U] = {
+    case SlackApiError("is_archived") => throw ArchivedChannelException(channel, slackTeamId, user, text)
+    case SlackApiError("channel_not_found") => throw ChannelNotFoundException(channel, slackTeamId, user, text)
+    case SlackApiError("not_in_channel") => throw NotInvitedToChannelException(channel, slackTeamId, user, text)
+    case SlackApiError("restricted_action") => throw RestrictedFromChannel(channel, slackTeamId, user, text)
+    case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
   }
 }
 

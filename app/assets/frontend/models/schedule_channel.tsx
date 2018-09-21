@@ -8,7 +8,8 @@ export interface ScheduleChannelJson {
   isPrivateChannel: boolean,
   isPrivateGroup: boolean,
   isArchived: boolean,
-  isShared: boolean
+  isShared: boolean,
+  isReadOnly: boolean
 }
 
 export interface ScheduleChannelInterface extends ScheduleChannelJson {}
@@ -24,6 +25,7 @@ class ScheduleChannel implements ScheduleChannelInterface {
   readonly isPrivateGroup: boolean;
   readonly isArchived: boolean;
   readonly isShared: boolean;
+  readonly isReadOnly: boolean;
 
     constructor(props: ScheduleChannelInterface) {
       Object.defineProperties(this, {
@@ -36,7 +38,8 @@ class ScheduleChannel implements ScheduleChannelInterface {
         isPrivateChannel: { value: props.isPrivateChannel, enumerable: true },
         isPrivateGroup: { value: props.isPrivateGroup, enumerable: true },
         isArchived: { value: props.isArchived, enumerable: true },
-        isShared: { value: props.isShared, enumerable: true }
+        isShared: { value: props.isShared, enumerable: true },
+        isReadOnly: { value: props.isReadOnly, enumerable: true }
       });
     }
 

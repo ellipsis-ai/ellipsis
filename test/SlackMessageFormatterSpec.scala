@@ -1,32 +1,29 @@
-import json.{SlackUserData, SlackUserProfileData}
 import models.SlackMessageFormatter
+import models.behaviors.events.MessageUserData
 import org.scalatestplus.play.PlaySpec
 
 class SlackMessageFormatterSpec extends PlaySpec {
 
-  def slackUserData(userId: String, username: String, displayName: String): SlackUserData = {
-    SlackUserData(
-      userId,
-      "T1",
-      username,
-      isPrimaryOwner = false,
-      isOwner = false,
-      isRestricted = false,
-      isUltraRestricted = false,
-      isBot = false,
-      None,
-      deleted = false,
-      Some(SlackUserProfileData(Some(displayName), None, None, None, None, None))
-    )
+  def messageUserData(userId: String, username: String, displayName: String): MessageUserData = {
+     MessageUserData(
+       context = "slack",
+       userName = displayName,
+       ellipsisUserId = None,
+       userIdForContext = Some(userId),
+       fullName = None,
+       email = None,
+       timeZone = None
+     )
   }
-  val slackUserList: Set[SlackUserData] = Set(
-    slackUserData("U1", "alligator", "Alligatór"),
-    slackUserData("U2", "baboon", "A Baboon!"),
-    slackUserData("U3", "crocodile", "Mr. Croc O. Dile")
+
+  val userList: Set[MessageUserData] = Set(
+    messageUserData("U1", "alligator", "Alligatór"),
+    messageUserData("U2", "baboon", "A Baboon!"),
+    messageUserData("U3", "crocodile", "Mr. Croc O. Dile")
   )
 
   def format(original: String): String = {
-    SlackMessageFormatter.bodyTextFor(original, slackUserList).trim
+    SlackMessageFormatter.bodyTextFor(original, userList).trim
   }
 
   "bodyTextFor" should {
@@ -51,6 +48,7 @@ class SlackMessageFormatterSpec extends PlaySpec {
       format("[This is a <special> link](http://special.com)") mustBe "<http://special.com|This is a &lt;special&gt; link>"
       format("[This is a \\<special\\> link](http://special.com)") mustBe "<http://special.com|This is a &lt;special&gt; link>"
       format("1 < 2 but this is a <@U1234> link to a “<#channel>”!") mustBe "1 &lt; 2 but this is a <@U1234> link to a “<#channel>”!"
+      format("Hello there, <@Joe User>") mustBe "Hello there, <@Joe User>"
     }
 
     "handle formatting inside links" in {
@@ -72,7 +70,7 @@ class SlackMessageFormatterSpec extends PlaySpec {
     }
 
     "converts usernames into links" in {
-      val input = """@A Baboon! has a message for @Alligatór: time to meet @Mr. Croc O. Dile."""
+      val input = """@A Baboon! has a message for @Alligatór: time to meet <@Mr. Croc O. Dile>."""
       val output = "<@U2> has a message for <@U1>: time to meet <@U3>."
       format(input) mustBe output
     }

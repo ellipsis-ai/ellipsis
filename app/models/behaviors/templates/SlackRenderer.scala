@@ -10,17 +10,17 @@ class SlackRenderer(stringBuilder: StringBuilder) extends AbstractVisitor {
   def escapeControlEntities(text: String): String = {
     val ampersandsEscaped = text.replaceAll("&", "&amp;")
     try {
-      """\S+""".r.replaceAllIn(
-        Matcher.quoteReplacement(ampersandsEscaped), m => {
-          val str = m.matched
-          if (str == null || str.isEmpty) {
-            ""
-          } else if (str.matches(".*<[@#].+>.*")) {
-            str
-          } else {
-            str.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
-          }
-        })
+      """(<[^<>\s][^<>]+>|<|>)""".r.replaceAllIn(ampersandsEscaped, m => {
+        val str = m.matched
+        val replacement = if (str == null || str.isEmpty) {
+          ""
+        } else if (str.matches("<[@#!].+>")) {
+          str
+        } else {
+          str.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+        }
+        Matcher.quoteReplacement(replacement)
+      })
     } catch {
       case e: Throwable => {
         Logger.error(

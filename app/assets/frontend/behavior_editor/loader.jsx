@@ -7,9 +7,10 @@ import BrowserUtils from '../lib/browser_utils';
 import BehaviorEditor from './index';
 import BehaviorGroup from '../models/behavior_group';
 import BehaviorGroupDeployment from '../models/behavior_group_deployment';
+import BehaviorResponseType from '../models/behavior_response_type';
 import ParamType from '../models/param_type';
 import {AWSConfigRef} from '../models/aws';
-import {OAuth2ApplicationRef} from '../models/oauth2';
+import {OAuthApplicationRef} from '../models/oauth';
 import {SimpleTokenApiRef} from '../models/simple_token';
 import LinkedGithubRepo from '../models/linked_github_repo';
 import autobind from '../lib/autobind';
@@ -24,7 +25,7 @@ class BehaviorEditorLoader extends React.Component {
           const selectedId = this.props.selectedId || this.fallbackSelectedIdFor(group);
           this.state = {
             awsConfigs: this.props.awsConfigs.map(AWSConfigRef.fromJson),
-            oauth2Applications: this.props.oauth2Applications.map(OAuth2ApplicationRef.fromJson),
+            oauthApplications: this.props.oauthApplications.map(OAuthApplicationRef.fromJson),
             simpleTokenApis: this.props.simpleTokenApis.map(SimpleTokenApiRef.fromJson),
             linkedGithubRepo: group.linkedGithubRepo,
             group: group,
@@ -133,10 +134,10 @@ class BehaviorEditorLoader extends React.Component {
                 builtinParamTypes={this.state.builtinParamTypes}
                 envVariables={this.props.envVariables}
                 awsConfigs={this.state.awsConfigs}
-                oauth2Applications={this.state.oauth2Applications}
-                oauth2Apis={this.props.oauth2Apis}
+                oauthApplications={this.state.oauthApplications}
+                oauthApis={this.props.oauthApis}
                 simpleTokenApis={this.state.simpleTokenApis}
-                linkedOAuth2ApplicationIds={this.props.linkedOAuth2ApplicationIds}
+                linkedOAuthApplicationIds={this.props.linkedOAuthApplicationIds}
                 savedAnswers={this.getSavedAnswers()}
                 onSave={this.onSave}
                 onForgetSavedAnswerForInput={this.resetSavedAnswerForInput}
@@ -152,6 +153,7 @@ class BehaviorEditorLoader extends React.Component {
                 lastDeployTimestamp={this.props.lastDeployTimestamp}
                 slackTeamId={this.props.slackTeamId}
                 botName={this.props.botName}
+                possibleResponseTypes={this.props.possibleResponseTypes.map(BehaviorResponseType.fromProps)}
                 {...pageProps}
               />
               )}
@@ -169,17 +171,18 @@ BehaviorEditorLoader.propTypes = {
   envVariables: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
   savedAnswers: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
   awsConfigs: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-  oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-  oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+  oauthApplications: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+  oauthApis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
   simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-  linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+  linkedOAuthApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
   userId: React.PropTypes.string.isRequired,
   isAdmin: React.PropTypes.bool.isRequired,
   isLinkedToGithub: React.PropTypes.bool.isRequired,
   showVersions: React.PropTypes.bool,
   lastDeployTimestamp: React.PropTypes.string,
   slackTeamId: React.PropTypes.string,
-  botName: React.PropTypes.string.isRequired
+  botName: React.PropTypes.string.isRequired,
+  possibleResponseTypes: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
 };
 
 ReactDOM.render(

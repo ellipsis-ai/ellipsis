@@ -10,7 +10,7 @@ import json.Formatting._
 import json._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
@@ -165,13 +165,16 @@ class BehaviorEditorController @Inject() (
                   dataService.behaviorGroups.createFor(data.exportId, team).map(Some(_))
                 }.getOrElse(Future.successful(None))
               }
+              oauth1Appications <- teamAccess.maybeTargetTeam.map { team =>
+                dataService.oauth1Applications.allUsableFor(team)
+              }.getOrElse(Future.successful(Seq()))
               oauth2Appications <- teamAccess.maybeTargetTeam.map { team =>
                 dataService.oauth2Applications.allUsableFor(team)
               }.getOrElse(Future.successful(Seq()))
               _ <- maybeGroup.map { group =>
                 val dataForNewVersion = data.copyForNewVersionOf(group)
                 val dataToUse = if (info.isReinstall.exists(identity)) {
-                  dataForNewVersion.copyWithApiApplicationsIfAvailable(oauth2Appications)
+                  dataForNewVersion.copyWithApiApplicationsIfAvailable(oauth1Appications ++ oauth2Appications)
                 } else {
                   dataForNewVersion
                 }
@@ -381,7 +384,7 @@ class BehaviorEditorController @Inject() (
   }
 
   def regexValidationErrorsFor(pattern: String) = silhouette.SecuredAction { implicit request =>
-    val content = MessageTrigger.maybeRegexValidationErrorFor(pattern).map { errMessage =>
+    val content = Trigger.maybeRegexValidationErrorFor(pattern).map { errMessage =>
       Array(errMessage)
     }.getOrElse {
       Array()
@@ -542,6 +545,9 @@ class BehaviorEditorController @Inject() (
             }
           }.getOrElse(Future.successful(None))
           teamAccess <- dataService.users.teamAccessFor(user, maybeBehaviorGroup.map(_.team.id))
+          oauth1Applications <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.oauth1Applications.allUsableFor(team)
+          }.getOrElse(Future.successful(Seq()))
           oauth2Applications <- teamAccess.maybeTargetTeam.map { team =>
             dataService.oauth2Applications.allUsableFor(team)
           }.getOrElse(Future.successful(Seq()))
@@ -550,7 +556,7 @@ class BehaviorEditorController @Inject() (
             maybeGithubProfile.map { profile =>
               val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, maybeExistingGroupData, githubService, services, ec)
               try {
-                val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth2Applications)
+                val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth1Applications ++ oauth2Applications)
                 Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
               } catch {
                 case e: GithubResultFromDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
@@ -616,6 +622,7 @@ class BehaviorEditorController @Inject() (
                   group,
                   user,
                   services,
+                  None,
                   ec
                 )
               pusher.run.map { r =>

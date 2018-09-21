@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import json.Formatting._
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
 import play.api.Logger
 import play.api.libs.json._
@@ -29,24 +30,30 @@ trait SlackEvent {
   }
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    services.slackApiService.clientFor(profile).openConversationFor(user).map(Some(_)).recover {
-      case e: SlackApiError => {
-        val msg =
-          s"""Couldn't open DM channel to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}
-             |Original event channel: $channel
-           """.stripMargin
-        Logger.error(msg, e)
-        None
+    if (profile.userId == user) {
+      Future.successful(None)
+    } else {
+      services.slackApiService.clientFor(profile).openConversationFor(user).map(Some(_)).recover {
+        case e: SlackApiError => {
+          if (e.code != "cannot_dm_bot") {
+            val msg =
+              s"""Couldn't open DM channel to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}
+                 |Original event channel: $channel
+               """.stripMargin
+            Logger.error(msg, e)
+          }
+          None
+        }
       }
     }
   }
 
   def channelForSend(
-                      forcePrivate: Boolean,
+                      responseType: BehaviorResponseType,
                       maybeConversation: Option[Conversation],
                       services: DefaultServices
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    (if (forcePrivate) {
+    (if (responseType == Private) {
       eventualMaybeDMChannel(services)
     } else {
       Future.successful(maybeConversation.flatMap(_.maybeChannel))
@@ -56,11 +63,11 @@ trait SlackEvent {
   }
 
   def maybeChannelForSendAction(
-                                  forcePrivate: Boolean,
+                                  responseType: BehaviorResponseType,
                                   maybeConversation: Option[Conversation],
                                   services: DefaultServices
                                 )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
-    DBIO.from(channelForSend(forcePrivate, maybeConversation, services).map(Some(_)))
+    DBIO.from(channelForSend(responseType, maybeConversation, services).map(Some(_)))
   }
 
   val isDirectMessage: Boolean = {

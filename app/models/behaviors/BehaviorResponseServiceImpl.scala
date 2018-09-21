@@ -6,9 +6,9 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorparameter.BehaviorParameterContext
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.conversations.parentconversation.{NewParentConversation, ParentConversation}
+import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.Event
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import models.team.Team
 import services._
 import services.slack.SlackEventService
@@ -65,12 +65,13 @@ class BehaviorResponseServiceImpl @Inject() (
                       event: Event,
                       behaviorVersion: BehaviorVersion,
                       paramValues: Map[String, String],
-                      maybeActivatedTrigger: Option[MessageTrigger],
+                      maybeActivatedTrigger: Option[Trigger],
                       maybeConversation: Option[Conversation],
-                      maybeNewParent: Option[NewParentConversation]
+                      maybeNewParent: Option[NewParentConversation],
+                      userExpectsResponse: Boolean
                     ): DBIO[BehaviorResponse] = {
     parametersWithValuesForAction(event, behaviorVersion, paramValues, maybeConversation).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, maybeNewParent, services)
+      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, maybeNewParent, userExpectsResponse, services)
     }
   }
 
@@ -78,11 +79,12 @@ class BehaviorResponseServiceImpl @Inject() (
                 event: Event,
                 behaviorVersion: BehaviorVersion,
                 paramValues: Map[String, String],
-                maybeActivatedTrigger: Option[MessageTrigger],
+                maybeActivatedTrigger: Option[Trigger],
                 maybeConversation: Option[Conversation],
-                maybeNewParent: Option[NewParentConversation]
+                maybeNewParent: Option[NewParentConversation],
+                userExpectsResponse: Boolean
               ): Future[BehaviorResponse] = {
-    dataService.run(buildForAction(event, behaviorVersion, paramValues, maybeActivatedTrigger, maybeConversation, maybeNewParent))
+    dataService.run(buildForAction(event, behaviorVersion, paramValues, maybeActivatedTrigger, maybeConversation, maybeNewParent, userExpectsResponse))
   }
 
   def allFor(

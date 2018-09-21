@@ -6,11 +6,12 @@ import json.Formatting._
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.{Normal, Private}
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.datatypefield.DataTypeFieldForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
 import models.team.Team
-import play.api.libs.json.Json
+import play.api.libs.json._
 import services.DataService
 import slick.dbio.DBIO
 import utils.NameFormatter
@@ -31,7 +32,6 @@ case class BehaviorVersionData(
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
                                 exportId: Option[String],
-                                knownEnvVarsUsed: Seq[String],
                                 createdAt: Option[OffsetDateTime]
                                 ) extends BehaviorVersionForDataTypeSchema {
 
@@ -141,8 +141,6 @@ object BehaviorVersionData {
                 dataService: DataService
               ): BehaviorVersionData = {
 
-    val knownEnvVarsUsed = dataService.teamEnvironmentVariables.lookForInCode(functionBody)
-
     BehaviorVersionData(
       id,
       teamId,
@@ -157,7 +155,6 @@ object BehaviorVersionData {
       triggers.sorted,
       config,
       exportId,
-      knownEnvVarsUsed,
       createdAt
     )
   }
@@ -178,7 +175,7 @@ object BehaviorVersionData {
       config = BehaviorConfig(
         None,
         maybeName,
-        None,
+        BehaviorResponseTypeData.normal.id,
         None,
         isDataType = maybeDataTypeConfig.isDefined,
         Some(isTest),
@@ -200,7 +197,22 @@ object BehaviorVersionData {
                    configString: String,
                    dataService: DataService
                    ): BehaviorVersionData = {
-    val config = Json.parse(configString).validate[BehaviorConfig].get
+    var json = Json.parse(configString)
+    if ((json \ "responseTypeId").isEmpty) {
+      json match {
+        case obj: JsObject => {
+          val isPrivate = (json \ "forcePrivateResponse").getOrElse(JsFalse) == JsTrue
+          val responseType = if (isPrivate) {
+            Private
+          } else {
+            Normal
+          }
+          json = obj ++ Json.obj("responseTypeId" -> JsString(responseType.id))
+        }
+        case _ =>
+      }
+    }
+    val config = json.validate[BehaviorConfig].get
     val configWithDataTypeConfig = if (!config.isDataType || config.dataTypeConfig.isDefined) {
       config
     } else {
@@ -250,7 +262,7 @@ object BehaviorVersionData {
         }
       }).map(_.toMap)
       maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.messageTriggers.allFor(behaviorVersion).map(Some(_))
+        dataService.triggers.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(Future.successful(None))
       maybeDataTypeConfig <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.dataTypeConfigs.maybeFor(behaviorVersion)
@@ -269,7 +281,7 @@ object BehaviorVersionData {
         val config = BehaviorConfig(
           maybeExportId,
           behaviorVersion.maybeName,
-          Some(behaviorVersion.forcePrivateResponse),
+          behaviorVersion.responseType.id,
           Some(behaviorVersion.canBeMemoized),
           isDataType = maybeEnsuredDataTypeConfigData.isDefined,
           isTest = Some(behaviorVersion.isTest),

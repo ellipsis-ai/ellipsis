@@ -5,7 +5,7 @@ import export.BehaviorGroupExporter
 case class BehaviorConfig(
                            exportId: Option[String],
                            name: Option[String],
-                           forcePrivateResponse: Option[Boolean],
+                           responseTypeId: String,
                            canBeMemoized: Option[Boolean],
                            isDataType: Boolean,
                            isTest: Option[Boolean],

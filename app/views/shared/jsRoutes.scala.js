@@ -43,6 +43,7 @@
   routes.javascript.ScheduledActionsController.index,
   routes.javascript.ScheduledActionsController.delete,
   routes.javascript.ScheduledActionsController.save,
+  routes.javascript.ScheduledActionsController.validateRecurrence,
   routes.javascript.SocialAuthController.authenticateGithub,
   routes.javascript.SupportController.sendRequest,
 
@@ -52,14 +53,16 @@
 
   web.settings.routes.javascript.EnvironmentVariablesController.list,
   web.settings.routes.javascript.EnvironmentVariablesController.submit,
+  web.settings.routes.javascript.EnvironmentVariablesController.delete,
+  web.settings.routes.javascript.EnvironmentVariablesController.adminLoadValue,
   web.settings.routes.javascript.RegionalSettingsController.index,
   web.settings.routes.javascript.IntegrationsController.list,
+  web.settings.routes.javascript.IntegrationsController.add,
+  web.settings.routes.javascript.IntegrationsController.edit,
+  web.settings.routes.javascript.IntegrationsController.save,
   web.settings.routes.javascript.AWSConfigController.add,
   web.settings.routes.javascript.AWSConfigController.edit,
   web.settings.routes.javascript.AWSConfigController.save,
-  web.settings.routes.javascript.OAuth2ApplicationController.edit,
-  web.settings.routes.javascript.OAuth2ApplicationController.add,
-  web.settings.routes.javascript.OAuth2ApplicationController.save,
 
   admin.routes.javascript.UserInfoController.userDataFor
 )

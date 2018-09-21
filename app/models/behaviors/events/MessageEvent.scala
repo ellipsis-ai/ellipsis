@@ -24,46 +24,32 @@ trait MessageEvent extends Event {
                             )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
-      maybeLimitToBehaviorVersion <- maybeLimitToBehavior.map { limitToBehavior =>
-        dataService.behaviors.maybeCurrentVersionFor(limitToBehavior)
-      }.getOrElse(Future.successful(None))
-      triggers <- maybeLimitToBehaviorVersion.map { limitToBehaviorVersion =>
-        dataService.messageTriggers.allFor(limitToBehaviorVersion)
-      }.getOrElse {
-        (for {
-          team <- maybeTeam
-          channel <- maybeChannel
-        } yield {
-          dataService.behaviorGroupDeployments.allActiveTriggersFor(context, channel, team)
-        }).getOrElse(Future.successful(Seq()))
-      }
-      activatedTriggerLists <- Future.successful {
-        triggers.
-          filter(_.isActivatedBy(this)).
-          groupBy(_.behaviorVersion).
-          values.
-          toSeq
-      }
-      activatedTriggerListsWithParamCounts <- Future.sequence(
-        activatedTriggerLists.map { list =>
-          Future.sequence(list.map { trigger =>
+      listeners <- dataService.messageListeners.allFor(this, maybeTeam, maybeChannel, context)
+      listenerResponses <- Future.sequence(listeners.map { ea =>
+        for {
+          maybeGroupVersion <- dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(ea.behavior.group, ea.medium, ea.channel)
+          maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+            dataService.behaviorVersions.findFor(ea.behavior, groupVersion)
+          }.getOrElse(Future.successful(None))
+          maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
             for {
-              params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
-            } yield {
-              (trigger, trigger.invocationParamsFor(this, params).size)
-            }
-          })
-        }
-      )
-      // we want to chose activated triggers with more params first
-      activatedTriggers <- Future.successful(activatedTriggerListsWithParamCounts.flatMap { list =>
-        list.
-          sortBy { case(_, paramCount) => paramCount }.
-          map { case(trigger, _) => trigger }.
-          reverse.
-          headOption
-      })
-      responses <- Future.sequence(activatedTriggers.map { trigger =>
+              params <- dataService.behaviorParameters.allFor(behaviorVersion)
+              maybeResponse <- dataService.behaviorResponses.buildFor(
+                this,
+                behaviorVersion,
+                ea.invocationParamsFor(params, relevantMessageText),
+                None,
+                None,
+                None,
+                userExpectsResponse = false
+              ).map(Some(_))
+            } yield maybeResponse
+          }.getOrElse(Future.successful(None))
+        } yield maybeResponse
+      }).map(_.flatten)
+      possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(this, maybeTeam, maybeChannel, context, maybeLimitToBehavior)
+      activatedTriggers <- activatedTriggersIn(possibleActivatedTriggers, dataService)
+      triggerResponses <- Future.sequence(activatedTriggers.map { trigger =>
         for {
           params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
           response <- dataService.behaviorResponses.buildFor(
@@ -72,11 +58,12 @@ trait MessageEvent extends Event {
             trigger.invocationParamsFor(this, params),
             Some(trigger),
             None,
-            None
+            None,
+            userExpectsResponse = true
           )
         } yield response
       })
-    } yield responses
+    } yield triggerResponses ++ listenerResponses
   }
 
 }

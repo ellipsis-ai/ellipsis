@@ -2,6 +2,7 @@ package models.behaviors.events
 
 import javax.inject._
 import models.behaviors.behaviorparameter.FetchValidValuesBadResultException
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.SlackMessageActionConstants._
@@ -31,7 +32,7 @@ class EventHandler @Inject() (
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
       results <- {
         val eventualResults = Future.sequence(responses.map(_.result))
-        if (responses.nonEmpty) {
+        if (responses.exists(_.userExpectsResponse)) {
           event.resultReactionHandler(eventualResults, services)
         }
         eventualResults.flatMap { r =>
@@ -52,7 +53,7 @@ class EventHandler @Inject() (
       Future.sequence((conversation :: ancestors).map { ea =>
         dataService.run(ea.cancelAction(dataService))
       }).map { _ =>
-        SimpleTextResult(event, Some(conversation), withMessage, forcePrivateResponse = false)
+        SimpleTextResult(event, Some(conversation), withMessage, responseType = Normal)
       }
     }
   }
@@ -96,12 +97,15 @@ class EventHandler @Inject() (
             }.getOrElse {
               s"It’s been a while since I asked you the question above."
             } + s"\n\nJust so I’m sure, is this an answer?"
-            val maybeSlackUserList = event match {
-              case slackMessageEvent: SlackMessageEvent => Some(slackMessageEvent.message.userList)
-              case _ => None
-            }
-            val actions = SlackMessageActionsGroup(callbackId, actionList, Some(event.relevantMessageTextWithFormatting), maybeSlackUserList, Some(Color.PINK))
-            TextWithAttachmentsResult(event, Some(updatedConvo), prompt, forcePrivateResponse = false, Seq(actions))
+
+            val actions = SlackMessageActionsGroup(
+              callbackId,
+              actionList,
+              Some(event.relevantMessageTextWithFormatting),
+              Some(event.messageUserDataList(Some(updatedConvo), services)),
+              Some(Color.PINK)
+            )
+            TextWithAttachmentsResult(event, Some(updatedConvo), prompt, responseType = Normal, Seq(actions))
           }
         } else {
           val eventualResult = dataService.run(updatedConvo.resultForAction(event, services))
@@ -128,7 +132,7 @@ class EventHandler @Inject() (
                     s"<#$channel>"
                   }.getOrElse("the main channel")
                 }
-                Some(SimpleTextResult(event, Some(convo), s"This conversation is either done or has expired. You can start a new one back in $channelText.", forcePrivateResponse = false))
+                Some(SimpleTextResult(event, Some(convo), s"This conversation is either done or has expired. You can start a new one back in $channelText.", responseType = Normal))
               } else {
                 None
               }
@@ -143,6 +147,7 @@ class EventHandler @Inject() (
 
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     (maybeConversation.map { conversation =>
+      cacheService.cacheMessageUserDataList(event.messageUserDataList.toSeq, conversation.id)
       dataService.run(dataService.parentConversations.rootForAction(conversation)).flatMap { root =>
         val isUninterrupted = event.maybeThreadId.isDefined || cacheService.eventHasLastConversationId(event, root.id)
         if (event.maybeThreadId.isEmpty) {
@@ -161,11 +166,7 @@ class EventHandler @Inject() (
       BuiltinBehavior.maybeFrom(event, services).map { builtin =>
         event.resultReactionHandler(builtin.result.map(Seq(_)), services)
       }.getOrElse {
-        maybeHandleInExpiredThread(event).flatMap { maybeExpiredThreadResult =>
-          maybeExpiredThreadResult.map(r => Future.successful(Seq(r))).getOrElse {
-            startInvokeConversationFor(event)
-          }
-        }
+        startInvokeConversationFor(event)
       }
     }).recover {
       case e: FetchValidValuesBadResultException => Seq(e.result)

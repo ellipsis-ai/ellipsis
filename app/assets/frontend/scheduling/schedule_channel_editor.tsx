@@ -2,7 +2,6 @@ import * as React from 'react';
 import Checkbox from '../form/checkbox';
 import Collapsible from '../shared_ui/collapsible';
 import SearchWithResults from '../form/search_with_results';
-import SVGCheckmark from '../svg/checkmark';
 import ChannelName from './channel_name';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
@@ -119,6 +118,23 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
       return Boolean(selectedChannel && selectedChannel.isDm());
     }
 
+    channelMissing(): boolean {
+      const channelId = this.props.scheduledAction.channel;
+      return !channelId || !this.findChannelFor(channelId);
+    }
+
+    channelArchived(): boolean {
+      const channelId = this.props.scheduledAction.channel;
+      const channel = this.findChannelFor(channelId);
+      return Boolean(channel && channel.isArchived);
+    }
+
+    channelReadOnly(): boolean {
+      const channelId = this.props.scheduledAction.channel;
+      const channel = this.findChannelFor(channelId);
+      return Boolean(channel && channel.isReadOnly);
+    }
+
     botMissingFromChannel(): boolean {
       const channelId = this.props.scheduledAction.channel;
       if (channelId && this.props.slackBotUserId) {
@@ -157,17 +173,28 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
     }
 
     renderChannelWarning() {
-      if (this.botMissingFromChannel()) {
+      if (this.channelMissing()) {
         return (
           <span className="type-pink type-bold type-italic">
-            Warning: Ellipsis must be invited to this channel to run any action.
+            Warning: Unknown or deleted channel
           </span>
         );
-      } else if (this.props.scheduledAction.channel) {
+      } else if (this.channelArchived()) {
         return (
-          <span className="type-green">
-            <span className="display-inline-block height-l align-m mrs"><SVGCheckmark/></span>
-            <span className="display-inline-block align-m">Ellipsis can send messages in this channel.</span>
+          <span className="type-pink type-bold type-italic">
+            Warning: This channel has been archived
+          </span>
+        );
+      } else if (this.botMissingFromChannel()) {
+        return (
+          <span className="type-pink type-bold type-italic">
+            Warning: The bot must be invited to this channel to run any action
+          </span>
+        );
+      } else if (this.channelReadOnly()) {
+        return (
+          <span className="type-pink type-bold type-italic">
+            Warning: The bot is restricted from posting to this channel by the admin
           </span>
         );
       } else if (!this.hasChannelList()) {

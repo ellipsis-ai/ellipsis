@@ -10,6 +10,8 @@ describe('BehaviorList', () => {
   jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get' });
   jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get' });
 
+  const normalResponseType = "Normal";
+
   const behaviorVersionTask1 = Object.freeze({
     "teamId": "abcdef",
     "groupId": "sfgsdf",
@@ -29,7 +31,9 @@ describe('BehaviorList', () => {
       "isRegex": false,
       "caseSensitive": false
     }],
-    "config": {},
+    "config": {
+      "responseTypeId": normalResponseType
+    },
     "createdAt": 1468338136532
   });
   const behaviorVersionTask2 = Object.freeze({
@@ -46,7 +50,9 @@ describe('BehaviorList', () => {
       "isRegex": true,
       "caseSensitive": false
     }],
-    "config": {},
+    "config": {
+      "responseTypeId": normalResponseType
+    },
     "createdAt": 1468359271138
   });
   const behaviorVersionTask3 = Object.freeze({
@@ -63,7 +69,9 @@ describe('BehaviorList', () => {
       "isRegex": true,
       "caseSensitive": false
     }],
-    "config": {},
+    "config": {
+      "responseTypeId": normalResponseType
+    },
     "createdAt": 1511817369237
   });
   const behaviorVersionKnowledge1 = Object.freeze({
@@ -75,7 +83,9 @@ describe('BehaviorList', () => {
     "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
     "params": [],
     "triggers": [],
-    "config": {},
+    "config": {
+      "responseTypeId": normalResponseType
+    },
     "createdAt": 1466109904858
   });
   const behaviorVersionKnowledge2 = Object.freeze({
@@ -87,7 +97,9 @@ describe('BehaviorList', () => {
     "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
     "params": [],
     "triggers": [],
-    "config": {},
+    "config": {
+      "responseTypeId": normalResponseType
+    },
     "createdAt": 1511816895686
   });
   const group1 = Object.freeze(BehaviorGroup.fromJson({
@@ -97,7 +109,7 @@ describe('BehaviorList', () => {
     behaviorVersions: [behaviorVersionTask1, behaviorVersionTask3],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858
   }));
@@ -108,7 +120,7 @@ describe('BehaviorList', () => {
     behaviorVersions: [behaviorVersionTask2],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858
   }));
@@ -119,7 +131,7 @@ describe('BehaviorList', () => {
     behaviorVersions: [behaviorVersionKnowledge2, behaviorVersionKnowledge1],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858
   }));

@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import json.UserData
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
+import models.behaviors.behaviorversion.{Normal, Private}
 import models.behaviors.events.{Event, EventType}
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
@@ -30,7 +31,7 @@ case class FeedbackBehavior(feedbackType: String, userMessage: String, event: Ev
            |
            |${userMessage.lines.mkString("> ", "\n", "")}
          """.stripMargin
-      SimpleTextResult(event, None, response, forcePrivateResponse = true)
+      SimpleTextResult(event, None, response, responseType = Private)
     }
   }
 }
@@ -79,7 +80,7 @@ object FeedbackBehavior {
         Some(originalEventType)
       )
       wasSent <- maybeAdminTeamEvent.map { adminTeamEvent =>
-        val result = SimpleTextResult(adminTeamEvent, None, msg, forcePrivateResponse = false)
+        val result = SimpleTextResult(adminTeamEvent, None, msg, responseType = Normal)
         services.botResultService.sendIn(result, None).map(_.isDefined).recover {
           case e: SlackApiError => {
             false

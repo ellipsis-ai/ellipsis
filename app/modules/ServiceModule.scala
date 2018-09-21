@@ -4,9 +4,13 @@ import com.google.inject.AbstractModule
 import models.Models
 import models.accounts.github.profile.{GithubProfileService, GithubProfileServiceImpl}
 import models.accounts.linkedaccount.{LinkedAccountService, LinkedAccountServiceImpl}
+import models.accounts.linkedoauth1token.{LinkedOAuth1TokenService, LinkedOAuth1TokenServiceImpl}
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
 import models.accounts.linkedsimpletoken.{LinkedSimpleTokenService, LinkedSimpleTokenServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
+import models.accounts.oauth1api.{OAuth1ApiService, OAuth1ApiServiceImpl}
+import models.accounts.oauth1application.{OAuth1ApplicationService, OAuth1ApplicationServiceImpl}
+import models.accounts.oauth1token.{OAuth1TokenService, OAuth1TokenServiceImpl}
 import models.accounts.oauth2api.{OAuth2ApiService, OAuth2ApiServiceImpl}
 import models.accounts.oauth2application.{OAuth2ApplicationService, OAuth2ApplicationServiceImpl}
 import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
@@ -25,6 +29,7 @@ import models.behaviors.behaviortestresult.{BehaviorTestResultService, BehaviorT
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
 import models.behaviors.config.requiredawsconfig.{RequiredAWSConfigService, RequiredAWSConfigServiceImpl}
+import models.behaviors.config.requiredoauth1apiconfig.{RequiredOAuth1ApiConfigService, RequiredOAuth1ApiConfigServiceImpl}
 import models.behaviors.config.requiredoauth2apiconfig.{RequiredOAuth2ApiConfigService, RequiredOAuth2ApiConfigServiceImpl}
 import models.behaviors.config.requiredsimpletokenapi.{RequiredSimpleTokenApiService, RequiredSimpleTokenApiServiceImpl}
 import models.behaviors.conversations.collectedparametervalue.{CollectedParameterValueService, CollectedParameterValueServiceImpl}
@@ -40,12 +45,13 @@ import models.behaviors.invocationtoken.{InvocationTokenService, InvocationToken
 import models.behaviors.library.{LibraryVersionService, LibraryVersionServiceImpl}
 import models.behaviors.linked_github_repo.{LinkedGithubRepoService, LinkedGithubRepoServiceImpl}
 import models.behaviors.managedbehaviorgroup.{ManagedBehaviorGroupService, ManagedBehaviorGroupServiceImpl}
+import models.behaviors.messagelistener.{MessageListenerService, MessageListenerServiceImpl}
 import models.behaviors.nodemoduleversion.{NodeModuleVersionService, NodeModuleVersionServiceImpl}
 import models.behaviors.savedanswer.{SavedAnswerService, SavedAnswerServiceImpl}
 import models.behaviors.scheduling.recurrence.{RecurrenceService, RecurrenceServiceImpl}
 import models.behaviors.scheduling.scheduledbehavior.{ScheduledBehaviorService, ScheduledBehaviorServiceImpl}
 import models.behaviors.scheduling.scheduledmessage.{ScheduledMessageService, ScheduledMessageServiceImpl}
-import models.behaviors.triggers.messagetrigger.{MessageTriggerService, MessageTriggerServiceImpl}
+import models.behaviors.triggers.{TriggerService, TriggerServiceImpl}
 import models.behaviors.{BehaviorResponseService, BehaviorResponseServiceImpl, BotResultService, BotResultServiceImpl}
 import models.billing.active_user_record.{ActiveUserRecordService, ActiveUserRecordServiceImpl}
 import models.billing.addon.{AddonService, AddonServiceImpl}
@@ -78,13 +84,17 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[APITokenService].to[APITokenServiceImpl]
     bind[TeamEnvironmentVariableService].to[TeamEnvironmentVariableServiceImpl]
     bind[InvocationTokenService].to[InvocationTokenServiceImpl]
+    bind[LinkedOAuth1TokenService].to[LinkedOAuth1TokenServiceImpl]
     bind[LinkedOAuth2TokenService].to[LinkedOAuth2TokenServiceImpl]
     bind[LinkedSimpleTokenService].to[LinkedSimpleTokenServiceImpl]
+    bind[OAuth1ApiService].to[OAuth1ApiServiceImpl]
+    bind[OAuth1ApplicationService].to[OAuth1ApplicationServiceImpl]
     bind[OAuth2ApiService].to[OAuth2ApiServiceImpl]
     bind[OAuth2ApplicationService].to[OAuth2ApplicationServiceImpl]
     bind[SimpleTokenApiService].to[SimpleTokenApiServiceImpl]
     bind[GithubProfileService].to[GithubProfileServiceImpl]
     bind[SlackBotProfileService].to[SlackBotProfileServiceImpl]
+    bind[OAuth1TokenService].to[OAuth1TokenServiceImpl]
     bind[OAuth2TokenService].to[OAuth2TokenServiceImpl]
     bind[BehaviorGroupService].to[BehaviorGroupServiceImpl]
     bind[BehaviorGroupVersionService].to[BehaviorGroupVersionServiceImpl]
@@ -97,9 +107,11 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[InputService].to[InputServiceImpl]
     bind[LibraryVersionService].to[LibraryVersionServiceImpl]
     bind[SavedAnswerService].to[SavedAnswerServiceImpl]
-    bind[MessageTriggerService].to[MessageTriggerServiceImpl]
+    bind[TriggerService].to[TriggerServiceImpl]
+    bind[MessageListenerService].to[MessageListenerServiceImpl]
     bind[AWSConfigService].to[AWSConfigServiceImpl]
     bind[RequiredAWSConfigService].to[RequiredAWSConfigServiceImpl]
+    bind[RequiredOAuth1ApiConfigService].to[RequiredOAuth1ApiConfigServiceImpl]
     bind[RequiredOAuth2ApiConfigService].to[RequiredOAuth2ApiConfigServiceImpl]
     bind[RequiredSimpleTokenApiService].to[RequiredSimpleTokenApiServiceImpl]
     bind[LinkedGithubRepoService].to[LinkedGithubRepoServiceImpl]

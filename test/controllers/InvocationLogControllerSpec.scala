@@ -10,7 +10,7 @@ import models.behaviors.ResultType
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.events.EventType
 import models.behaviors.invocationlogentry.InvocationLogEntry
 import models.behaviors.invocationtoken.InvocationToken
@@ -21,7 +21,6 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
-import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.DataService
@@ -62,8 +61,8 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
     val group = BehaviorGroup(IDs.next, None, team, now)
     val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
     val behavior = Behavior(IDs.next, team, group, Some(IDs.next), isDataType = false, OffsetDateTime.now)
-    val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
-    val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, Some(behaviorName), None, None, false, false, false, OffsetDateTime.now)
+    val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
+    val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, Some(behaviorName), None, None, Normal, false, false, OffsetDateTime.now)
     val invocationToken = InvocationToken(IDs.next, user.id, originatingBehaviorVersion.id, None, now)
 
     val logs = makeLogs(targetBehaviorVersion, user)

@@ -142,7 +142,7 @@ class SupportRequest extends React.Component<Props, State> {
             <div className="columns">
               <div className="column column-two-thirds narrow-column-full pbl">
                 <h5>Your question or concern <span className="type-weak type-regular">(required):</span></h5>
-                <Textarea value={this.state.message} onChange={this.onChangeMessage} rows="10" className="form-input-height-auto" />
+                <Textarea value={this.state.message} onChange={this.onChangeMessage} rows={10} className="form-input-height-auto" />
               </div>
             </div>
             <div>

@@ -1,11 +1,13 @@
 package models.behaviors
 
 import akka.actor.ActorSystem
+import json.Formatting._
 import json.UserData
 import models.accounts.user.User
 import models.behaviors.config.awsconfig.AWSConfig
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
-import models.behaviors.events.Event
+import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.{Event, MessageUserData}
 import models.team.Team
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -26,16 +28,38 @@ case class LinkedInfo(externalSystem: String, accessToken: String) {
 
 }
 
-case class MessageInfo(medium: String, channel: Option[String], userId: String, details: JsObject)
+case class MessageInfo(
+                        text: String,
+                        medium: String,
+                        channel: Option[String],
+                        thread: Option[String],
+                        userId: String,
+                        details: JsObject,
+                        usersMentioned: Set[MessageUserData],
+                        permalink: Option[String]
+                      )
 
 object MessageInfo {
 
   def buildFor(
                 event: Event,
+                maybeConversation: Option[Conversation],
                 services: DefaultServices
               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
-    event.detailsFor(services).map { details =>
-      MessageInfo(event.name, event.maybeChannel, event.userIdForContext, details)
+    for {
+      details <- event.detailsFor(services)
+      maybePermalink <- event.maybePermalinkFor(services)
+    } yield {
+      MessageInfo(
+        event.messageText,
+        event.name,
+        event.maybeChannel,
+        event.maybeThreadId,
+        event.userIdForContext,
+        details,
+        event.messageUserDataList(maybeConversation, services),
+        maybePermalink
+      )
     }
   }
 
@@ -43,23 +67,21 @@ object MessageInfo {
 
 case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option[MessageInfo], maybeUserData: Option[UserData]) {
 
-  implicit val messageInfoWrites = Json.writes[MessageInfo]
-
   def toJson: JsObject = {
-    val linkParts: Seq[(String, JsValue)] = Seq(
-      "links" -> JsArray(links.map(_.toJson))
-    )
+    val linkParts = Json.obj("links" -> JsArray(links.map(_.toJson)))
     val messageInfoPart = maybeMessageInfo.map { info =>
-      Seq("messageInfo" -> Json.toJson(info))
-    }.getOrElse(Seq())
-    val userDataPart = Seq(
-      "ellipsisUserId" -> JsString(user.id),
-      "timeZone" -> Json.toJson(maybeUserData.flatMap(_.tz)),
-      "userName" -> Json.toJson(maybeUserData.flatMap(_.userName)),
-      "fullName" -> Json.toJson(maybeUserData.flatMap(_.fullName)),
-      "email" -> Json.toJson(maybeUserData.flatMap(_.email))
-    )
-    JsObject(linkParts ++ messageInfoPart ++ userDataPart)
+      Json.obj("messageInfo" -> Json.toJson(info))
+    }.getOrElse(Json.obj())
+    val userDataPart = Json.toJsObject(MessageUserData(
+      maybeUserData.flatMap(_.context).getOrElse("unknown"),
+      maybeUserData.map(_.userNameOrDefault).getOrElse("unknown"),
+      Some(user.id),
+      Some(user.loginInfo.providerKey),
+      maybeUserData.flatMap(_.fullName),
+      maybeUserData.flatMap(_.email),
+      maybeUserData.flatMap(_.tz)
+    ))
+    linkParts ++ messageInfoPart ++ userDataPart
   }
 }
 
@@ -68,19 +90,23 @@ object UserInfo {
   def buildForAction(
                       user: User,
                       event: Event,
+                      maybeConversation: Option[Conversation],
                       services: DefaultServices
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
     for {
+      linkedOAuth1Tokens <- services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)
       linkedOAuth2Tokens <- services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)
       linkedSimpleTokens <- services.dataService.linkedSimpleTokens.allForUserAction(user)
       links <- DBIO.successful {
-        linkedOAuth2Tokens.map { ea =>
+        linkedOAuth1Tokens.map { ea =>
+          LinkedInfo(ea.application.name, ea.accessToken)
+        } ++ linkedOAuth2Tokens.map { ea =>
           LinkedInfo(ea.application.name, ea.accessToken)
         } ++ linkedSimpleTokens.map { ea =>
           LinkedInfo(ea.api.name, ea.accessToken)
         }
       }
-      messageInfo <- DBIO.from(event.messageInfo(services))
+      messageInfo <- DBIO.from(event.messageInfo(maybeConversation, services))
       maybeTeam <- services.dataService.teams.findAction(user.teamId)
       maybeUserData <- maybeTeam.map { team =>
         DBIO.from(services.dataService.users.userDataFor(user, team)).map(Some(_))
@@ -92,12 +118,13 @@ object UserInfo {
 
   def buildForAction(
                       event: Event,
+                      maybeConversation: Option[Conversation],
                       teamId: String,
                       services: DefaultServices
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
     for {
       user <- event.ensureUserAction(services.dataService)
-      info <- buildForAction(user, event, services)
+      info <- buildForAction(user, event, maybeConversation, services)
     } yield info
   }
 

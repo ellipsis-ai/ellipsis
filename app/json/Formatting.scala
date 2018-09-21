@@ -5,7 +5,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors._
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.behaviortestresult.BehaviorTestResult
-import models.behaviors.events.{SlackFile, SlackMessage}
+import models.behaviors.events.{MessageUserData, SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
 import services.caching.SlackMessageEventData
@@ -37,26 +37,22 @@ object Formatting {
   lazy implicit val awsConfigReads = Json.reads[AWSConfigData]
   lazy implicit val awsConfigWrites = Json.writes[AWSConfigData]
 
-  lazy implicit val oAuth2ApiReads = Json.reads[OAuth2ApiData]
-  lazy implicit val oAuth2ApiWrites = Json.writes[OAuth2ApiData]
-
-  lazy implicit val oAuth2ApplicationReads = Json.reads[OAuth2ApplicationData]
-  lazy implicit val oAuth2ApplicationWrites = Json.writes[OAuth2ApplicationData]
+  lazy implicit val oAuthApiFormat = Json.format[OAuthApiData]
+  lazy implicit val oAuthApplicatioFormat = Json.format[OAuthApplicationData]
 
   lazy implicit val linkedGithubRepoDataFormat = Json.format[LinkedGithubRepoData]
 
-  lazy implicit val oAuth2ApplicationListConfigWrites = Json.writes[OAuth2ApplicationListConfig]
+  lazy implicit val oAuthApplicationEditConfigWrites = Json.writes[OAuthApplicationEditConfig]
 
-  lazy implicit val oAuth2ApplicationEditConfigWrites = Json.writes[OAuth2ApplicationEditConfig]
-
-  lazy implicit val requiredOAuth2ApiConfigReads = Json.reads[RequiredOAuth2ApiConfigData]
-  lazy implicit val requiredOAuth2ApiConfigWrites = Json.writes[RequiredOAuth2ApiConfigData]
+  lazy implicit val requiredOAuthApiConfigFormat = Json.format[RequiredOAuthApiConfigData]
 
   lazy implicit val simpleTokenApiReads = Json.reads[SimpleTokenApiData]
   lazy implicit val simpleTokenApiWrites = Json.writes[SimpleTokenApiData]
 
   lazy implicit val requiredSimpleTokenApiReads = Json.reads[RequiredSimpleTokenApiData]
   lazy implicit val requiredSimpleTokenApiWrites = Json.writes[RequiredSimpleTokenApiData]
+
+  lazy implicit val behaviorResponseTypeDataFormat = Json.format[BehaviorResponseTypeData]
 
   lazy implicit val behaviorConfigReads = Json.reads[BehaviorConfig]
   lazy implicit val behaviorConfigWrites = Json.writes[BehaviorConfig]
@@ -128,6 +124,8 @@ object Formatting {
 
   lazy implicit val scheduledActionRecurrenceDataReads = Json.reads[ScheduledActionRecurrenceData]
   lazy implicit val scheduledActionRecurrenceDataWrites = Json.writes[ScheduledActionRecurrenceData]
+
+  lazy implicit val scheduledActionNextRecurrencesData = Json.writes[ScheduledActionValidatedRecurrenceData]
 
   lazy implicit val scheduledActionDataReads = Json.reads[ScheduledActionData]
   lazy implicit val scheduledActionDataWrites = Json.writes[ScheduledActionData]
@@ -206,5 +204,9 @@ object Formatting {
   lazy implicit val behaviorTestResultsDataFormat: Format[BehaviorTestResultsData] = Json.format[BehaviorTestResultsData]
 
   lazy implicit val adminTeamDataWrites = Json.writes[AdminTeamData]
+
+  implicit val messageUserDataWrites = Json.format[MessageUserData]
+  implicit val messageInfoWrites = Json.format[MessageInfo]
+
 }
 

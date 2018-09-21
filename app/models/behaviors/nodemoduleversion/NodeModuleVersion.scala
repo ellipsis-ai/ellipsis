@@ -7,7 +7,7 @@ case class NodeModuleVersion(
                               groupVersionId: String
                             ) {
   val nameWithoutVersion: String = {
-    name.replaceFirst("""@.+$""", "")
+    name.replaceFirst("""^(.+)@.+$""", "$1")
   }
 
   val versionWithoutSemVerPrefix: String = {

@@ -212,8 +212,12 @@ class ScheduledBehaviorServiceImpl @Inject() (
     dataService.run(saveAction(scheduledBehavior))
   }
 
-  def updateNextTriggeredForAction(scheduledBehavior: ScheduledBehavior): DBIO[ScheduledBehavior] = {
-    saveAction(scheduledBehavior.withUpdatedNextTriggeredFor(OffsetDateTime.now))
+  def updateForNextRunAction(scheduledBehavior: ScheduledBehavior): DBIO[ScheduledBehavior] = {
+    val updated = scheduledBehavior.updatedWithNextRunAfter(OffsetDateTime.now)
+    for {
+      _ <- dataService.recurrences.saveAction(updated.recurrence)
+      updatedBehavior <- saveAction(updated)
+    } yield updatedBehavior
   }
 
   def maybeCreateWithRecurrenceText(behavior: Behavior,
@@ -261,10 +265,10 @@ class ScheduledBehaviorServiceImpl @Inject() (
   }
   val rawFindQueryFor = Compiled(uncompiledRawFindQuery _)
 
-  def delete(scheduledBehavior: ScheduledBehavior): Future[Option[ScheduledBehavior]] = {
+  def deleteAction(scheduledBehavior: ScheduledBehavior): DBIO[Option[ScheduledBehavior]] = {
     // recurrence deletes cascade to scheduled behaviors
     for {
-      didDelete <- dataService.recurrences.delete(scheduledBehavior.recurrence.id)
+      didDelete <- dataService.recurrences.deleteAction(scheduledBehavior.recurrence.id)
     } yield {
       if (didDelete) {
         Some(scheduledBehavior)
@@ -272,5 +276,9 @@ class ScheduledBehaviorServiceImpl @Inject() (
         None
       }
     }
+  }
+
+  def delete(scheduledBehavior: ScheduledBehavior): Future[Option[ScheduledBehavior]] = {
+    dataService.run(deleteAction(scheduledBehavior))
   }
 }

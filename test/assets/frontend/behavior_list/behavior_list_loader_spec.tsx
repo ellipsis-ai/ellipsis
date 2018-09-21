@@ -20,11 +20,16 @@ jest.setMock('../../../../app/assets/frontend/lib/data_request', { DataRequest: 
   })
 })});
 
+const absoluteUrl = () => "https://nope/";
+
 describe('BehaviorListApp', () => {
-  jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo = () => ({ url: '/fetch', method: 'get' });
-  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get' });
-  jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get' });
-  jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get' });
+  jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo = () => ({ url: '/fetch', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get', absoluteURL: absoluteUrl });
+
+  const normalResponseType= "Normal";
+  const normalResponseTypeJson = { id: normalResponseType, displayString: "Display normally" };
 
   const behaviorVersionTask1: BehaviorVersionJson = {
     "teamId": "abcdef",
@@ -45,11 +50,11 @@ describe('BehaviorListApp', () => {
     }],
     "config": {
       isDataType: false,
-      isTest: false
+      isTest: false,
+      responseTypeId: normalResponseType
     },
     "createdAt": 1468338136532,
-    inputIds: [],
-    knownEnvVarsUsed: []
+    inputIds: []
   };
   const behaviorVersionTask2: BehaviorVersionJson = {
     "teamId": "abcdef",
@@ -65,11 +70,11 @@ describe('BehaviorListApp', () => {
     }],
     "config": {
       isDataType: false,
-      isTest: false
+      isTest: false,
+      responseTypeId: normalResponseType
     },
     "createdAt": 1468359271138,
-    inputIds: [],
-    knownEnvVarsUsed: []
+    inputIds: []
   };
   const behaviorVersionKnowledge1: BehaviorVersionJson ={
     "teamId": "abcdef",
@@ -80,11 +85,11 @@ describe('BehaviorListApp', () => {
     "triggers": [],
     "config": {
       isDataType: false,
-      isTest: false
+      isTest: false,
+      responseTypeId: normalResponseType
     },
     "createdAt": 1466109904858,
-    inputIds: [],
-    knownEnvVarsUsed: []
+    inputIds: []
   };
   const group1: BehaviorGroupJson = {
     id: "a",
@@ -97,7 +102,7 @@ describe('BehaviorListApp', () => {
     behaviorVersions: [behaviorVersionTask1],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858,
     exportId: null,
@@ -117,7 +122,7 @@ describe('BehaviorListApp', () => {
     behaviorVersions: [behaviorVersionTask2],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858,
     exportId: null,
@@ -137,7 +142,7 @@ describe('BehaviorListApp', () => {
     behaviorVersions: [behaviorVersionKnowledge1],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858,
     exportId: null,
@@ -154,7 +159,8 @@ describe('BehaviorListApp', () => {
     slackTeamId: "1",
     teamTimeZone: "America/Toronto",
     branchName: null,
-    botName: "TestBot"
+    botName: "TestBot",
+    possibleResponseTypes: [normalResponseTypeJson]
   };
 
   function createBehaviorListLoader(config) {

@@ -13,10 +13,10 @@ import models.team.Team
 import play.api.Logger
 import play.api.libs.ws.WSClient
 import services.caching.CacheService
-import services.slack.{MalformedResponseException, SlackApiService, SlackEventService}
+import services.slack._
 import services.DataService
 import slick.dbio.DBIO
-import utils.{SlackChannels, SlackMessageReactionHandler, SlackTimestamp}
+import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -138,7 +138,9 @@ class SlackBotProfileServiceImpl @Inject() (
           None,
           SlackTimestamp.now,
           maybeOriginalEventType,
-          isUninterruptedConversation = false
+          isUninterruptedConversation = false,
+          isEphemeral = false,
+          maybeResponseUrl = None
         )
       }
     }
@@ -169,8 +171,8 @@ class SlackBotProfileServiceImpl @Inject() (
         cacheService.getBotName(teamId)
       }
     }.recover {
-      case e: MalformedResponseException => {
-        Logger.warn("Couldn’t retrieve bot user data from Slack API because of an invalid response; using fallback cache", e)
+      case e: InvalidResponseException => {
+        Logger.warn("Couldn’t retrieve bot user data from Slack API because of an invalid/error response; using fallback cache", e)
         cacheService.getBotName(teamId)
       }
     }
@@ -208,8 +210,10 @@ class SlackBotProfileServiceImpl @Inject() (
                               channelId: String,
                               userId: String,
                               originalMessageTs: String,
-                              maybeThreadTs: Option[String]
-  ): Future[Unit] = {
+                              maybeThreadTs: Option[String],
+                              isEphemeral: Boolean,
+                              maybeResponseUrl: Option[String]
+  ): Future[Option[String]] = {
     val delayMilliseconds = 1000
     val event = SlackMessageEvent(
       botProfile,
@@ -219,20 +223,20 @@ class SlackBotProfileServiceImpl @Inject() (
       userId,
       SlackMessage.blank,
       None,
-      SlackTimestamp.now,
+      maybeThreadTs.getOrElse(originalMessageTs),
       None,
-      isUninterruptedConversation = false
+      isUninterruptedConversation = false,
+      isEphemeral,
+      maybeResponseUrl
     )
-    (for {
-      _ <- {
-        val eventualResult = getEventualMaybeResult(event)
-        sendResult(eventualResult)
-        SlackMessageReactionHandler.handle(slackApiService.clientFor(botProfile), eventualResult, channelId, originalMessageTs, delayMilliseconds)
-      }
-    } yield {}).recover {
-      case t: Throwable => {
-        Logger.error(s"Exception responding to a Slack action: $description", t)
-      }
-    }
+    val eventualResult = sendResult(getEventualMaybeResult(event))
+    SlackMessageReactionHandler.handle(
+      slackApiService.clientFor(botProfile),
+      eventualResult,
+      channelId,
+      originalMessageTs,
+      delayMilliseconds
+    )
+    eventualResult
   }
 }

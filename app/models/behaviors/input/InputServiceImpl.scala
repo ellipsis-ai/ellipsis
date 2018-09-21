@@ -67,6 +67,13 @@ class InputServiceImpl @Inject() (
     }
   }
 
+  def findByName(name: String, behaviorGroupVersion: BehaviorGroupVersion): Future[Option[Input]] = {
+    val action = findByNameQuery(name, behaviorGroupVersion.id).result.map { r =>
+      r.headOption.map(tuple2Input)
+    }
+    dataService.run(action)
+  }
+
   private def maybeParamTypeForAction(data: InputData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[Option[BehaviorParameterType]] = {
     (data.paramType.flatMap { paramTypeData =>
       paramTypeData.id.orElse(paramTypeData.exportId).map { id =>

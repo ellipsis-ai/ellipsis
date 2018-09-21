@@ -5,14 +5,14 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
+import models.behaviors.triggers.Trigger
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
-import services.caching.CacheService
 import services.{AWSLambdaService, DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.UploadFileSpec
@@ -39,6 +39,8 @@ trait Event {
   val messageRecipientPrefix: String
   val isPublicChannel: Boolean
   val isUninterruptedConversation: Boolean = false
+  val isEphemeral: Boolean = false
+  val maybeResponseUrl: Option[String] = None
 
   def originalEventType: EventType = {
     maybeOriginalEventType.getOrElse(eventType)
@@ -71,15 +73,27 @@ trait Event {
     dataService.run(ensureUserAction(dataService))
   }
 
-  def userInfoAction(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
-    UserInfo.buildForAction(this, teamId, services)
+  def userInfoAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
+    UserInfo.buildForAction(this, maybeConversation, teamId, services)
   }
 
-  def messageInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
-    MessageInfo.buildFor(this, services)
+  def messageInfo(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
+    MessageInfo.buildFor(this, maybeConversation, services)
+  }
+
+  def messageUserDataList: Set[MessageUserData]
+
+  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices): Set[MessageUserData] = {
+    messageUserDataList ++ maybeConversation.flatMap { conversation =>
+      services.cacheService.getMessageUserDataList(conversation.id)
+    }.getOrElse(Seq.empty)
   }
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
+
+  def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    Future.successful(None)
+  }
 
   def navLinkList(lambdaService: AWSLambdaService): Seq[(String, String)] = {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
@@ -132,18 +146,26 @@ trait Event {
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    if (behaviorVersion.forcePrivateResponse) {
-      eventualMaybeDMChannel(services).map { maybeDMChannel =>
-        maybeDMChannel
-      }
-    } else {
-      Future.successful(maybeChannel)
+  def shouldAutoForcePrivate(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
+      isEphemeral && params.exists(_.paramType.mayRequireTypedAnswer)
     }
+  }
+  def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    for {
+      forcePrivate <- shouldAutoForcePrivate(behaviorVersion, services.dataService).map(_ || behaviorVersion.forcePrivateResponse)
+      maybeChannelToUse <- if (forcePrivate) {
+        eventualMaybeDMChannel(services).map { maybeDMChannel =>
+          maybeDMChannel
+        }
+      } else {
+        Future.successful(maybeChannel)
+      }
+    } yield maybeChannelToUse
   }
 
   def maybeChannelForSendAction(
-                                 forcePrivate: Boolean,
+                                 responseType: BehaviorResponseType,
                                  maybeConversation: Option[Conversation],
                                  services: DefaultServices
                                )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]]
@@ -155,7 +177,7 @@ trait Event {
 
   def sendMessage(
                    text: String,
-                   forcePrivate: Boolean,
+                   responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
                    attachmentGroups: Seq[MessageAttachmentGroup],
@@ -177,5 +199,37 @@ trait Event {
                                maybeLimitToBehavior: Option[Behavior],
                                services: DefaultServices
                              )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]]
+
+  def activatedTriggersIn(
+                           triggers: Seq[Trigger],
+                           dataService: DataService
+                         )(implicit ec: ExecutionContext): Future[Seq[Trigger]] = {
+    val activatedTriggerLists = triggers.
+        filter(_.isActivatedBy(this)).
+        groupBy(_.behaviorVersion).
+        values.
+        toSeq
+    Future.sequence(
+      activatedTriggerLists.map { list =>
+        Future.sequence(list.map { trigger =>
+          for {
+            params <- dataService.behaviorParameters.allFor(trigger.behaviorVersion)
+          } yield {
+            (trigger, trigger.invocationParamsFor(this, params).size)
+          }
+        })
+      }
+    ).map { activatedTriggerListsWithParamCounts =>
+
+      // we want to chose activated triggers with more params first
+      activatedTriggerListsWithParamCounts.flatMap { list =>
+        list.
+          sortBy { case(_, paramCount) => paramCount }.
+          map { case(trigger, _) => trigger }.
+          reverse.
+          headOption
+      }
+    }
+  }
 
 }

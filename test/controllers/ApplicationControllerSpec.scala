@@ -9,7 +9,7 @@ import models.accounts.user.UserTeamAccess
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroupInfo
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -37,7 +37,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         val behaviorGroup = BehaviorGroup(groupId, None, team, OffsetDateTime.now)
         val behavior = Behavior(behaviorId, team, behaviorGroup, None, false, OffsetDateTime.now)
         val behaviorGroupVersion = BehaviorGroupVersion(groupVersionId, behaviorGroup, groupName, None, None, None, OffsetDateTime.now)
-        val behaviorVersion = BehaviorVersion(IDs.next, behavior, behaviorGroupVersion, None, None, None, None, forcePrivateResponse = false, canBeMemoized = false, isTest = false, OffsetDateTime.now)
+        val behaviorVersion = BehaviorVersion(IDs.next, behavior, behaviorGroupVersion, None, None, None, None, responseType = Normal, canBeMemoized = false, isTest = false, OffsetDateTime.now)
         val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
 
         when(dataService.users.teamAccessFor(user, Some(team.id))).thenReturn(Future.successful(teamAccess))
@@ -56,8 +56,9 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviors.find(behaviorId, user)).thenReturn(Future.successful(Some(behavior)))
         when(dataService.behaviorVersions.findFor(behavior, behaviorGroupVersion)).thenReturn(Future.successful(Some(behaviorVersion)))
         when(dataService.behaviorParameters.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.messageTriggers.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
+        when(dataService.triggers.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
         when(dataService.requiredAWSConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
+        when(dataService.requiredOAuth1ApiConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
         when(dataService.requiredOAuth2ApiConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
         when(dataService.requiredSimpleTokenApis.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
         when(dataService.teamEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())

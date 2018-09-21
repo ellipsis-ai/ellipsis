@@ -1,13 +1,15 @@
 package controllers
 
-import javax.inject.Inject
+import java.time.OffsetDateTime
 
+import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
 import models.accounts.user.User
+import models.behaviors.scheduling.recurrence.Recurrence
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.silhouette.EllipsisEnv
@@ -136,7 +138,20 @@ class ScheduledActionsController @Inject()(
       } yield {
         val newArguments = newData.arguments.map(ea => ea.name -> ea.value).toMap
         val maybeChannel = Option(newData.channel).filter(_.trim.nonEmpty)
-        dataService.scheduledBehaviors.createFor(behavior, newArguments, recurrence, user, team, maybeChannel, newData.useDM).map(Some(_))
+        maybeOriginal.map { original =>
+          dataService.scheduledBehaviors.save(original.copy(
+            behavior = behavior,
+            arguments = newArguments,
+            recurrence = recurrence,
+            nextSentAt = recurrence.nextAfter(OffsetDateTime.now),
+            maybeUser = Some(user),
+            team = team,
+            maybeChannel = maybeChannel,
+            isForIndividualMembers = newData.useDM
+          ))
+        }.getOrElse {
+          dataService.scheduledBehaviors.createFor(behavior, newArguments, recurrence, user, team, maybeChannel, newData.useDM)
+        }.map(Some(_))
       }).getOrElse(Future.successful(None))
     } yield {
       if (maybeNewScheduledBehavior.isDefined) {
@@ -161,14 +176,21 @@ class ScheduledActionsController @Inject()(
         }.getOrElse(Future.successful(None))
         maybeNewScheduledMessage <- maybeNewRecurrence.map { recurrence =>
           val maybeChannel = Option(newData.channel).filter(_.trim.nonEmpty)
-          dataService.scheduledMessages.createFor(trigger, recurrence, user, team, maybeChannel, newData.useDM).map(Some(_))
+          maybeOriginal.map { original =>
+            dataService.scheduledMessages.save(original.copy(
+              text = trigger,
+              recurrence = recurrence,
+              nextSentAt = recurrence.nextAfter(OffsetDateTime.now),
+              maybeUser = Some(user),
+              team = team,
+              maybeChannel = maybeChannel,
+              isForIndividualMembers = newData.useDM
+            ))
+          }.getOrElse {
+            dataService.scheduledMessages.createFor(trigger, recurrence, user, team, maybeChannel, newData.useDM)
+          }.map(Some(_))
         }.getOrElse(Future.successful(None))
       } yield {
-        if (maybeNewScheduledMessage.isDefined) {
-          maybeOriginal.map { original =>
-            dataService.scheduledMessages.delete(original)
-          }
-        }
         maybeNewScheduledMessage
       }
     }.getOrElse(Future.successful(None))
@@ -296,6 +318,40 @@ class ScheduledActionsController @Inject()(
             Future.successful(NotFound(Json.toJson("Team not found")))
           }
         } yield result
+      }
+    )
+  }
+
+  def validateRecurrence = silhouette.SecuredAction(parse.json) { implicit request =>
+    request.body.validate[ScheduledActionRecurrenceData].fold(
+      jsonError => {
+        BadRequest(JsError.toJson(jsonError))
+      },
+      recurrenceData => {
+        recurrenceData.maybeNewRecurrence.map { recurrence =>
+          val now = OffsetDateTime.now
+          val maybeRemainingRuns = recurrence.maybeTotalTimesToRun.map { totalTimes =>
+            math.max(0, totalTimes - recurrence.timesHasRun)
+          }
+          val maybeFirst = if (maybeRemainingRuns.isEmpty || maybeRemainingRuns.exists(_ > 0)) {
+            Some(recurrence.nextAfter(now))
+          } else {
+            None
+          }
+          val maybeSecond = if (maybeRemainingRuns.isEmpty || maybeRemainingRuns.exists(_ > 1)) {
+            maybeFirst.map(recurrence.nextAfter)
+          } else {
+            None
+          }
+          Ok(Json.toJson(
+            ScheduledActionValidatedRecurrenceData(
+              ScheduledActionRecurrenceData.fromRecurrence(recurrence),
+              Seq(maybeFirst, maybeSecond)
+            )
+          ))
+        }.getOrElse {
+          BadRequest("No valid recurrence was found.")
+        }
       }
     )
   }

@@ -4,19 +4,19 @@ case class BehaviorGroupConfig(
                                 name: String,
                                 exportId: Option[String],
                                 icon: Option[String],
-                                requiredAWSConfigs: Seq[RequiredAWSConfigData],
-                                requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfigData],
-                                requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData]
+                                requiredAWSConfigs: Option[Seq[RequiredAWSConfigData]],
+                                requiredOAuthApiConfigs: Option[Seq[RequiredOAuthApiConfigData]],
+                                requiredSimpleTokenApis: Option[Seq[RequiredSimpleTokenApiData]]
                               ) {
 
   def copyForExport: BehaviorGroupConfig = {
     // we don't want to export the team-specific application, but we want to keep the scope
-    val requiredAWSConfigsForExport = requiredAWSConfigs.map(_.copyForExport)
-    val requiredOAuth2ApiConfigsForExport = requiredOAuth2ApiConfigs.map(_.copyForExport)
-    val requiredSimpleTokenApisForExport = requiredSimpleTokenApis.map(_.copyForExport)
+    val requiredAWSConfigsForExport = requiredAWSConfigs.map(_.map(_.copyForExport))
+    val requiredOAuthApiConfigsForExport = requiredOAuthApiConfigs.map(_.map(_.copyForExport))
+    val requiredSimpleTokenApisForExport = requiredSimpleTokenApis.map(_.map(_.copyForExport))
     copy(
       requiredAWSConfigs = requiredAWSConfigsForExport,
-      requiredOAuth2ApiConfigs = requiredOAuth2ApiConfigsForExport,
+      requiredOAuthApiConfigs = requiredOAuthApiConfigsForExport,
       requiredSimpleTokenApis = requiredSimpleTokenApisForExport
     )
   }

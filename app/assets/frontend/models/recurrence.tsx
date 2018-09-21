@@ -10,11 +10,15 @@ interface Time {
   minute: number
 }
 
+export type RecurrenceType = "minutely" | "hourly" | "daily" | "weekly" | "monthly_by_day_of_month" | "monthly_by_nth_day_of_week" | "yearly"
+
 export interface RecurrenceJson {
   id?: Option<string>,
   displayString?: Option<string>,
-  frequency: number,
-  typeName: string,
+  frequency: Option<number>,
+  timesHasRun: number,
+  totalTimesToRun?: Option<number>,
+  typeName: RecurrenceType,
   timeOfDay?: Option<Time>,
   timeZone?: Option<string>,
   timeZoneName?: Option<string>,
@@ -26,13 +30,15 @@ export interface RecurrenceJson {
   daysOfWeek: Array<number>
 }
 
-interface RecurrenceInterface extends RecurrenceJson {}
+export interface RecurrenceInterface extends RecurrenceJson {}
 
 class Recurrence implements RecurrenceInterface {
   readonly id: Option<string>;
   readonly displayString: Option<string>;
-  readonly frequency: number;
-  readonly typeName: string;
+  readonly frequency: Option<number>;
+  readonly timesHasRun: number;
+  readonly totalTimesToRun: Option<number>;
+  readonly typeName: RecurrenceType;
   readonly timeOfDay: Option<Time>;
   readonly timeZone: Option<string>;
   readonly timeZoneName: Option<string>;
@@ -48,7 +54,9 @@ class Recurrence implements RecurrenceInterface {
         id: null,
         displayString: "",
         frequency: 1,
-        typeName: "",
+        timesHasRun: 0,
+        totalTimesToRun: null,
+        typeName: "minutely",
         timeOfDay: null,
         timeZone: null,
         timeZoneName: null,
@@ -64,6 +72,8 @@ class Recurrence implements RecurrenceInterface {
         id: { value: initialProps.id, enumerable: true },
         displayString: { value: initialProps.displayString, enumerable: true },
         frequency: { value: initialProps.frequency, enumerable: true },
+        timesHasRun: { value: initialProps.timesHasRun, enumerable: true },
+        totalTimesToRun: { value: initialProps.totalTimesToRun, enumerable: true },
         typeName: { value: initialProps.typeName, enumerable: true },
         timeOfDay: { value: initialProps.timeOfDay, enumerable: true },
         timeZone: { value: initialProps.timeZone, enumerable: true },
@@ -147,9 +157,11 @@ class Recurrence implements RecurrenceInterface {
       return new Recurrence(Object.assign({}, this, props));
     }
 
-    becomeMinutely(): Recurrence {
+    becomeMinutely(defaultProps?: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
         typeName: "minutely",
+        timesHasRun: 0,
+        totalTimesToRun: (defaultProps && defaultProps.totalTimesToRun) || this.totalTimesToRun || null,
         timeOfDay: null,
         timeZone: null,
         timeZoneName: null,
@@ -162,10 +174,12 @@ class Recurrence implements RecurrenceInterface {
       });
     }
 
-    becomeHourly(): Recurrence {
+    becomeHourly(defaultProps?: Partial<RecurrenceInterface>): Recurrence {
       const minuteOfHour = typeof this.minuteOfHour === "number" && Number.isInteger(this.minuteOfHour) ? this.minuteOfHour : 0;
       return this.clone({
         typeName: "hourly",
+        timesHasRun: 0,
+        totalTimesToRun: (defaultProps && defaultProps.totalTimesToRun) || this.totalTimesToRun || null,
         minuteOfHour: minuteOfHour,
         timeOfDay: null,
         timeZone: null,
@@ -181,6 +195,8 @@ class Recurrence implements RecurrenceInterface {
     becomeDaily(defaultProps?: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
         typeName: "daily",
+        timesHasRun: 0,
+        totalTimesToRun: (defaultProps && defaultProps.totalTimesToRun) || this.totalTimesToRun || null,
         timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
@@ -193,23 +209,27 @@ class Recurrence implements RecurrenceInterface {
       });
     }
 
-    becomeWeekly(defaultProps): Recurrence {
+    becomeWeekly(defaultProps: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
         typeName: "weekly",
+        timesHasRun: 0,
+        totalTimesToRun: defaultProps.totalTimesToRun || this.totalTimesToRun || null,
         timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
         dayOfMonth: null,
         nthDayOfWeek: null,
         month: null,
-        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
-        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null)
+        timeZone: this.timeZone || defaultProps.timeZone || null,
+        timeZoneName: this.timeZoneName || defaultProps.timeZoneName || null
       });
     }
 
-    becomeMonthlyByDayOfMonth(defaultProps): Recurrence {
+    becomeMonthlyByDayOfMonth(defaultProps: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
         typeName: "monthly_by_day_of_month",
+        timesHasRun: 0,
+        totalTimesToRun: defaultProps.totalTimesToRun || this.totalTimesToRun || null,
         timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
@@ -217,14 +237,18 @@ class Recurrence implements RecurrenceInterface {
         dayOfMonth: this.dayOfMonth || 1,
         daysOfWeek: [],
         month: null,
-        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
-        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null)
+        timeZone: this.timeZone || defaultProps.timeZone || null,
+        timeZoneName: this.timeZoneName || defaultProps.timeZoneName || null
       });
     }
 
-    becomeYearly(defaultProps): Recurrence {
+    becomeYearly(defaultProps: Partial<RecurrenceInterface>): Recurrence {
       return this.clone({
+        frequency: defaultProps.frequency || this.frequency || null,
         typeName: "yearly",
+        timesHasRun: 0,
+        totalTimesToRun: (typeof defaultProps.totalTimesToRun === "undefined") ?
+          (this.totalTimesToRun || null) : defaultProps.totalTimesToRun,
         timeOfDay: this.fallbackTimeOfDay(),
         minuteOfHour: null,
         dayOfWeek: null,
@@ -232,8 +256,8 @@ class Recurrence implements RecurrenceInterface {
         daysOfWeek: [],
         dayOfMonth: this.dayOfMonth || 1,
         month: 1,
-        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
-        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null)
+        timeZone: this.timeZone || defaultProps.timeZone || null,
+        timeZoneName: this.timeZoneName || defaultProps.timeZoneName || null
       });
     }
 

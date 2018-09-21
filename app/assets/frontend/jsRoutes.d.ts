@@ -1,10 +1,17 @@
 interface JsRoute {
   url: string,
-  method: string
+  method: "get" | "post",
+  absoluteURL: (https: true) => string
 }
 
 declare var jsRoutes: {
   controllers: {
+    APIAccessController: {
+      linkCustomOAuth2Service: (configId: string, code?: Option<string>, state?: Option<string>, invocationId?: Option<string>, redirect?: Option<string>) => JsRoute
+    },
+    APITokenController: {
+      listTokens: (tokenId: Option<string>, teamId?: Option<string>) => JsRoute
+    },
     ApplicationController: {
       deleteBehaviorGroups: () => JsRoute,
       findBehaviorGroupsMatching: (queryString: string, branch: Option<string>, teamId: string) => JsRoute,
@@ -27,6 +34,8 @@ declare var jsRoutes: {
       queryDefaultStorage: () => JsRoute,
       save: () => JsRoute,
       saveDefaultStorageItem: () => JsRoute,
+      testInvocation: () => JsRoute,
+      testTriggers: () => JsRoute,
       updateFromGithub: () => JsRoute,
       updateNodeModules: () => JsRoute,
       versionInfoFor: (groupId: string) => JsRoute
@@ -46,7 +55,8 @@ declare var jsRoutes: {
     ScheduledActionsController: {
       delete: () => JsRoute,
       index: (selectedId?: Option<string>, isNewSchedule?: Option<boolean>, teamId?: Option<string>, forceAdmin?: Option<boolean>) => JsRoute,
-      save: () => JsRoute
+      save: () => JsRoute,
+      validateRecurrence: () => JsRoute
     },
     SocialAuthController: {
       authenticateGithub: (redirectUrl?: Option<string>, teamId?: Option<string>, channelId?: Option<string>) => JsRoute
@@ -54,6 +64,23 @@ declare var jsRoutes: {
     SupportController: {
       sendRequest: () => JsRoute
     },
+
+    web: {
+      settings: {
+        EnvironmentVariablesController: {
+          list: (teamId?: Option<string>) => JsRoute,
+          submit: () => JsRoute,
+          delete: () => JsRoute,
+          adminLoadValue: (teamId: string, name: string) => JsRoute
+        },
+        IntegrationsController: {
+          list: (teamId?: Option<string>) => JsRoute
+        }
+        RegionalSettingsController: {
+          index: (teamId?: Option<string>) => JsRoute
+        }
+      }
+    }
 
     admin: {
       UserInfoController: {

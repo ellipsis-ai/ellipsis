@@ -17,7 +17,6 @@ import ConfirmActionPanel from '../panels/confirm_action';
 import CollapseButton from '../shared_ui/collapse_button';
 import {DataRequest} from '../lib/data_request';
 import DataTypeEditor from './data_type_editor';
-import DataTypePromptHelp from './data_type_prompt_help';
 import DataTypeSourceHelp from './data_type_source_help';
 import DefaultStorageAdder from './default_storage_adder';
 import DefaultStorageBrowser from './default_storage_browser';
@@ -36,11 +35,11 @@ import LibraryVersion from '../models/library_version';
 import LinkedGithubRepo from '../models/linked_github_repo';
 import ModalScrim from '../shared_ui/modal_scrim';
 import Notifications from '../notifications/notifications';
-import {OAuth2ApplicationRef} from '../models/oauth2';
+import {OAuthApplicationRef} from '../models/oauth';
 import Page from '../shared_ui/page';
 import ParamType from '../models/param_type';
 import {RequiredAWSConfig} from '../models/aws';
-import {RequiredOAuth2Application} from '../models/oauth2';
+import {RequiredOAuthApplication} from '../models/oauth';
 import ResponseTemplate from '../models/response_template';
 import ResponseTemplateConfiguration from './response_template_configuration';
 import ResponseTemplateHelp from './response_template_help';
@@ -76,7 +75,7 @@ import DataTypeUnnamedFieldsNotificationData from "../models/notifications/data_
 import DataTypeUnnamedNotificationData from "../models/notifications/data_type_unnamed_notification_data";
 import EnvVarMissingNotificationData from "../models/notifications/env_var_missing_notification_data";
 import RequiredAwsConfigNotificationData from "../models/notifications/required_aws_config_notification_data";
-import OAuth2ConfigWithoutApplicationNotificationData from "../models/notifications/oauth2_config_without_application_notification_data";
+import OAuthConfigWithoutApplicationNotificationData from "../models/notifications/oauth_config_without_application_notification_data";
 import ServerDataWarningNotificationData from "../models/notifications/server_data_warning_notification_data";
 import SkillDetailsWarningNotificationData from "../models/notifications/skill_details_warning_notification_data";
 import TestResultsNotificationData from "../models/notifications/test_result_notification_data";
@@ -91,13 +90,13 @@ const BehaviorEditor = React.createClass({
     builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
     envVariables: React.PropTypes.arrayOf(React.PropTypes.object),
     awsConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(AWSConfigRef)),
-    oauth2Applications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuth2ApplicationRef)),
-    oauth2Apis: React.PropTypes.arrayOf(React.PropTypes.shape({
+    oauthApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(OAuthApplicationRef)),
+    oauthApis: React.PropTypes.arrayOf(React.PropTypes.shape({
       apiId: React.PropTypes.string.isRequired,
       name: React.PropTypes.string.isRequired
     })),
     simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.instanceOf(SimpleTokenApiRef)),
-    linkedOAuth2ApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
+    linkedOAuthApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
     linkedGithubRepo: React.PropTypes.instanceOf(LinkedGithubRepo),
     savedAnswers: React.PropTypes.arrayOf(
       React.PropTypes.shape({
@@ -154,12 +153,12 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().getRequiredAWSConfigs();
   },
 
-  getAllOAuth2Applications: function() {
-    return this.props.oauth2Applications || [];
+  getAllOAuthApplications: function() {
+    return this.props.oauthApplications || [];
   },
 
-  getRequiredOAuth2ApiConfigs: function() {
-    return this.getBehaviorGroup().getRequiredOAuth2ApiConfigs();
+  getRequiredOAuthApiConfigs: function() {
+    return this.getBehaviorGroup().getRequiredOAuthApiConfigs();
   },
 
   getAllSimpleTokenApis: function() {
@@ -170,8 +169,8 @@ const BehaviorEditor = React.createClass({
     return this.getBehaviorGroup().getRequiredSimpleTokenApis();
   },
 
-  getApiApplications: function() {
-    return this.getRequiredOAuth2ApiConfigs()
+  getOAuthApiApplications: function() {
+    return this.getRequiredOAuthApiConfigs()
       .filter(ea => !!ea.config);
   },
 
@@ -186,14 +185,14 @@ const BehaviorEditor = React.createClass({
 
   getAllConfigs: function() {
     return this.getAllAWSConfigs()
-      .concat(this.getAllOAuth2Applications())
+      .concat(this.getAllOAuthApplications())
       .concat(this.getAllSimpleTokenApis());
   },
 
   getAllRequiredApiConfigs: function() {
     return this.getRequiredAWSConfigs()
-      .concat(this.getRequiredOAuth2ApiConfigs())
-        .concat(this.getRequiredSimpleTokenApis());
+      .concat(this.getRequiredOAuthApiConfigs())
+      .concat(this.getRequiredSimpleTokenApis());
   },
 
   getRequiredApiConfigWithId: function(id) {
@@ -242,8 +241,8 @@ const BehaviorEditor = React.createClass({
     return api ? (api.logoImageUrl || api.iconImageUrl) : null;
   },
 
-  getOAuth2LogoUrlForConfig: function(config) {
-    const api = this.getOAuth2ApiWithId(config.apiId);
+  getOAuthLogoUrlForConfig: function(config) {
+    const api = this.getOAuthApiWithId(config.apiId);
     return this.getApiLogoUrlForApi(api);
   },
 
@@ -272,8 +271,8 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  getOAuth2ApiNameForConfig: function(config) {
-    const api = this.getOAuth2ApiWithId(config.apiId);
+  getOAuthApiNameForConfig: function(config) {
+    const api = this.getOAuthApiWithId(config.apiId);
     return api ? api.name : "";
   },
 
@@ -419,17 +418,18 @@ const BehaviorEditor = React.createClass({
   },
 
   buildEnvVarNotifications: function() {
-    var selectedBehavior = this.getSelectedBehavior();
+    const selectedBehavior = this.getSelectedBehavior();
+    const existingEnvVars = this.getEnvVariables();
     if (selectedBehavior) {
-      return this.getEnvVariables()
-        .filter((ea) => selectedBehavior.knownEnvVarsUsed.includes(ea.name))
-        .filter((ea) => !ea.isAlreadySavedWithValue)
-        .map((ea) => new EnvVarMissingNotificationData({
-          environmentVariableName: ea.name,
-          onClick: () => {
-            this.showEnvVariableSetter(ea.name);
-          }
-        }));
+      return selectedBehavior.getEnvVarNamesInFunction().filter((varName) => {
+        const existingVar = existingEnvVars.find((ea) => ea.name === varName);
+        return !existingVar || !existingVar.isAlreadySavedWithValue;
+      }).map((varName) => new EnvVarMissingNotificationData({
+        environmentVariableName: varName,
+        onClick: () => {
+          this.showEnvVariableSetter(varName);
+        }
+      }));
     } else {
       return [];
     }
@@ -453,21 +453,21 @@ const BehaviorEditor = React.createClass({
     }));
   },
 
-  getOAuth2ApiWithId: function(apiId) {
-    return this.props.oauth2Apis.find(ea => ea.apiId === apiId);
+  getOAuthApiWithId: function(apiId) {
+    return this.props.oauthApis.find(ea => ea.apiId === apiId);
   },
 
   getSimpleTokenApiWithId: function(tokenId) {
     return this.props.simpleTokenApis.find(ea => ea.id === tokenId);
   },
 
-  getRequiredOAuth2ApiConfigsWithNoApplication: function() {
-    return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config);
+  getRequiredOAuthApiConfigsWithNoApplication: function() {
+    return this.getRequiredOAuthApiConfigs().filter(ea => !ea.config);
   },
 
-  getOAuth2ApplicationsRequiringAuth: function() {
-    return this.getApiApplications().filter(ea => {
-      return !this.props.linkedOAuth2ApplicationIds.includes(ea.config.id);
+  getOAuthApplicationsRequiringAuth: function() {
+    return this.getOAuthApiApplications().filter(ea => {
+      return !this.props.linkedOAuthApplicationIds.includes(ea.config.id);
     });
   },
 
@@ -479,12 +479,12 @@ const BehaviorEditor = React.createClass({
     if (this.isConfiguringApi()) {
       return [];
     }
-    return this.getRequiredOAuth2ApiConfigsWithNoApplication().map(ea => new OAuth2ConfigWithoutApplicationNotificationData({
-      name: this.getOAuth2ApiWithId(ea.apiId).name,
+    return this.getRequiredOAuthApiConfigsWithNoApplication().map(ea => new OAuthConfigWithoutApplicationNotificationData({
+      name: this.getOAuthApiWithId(ea.apiId).name,
       requiredApiConfig: ea,
-      existingOAuth2Applications: this.getAllOAuth2Applications(),
-      onUpdateOAuth2Application: this.onUpdateOAuth2Application,
-      onNewOAuth2Application: this.onNewOAuth2Application,
+      existingOAuthApplications: this.getAllOAuthApplications(),
+      onUpdateOAuthApplication: this.onUpdateOAuthApplication,
+      onNewOAuthApplication: this.onNewOAuthApplication,
       onConfigClick: this.onApiConfigClick.bind(this, ea)
     }));
   },
@@ -988,9 +988,9 @@ const BehaviorEditor = React.createClass({
           const group = this.getBehaviorGroup();
           const teamId = group.teamId;
           const groupId = json.id;
-          if (this.state.shouldRedirectToAddNewOAuth2App) {
-            const config = this.state.requiredOAuth2ApiConfig;
-            window.location.href = jsRoutes.controllers.web.settings.OAuth2ApplicationController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
+          if (this.state.shouldRedirectToAddNewOAuthApp) {
+            const config = this.state.requiredOAuthApiConfig;
+            window.location.href = jsRoutes.controllers.web.settings.IntegrationsController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
           } else if (this.state.shouldRedirectToAddNewAWSConfig) {
             const config = this.state.requiredAWSConfig;
             window.location.href = jsRoutes.controllers.web.settings.AWSConfigController.add(teamId, groupId, this.getSelectedId(), config.nameInCode).url;
@@ -1114,7 +1114,7 @@ const BehaviorEditor = React.createClass({
   showEnvVariableSetter: function(nameToFocus) {
     this.toggleActivePanel('envVariableSetter', true, () => {
       if (nameToFocus && this.envVariableSetterPanel) {
-        this.envVariableSetterPanel.focusOnVarName(nameToFocus);
+        this.envVariableSetterPanel.focusOrCreateVarName(nameToFocus);
       }
     });
   },
@@ -1293,6 +1293,28 @@ const BehaviorEditor = React.createClass({
       });
   },
 
+  deleteEnvVariable: function(name) {
+    this.setState({
+      envVariables: this.state.envVariables.filter((ea) => ea.name !== name)
+    });
+  },
+
+  loadAdminEnvVariableValue: function(name, value) {
+    this.setState({
+      envVariables: this.state.envVariables.map((ea) => {
+        if (ea.name === name) {
+          return {
+            name: name,
+            value: value,
+            isAlreadySavedWithValue: Boolean(value)
+          };
+        } else {
+          return ea;
+        }
+      })
+    });
+  },
+
   forgetSavedAnswerRequest: function(url, inputId) {
     var data = {
       inputId: inputId
@@ -1369,6 +1391,10 @@ const BehaviorEditor = React.createClass({
 
   updateTemplate: function(newTemplateString) {
     this.setEditableProp('responseTemplate', this.getBehaviorTemplate().clone({ text: newTemplateString }));
+  },
+
+  onSelectResponseType: function(newValue) {
+    this.setConfigProperty('responseTypeId', newValue);
   },
 
   syncParamNamesAndCount: function(oldName, newName) {
@@ -1535,18 +1561,18 @@ const BehaviorEditor = React.createClass({
     this.onNewAWSConfig(requiredToUse);
   },
 
-  onAddOAuth2Application: function(toAdd, callback) {
-    const existing = this.getRequiredOAuth2ApiConfigs();
+  onAddOAuthApplication: function(toAdd, callback) {
+    const existing = this.getRequiredOAuthApiConfigs();
     const newApplications = existing.concat([toAdd]);
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newApplications }), callback);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuthApiConfigs: newApplications }), callback);
   },
 
-  onRemoveOAuth2Application: function(toRemove, callback) {
-    const existing = this.getRequiredOAuth2ApiConfigs();
+  onRemoveOAuthApplication: function(toRemove, callback) {
+    const existing = this.getRequiredOAuthApiConfigs();
     const newApplications = existing.filter(function(ea) {
       return ea.id !== toRemove.id;
     });
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: newApplications }), () => {
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuthApiConfigs: newApplications }), () => {
       this.props.onClearActivePanel();
       if (callback) {
         callback();
@@ -1554,15 +1580,15 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  onUpdateOAuth2Application: function(config, callback) {
-    const configs = this.getRequiredOAuth2ApiConfigs().slice();
+  onUpdateOAuthApplication: function(config, callback) {
+    const configs = this.getRequiredOAuthApiConfigs().slice();
     const indexToReplace = configs.findIndex(ea => ea.id === config.id);
     configs[indexToReplace] = config;
-    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuth2ApiConfigs: configs }), callback);
+    this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuthApiConfigs: configs }), callback);
   },
 
-  addNewOAuth2Application: function(required) {
-    const requiredToUse = required || RequiredOAuth2Application.fromProps({
+  addNewOAuthApplication: function(required) {
+    const requiredToUse = required || RequiredOAuthApplication.fromProps({
       id: ID.next(),
       exportId: null,
       apiId: "",
@@ -1570,7 +1596,7 @@ const BehaviorEditor = React.createClass({
       config: null,
       recommendedScope: ""
     });
-    this.onNewOAuth2Application(requiredToUse);
+    this.onNewOAuthApplication(requiredToUse);
   },
 
   onAddSimpleTokenApi: function(toAdd) {
@@ -1599,10 +1625,10 @@ const BehaviorEditor = React.createClass({
     }, this.onSaveBehaviorGroup);
   },
 
-  onNewOAuth2Application: function(requiredOAuth2ApiConfig) {
+  onNewOAuthApplication: function(requiredOAuthApiConfig) {
     this.setState({
-      shouldRedirectToAddNewOAuth2App: true,
-      requiredOAuth2ApiConfig: requiredOAuth2ApiConfig
+      shouldRedirectToAddNewOAuthApp: true,
+      requiredOAuthApiConfig: requiredOAuthApiConfig
     }, this.onSaveBehaviorGroup);
   },
 
@@ -1660,25 +1686,27 @@ const BehaviorEditor = React.createClass({
 
   loadTestResults: function() {
     this.resetNotificationsEventually();
-    this.setState({
-      error: null,
-      runningTests: true,
-      testResults: []
-    }, () => {
-      this.doTestResultRequest(0);
-    });
-
+    const behaviorGroupId = this.getBehaviorGroup().id;
+    if (behaviorGroupId) {
+      this.setState({
+        error: null,
+        runningTests: true,
+        testResults: []
+      }, () => {
+        this.doTestResultRequest(behaviorGroupId, 0);
+      });
+    }
   },
 
-  doTestResultRequest: function(numRetries) {
+  doTestResultRequest: function(behaviorGroupId, numRetries) {
     const MAX_RETRY_COUNT = 4;
-    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(this.getBehaviorGroup().id).url)
+    DataRequest.jsonGet(jsRoutes.controllers.BehaviorEditorController.testResults(behaviorGroupId).url)
       .then(json => {
         if (json.shouldRetry) {
           if (numRetries < MAX_RETRY_COUNT) {
             const newRetryCount = numRetries + 1;
             setTimeout(() => {
-              this.doTestResultRequest(newRetryCount);
+              this.doTestResultRequest(behaviorGroupId, newRetryCount);
             }, Math.pow(2, newRetryCount) * 1000);
           } else {
             throw new Error("Unable to load test results. Try reloading the page in a moment.");
@@ -1723,7 +1751,8 @@ const BehaviorEditor = React.createClass({
     window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
-    window.addEventListener('focus', this.checkForUpdates, false);
+    this.checkForUpdateTimer = null;
+    window.addEventListener('focus', () => this.checkForUpdatesLater(2000), false);
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
     this.loadTestResults();
@@ -1756,12 +1785,13 @@ const BehaviorEditor = React.createClass({
               errorReachingServer: null
             }, this.resetNotificationsEventually);
           }
-          this.checkForUpdatesLater();
         })
         .catch((err) => {
           this.setState({
             errorReachingServer: err
           }, this.resetNotificationsEventually);
+        })
+        .finally(() => {
           this.checkForUpdatesLater();
         });
     } else {
@@ -1769,8 +1799,9 @@ const BehaviorEditor = React.createClass({
     }
   },
 
-  checkForUpdatesLater: function() {
-    setTimeout(this.checkForUpdates, 30000);
+  checkForUpdatesLater: function(overrideDuration) {
+    clearTimeout(this.checkForUpdateTimer);
+    this.checkForUpdateTimer = setTimeout(this.checkForUpdates, overrideDuration || 30000);
   },
 
   getInitialEnvVariables: function() {
@@ -1792,8 +1823,8 @@ const BehaviorEditor = React.createClass({
       redirectValue: "",
       requiredAWSConfig: null,
       shouldRedirectToAddNewAWSConfig: false,
-      requiredOAuth2ApiConfig: null,
-      shouldRedirectToAddNewOAuth2App: false,
+      requiredOAuthApiConfig: null,
+      shouldRedirectToAddNewOAuthApp: false,
       paramNameToSync: null,
       error: null,
       selectedSavedAnswerInputId: null,
@@ -1813,7 +1844,8 @@ const BehaviorEditor = React.createClass({
         width: window.innerWidth,
         height: window.innerHeight
       },
-      updatingNodeModules: false
+      updatingNodeModules: false,
+      testResults: []
     };
   },
 
@@ -1861,7 +1893,7 @@ const BehaviorEditor = React.createClass({
         inputs={this.getInputs()}
         systemParams={codeConfigProps.systemParams || this.getSystemParams()}
         requiredAWSConfigs={this.getRequiredAWSConfigs()}
-        apiApplications={this.getApiApplications()}
+        oauthApiApplications={this.getOAuthApiApplications()}
 
         functionBody={this.getFunctionBody()}
         onChangeFunctionBody={this.updateCode}
@@ -1878,7 +1910,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getSelectedTestResult: function() {
-    return (this.state.testResults || []).find(ea => ea.behaviorVersionId === this.getSelectedBehavior().id);
+    return this.state.testResults.find(ea => ea.behaviorVersionId === this.getSelectedBehavior().id);
   },
 
   renderTestOutput: function(options) {
@@ -1978,7 +2010,7 @@ const BehaviorEditor = React.createClass({
               onUpdateConfig={this.onUpdateConfigForSelected()}
               onDoneClick={this.props.onClearActivePanel}
               addNewAWSConfig={this.addNewAWSConfig}
-              addNewOAuth2Application={this.addNewOAuth2Application}
+              addNewOAuthApplication={this.addNewOAuthApplication}
               animationDisabled={this.state.animationDisabled}
             >
             </APIConfigPanel>
@@ -2019,7 +2051,7 @@ const BehaviorEditor = React.createClass({
           <Collapsible revealWhen={this.props.activePanelName === 'helpForBehaviorCode'} onChange={this.layoutDidUpdate}>
             <BehaviorCodeHelp
               envVariableNames={this.getEnvVariableNames()}
-              apiAccessTokens={this.getApiApplications()}
+              oauthApiAccessTokens={this.getOAuthApiApplications()}
               onAddNewEnvVariable={this.onAddNewEnvVariable}
               onCollapseClick={this.props.onClearActivePanel}
               isDataType={this.isDataTypeBehavior()}
@@ -2036,10 +2068,6 @@ const BehaviorEditor = React.createClass({
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForDataTypeSource'} onChange={this.layoutDidUpdate}>
             <DataTypeSourceHelp onCollapseClick={this.props.onClearActivePanel} />
-          </Collapsible>
-
-          <Collapsible revealWhen={this.props.activePanelName === 'helpForDataTypePrompt'} onChange={this.layoutDidUpdate}>
-            <DataTypePromptHelp usesSearch={this.hasInputNamed('searchQuery')} onCollapseClick={this.props.onClearActivePanel} />
           </Collapsible>
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForLibraryCode'} onChange={this.layoutDidUpdate}>
@@ -2065,6 +2093,15 @@ const BehaviorEditor = React.createClass({
                       vars={this.getEnvVariables()}
                       onCancelClick={this.props.onClearActivePanel}
                       onSave={this.updateEnvVariables}
+                      onDelete={this.deleteEnvVariable}
+                      activePanelName={this.props.activePanelName}
+                      activePanelIsModal={false}
+                      teamId={this.getBehaviorGroup().teamId}
+                      csrfToken={this.props.csrfToken}
+                      isAdmin={this.props.isAdmin}
+                      onAdminLoadedValue={this.loadAdminEnvVariableValue}
+                      onToggleActivePanel={this.props.onToggleActivePanel}
+                      onClearActivePanel={this.props.onClearActivePanel}
                     />
                   </div>
                 </div>
@@ -2096,21 +2133,23 @@ const BehaviorEditor = React.createClass({
               ref={(el) => this.props.onRenderPanel("behaviorTester", el)}
               triggers={this.getBehaviorTriggers()}
               inputs={this.getInputs()}
+              groupId={this.getBehaviorGroup().id}
               behaviorId={this.getSelectedId()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
-              appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
+              appsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
             />
           </Collapsible>
 
           <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.layoutDidUpdate}>
             <DataTypeTester
               ref={(el) => this.props.onRenderPanel("dataTypeTester", el)}
+              groupId={this.getBehaviorGroup().id}
               behaviorId={this.getSelectedId()}
               isSearch={this.isSearchDataTypeBehavior()}
               csrfToken={this.props.csrfToken}
               onDone={this.props.onClearActivePanel}
-              appsRequiringAuth={this.getOAuth2ApplicationsRequiringAuth()}
+              appsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
             />
           </Collapsible>
 
@@ -2267,17 +2306,17 @@ const BehaviorEditor = React.createClass({
     return selected ? selected.editorScrollPosition : 0;
   },
 
-  onSelect: function(optionalGroupId, id, optionalCallback) {
+  onSelect: function(optionalGroupId, optionalBehaviorId, optionalCallback) {
     var newState = {
       animationDisabled: true,
-      selectedId: id
+      selectedId: optionalBehaviorId
     };
     if (this.windowIsMobile()) {
       newState.behaviorSwitcherVisible = false;
     }
     this.setState(newState, () => {
       if (optionalGroupId) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, id).url);
+        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, optionalBehaviorId).url);
       }
       var newScrollPosition = this.getEditorScrollPosition();
       window.scrollTo(window.scrollX, typeof(newScrollPosition) === 'number' ? newScrollPosition : 0);
@@ -2405,7 +2444,7 @@ const BehaviorEditor = React.createClass({
               isModified={this.editableIsModified}
               onUpdateNodeModules={this.updateNodeModules}
               requiredAWSConfigs={this.getRequiredAWSConfigs()}
-              requiredOAuth2Applications={this.getRequiredOAuth2ApiConfigs()}
+              requiredOAuthApplications={this.getRequiredOAuthApiConfigs()}
               requiredSimpleTokenApis={this.getRequiredSimpleTokenApis()}
               onApiConfigClick={this.onApiConfigClick}
               onAddApiConfigClick={this.onAddApiConfigClick}
@@ -2530,10 +2569,9 @@ const BehaviorEditor = React.createClass({
                 <ResponseTemplateConfiguration
                   template={this.getBehaviorTemplate()}
                   onChangeTemplate={this.updateTemplate}
-                  isFinishedBehavior={this.isFinishedBehavior()}
-                  behaviorUsesCode={this.getFunctionBody().length > 0}
-                  shouldForcePrivateResponse={this.shouldForcePrivateResponse()}
-                  onChangeForcePrivateResponse={this.updateForcePrivateResponse}
+                  responseTypeId={this.getBehaviorConfig().responseTypeId}
+                  possibleResponseTypes={this.props.possibleResponseTypes}
+                  onSelectResponseType={this.onSelectResponseType}
                   onCursorChange={this.ensureCursorVisible}
                   onToggleHelp={this.toggleResponseTemplateHelp}
                   helpVisible={this.props.activePanelName === 'helpForResponseTemplate'}
@@ -2575,7 +2613,7 @@ const BehaviorEditor = React.createClass({
 
           systemParams={this.getSystemParams()}
           requiredAWSConfigs={this.getRequiredAWSConfigs()}
-          apiApplications={this.getApiApplications()}
+          oauthApiApplications={this.getOAuthApiApplications()}
 
           onCursorChange={this.ensureCursorVisible}
           useLineWrapping={this.state.codeEditorUseLineWrapping}
