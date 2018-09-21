@@ -8,7 +8,7 @@ import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackTimestamp
@@ -18,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait Conversation {
   val id: String
   val behaviorVersion: BehaviorVersion
-  val maybeTrigger: Option[MessageTrigger]
+  val maybeTrigger: Option[Trigger]
   val maybeTriggerMessage: Option[String]
   val maybeOriginalEventType: Option[EventType]
   val maybeParentId: Option[String]

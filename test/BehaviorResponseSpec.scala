@@ -5,7 +5,7 @@ import models.behaviors.behaviorparameter.{BehaviorParameter, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
 import models.behaviors.testing.TestEvent
-import models.behaviors.triggers.TemplateMessageTrigger
+import models.behaviors.triggers.{MessageSent, TemplateTrigger}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -24,9 +24,10 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val event = TestEvent(user, team, "trigger me this batman", includesBotMention = true)
         val version = mock[BehaviorVersion]
-        val generalTrigger = TemplateMessageTrigger(
+        val generalTrigger = TemplateTrigger(
           IDs.next,
           version,
+          MessageSent,
           "trigger me",
           requiresBotMention = false,
           isCaseSensitive= false

@@ -10,7 +10,7 @@ import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.Event
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import play.api.Logger
 import play.api.libs.json.{JsString, JsValue}
 import services._
@@ -40,7 +40,7 @@ case class BehaviorResponse(
                              behaviorVersion: BehaviorVersion,
                              maybeConversation: Option[Conversation],
                              parametersWithValues: Seq[ParameterWithValue],
-                             maybeActivatedTrigger: Option[MessageTrigger],
+                             maybeActivatedTrigger: Option[Trigger],
                              maybeNewParent: Option[NewParentConversation],
                              userExpectsResponse: Boolean,
                              services: DefaultServices

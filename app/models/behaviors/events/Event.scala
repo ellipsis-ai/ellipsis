@@ -9,7 +9,7 @@ import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsObject
@@ -201,9 +201,9 @@ trait Event {
                              )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]]
 
   def activatedTriggersIn(
-                           triggers: Seq[MessageTrigger],
+                           triggers: Seq[Trigger],
                            dataService: DataService
-                         )(implicit ec: ExecutionContext): Future[Seq[MessageTrigger]] = {
+                         )(implicit ec: ExecutionContext): Future[Seq[Trigger]] = {
     val activatedTriggerLists = triggers.
         filter(_.isActivatedBy(this)).
         groupBy(_.behaviorVersion).

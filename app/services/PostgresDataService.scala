@@ -50,7 +50,7 @@ import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
-import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.behaviors.triggers.TriggerService
 import models.billing.active_user_record.ActiveUserRecordService
 import models.billing.addon.AddonService
 import models.billing.customer.CustomerService
@@ -100,7 +100,7 @@ class PostgresDataService @Inject() (
                                       val librariesProvider: Provider[LibraryVersionService],
                                       val nodeModuleVersionsProvider: Provider[NodeModuleVersionService],
                                       val savedAnswersProvider: Provider[SavedAnswerService],
-                                      val messageTriggersProvider: Provider[MessageTriggerService],
+                                      val triggersProvider: Provider[TriggerService],
                                       val messageListenersProvider: Provider[MessageListenerService],
                                       val awsConfigsProvider: Provider[AWSConfigService],
                                       val requiredAWSConfigsProvider: Provider[RequiredAWSConfigService],
@@ -162,7 +162,7 @@ class PostgresDataService @Inject() (
   val libraries = librariesProvider.get
   val nodeModuleVersions = nodeModuleVersionsProvider.get
   val savedAnswers = savedAnswersProvider.get
-  val messageTriggers = messageTriggersProvider.get
+  val triggers = triggersProvider.get
   val messageListeners = messageListenersProvider.get
   val awsConfigs = awsConfigsProvider.get
   val requiredAWSConfigs = requiredAWSConfigsProvider.get

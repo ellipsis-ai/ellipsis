@@ -27,7 +27,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
 
         val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
-        val trigger = runNow(dataService.messageTriggers.allFor(behaviorVersion)).head
+        val trigger = runNow(dataService.triggers.allFor(behaviorVersion)).head
         val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, None, Some(trigger), None, dataService, cacheService))
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
@@ -58,7 +58,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
 
         val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
-        val trigger = runNow(dataService.messageTriggers.allFor(behaviorVersion)).head
+        val trigger = runNow(dataService.triggers.allFor(behaviorVersion)).head
         val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, None, Some(trigger), None, dataService, cacheService))
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 
@@ -89,7 +89,7 @@ class ParamCollectionStateSpec extends DBSpec {
         val groupVersion = newSavedGroupVersionFor(group, user, Some(groupData))
 
         val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
-        val trigger = runNow(dataService.messageTriggers.allFor(behaviorVersion)).head
+        val trigger = runNow(dataService.triggers.allFor(behaviorVersion)).head
         val conversation = runNow(InvokeBehaviorConversation.createFor(behaviorVersion, event, event.maybeChannel, None, Some(trigger), None, dataService, cacheService))
         val param = runNow(dataService.behaviorParameters.allFor(behaviorVersion)).head
 

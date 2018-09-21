@@ -10,7 +10,7 @@ import json.Formatting._
 import json._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.testing.{InvocationTester, TestEvent, TriggerTester}
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.triggers.Trigger
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
@@ -384,7 +384,7 @@ class BehaviorEditorController @Inject() (
   }
 
   def regexValidationErrorsFor(pattern: String) = silhouette.SecuredAction { implicit request =>
-    val content = MessageTrigger.maybeRegexValidationErrorFor(pattern).map { errMessage =>
+    val content = Trigger.maybeRegexValidationErrorFor(pattern).map { errMessage =>
       Array(errMessage)
     }.getOrElse {
       Array()

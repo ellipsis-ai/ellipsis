@@ -49,7 +49,7 @@ import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehaviorService
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
-import models.behaviors.triggers.messagetrigger.MessageTriggerService
+import models.behaviors.triggers.TriggerService
 import models.billing.active_user_record.ActiveUserRecordService
 import models.billing.addon.AddonService
 import models.billing.invoice.InvoiceService
@@ -100,7 +100,7 @@ class MockDataService extends DataService with MockitoSugar {
   val libraries = mock[LibraryVersionService]
   val nodeModuleVersions = mock[NodeModuleVersionService]
   val savedAnswers = mock[SavedAnswerService]
-  val messageTriggers = mock[MessageTriggerService]
+  val triggers = mock[TriggerService]
   val messageListeners = mock[MessageListenerService]
   val awsConfigs = mock[AWSConfigService]
   val requiredAWSConfigs: RequiredAWSConfigService = mock[RequiredAWSConfigService]
