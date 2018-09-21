@@ -15,7 +15,7 @@ class RegexTriggerSpec extends TriggerSpec {
     val versionId = IDs.next
     val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
     val groupVersion = BehaviorGroupVersion(IDs.next, group, "", None, None, None, OffsetDateTime.now)
-    val behavior = Behavior(IDs.next, team, Some(group), Some(versionId), isDataType = false, OffsetDateTime.now)
+    val behavior = Behavior(IDs.next, team, group, Some(versionId), isDataType = false, OffsetDateTime.now)
     val behaviorVersion = BehaviorVersion(versionId, behavior, groupVersion, None, None, None, None, responseType = Normal, canBeMemoized = false, isTest = false, OffsetDateTime.now)
     RegexTrigger(IDs.next, behaviorVersion, MessageSent, pattern, requiresBotMention, isCaseSensitive)
   }

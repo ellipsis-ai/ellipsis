@@ -324,16 +324,6 @@ class BehaviorVersionServiceImpl @Inject() (
     }.map(_ => behaviorVersion)
   }
 
-  def delete(behaviorVersion: BehaviorVersion): Future[BehaviorVersion] = {
-    val action = all.filter(_.id === behaviorVersion.id).delete.map(_ => behaviorVersion)
-    dataService.run(action)
-  }
-
-  def unlearn(behaviorVersion: BehaviorVersion): Future[Unit] = {
-    lambdaService.deleteFunction(behaviorVersion.id)
-    delete(behaviorVersion).map(_ => Unit)
-  }
-
   private def paramsIn(code: String): Array[String] = {
     """.*function\s*\(([^\)]*)\)""".r.findFirstMatchIn(code).flatMap { firstMatch =>
       firstMatch.subgroups.headOption.map { paramString =>

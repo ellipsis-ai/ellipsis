@@ -149,7 +149,7 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
       maybeExisting <- findForBehaviorGroupVersionQuery(version.id).result.map(r => r.headOption)
       instance <- maybeExisting.map(DBIO.successful).getOrElse {
         val newInstance = BehaviorGroupDeployment(IDs.next, version.group.id, version.id, maybeComment, userId, OffsetDateTime.now)
-        (all += newInstance).map(_ => newInstance)
+        (insertQuery += newInstance).map(_ => newInstance)
       }
     } yield instance
     dataService.run(action.transactionally)

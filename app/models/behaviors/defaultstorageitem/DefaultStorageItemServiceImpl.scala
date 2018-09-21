@@ -258,7 +258,7 @@ class DefaultStorageItemServiceImpl @Inject() (
       }.getOrElse {
         (all += newInstanceToSave.toRaw)
       }
-      newInstanceToReturn <- tuple2Item((newInstanceToSave.toRaw, ((behaviorVersion.behavior.toRaw, team), Some((group.toRaw, team)))))
+      newInstanceToReturn <- tuple2Item((newInstanceToSave.toRaw, ((behaviorVersion.behavior.toRaw, team), (group.toRaw, team))))
     } yield newInstanceToReturn
   }
 

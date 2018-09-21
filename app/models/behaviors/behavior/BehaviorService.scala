@@ -58,13 +58,9 @@ trait BehaviorService {
 
   def createForAction(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): DBIO[Behavior]
 
-  def delete(behavior: Behavior): Future[Behavior]
-
   def maybeCurrentVersionForAction(behavior: Behavior): DBIO[Option[BehaviorVersion]]
 
   def maybeCurrentVersionFor(behavior: Behavior): Future[Option[BehaviorVersion]]
-
-  def unlearn(behavior: Behavior): Future[Unit]
 
   def editLinkFor(groupId: String, maybeBehaviorId: Option[String], configuration: Configuration): String = {
     val baseUrl = configuration.get[String]("application.apiBaseUrl")

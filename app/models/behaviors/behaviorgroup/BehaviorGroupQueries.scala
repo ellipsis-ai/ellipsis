@@ -5,7 +5,8 @@ import drivers.SlickPostgresDriver.api._
 
 object BehaviorGroupQueries {
 
-  val all = TableQuery[BehaviorGroupsTable]
+  val insertQuery = TableQuery[BehaviorGroupsTable]
+  val all = TableQuery[BehaviorGroupsTable].filter(_.maybeDeletedAt.isEmpty)
   val allWithTeam = all.join(TeamQueries.all).on(_.teamId === _.id)
 
   type TupleType = (RawBehaviorGroup, Team)
@@ -31,4 +32,9 @@ object BehaviorGroupQueries {
     all.filter(_.id === id)
   }
   val rawFindQuery = Compiled(uncompiledRawFindQuery _)
+
+  def uncompiledDeleteQuery(id: Rep[String]) = {
+    uncompiledRawFindQuery(id).map(_.maybeDeletedAt)
+  }
+  val deleteQuery = Compiled(uncompiledDeleteQuery _)
 }

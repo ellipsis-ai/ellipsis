@@ -65,8 +65,6 @@ trait BehaviorVersionService {
                        data: BehaviorVersionData
                      ): DBIO[BehaviorVersion]
 
-  def delete(behaviorVersion: BehaviorVersion): Future[BehaviorVersion]
-
   def maybeFunctionFor(behaviorVersion: BehaviorVersion): Future[Option[String]]
 
   def maybePreviousFor(behaviorVersion: BehaviorVersion): Future[Option[BehaviorVersion]]
@@ -86,7 +84,5 @@ trait BehaviorVersionService {
                  event: Event,
                  maybeConversation: Option[Conversation]
                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult]
-
-  def unlearn(behaviorVersion: BehaviorVersion): Future[Unit]
 
 }

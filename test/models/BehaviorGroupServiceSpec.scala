@@ -75,8 +75,14 @@ class BehaviorGroupServiceSpec extends DBSpec {
         val merged = runNow(dataService.behaviorGroups.merge(reloadedGroups, user))
         val mergedVersion = runNow(dataService.behaviorGroups.maybeCurrentVersionFor(merged)).get
 
+        val reloadedGroupVersionsAfterMerge = reloadedGroupVersions.flatMap { ea =>
+          runNow(dataService.behaviorGroupVersions.findWithoutAccessCheck(ea.id))
+        }
+        reloadedGroupVersionsAfterMerge mustBe empty
+
         reloadedGroupVersions.foreach { groupVersion =>
-          runNow(dataService.behaviors.allForGroup(groupVersion.group)) mustBe empty
+          val b = runNow(dataService.behaviors.allForGroup(groupVersion.group))
+          b mustBe empty
           runNow(dataService.inputs.allForGroupVersion(groupVersion)) mustBe empty
           runNow(dataService.behaviorGroups.findWithoutAccessCheck(groupVersion.group.id)) mustBe empty
         }

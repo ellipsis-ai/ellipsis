@@ -20,7 +20,8 @@ case class RawBehaviorGroup(
                              id: String,
                              maybeExportId: Option[String],
                              teamId: String,
-                             createdAt: OffsetDateTime
+                             createdAt: OffsetDateTime,
+                             maybeDeletedAt: Option[OffsetDateTime]
                            )
 
 class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavior_groups") {
@@ -29,8 +30,9 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
   def maybeExportId = column[Option[String]]("export_id")
   def teamId = column[String]("team_id")
   def createdAt = column[OffsetDateTime]("created_at")
+  def maybeDeletedAt = column[Option[OffsetDateTime]]("deleted_at")
 
-  def * = (id, maybeExportId, teamId, createdAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
+  def * = (id, maybeExportId, teamId, createdAt, maybeDeletedAt) <> ((RawBehaviorGroup.apply _).tupled, RawBehaviorGroup.unapply _)
 }
 
 class BehaviorGroupServiceImpl @Inject() (
@@ -45,8 +47,8 @@ class BehaviorGroupServiceImpl @Inject() (
   import BehaviorGroupQueries._
 
   def createFor(maybeExportId: Option[String], team: Team): Future[BehaviorGroup] = {
-    val raw = RawBehaviorGroup(IDs.next, maybeExportId.orElse(Some(IDs.next)), team.id, OffsetDateTime.now)
-    val action = (all += raw).map(_ => tuple2Group((raw, team)))
+    val raw = RawBehaviorGroup(IDs.next, maybeExportId.orElse(Some(IDs.next)), team.id, OffsetDateTime.now, None)
+    val action = (insertQuery += raw).map(_ => tuple2Group((raw, team)))
     dataService.run(action)
   }
 
@@ -133,7 +135,7 @@ class BehaviorGroupServiceImpl @Inject() (
       mergedData <- Future.successful({
         val actionInputs = groupsData.flatMap(_.actionInputs)
         val dataTypeInputs = groupsData.flatMap(_.dataTypeInputs)
-        val behaviorVersions = groupsData.flatMap(_.behaviorVersions)
+        val behaviorVersions = groupsData.flatMap(_.behaviorVersions).map(_.copyWithNewBehaviorIdForMerge)
         val libraryVersions = groupsData.flatMap(_.libraryVersions)
         val requiredAWSConfigs = groupsData.flatMap(_.requiredAWSConfigs)
         val requiredOAuthApiConfigs = groupsData.flatMap(_.requiredOAuthApiConfigs)
@@ -166,24 +168,16 @@ class BehaviorGroupServiceImpl @Inject() (
         )
       })
       _ <- Future.sequence(groupVersions.map { ea =>
-        dataService.behaviorGroups.delete(ea.group)
+        delete(ea.group)
       })
-      mergedGroup <- dataService.behaviorGroups.createFor(mergedData.exportId, team)
+      mergedGroup <- createFor(mergedData.exportId, team)
       mergedGroupVersion <- dataService.behaviorGroupVersions.createFor(mergedGroup, user, mergedData.copyForNewVersionOf(mergedGroup))
     } yield mergedGroupVersion.group
   }
 
   def delete(group: BehaviorGroup): Future[BehaviorGroup] = {
-    for {
-      behaviors <- dataService.behaviors.allForGroup(group)
-      _ <- Future.sequence(behaviors.map { ea =>
-        dataService.behaviors.unlearn(ea)
-      })
-      deleted <- {
-        val action = rawFindQuery(group.id).delete
-        dataService.run(action).map(_ => group)
-      }
-    } yield deleted
+    val action = deleteQuery(group.id).update(Some(OffsetDateTime.now))
+    dataService.run(action).map(_ => group)
   }
 
   def maybeCurrentVersionFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]] = {
