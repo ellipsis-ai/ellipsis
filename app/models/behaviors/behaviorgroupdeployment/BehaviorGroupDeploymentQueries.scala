@@ -6,6 +6,7 @@ import models.behaviors.behaviorgroup.BehaviorGroupQueries
 
 object BehaviorGroupDeploymentQueries {
 
+  val insertQuery = TableQuery[BehaviorGroupDeploymentsTable]
   // Don't find deployments for tombstoned groups
   val all = TableQuery[BehaviorGroupDeploymentsTable].join(BehaviorGroupQueries.all).on(_.groupId === _.id).map(_._1)
   val allWithUser = all.join(UserQueries.all).on(_.userId === _.id)
