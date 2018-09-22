@@ -8,14 +8,16 @@ import models.team.Team
 case class Behavior(
                      id: String,
                      team: Team,
-                     group: BehaviorGroup,
+                     maybeGroup: Option[BehaviorGroup],
                      maybeExportId: Option[String],
                      isDataType: Boolean,
                      createdAt: OffsetDateTime
                    ) {
 
+  def group: BehaviorGroup = maybeGroup.get
+
   def toRaw: RawBehavior = {
-    RawBehavior(id, team.id, group.id, maybeExportId, isDataType, createdAt)
+    RawBehavior(id, team.id, maybeGroup.map(_.id), maybeExportId, isDataType, createdAt)
   }
 
 }

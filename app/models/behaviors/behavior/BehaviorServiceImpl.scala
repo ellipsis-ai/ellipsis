@@ -1,16 +1,17 @@
 package models.behaviors.behavior
 
 import java.time.OffsetDateTime
+import javax.inject.Inject
 
 import com.google.inject.Provider
-import drivers.SlickPostgresDriver.api._
-import javax.inject.Inject
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 import services.{AWSLambdaService, DataService}
+import drivers.SlickPostgresDriver.api._
+import models.behaviors.events.SlackMessageEvent
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -18,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class RawBehavior(
                         id: String,
                         teamId: String,
-                        groupId: String,
+                        groupId: Option[String],
                         maybeExportId: Option[String],
                         isDataType: Boolean,
                         createdAt: OffsetDateTime
@@ -28,7 +29,7 @@ class BehaviorsTable(tag: Tag) extends Table[RawBehavior](tag, "behaviors") {
 
   def id = column[String]("id", O.PrimaryKey)
   def teamId = column[String]("team_id")
-  def groupId = column[String]("group_id")
+  def groupId = column[Option[String]]("group_id")
   def maybeExportId = column[Option[String]]("export_id")
   def isDataType = column[Boolean]("is_data_type")
   def createdAt = column[OffsetDateTime]("created_at")
@@ -80,7 +81,7 @@ class BehaviorServiceImpl @Inject() (
   def findByIdOrName(idOrName: String, group: BehaviorGroup): Future[Option[Behavior]] = {
     findWithoutAccessCheck(idOrName).flatMap { maybeById =>
       maybeById.map { b =>
-        if (b.group == group) {
+        if (b.maybeGroup.contains(group)) {
           Future.successful(Some(b))
         } else {
           Future.successful(None)
@@ -143,11 +144,15 @@ class BehaviorServiceImpl @Inject() (
   }
 
   def createForAction(group: BehaviorGroup, maybeIdToUse: Option[String], maybeExportId: Option[String], isDataType: Boolean): DBIO[Behavior] = {
-    val raw = RawBehavior(maybeIdToUse.getOrElse(IDs.next), group.team.id, group.id, maybeExportId.orElse(Some(IDs.next)), isDataType, OffsetDateTime.now)
+    val raw = RawBehavior(maybeIdToUse.getOrElse(IDs.next), group.team.id, Some(group.id), maybeExportId.orElse(Some(IDs.next)), isDataType, OffsetDateTime.now)
 
     (all += raw).map { _ =>
-      Behavior(raw.id, group.team, group, raw.maybeExportId, raw.isDataType, raw.createdAt)
+      Behavior(raw.id, group.team, Some(group), raw.maybeExportId, raw.isDataType, raw.createdAt)
     }
+  }
+
+  def delete(behavior: Behavior): Future[Behavior] = {
+    dataService.run(findRawQueryFor(behavior.id).delete.map(_ => behavior))
   }
 
   def maybeCurrentVersionForAction(behavior: Behavior): DBIO[Option[BehaviorVersion]] = {
@@ -161,6 +166,14 @@ class BehaviorServiceImpl @Inject() (
 
   def maybeCurrentVersionFor(behavior: Behavior): Future[Option[BehaviorVersion]] = {
     dataService.run(maybeCurrentVersionForAction(behavior))
+  }
+
+  def unlearn(behavior: Behavior): Future[Unit] = {
+    for {
+      versions <- dataService.behaviorVersions.allFor(behavior)
+      _ <- Future.sequence(versions.map(v => dataService.behaviorVersions.unlearn(v)))
+      _ <- delete(behavior)
+    } yield {}
   }
 
 }

@@ -8,15 +8,13 @@ case class BehaviorGroup(
                           id: String,
                           maybeExportId: Option[String],
                           team: Team,
-                          createdAt: OffsetDateTime
-                        ) {
+                          createdAt: OffsetDateTime) {
 
   def toRaw: RawBehaviorGroup = RawBehaviorGroup(
     id,
     maybeExportId,
     team.id,
-    createdAt,
-    None
+    createdAt
   )
 
 

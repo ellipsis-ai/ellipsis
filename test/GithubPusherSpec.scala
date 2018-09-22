@@ -100,7 +100,7 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
   }
 
   def setupBehaviorFor(group: BehaviorGroup, user: User, dataService: DataService): Behavior = {
-    val behavior = Behavior(IDs.next, group.team, group, Some(IDs.next), isDataType = false, OffsetDateTime.now)
+    val behavior = Behavior(IDs.next, group.team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
     when(dataService.behaviors.allForGroup(group)).thenReturn(Future.successful(Seq(behavior)))
     when(dataService.behaviors.find(behavior.id, user)).thenReturn(Future.successful(Some(behavior)))
     behavior
