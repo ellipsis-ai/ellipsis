@@ -310,7 +310,8 @@ class SlackController @Inject() (
               None,
               isUninterruptedConversation = false,
               isEphemeral = false,
-              None
+              None,
+              hideFeedback = false
             )
           )
         } yield {}
@@ -778,7 +779,8 @@ class SlackController @Inject() (
           None,
           isUninterruptedConversation = false,
           info.isEphemeral,
-          Some(info.response_url)
+          Some(info.response_url),
+          hideFeedback = false
         ))
       }).getOrElse {
         Future.successful({})
@@ -880,7 +882,8 @@ class SlackController @Inject() (
         info.message_ts,
         maybeThreadIdToUse,
         info.isEphemeral,
-        Some(info.response_url)
+        Some(info.response_url),
+        actionChoice.shouldHideFeedback
       )
     } yield {}
   }
@@ -898,34 +901,39 @@ class SlackController @Inject() (
     implicit val request: Request[AnyContent]
 
     def instantBackgroundResponse(responseText: String): Future[Option[String]] = {
-      for {
-        maybeBotProfile <- info.maybeBotProfile
-        maybeTs <- maybeBotProfile.map { botProfile =>
-          dataService.slackBotProfiles.sendResultWithNewEvent(
-            "Message acknowledging response to Slack action",
-            slackMessageEvent => for {
-              maybeConversation <- slackMessageEvent.maybeOngoingConversation(dataService)
-            } yield {
-              val trimmed = responseText.trim.replaceAll("(^\\u00A0|\\u00A0$)", "")
-              Some(SimpleTextResult(
-                slackMessageEvent,
-                maybeConversation,
-                s"_${trimmed}_",
-                responseType = Normal,
-                shouldInterrupt = false
-              ))
-            },
-            botProfile.slackTeamId,
-            botProfile,
-            info.channel.id,
-            info.user.id,
-            info.message_ts,
-            info.maybeOriginalMessageThreadId,
-            info.isEphemeral,
-            Some(info.response_url)
-          )
-        }.getOrElse(Future.successful(None))
-      } yield maybeTs
+      val trimmed = responseText.trim.replaceAll("(^\\u00A0|\\u00A0$)", "")
+      if (trimmed.isEmpty) {
+        Future.successful(None)
+      } else {
+        for {
+          maybeBotProfile <- info.maybeBotProfile
+          maybeTs <- maybeBotProfile.map { botProfile =>
+            dataService.slackBotProfiles.sendResultWithNewEvent(
+              "Message acknowledging response to Slack action",
+              slackMessageEvent => for {
+                maybeConversation <- slackMessageEvent.maybeOngoingConversation(dataService)
+              } yield {
+                Some(SimpleTextResult(
+                  slackMessageEvent,
+                  maybeConversation,
+                  s"_${trimmed}_",
+                  responseType = Normal,
+                  shouldInterrupt = false
+                ))
+              },
+              botProfile.slackTeamId,
+              botProfile,
+              info.channel.id,
+              info.user.id,
+              info.message_ts,
+              info.maybeOriginalMessageThreadId,
+              info.isEphemeral,
+              Some(info.response_url),
+              hideFeedback = false
+            )
+          }.getOrElse(Future.successful(None))
+        } yield maybeTs
+      }
     }
 
     def runInBackground(maybeInstantResponseTs: Future[Option[String]]): Unit
@@ -933,10 +941,8 @@ class SlackController @Inject() (
     def result: Result = {
 
       // respond immediately by sending a new message
-      maybeResultText.map(instantBackgroundResponse).map { maybeInstantResponseTs =>
-        runInBackground(maybeInstantResponseTs)
-      }
-
+      val instantResponse = maybeResultText.map(instantBackgroundResponse).getOrElse(Future.successful(None))
+      runInBackground(instantResponse)
 
       val updated = if (shouldRemoveActions) {
         info.original_message.map { originalMessage =>
@@ -983,7 +989,9 @@ class SlackController @Inject() (
                                      implicit val request: Request[AnyContent]
                                    ) extends ActionPermission {
 
-    override val maybeResultText: Option[String] = if (isActive) {
+    override val maybeResultText: Option[String] = if (isActive && actionChoice.shouldHideFeedback) {
+      None
+    } else if (isActive) {
       Some(s"$slackUser clicked ${actionChoice.label}")
     } else {
       Some("This skill has been updated, making these associated actions no longer valid")
@@ -1215,7 +1223,8 @@ class SlackController @Inject() (
         info.message_ts,
         info.maybeOriginalMessageThreadId,
         info.isEphemeral,
-        Some(info.response_url)
+        Some(info.response_url),
+        hideFeedback = false
       )
     }
 
@@ -1269,7 +1278,8 @@ class SlackController @Inject() (
         info.message_ts,
         info.maybeOriginalMessageThreadId,
         info.isEphemeral,
-        Some(info.response_url)
+        Some(info.response_url),
+        hideFeedback = false
       )
     }
 
@@ -1319,7 +1329,8 @@ class SlackController @Inject() (
         info.message_ts,
         info.maybeOriginalMessageThreadId,
         info.isEphemeral,
-        Some(info.response_url)
+        Some(info.response_url),
+        hideFeedback = false
       )
     }
 
@@ -1513,7 +1524,8 @@ class SlackController @Inject() (
         info.message_ts,
         info.maybeOriginalMessageThreadId,
         info.isEphemeral,
-        Some(info.response_url)
+        Some(info.response_url),
+        hideFeedback = false
       )
     }
 

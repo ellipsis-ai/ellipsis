@@ -86,7 +86,8 @@ case class SlackMessageSender(
                                userDataList: Set[MessageUserData],
                                services: DefaultServices,
                                isEphemeral: Boolean,
-                               maybeResponseUrl: Option[String]
+                               maybeResponseUrl: Option[String],
+                               hideFeedback: Boolean
                              ) {
 
   val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
@@ -220,10 +221,12 @@ case class SlackMessageSender(
     if (formattedText.nonEmpty) {
       for {
         _ <- if (responseType == Private && !maybeDMChannel.contains(originatingChannel)) {
-          postChatMessage(
-            s"<@${user}> I've sent you a private message :sleuth_or_spy:",
-            maybeChannelToForce = Some(originatingChannel)
-          )
+          val preambleMessage = s"<@${user}> I’ve sent you a <${client.profile.botDMDeepLink}|private message> :sleuth_or_spy:"
+          if (hideFeedback) {
+            postEphemeralMessage(preambleMessage, None, originatingChannel)
+          } else {
+            postChatMessage(preambleMessage, None, Some(originatingChannel))
+          }
         } else {
           Future.successful({})
         }

@@ -68,7 +68,8 @@ trait Conversation {
         None, // TODO: Pass the original event type down to here if we actually care about it, but it doesn't seem useful at present
         isUninterruptedConversation = false,
         isEphemeral = false,
-        None
+        None,
+        hideFeedback = false
       )
     }
   }
