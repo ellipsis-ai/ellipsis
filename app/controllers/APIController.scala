@@ -1034,6 +1034,10 @@ class APIController @Inject() (
     }
   }
 
+  case class DeleteSavedAnswersResult(inputName: String, deletedCount: Int)
+
+  implicit val deleteSavedAnswersResultWrites = Json.writes[DeleteSavedAnswersResult]
+
   case class DeleteSavedAnswersInfo(inputName: String, deleteAll: Option[Boolean], token: String) extends ApiMethodInfo
 
   implicit val deleteSavedAnswersInfoWrites = Json.writes[DeleteSavedAnswersInfo]
@@ -1065,16 +1069,16 @@ class APIController @Inject() (
         } yield {
           Future.sequence {
             if (deleteAll) {
-              savedInputs.map(input => dataService.savedAnswers.deleteAllFor(input.id))
+              savedInputs.map(input => dataService.savedAnswers.deleteAllFor(input.inputId))
             } else {
-              savedInputs.map(input => dataService.savedAnswers.deleteForUser(input.id, user))
+              savedInputs.map(input => dataService.savedAnswers.deleteForUser(input.inputId, user))
             }
           }
         }
       }.getOrElse(Future.successful(Seq(0))).map(_.sum)
     } yield {
       if (savedInputs.nonEmpty) {
-        Ok(Json.toJson(numDeleted))
+        Ok(Json.toJson(DeleteSavedAnswersResult(inputName, numDeleted)))
       } else {
         NotFound(s"No saved input named `${inputName}` found")
       }
