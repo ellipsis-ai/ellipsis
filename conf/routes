@@ -163,6 +163,12 @@ GET         /api/v1/files                             @controllers.APIController
 HEAD        /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
 #NOCSRF
 POST        /api/v1/add_message_listener              @controllers.APIController.addMessageListener
+#NOCSRF
+POST        /api/v1/delete_saved_answers              @controllers.APIController.deleteSavedAnswers
+#NOCSRF
+DELETE   /api/v1/inputs/:inputName/user_saved_answer/:token  @controllers.APIController.deleteUserSavedAnswer(inputName: String, token: String)
+#NOCSRF
+DELETE   /api/v1/inputs/:inputName/team_saved_answers/:token @controllers.APIController.deleteTeamSavedAnswers(inputName: String, token: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)

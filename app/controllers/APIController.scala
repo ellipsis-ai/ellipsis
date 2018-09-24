@@ -1033,4 +1033,73 @@ class APIController @Inject() (
       case e: InvalidTokenException => invalidTokenRequest(Map("token" -> token))
     }
   }
+
+  case class DeleteSavedAnswersResult(inputName: String, deletedCount: Int)
+
+  implicit val deleteSavedAnswersResultWrites = Json.writes[DeleteSavedAnswersResult]
+
+  case class DeleteSavedAnswersInfo(inputName: String, deleteAll: Option[Boolean], token: String) extends ApiMethodInfo
+
+  implicit val deleteSavedAnswersInfoWrites = Json.writes[DeleteSavedAnswersInfo]
+
+  private val deleteSavedAnswersForm = Form(
+    mapping(
+      "inputName" -> nonEmptyText,
+      "deleteAll" -> optional(boolean),
+      "token" -> nonEmptyText
+    )(DeleteSavedAnswersInfo.apply)(DeleteSavedAnswersInfo.unapply)
+  )
+
+  private def deleteSavedAnswersFor(deleteSavedAnswersInfo: DeleteSavedAnswersInfo)
+                                   (implicit r: Request[AnyContent]): Future[Result] = {
+    val token = deleteSavedAnswersInfo.token
+    val inputName = deleteSavedAnswersInfo.inputName
+    val deleteAll = deleteSavedAnswersInfo.deleteAll.getOrElse(false)
+    val eventualResult = for {
+      context <- ApiMethodContext.createFor(token)
+      maybeBehaviorVersion <- context.maybeOriginatingBehaviorVersion
+      savedInputs <- maybeBehaviorVersion.map { behaviorVersion =>
+        dataService.inputs.allForGroupVersion(behaviorVersion.groupVersion).map { inputs =>
+          inputs.filter(input => input.isSaved && input.name == inputName)
+        }
+      }.getOrElse(Future.successful(Seq()))
+      numDeleted <- {
+        for {
+          user <- context.maybeUser
+        } yield {
+          Future.sequence {
+            if (deleteAll) {
+              savedInputs.map(input => dataService.savedAnswers.deleteAllFor(input.inputId))
+            } else {
+              savedInputs.map(input => dataService.savedAnswers.deleteForUser(input.inputId, user))
+            }
+          }
+        }
+      }.getOrElse(Future.successful(Seq(0))).map(_.sum)
+    } yield {
+      if (savedInputs.nonEmpty) {
+        Ok(Json.toJson(DeleteSavedAnswersResult(inputName, numDeleted)))
+      } else {
+        NotFound(s"No saved input named `${inputName}` found")
+      }
+    }
+    eventualResult.recover {
+      case e: InvalidTokenException => invalidTokenRequest(deleteSavedAnswersInfo)
+    }
+  }
+
+  def deleteUserSavedAnswer(inputName: String, token: String) = Action.async { implicit request =>
+    deleteSavedAnswersFor(DeleteSavedAnswersInfo(inputName, Some(false), token))
+  }
+
+  def deleteTeamSavedAnswers(inputName: String, token: String) = Action.async { implicit request =>
+    deleteSavedAnswersFor(DeleteSavedAnswersInfo(inputName, Some(true), token))
+  }
+
+  def deleteSavedAnswers = Action.async { implicit request =>
+    deleteSavedAnswersForm.bindFromRequest.fold(
+      formWithErrors => Future.successful(resultForFormErrors(formWithErrors)),
+      info => deleteSavedAnswersFor(info)
+    )
+  }
 }
