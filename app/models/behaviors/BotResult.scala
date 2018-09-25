@@ -54,12 +54,12 @@ case class ActionChoice(
                          allowMultipleSelections: Option[Boolean],
                          userId: Option[String],
                          originatingBehaviorVersionId: Option[String],
-                         hideFeedback: Option[Boolean]
+                         quiet: Option[Boolean]
                        ) extends WithActionArgs {
 
   val areOthersAllowed: Boolean = allowOthers.contains(true)
 
-  val shouldHideFeedback: Boolean = hideFeedback.contains(true)
+  val shouldBeQuiet: Boolean = quiet.contains(true)
 
   private def isAllowedBecauseAdmin(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     dataService.users.isAdmin(user).map { isAdmin =>

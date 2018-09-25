@@ -51,7 +51,7 @@ trait SlackBotProfileService {
     maybeThreadTs: Option[String],
     isEphemeral: Boolean,
     maybeResponseUrl: Option[String],
-    hideFeedback: Boolean
+    beQuiet: Boolean
   ): Future[Option[String]]
 
   def sendDMWarningMessageFor(event: Event, services: DefaultServices, profile: SlackBotProfile, slackUserId: String, message: String)
@@ -79,7 +79,7 @@ trait SlackBotProfileService {
             None,
             isEphemeral = false,
             None,
-            hideFeedback = false
+            beQuiet = false
           )
         }.getOrElse(Future.successful(None))
       } yield maybeTs

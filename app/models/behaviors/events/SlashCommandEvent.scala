@@ -42,7 +42,7 @@ case class SlashCommandEvent(
   override val isResponseExpected: Boolean = true
   val includesBotMention: Boolean = true
 
-  override val hideFeedback: Boolean = true
+  override val beQuiet: Boolean = true
 
   def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
     Future.successful(None)
@@ -122,7 +122,7 @@ case class SlashCommandEvent(
         services,
         isEphemeral,
         maybeResponseUrl,
-        hideFeedback
+        beQuiet
       ).send
     } yield maybeTs
   }

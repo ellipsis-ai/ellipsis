@@ -311,7 +311,7 @@ class SlackController @Inject() (
               isUninterruptedConversation = false,
               isEphemeral = false,
               None,
-              hideFeedback = false
+              beQuiet = false
             )
           )
         } yield {}
@@ -780,7 +780,7 @@ class SlackController @Inject() (
           isUninterruptedConversation = false,
           info.isEphemeral,
           Some(info.response_url),
-          hideFeedback = false
+          beQuiet = false
         ))
       }).getOrElse {
         Future.successful({})
@@ -883,7 +883,7 @@ class SlackController @Inject() (
         maybeThreadIdToUse,
         info.isEphemeral,
         Some(info.response_url),
-        actionChoice.shouldHideFeedback
+        actionChoice.shouldBeQuiet
       )
     } yield {}
   }
@@ -893,7 +893,8 @@ class SlackController @Inject() (
     val info: ActionsTriggeredInfo
     val shouldRemoveActions: Boolean
     val maybeResultText: Option[String]
-    val slackUser: String = if (info.channel.isDirectMessage) {
+    val beQuiet: Boolean = false
+    def slackUser: String = if (info.channel.isDirectMessage || beQuiet) {
       "You"
     } else {
       s"<@${info.user.id}>"
@@ -927,9 +928,9 @@ class SlackController @Inject() (
               info.user.id,
               info.message_ts,
               info.maybeOriginalMessageThreadId,
-              info.isEphemeral,
+              info.isEphemeral || beQuiet,
               Some(info.response_url),
-              hideFeedback = false
+              beQuiet = false
             )
           }.getOrElse(Future.successful(None))
         } yield maybeTs
@@ -989,9 +990,9 @@ class SlackController @Inject() (
                                      implicit val request: Request[AnyContent]
                                    ) extends ActionPermission {
 
-    override val maybeResultText: Option[String] = if (isActive && actionChoice.shouldHideFeedback) {
-      None
-    } else if (isActive) {
+    override val beQuiet: Boolean = actionChoice.shouldBeQuiet
+
+    override val maybeResultText: Option[String] = if (isActive) {
       Some(s"$slackUser clicked ${actionChoice.label}")
     } else {
       Some("This skill has been updated, making these associated actions no longer valid")
@@ -1224,7 +1225,7 @@ class SlackController @Inject() (
         info.maybeOriginalMessageThreadId,
         info.isEphemeral,
         Some(info.response_url),
-        hideFeedback = false
+        beQuiet = false
       )
     }
 
@@ -1279,7 +1280,7 @@ class SlackController @Inject() (
         info.maybeOriginalMessageThreadId,
         info.isEphemeral,
         Some(info.response_url),
-        hideFeedback = false
+        beQuiet = false
       )
     }
 
@@ -1330,7 +1331,7 @@ class SlackController @Inject() (
         info.maybeOriginalMessageThreadId,
         info.isEphemeral,
         Some(info.response_url),
-        hideFeedback = false
+        beQuiet = false
       )
     }
 
@@ -1525,7 +1526,7 @@ class SlackController @Inject() (
         info.maybeOriginalMessageThreadId,
         info.isEphemeral,
         Some(info.response_url),
-        hideFeedback = false
+        beQuiet = false
       )
     }
 

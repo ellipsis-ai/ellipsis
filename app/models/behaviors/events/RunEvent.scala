@@ -90,7 +90,7 @@ case class RunEvent(
         services,
         isEphemeral,
         maybeResponseUrl,
-        hideFeedback
+        beQuiet
       ).send
     } yield maybeTs
   }

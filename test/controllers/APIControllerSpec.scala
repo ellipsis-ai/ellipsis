@@ -96,7 +96,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       isUninterruptedConversation = false,
       isEphemeral = false,
       maybeResponseUrl = None,
-      hideFeedback = false
+      beQuiet = false
     )
     when(dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)

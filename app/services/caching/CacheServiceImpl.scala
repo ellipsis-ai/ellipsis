@@ -39,7 +39,7 @@ case class SlackMessageEventData(
                                   isUninterruptedConversation: Boolean,
                                   isEphemeral: Boolean,
                                   maybeResponseUrl: Option[String],
-                                  hideFeedback: Boolean
+                                  beQuiet: Boolean
                                 )
 
 case class InvokeResultData(
@@ -110,7 +110,7 @@ class CacheServiceImpl @Inject() (
           ev.isUninterruptedConversation,
           ev.isEphemeral,
           ev.maybeResponseUrl,
-          ev.hideFeedback
+          ev.beQuiet
         )
         set(key, Json.toJson(eventData), expiration)
       }
@@ -135,7 +135,7 @@ class CacheServiceImpl @Inject() (
             event.isUninterruptedConversation,
             event.isEphemeral,
             event.maybeResponseUrl,
-            event.hideFeedback
+            event.beQuiet
           ))
         }
         case JsError(err) => None

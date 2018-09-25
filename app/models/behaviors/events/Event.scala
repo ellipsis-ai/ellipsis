@@ -41,7 +41,7 @@ trait Event {
   val isUninterruptedConversation: Boolean = false
   val isEphemeral: Boolean = false
   val maybeResponseUrl: Option[String] = None
-  val hideFeedback: Boolean = false
+  val beQuiet: Boolean = false
 
   def originalEventType: EventType = {
     maybeOriginalEventType.getOrElse(eventType)

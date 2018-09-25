@@ -87,7 +87,7 @@ case class SlackMessageSender(
                                services: DefaultServices,
                                isEphemeral: Boolean,
                                maybeResponseUrl: Option[String],
-                               hideFeedback: Boolean
+                               beQuiet: Boolean
                              ) {
 
   val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
@@ -217,20 +217,23 @@ case class SlackMessageSender(
     }
   }
 
+  private def maybePreambleText: Option[String] = {
+    if (responseType == Private && !maybeDMChannel.contains(originatingChannel)) {
+      Some(s"<@${user}> I’ve sent you a <${client.profile.botDMDeepLink}|private message> :sleuth_or_spy:")
+    } else {
+      None
+    }
+  }
+
   def sendPreamble(formattedText: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     if (formattedText.nonEmpty) {
-      for {
-        _ <- if (responseType == Private && !maybeDMChannel.contains(originatingChannel)) {
-          val preambleMessage = s"<@${user}> I’ve sent you a <${client.profile.botDMDeepLink}|private message> :sleuth_or_spy:"
-          if (hideFeedback) {
-            postEphemeralMessage(preambleMessage, None, originatingChannel)
-          } else {
-            postChatMessage(preambleMessage, None, Some(originatingChannel))
-          }
+      maybePreambleText.map { preambleMessage =>
+        if (beQuiet) {
+          postEphemeralMessage(preambleMessage, None, originatingChannel)
         } else {
-          Future.successful({})
+          postChatMessage(preambleMessage, None, Some(originatingChannel))
         }
-      } yield {}
+      }.getOrElse(Future.successful(None)).map(_ => ())
     } else {
       Future.successful({})
     }

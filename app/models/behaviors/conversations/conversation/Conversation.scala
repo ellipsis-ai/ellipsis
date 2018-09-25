@@ -69,7 +69,7 @@ trait Conversation {
         isUninterruptedConversation = false,
         isEphemeral = false,
         None,
-        hideFeedback = false
+        beQuiet = false
       )
     }
   }

@@ -36,7 +36,7 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
       isUninterruptedConversation = false,
       isEphemeral = false,
       maybeResponseUrl = None,
-      hideFeedback = false
+      beQuiet = false
     )
   }
 

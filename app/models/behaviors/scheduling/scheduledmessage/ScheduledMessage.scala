@@ -47,7 +47,7 @@ case class ScheduledMessage(
             isUninterruptedConversation = false,
             isEphemeral = false,
             None,
-            hideFeedback = false
+            beQuiet = false
           ),
           this
         )
