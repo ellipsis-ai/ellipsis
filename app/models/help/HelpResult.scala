@@ -65,7 +65,7 @@ trait HelpResult {
     if (behaviorVersions.length == 1) {
       behaviorVersions.headOption.flatMap { version =>
         version.id.map { versionId =>
-          Seq(SlackMessageActionButton(RUN_BEHAVIOR_VERSION, "Run this action", versionId))
+          Seq(SlackMessageActionButton(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, "Run this action", versionId))
         }
       }.getOrElse(Seq())
     } else {
@@ -74,7 +74,7 @@ trait HelpResult {
           SlackMessageActionMenuItem(ea.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
         }
       }
-      Seq(SlackMessageActionMenu(RUN_BEHAVIOR_VERSION, "Actions", menuItems))
+      Seq(SlackMessageActionMenu(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, "Actions", menuItems))
     }
   }
 

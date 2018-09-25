@@ -123,7 +123,12 @@ class SlackBotProfileServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]] = {
+  def eventualMaybeEvent(
+                          slackTeamId: String,
+                          channelId: String,
+                          maybeUserId: Option[String],
+                          maybeOriginalEventType: Option[EventType]
+                        ): Future[Option[SlackMessageEvent]] = {
     allForSlackTeamId(slackTeamId).map { botProfiles =>
       botProfiles.headOption.map { botProfile =>
         // TODO: Create a new class for placeholder events
@@ -140,7 +145,8 @@ class SlackBotProfileServiceImpl @Inject() (
           maybeOriginalEventType,
           isUninterruptedConversation = false,
           isEphemeral = false,
-          maybeResponseUrl = None
+          maybeResponseUrl = None,
+          beQuiet = false
         )
       }
     }
@@ -212,7 +218,8 @@ class SlackBotProfileServiceImpl @Inject() (
                               originalMessageTs: String,
                               maybeThreadTs: Option[String],
                               isEphemeral: Boolean,
-                              maybeResponseUrl: Option[String]
+                              maybeResponseUrl: Option[String],
+                              beQuiet: Boolean
   ): Future[Option[String]] = {
     val delayMilliseconds = 1000
     val event = SlackMessageEvent(
@@ -227,7 +234,8 @@ class SlackBotProfileServiceImpl @Inject() (
       None,
       isUninterruptedConversation = false,
       isEphemeral,
-      maybeResponseUrl
+      maybeResponseUrl,
+      beQuiet
     )
     val eventualResult = sendResult(getEventualMaybeResult(event))
     SlackMessageReactionHandler.handle(

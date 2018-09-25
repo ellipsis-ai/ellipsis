@@ -89,7 +89,8 @@ case class RunEvent(
         Set.empty[MessageUserData],
         services,
         isEphemeral,
-        maybeResponseUrl
+        maybeResponseUrl,
+        beQuiet
       ).send
     } yield maybeTs
   }

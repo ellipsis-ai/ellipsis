@@ -9,7 +9,7 @@ object SlackMessageActionConstants {
   val CONFIRM_CONTINUE_CONVERSATION = "confirm_continue_conversation"
   val DONT_CONTINUE_CONVERSATION = "dont_continue_conversation"
   val STOP_CONVERSATION = "stop_conversation"
-  val RUN_BEHAVIOR_VERSION = "run_behavior_version"
+  val BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION = "run_behavior_version"
   val INPUT_CHOICE = "input_choice"
   val DATA_TYPE_CHOICE = "data_type_choice"
   val ACTION_CHOICES = "action_choices"

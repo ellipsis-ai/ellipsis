@@ -17,6 +17,8 @@ case class SlackBotProfile(
     SlackMessageEvent.mentionRegexFor(userId).findFirstMatchIn(message.originalText).nonEmpty ||
       (allowShortcutMention && MessageEvent.ellipsisShortcutMentionRegex.findFirstMatchIn(message.originalText).nonEmpty)
   }
+
+  val botDMDeepLink: String = s"slack://user?team=${slackTeamId}&id=${userId}"
 }
 
 object SlackBotProfile {
