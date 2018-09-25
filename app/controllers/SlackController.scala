@@ -585,8 +585,8 @@ class SlackController @Inject() (
       } yield StopConversationResponse(conversationId, userId)
     }
 
-    def maybeRunBehaviorVersionId: Option[String] = {
-      val maybeAction = actions.find(_.name == RUN_BEHAVIOR_VERSION)
+    def maybeHelpRunBehaviorVersionId: Option[String] = {
+      val maybeAction = actions.find(_.name == BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION)
       val maybeValue = maybeAction.flatMap(_.maybeValue)
       maybeValue.orElse {
         for {
@@ -1471,14 +1471,14 @@ class SlackController @Inject() (
 
   }
 
-  case class RunBehaviorVersionPermission(
-                                           behaviorVersionId: String,
-                                           info: ActionsTriggeredInfo,
-                                           isActive: Boolean,
-                                           canBeTriggered: Boolean,
-                                           botProfile: SlackBotProfile,
-                                           implicit val request: Request[AnyContent]
-                                         ) extends ActionPermission {
+  case class HelpRunBehaviorVersionPermission(
+                                               behaviorVersionId: String,
+                                               info: ActionsTriggeredInfo,
+                                               isActive: Boolean,
+                                               canBeTriggered: Boolean,
+                                               botProfile: SlackBotProfile,
+                                               implicit val request: Request[AnyContent]
+                                             ) extends ActionPermission {
 
     val shouldRemoveActions: Boolean = false
     val maybeOptionLabel: Option[String] = info.findOptionLabelForValue(behaviorVersionId).map(_.mkString("“", "", "”"))
@@ -1489,7 +1489,7 @@ class SlackController @Inject() (
       } else if (!canBeTriggered) {
         s"$slackUser tried to run $actionText"
       } else {
-        info.findButtonLabelForNameAndValue(RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
+        info.findButtonLabelForNameAndValue(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, behaviorVersionId).map { text =>
           s"$slackUser clicked $text"
         }.getOrElse {
           s"$slackUser ran $actionText"
@@ -1497,7 +1497,7 @@ class SlackController @Inject() (
       }
     })
 
-    private def runIt(): Unit = {
+    private def runBehaviorVersion(): Unit = {
       dataService.slackBotProfiles.sendResultWithNewEvent(
         s"run behavior version $behaviorVersionId",
         event => for {
@@ -1532,7 +1532,7 @@ class SlackController @Inject() (
     def runInBackground(maybeInstantResponseTs: Future[Option[String]]): Unit = {
       if (canBeTriggered) {
         if (isActive) {
-          runIt()
+          runBehaviorVersion()
         }
       } else {
         dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId).flatMap { maybeBehaviorVersion =>
@@ -1544,15 +1544,15 @@ class SlackController @Inject() (
     }
   }
 
-  object RunBehaviorVersionPermission extends ActionPermissionType[RunBehaviorVersionPermission] {
+  object HelpRunBehaviorVersionPermission extends ActionPermissionType[HelpRunBehaviorVersionPermission] {
 
-    def maybeFor(info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Option[Future[RunBehaviorVersionPermission]] = {
-      info.maybeRunBehaviorVersionId.map { behaviorVersionId =>
+    def maybeFor(info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Option[Future[HelpRunBehaviorVersionPermission]] = {
+      info.maybeHelpRunBehaviorVersionId.map { behaviorVersionId =>
         buildFor(behaviorVersionId, info, botProfile)
       }
     }
 
-    def buildFor(behaviorVersionId: String, info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[RunBehaviorVersionPermission] = {
+    def buildFor(behaviorVersionId: String, info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[HelpRunBehaviorVersionPermission] = {
       for {
         maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
         isActive <- maybeBehaviorVersion.map { behaviorVersion =>
@@ -1564,7 +1564,7 @@ class SlackController @Inject() (
           user <- maybeUser
         } yield behaviorVersion.groupVersion.canBeTriggeredBy(user, dataService)).getOrElse(Future.successful(false))
       } yield {
-        RunBehaviorVersionPermission(
+        HelpRunBehaviorVersionPermission(
           behaviorVersionId,
           info,
           isActive = isActive,
@@ -1602,7 +1602,7 @@ class SlackController @Inject() (
                             HelpListAllActionsPermission.maybeResultFor(info, botProfile).getOrElse {
                               ConfirmContinueConversationPermission.maybeResultFor(info, botProfile).getOrElse {
                                 StopConversationPermission.maybeResultFor(info, botProfile).getOrElse {
-                                  RunBehaviorVersionPermission.maybeResultFor(info, botProfile).getOrElse {
+                                  HelpRunBehaviorVersionPermission.maybeResultFor(info, botProfile).getOrElse {
                                     Future.successful(Ok(""))
                                   }
                                 }
