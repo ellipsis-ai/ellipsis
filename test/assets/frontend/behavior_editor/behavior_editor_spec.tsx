@@ -12,8 +12,8 @@ import * as TestUtils from 'react-addons-test-utils';
 import BehaviorEditor from '../../../../app/assets/frontend/behavior_editor/index';
 import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
 import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
-import BehaviorResponseType from '../../../../app/assets/frontend/models/behavior_response_type';
 import ParamType from '../../../../app/assets/frontend/models/param_type';
+import TriggerType from "../../../../app/assets/frontend/models/trigger_type";
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
 import {OAuthApplicationRef} from '../../../../app/assets/frontend/models/oauth';
 import {SimpleTokenApiRef} from '../../../../app/assets/frontend/models/simple_token';
@@ -47,7 +47,8 @@ describe('BehaviorEditor', () => {
           text: "Do the tests run?",
           requiresMention: false,
           isRegex: false,
-          caseSensitive: false
+          caseSensitive: false,
+          triggerType: "MessageSent"
         }],
         config: {
           isDataType: false,
@@ -73,6 +74,7 @@ describe('BehaviorEditor', () => {
     teamId: "A",
     "isAdmin": false,
     "isLinkedToGithub": false,
+    triggerTypes: [{ id: "MessageSent", displayString: "Message sent" }],
     group: groupJson,
     selectedId: "1",
     csrfToken: "2",
@@ -148,8 +150,8 @@ describe('BehaviorEditor', () => {
       "functionBody": "",
       "responseTemplate": "",
       "inputIds": [],
-      "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false }],
-      "config": { "isDataType": false, "isTest": false, responseTypeId: normalResponseType }
+      "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false, triggerType: "MessageSent" }],
+      "config": { "isDataType": false, "isTest": false, responseTypeId: normalResponseType },
     }],
     "libraryVersions": [],
     "requiredAWSConfigs": [],
@@ -165,6 +167,7 @@ describe('BehaviorEditor', () => {
     "csrfToken": "1234",
     "isAdmin": false,
     "isLinkedToGithub": false,
+    triggerTypes: [{ id: "MessageSent", displayString: "Message sent" }],
     "group": newGroupJson,
     "builtinParamTypes": [{ "id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false }, {
       "id": "Number",
@@ -234,6 +237,7 @@ describe('BehaviorEditor', () => {
 
   function createEditor(config): BehaviorEditor {
     const props = Object.assign({}, config, {
+      triggerTypes: config.triggerTypes.map(ea => TriggerType.fromProps(ea)),
       group: BehaviorGroup.fromJson(config.group),
       awsConfigs: config.awsConfigs.map(AWSConfigRef.fromJson),
       oauthApplications: config.oauthApplications.map(OAuthApplicationRef.fromJson),

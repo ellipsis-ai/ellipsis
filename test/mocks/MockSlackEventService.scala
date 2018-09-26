@@ -3,7 +3,7 @@ package mocks
 import akka.actor.ActorSystem
 import json.{SlackUserData, SlackUserProfileData}
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.events.SlackMessageEvent
+import models.behaviors.events.Event
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -40,7 +40,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
     client
   }
 
-  def onEvent(event: SlackMessageEvent): Future[Unit] = Future.successful({})
+  def onEvent(event: Event): Future[Unit] = Future.successful({})
 
   def clientFor(botProfile: SlackBotProfile): SlackApiClient = client
 

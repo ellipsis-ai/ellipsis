@@ -23,6 +23,7 @@ import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.input.Input
 import models.behaviors.savedanswer.SavedAnswer
+import models.behaviors.triggers.MessageSent
 import models.team.Team
 import modules.ActorModule
 import org.scalatest.mock.MockitoSugar
@@ -118,7 +119,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def newTriggerData: BehaviorTriggerData = {
-    BehaviorTriggerData("foo", false, false, false)
+    BehaviorTriggerData("foo", false, false, false, MessageSent.toString)
   }
 
   def newGroupVersionDataFor(group: BehaviorGroup, user: User): BehaviorGroupData = {

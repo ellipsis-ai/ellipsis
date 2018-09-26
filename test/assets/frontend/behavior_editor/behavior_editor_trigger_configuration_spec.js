@@ -2,12 +2,14 @@ import React from 'react';
 import TestUtils from 'react-addons-test-utils';
 import TriggerConfiguration from '../../../../app/assets/frontend/behavior_editor/trigger_configuration';
 import Trigger from '../../../../app/assets/frontend/models/trigger';
+import TriggerType from '../../../../app/assets/frontend/models/trigger_type';
 import ParamNotInFunctionNotificationData from "../../../../app/assets/frontend/models/notifications/param_not_in_function_notification_data";
 import InvalidParamInTriggerNotificationData from "../../../../app/assets/frontend/models/notifications/invalid_param_in_trigger_notification_data";
 
 describe('TriggerConfiguration', () => {
   const defaultConfig = {
     isFinishedBehavior: false,
+    triggerTypes: [{ id: "MessageSent", displayString: "Message sent" }].map(ea => TriggerType.fromProps(ea)),
     triggers: Trigger.triggersFromJson([{
       text: "Do the tests run?",
       requiresMention: false,
