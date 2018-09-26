@@ -12,12 +12,14 @@ const behaviorVersionTask1: BehaviorVersionJson = Object.freeze({
     "text": "B",
     "requiresMention": false,
     "isRegex": true,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": "MessageSent"
   }, {
     "text": "C",
     "requiresMention": false,
     "isRegex": false,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": "MessageSent"
   }],
   "config": {
     "aws": {
@@ -43,12 +45,14 @@ const behaviorVersionTask2: BehaviorVersionJson = Object.freeze({
     "text": "A",
     "requiresMention": true,
     "isRegex": true,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": "MessageSent"
   }, {
     "text": ".+",
     "requiresMention": false,
     "isRegex": true,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": "MessageSent"
   }],
   "config": {
     "aws": {
@@ -73,12 +77,14 @@ const behaviorVersionKnowledge1: BehaviorVersionJson = Object.freeze({
     "text": "",
     "requiresMention": false,
     "isRegex": false,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": "MessageSent"
   }, {
     "text": "",
     "requiresMention": false,
     "isRegex": false,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": "MessageSent"
   }],
   "config": {
     isDataType: false,

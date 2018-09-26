@@ -41,12 +41,14 @@ describe('BehaviorListApp', () => {
       "text": "B",
       "requiresMention": false,
       "isRegex": true,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
     }, {
       "text": "C",
       "requiresMention": false,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
     }],
     "config": {
       isDataType: false,
@@ -66,7 +68,8 @@ describe('BehaviorListApp', () => {
       "text": "A",
       "requiresMention": true,
       "isRegex": true,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
     }],
     "config": {
       isDataType: false,

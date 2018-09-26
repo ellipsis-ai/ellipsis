@@ -42,12 +42,14 @@ const behaviorVersion1: BehaviorVersionJson = Object.freeze({
     "text": "B",
     "requiresMention": false,
     "isRegex": true,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": "MessageSent"
   }, {
     "text": "C",
     "requiresMention": false,
     "isRegex": false,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": "MessageSent"
   }],
   "inputIds": [inputId, inputId2],
   "config": {
@@ -77,12 +79,14 @@ const behaviorVersion2: BehaviorVersionJson = Object.freeze({
     "text": "B",
     "requiresMention": true,
     "isRegex": true,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": "MessageSent"
   }, {
     "text": ".+",
     "requiresMention": false,
     "isRegex": true,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": "MessageSent"
   }],
   "inputIds": [inputId2, inputId],
   "config": {
@@ -325,7 +329,8 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "what's on my calendar today",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
     }],
     "config": {
       "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
@@ -349,13 +354,15 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "deactivate my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
     }, {
       "text": "stop my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
-    }, {"text": "turn off my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
+    }, {"text": "turn off my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": "MessageSent"}],
     "config": {
       "exportId": "V-LAjv1AS4CoFimMANnxpg",
       "name": "Deactivate",
@@ -374,7 +381,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "functionBody": "",
     "responseTemplate": "Ellipsis can show you what's happening on your calendar today, and send reminders when events are about to begin. (This skill requires access to your Google Calendar.)\n\n**Actions:**\n- `what's on my calendar today` — show your agenda (list all events) for the rest of the day\n- `what's on my calendar now` — show any events happening now or in the next 10 minutes\n- `setup my calendar` — set up the skill to send you your agenda each weekday, and send you reminders a few minutes before events begin\n- `stop my calendar` — turn off the scheduled agenda and reminders\n",
     "inputIds": [],
-    "triggers": [{"text": "my calendar help", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+    "triggers": [{"text": "my calendar help", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": "MessageSent"}],
     "config": {
       "exportId": "J0uB9LvZTo6_L-spEBrtqg",
       "name": "Help",
@@ -397,7 +404,8 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "what's on my calendar now",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
     }],
     "config": {
       "exportId": "SBH4IfDzTGO8P7kV02yECw",
@@ -421,8 +429,9 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "set up my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
-    }, {"text": "setup my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
+    }, {"text": "setup my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": "MessageSent"}],
     "config": {
       "exportId": "ioHMv3b3T4utFwwH0cwjLg",
       "name": "Setup",
@@ -496,13 +505,15 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "deactivate my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
     }, {
       "text": "stop my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
-    }, {"text": "turn off my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
+    }, {"text": "turn off my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": "MessageSent"}],
     "config": {
       "exportId": "V-LAjv1AS4CoFimMANnxpg",
       "name": "Deactivate",
@@ -523,7 +534,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "functionBody": "",
     "responseTemplate": "Ellipsis can show you what's happening on your calendar today, and send reminders when events are about to begin. (This skill requires access to your Google Calendar.)\n\n**Actions:**\n- `what's on my calendar today` — show your agenda (list all events) for the rest of the day\n- `what's on my calendar now` — show any events happening now or in the next 10 minutes\n- `setup my calendar` — set up the skill to send you your agenda each weekday, and send you reminders a few minutes before events begin\n- `stop my calendar` — turn off the scheduled agenda and reminders\n",
     "inputIds": [],
-    "triggers": [{"text": "my calendar help", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+    "triggers": [{"text": "my calendar help", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": "MessageSent"}],
     "config": {
       "exportId": "J0uB9LvZTo6_L-spEBrtqg",
       "name": "Help",
@@ -548,8 +559,9 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "set up my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
-    }, {"text": "setup my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
+    }, {"text": "setup my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": "MessageSent"}],
     "config": {
       "exportId": "ioHMv3b3T4utFwwH0cwjLg",
       "name": "Setup",
@@ -574,7 +586,8 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "what's on my calendar now",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
     }],
     "config": {
       "exportId": "SBH4IfDzTGO8P7kV02yECw",
@@ -600,7 +613,8 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "what's on my calendar today",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": "MessageSent"
     }],
     "config": {
       "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
