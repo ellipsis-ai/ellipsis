@@ -5,11 +5,13 @@ import Notifications from '../notifications/notifications';
 import SectionHeading from '../shared_ui/section_heading';
 import TriggerInput from './trigger_input';
 import Trigger from '../models/trigger';
+import TriggerType from '../models/trigger_type';
 import ParamNotInFunctionNotificationData from "../models/notifications/param_not_in_function_notification_data";
 import InvalidParamInTriggerNotificationData from "../models/notifications/invalid_param_in_trigger_notification_data";
 
 const TriggerConfiguration = React.createClass({
     propTypes: {
+      triggerTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(TriggerType)).isRequired,
       triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
       inputNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
       onToggleHelp: React.PropTypes.func.isRequired,
@@ -99,16 +101,19 @@ const TriggerConfiguration = React.createClass({
                 return (
                   <div key={`trigger${index}`}>
                     <TriggerInput
-                      dropdownIsOpen={this.props.openDropdownName === `BehaviorEditorTriggerDropdown${index}`}
+                      matchTypeDropdownIsOpen={this.props.openDropdownName === `BehaviorEditorTriggerMatchTypeDropdown${index}`}
+                      triggerTypeDropdownIsOpen={this.props.openDropdownName === `BehaviorEditorTriggerTriggerTypeDropdown${index}`}
                       key={`BehaviorEditorTrigger${index}`}
                       id={`trigger${index}`}
                       ref={`trigger${index}`}
+                      triggerTypes={this.props.triggerTypes}
                       trigger={trigger}
                       onChange={this.changeTrigger.bind(this, index)}
                       onDelete={this.deleteTrigger.bind(this, index)}
                       onEnterKey={this.onTriggerEnterKey.bind(this, index)}
                       onHelpClick={this.props.onToggleHelp}
-                      onToggleDropdown={this.toggleDropdown.bind(this, `BehaviorEditorTriggerDropdown${index}`)}
+                      onToggleMatchTypeDropdown={this.toggleDropdown.bind(this, `BehaviorEditorTriggerMatchTypeDropdown${index}`)}
+                      onToggleTriggerTypeDropdown={this.toggleDropdown.bind(this, `BehaviorEditorTriggerTriggerTypeDropdown${index}`)}
                       helpVisible={this.props.helpVisible}
                     />
                     <div className={notifications.length > 0 ? "mtneg1 mbxs" : ""}>

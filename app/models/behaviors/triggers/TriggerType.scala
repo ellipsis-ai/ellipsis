@@ -1,5 +1,6 @@
 package models.behaviors.triggers
 
+import models.behaviors.events.{Event, MessageEvent, SlackReactionAddedEvent, SlashCommandEvent}
 import utils.Enum
 
 object TriggerType extends Enum[TriggerType] {
@@ -8,14 +9,27 @@ object TriggerType extends Enum[TriggerType] {
 }
 
 sealed trait TriggerType extends TriggerType.Value {
-  val requiresAuth: Boolean
+  val displayString: String
+  def matches(trigger: Trigger, event: Event): Boolean
 }
 
 case object MessageSent extends TriggerType {
-  val requiresAuth = true
+  val displayString = "Message sent"
+  def matches(trigger: Trigger, event: Event): Boolean = {
+    event match {
+      case e: MessageEvent => trigger.matches(e.relevantMessageText, e.includesBotMention)
+      case e: SlashCommandEvent => trigger.matches(e.messageText, includesBotMention = true)
+      case _ => false
+    }
+  }
 }
 
 case object ReactionAdded extends TriggerType {
-  val requiresAuth = false
-
+  val displayString = "Reaction added"
+  def matches(trigger: Trigger, event: Event): Boolean = {
+    event match {
+      case e: SlackReactionAddedEvent => trigger.matches(e.reaction, includesBotMention = true)
+      case _ => false
+    }
+  }
 }

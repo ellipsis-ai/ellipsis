@@ -393,7 +393,7 @@ const name = ellipsis.userInfo.fullName || "friend";
 ellipsis.success(\`Hello, \${name}.\`);
 `);
       const template = ResponseTemplate.fromString("{successResult}");
-      const triggers = [new Trigger(`run ${optionalName || "action"}`, false, true)];
+      const triggers = [new Trigger("MessageSent", `run ${optionalName || "action"}`, false, true)];
       const props: DefaultActionProps = {
         triggers: triggers,
         functionBody: functionBody,

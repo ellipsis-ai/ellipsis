@@ -14,6 +14,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
+import models.behaviors.triggers.TriggerType
 import models.team.Team
 import play.api.Configuration
 import services._
@@ -300,7 +301,8 @@ class BehaviorVersionServiceImpl @Inject() (
             trigger.text,
             trigger.requiresMention,
             trigger.isRegex,
-            trigger.caseSensitive
+            trigger.caseSensitive,
+            TriggerType.definitelyFind(trigger.triggerType)
           )
         }
       )

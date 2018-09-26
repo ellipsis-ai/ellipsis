@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import controllers.RemoteAssets
 import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.behaviorparameter.BehaviorParameterType
+import models.behaviors.triggers.TriggerType
 import models.team.Team
 import play.api.libs.ws.WSClient
 import services.DataService
@@ -14,6 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorEditorData(
                                teamAccess: UserTeamAccess,
+                               triggerTypes: Seq[TriggerTypeData],
                                group: BehaviorGroupData,
                                builtinParamTypes: Seq[BehaviorParameterTypeData],
                                maybeSelectedId: Option[String],
@@ -217,6 +219,7 @@ object BehaviorEditorData {
       }
       BehaviorEditorData(
         teamAccess,
+        TriggerType.values.map(TriggerTypeData.from),
         data,
         builtinParamTypeData,
         maybeVerifiedSelectedId,

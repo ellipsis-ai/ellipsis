@@ -51,6 +51,7 @@ import Sticky from '../shared_ui/sticky';
 import SVGHamburger from '../svg/hamburger';
 import Trigger from '../models/trigger';
 import TriggerConfiguration from './trigger_configuration';
+import TriggerType from '../models/trigger_type';
 import TriggerHelp from './trigger_help';
 import UniqueBy from '../lib/unique_by';
 import UserInputConfiguration from './user_input_configuration';
@@ -84,6 +85,7 @@ import TestOutput from "./test_output";
 
 const BehaviorEditor = React.createClass({
   propTypes: Object.assign({}, Page.requiredPropTypes, {
+    triggerTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(TriggerType)).isRequired,
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
     selectedId: React.PropTypes.string,
     csrfToken: React.PropTypes.string.isRequired,
@@ -2522,6 +2524,7 @@ const BehaviorEditor = React.createClass({
                 <hr className="mtn mbn rule-subtle" />
 
                 <TriggerConfiguration
+                  triggerTypes={this.props.triggerTypes}
                   triggers={this.getBehaviorTriggers()}
                   inputNames={this.getInputs().map((ea) => ea.name)}
                   onToggleHelp={this.toggleTriggerHelp}

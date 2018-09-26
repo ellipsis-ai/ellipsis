@@ -2,7 +2,7 @@ package services.slack
 
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.events.SlackMessageEvent
+import models.behaviors.events.Event
 import services.slack.apiModels.SlackUser
 
 import scala.concurrent.Future
@@ -12,7 +12,7 @@ trait SlackEventService {
 
   val random = new Random()
 
-  def onEvent(event: SlackMessageEvent): Future[Unit]
+  def onEvent(event: Event): Future[Unit]
 
   def clientFor(botProfile: SlackBotProfile): SlackApiClient
 

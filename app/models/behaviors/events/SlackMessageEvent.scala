@@ -38,7 +38,7 @@ case class SlackMessageEvent(
     this.copy(maybeOriginalEventType = Some(originalEventType), isUninterruptedConversation = isUninterrupted)
   }
 
-  lazy val isBotMessage: Boolean = profile.userId == user
+  override val isBotMessage: Boolean = profile.userId == user
 
   override def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     if (isDirectMessage) {
@@ -79,7 +79,7 @@ case class SlackMessageEvent(
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
 
-  def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
+  override def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId, teamId).flatMap { maybeConvo =>
       maybeConvo.map(c => Future.successful(Some(c))).getOrElse(maybeConversationRootedHere(dataService))
     }

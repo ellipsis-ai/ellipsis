@@ -41,6 +41,7 @@ trait Event {
   val isUninterruptedConversation: Boolean = false
   val isEphemeral: Boolean = false
   val maybeResponseUrl: Option[String] = None
+  val isBotMessage: Boolean = false
 
   def originalEventType: EventType = {
     maybeOriginalEventType.getOrElse(eventType)
@@ -193,6 +194,8 @@ trait Event {
   def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
 
   val invocationLogText: String
+
+  def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = Future.successful(None)
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],

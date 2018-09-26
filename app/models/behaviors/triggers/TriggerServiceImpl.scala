@@ -104,11 +104,12 @@ class TriggerServiceImpl @Inject()(
                        pattern: String,
                        requiresBotMention: Boolean,
                        shouldTreatAsRegex: Boolean,
-                       isCaseSensitive: Boolean
+                       isCaseSensitive: Boolean,
+                       triggerType: TriggerType
                      ): DBIO[Trigger] = {
     val processedPattern = patternWithoutCaseInsensitiveFlag(pattern, shouldTreatAsRegex)
     val isCaseSensitiveIntended = isCaseSensitive && (!shouldTreatAsRegex || caseInsensitiveRegex.findFirstMatchIn(pattern).isEmpty)
-    val newRaw = RawTrigger(IDs.next, behaviorVersion.id, MessageSent, processedPattern, requiresBotMention, shouldTreatAsRegex, isCaseSensitiveIntended)
+    val newRaw = RawTrigger(IDs.next, behaviorVersion.id, triggerType, processedPattern, requiresBotMention, shouldTreatAsRegex, isCaseSensitiveIntended)
     (all += newRaw).map(_ => newRaw).map { _ =>
       val triggerKind = if (newRaw.shouldTreatAsRegex) RegexTrigger else TemplateTrigger
       triggerKind(newRaw.id, behaviorVersion, newRaw.triggerType, newRaw.pattern, newRaw.requiresBotMention, newRaw.isCaseSensitive)

@@ -4,7 +4,8 @@ export interface TriggerJson {
   text: string,
   isRegex: boolean,
   requiresMention: boolean,
-  caseSensitive: boolean
+  caseSensitive: boolean,
+  triggerType: string
 }
 
 interface TriggerInterface extends TriggerJson {}
@@ -14,8 +15,10 @@ class Trigger implements Diffable, TriggerInterface {
   readonly requiresMention: boolean;
   readonly caseSensitive: boolean;
   readonly text: string;
+  readonly triggerType: string;
 
   constructor(
+    triggerType: string,
     maybeText?: Option<string>,
     maybeIsRegex?: Option<boolean>,
     maybeRequiresMention?: Option<boolean>
@@ -38,6 +41,10 @@ class Trigger implements Diffable, TriggerInterface {
         },
         text: {
           value: maybeText || "",
+          enumerable: true
+        },
+        triggerType: {
+          value: triggerType,
           enumerable: true
         }
       });
@@ -68,6 +75,10 @@ class Trigger implements Diffable, TriggerInterface {
       }, {
         name: "Require user to mention Ellipsis",
         value: this.requiresMention
+      }, {
+        name: "Trigger type",
+        value: this.triggerType,
+        isCategorical: true
       }];
     }
 
@@ -122,9 +133,10 @@ class Trigger implements Diffable, TriggerInterface {
 
     static fromProps(props: TriggerInterface): Trigger {
       return new Trigger(
+        props.triggerType,
         props.text,
         props.isRegex,
-        props.requiresMention
+        props.requiresMention,
       );
     }
 

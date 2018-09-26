@@ -7,6 +7,7 @@ import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
+import models.behaviors.events.SlackMessage
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
@@ -115,6 +116,7 @@ case class SlackApiClient(
     Logger.info(s"SlackApiClient query $endpoint with params $params")
     ws.
       url(urlFor(endpoint)).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
       withQueryStringParameters((params ++ defaultParams): _*).
       get
   }
@@ -138,6 +140,30 @@ case class SlackApiClient(
           Logger.error(
             s"""
                |Failed to retrieve permalink: $err
+               |
+               |Channel: $channel
+               |Message timestamp: $messageTs
+             """.stripMargin)
+          None
+        }
+      }
+  }
+
+  case class SlackMessageJson(user: String, text: String, ts: String)
+  implicit val slackMessageFormat = Json.format[SlackMessageJson]
+
+  def findReaction(channel: String, messageTs: String, slackEventService: SlackEventService): Future[Option[SlackMessage]] = {
+    val params = Seq(("channel", channel), ("timestamp", messageTs))
+    getResponseFor("reactions.get", params).
+      flatMap { r =>
+        val text = extract[SlackMessageJson](r, "message").text
+        SlackMessage.fromFormattedText(text, profile, slackEventService).map(Some(_))
+      }.
+      recover {
+        case SlackApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve reactions for message: $err
                |
                |Channel: $channel
                |Message timestamp: $messageTs

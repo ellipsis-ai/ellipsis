@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 case class BehaviorEditorEditConfig(
   containerId: String,
   csrfToken: Option[String],
+  triggerTypes: Seq[TriggerTypeData],
   group: BehaviorGroupData,
   selectedId: Option[String],
   builtinParamTypes: Seq[BehaviorParameterTypeData],
@@ -30,6 +31,7 @@ object BehaviorEditorEditConfig {
     BehaviorEditorEditConfig(
       containerId,
       csrfToken,
+      data.triggerTypes,
       data.group,
       data.maybeSelectedId,
       data.builtinParamTypes,

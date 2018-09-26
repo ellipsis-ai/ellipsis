@@ -13,19 +13,18 @@ import utils.{SlackMessageSender, UploadFileSpec}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class SlashCommandEvent(
-                              profile: SlackBotProfile,
-                              userSlackTeamId: String,
-                              channel: String,
-                              user: String,
-                              message: SlackMessage,
-                              responseUrl: String
-                            ) extends Event with SlackEvent {
+case class SlackReactionAddedEvent(
+                                    profile: SlackBotProfile,
+                                    userSlackTeamId: String,
+                                    channel: String,
+                                    user: String,
+                                    reaction: String,
+                                    maybeMessage: Option[SlackMessage]
+                                  ) extends Event with SlackEvent {
 
   val eventType: EventType = EventType.chat
 
-  override val isEphemeral: Boolean = true
-  override val maybeResponseUrl: Option[String] = Some(responseUrl)
+  override val isEphemeral: Boolean = false
 
   val teamId: String = profile.teamId
   val userIdForContext: String = user
@@ -33,7 +32,7 @@ case class SlashCommandEvent(
   lazy val maybeChannel = Some(channel)
   lazy val name: String = Conversation.SLACK_CONTEXT
 
-  lazy val messageText: String = message.originalText
+  lazy val messageText: String = maybeMessage.map(_.originalText).getOrElse("")
   lazy val invocationLogText: String = relevantMessageText
 
   val maybeThreadId: Option[String] = None
@@ -74,7 +73,9 @@ case class SlashCommandEvent(
 
 
   def messageUserDataList: Set[MessageUserData] = {
-    message.userList.map(MessageUserData.fromSlackUserData)
+    maybeMessage.map { message =>
+      message.userList.map(MessageUserData.fromSlackUserData)
+    }.getOrElse(Set())
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this

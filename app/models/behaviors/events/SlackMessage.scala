@@ -2,6 +2,7 @@ package models.behaviors.events
 
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
+import services.DefaultServices
 import services.slack.SlackEventService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -65,6 +66,16 @@ object SlackMessage {
     } yield {
       SlackMessage(text, withoutBotPrefix, unformatTextWithUsers(withoutBotPrefix, slackUsers), slackUsers)
     }
+  }
+
+  def maybeFromMessageTs(
+                          ts: String,
+                          channel: String,
+                          botProfile: SlackBotProfile,
+                          services: DefaultServices
+                        )(implicit ec: ExecutionContext): Future[Option[SlackMessage]] = {
+    val client = services.slackApiService.clientFor(botProfile)
+    client.findReaction(channel, ts, services.slackEventService)
   }
 
   def blank: SlackMessage = SlackMessage("", "", "", Set.empty[SlackUserData])

@@ -7,11 +7,14 @@ import Collapsible from '../shared_ui/collapsible';
 import ToggleGroup from '../form/toggle_group';
 import DropdownMenu from '../shared_ui/dropdown_menu';
 import Trigger from '../models/trigger';
+import TriggerType from '../models/trigger_type';
 
 const TriggerInput = React.createClass({
   propTypes: {
+    triggerTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(TriggerType)).isRequired,
     trigger: React.PropTypes.instanceOf(Trigger).isRequired,
-    dropdownIsOpen: React.PropTypes.bool.isRequired,
+    matchTypeDropdownIsOpen: React.PropTypes.bool.isRequired,
+    triggerTypeDropdownIsOpen: React.PropTypes.bool.isRequired,
     helpVisible: React.PropTypes.bool.isRequired,
     id: React.PropTypes.oneOfType([
       React.PropTypes.number,
@@ -21,7 +24,8 @@ const TriggerInput = React.createClass({
     onDelete: React.PropTypes.func.isRequired,
     onEnterKey: React.PropTypes.func.isRequired,
     onHelpClick: React.PropTypes.func.isRequired,
-    onToggleDropdown: React.PropTypes.func.isRequired
+    onToggleMatchTypeDropdown: React.PropTypes.func.isRequired,
+    onToggleTriggerTypeDropdown: React.PropTypes.func.isRequired
   },
   getInitialState: function() {
     return {
@@ -44,6 +48,13 @@ const TriggerInput = React.createClass({
     changes[propName] = newValue;
     this.changeTrigger(changes);
     this.focus();
+  },
+  setTriggerType: function(id) {
+    if (this.props.trigger.triggerType !== id) {
+      this.changeTrigger({
+        triggerType: id
+      });
+    }
   },
   setNormalPhrase: function() {
     if (this.isRegex()) {
@@ -136,6 +147,11 @@ const TriggerInput = React.createClass({
     }
   },
 
+  getTriggerTypeDisplayString: function() {
+    const found = this.props.triggerTypes.find(ea => ea.id === this.props.trigger.triggerType);
+    return found ? found.displayString : "MessageSent";
+  },
+
   renderErrorMessage: function() {
     return (
       <div style={{ marginTop: -4 }} className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
@@ -160,10 +176,28 @@ const TriggerInput = React.createClass({
         <div className="column column-expand ptxs">
           <div>
             <DropdownMenu
-              openWhen={this.props.dropdownIsOpen}
+              openWhen={this.props.triggerTypeDropdownIsOpen}
+              label={this.getTriggerTypeDisplayString()}
+              labelClassName="button-dropdown-trigger-borderless type-label type-weak button-s"
+              toggle={this.props.onToggleTriggerTypeDropdown}
+              menuClassName="width-20"
+            >
+              {this.props.triggerTypes.map(ea => {
+                return (
+                  <DropdownMenu.Item
+                    key={`triggerType${ea.id}`}
+                    onClick={() => this.setTriggerType(ea.id)}
+                    label={ea.displayString}
+                    checkedWhen={this.props.trigger.triggerType === ea.id}
+                  />
+                );
+              })}
+            </DropdownMenu>
+            <DropdownMenu
+              openWhen={this.props.matchTypeDropdownIsOpen}
               label={this.getPrefix()}
               labelClassName="button-dropdown-trigger-borderless type-label type-weak button-s"
-              toggle={this.props.onToggleDropdown}
+              toggle={this.props.onToggleMatchTypeDropdown}
               menuClassName="width-20"
             >
               <DropdownMenu.Item

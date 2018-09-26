@@ -24,7 +24,8 @@ trait TriggerService {
                        pattern: String,
                        requiresBotMention: Boolean,
                        shouldTreatAsRegex: Boolean,
-                       isCaseSensitive: Boolean
+                       isCaseSensitive: Boolean,
+                       triggerType: TriggerType
                      ): DBIO[Trigger]
 
 }
