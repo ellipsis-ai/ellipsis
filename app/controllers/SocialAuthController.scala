@@ -98,7 +98,7 @@ class SocialAuthController @Inject() (
           withLocale(java.util.Locale.ENGLISH).
           withZone(ZoneId.of("America/Toronto"))
       )
-      val isNewTeam = team.createdAt.isBefore(OffsetDateTime.now.minusDays(1))
+      val isNewTeam = team.createdAt.isAfter(OffsetDateTime.now.minusDays(1))
       val heading = if (isNewTeam) {
         "New Slack team installed"
       } else {
