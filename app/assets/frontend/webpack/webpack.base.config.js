@@ -1,11 +1,16 @@
 /* eslint no-console: "off" */
 const webpack = require('webpack');
 const path = require('path');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 /**
  * Base configuration object for Webpack
  */
 const webpackConfig = {
+  bail: true,
+  resolve: {
+    extensions: ['.tsx', '.jsx', '.ts', '.js']
+  },
   entry: {
     // Used on every page, should include bootstrapping code
     global: ['./app/assets/frontend/page_header/page_header'],
@@ -49,41 +54,54 @@ const webpackConfig = {
     sourceMapFilename: '[name].map',
     publicPath: '/javascripts/'
   },
-  externals: {
-  },
   module: {
-    rules: [
-      {
-        test: /\.tsx?$/,
-        use: {
-          loader: 'ts-loader'
-        }
-      },
-      {
-        test: /\.jsx$/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['env', 'react']
-          }
-        },
+    rules: [{
+      test: /\.tsx?$/,
+      exclude: /node_modules/,
+      use: {
+        loader: 'ts-loader'
       }
-    ]
+    }, {
+      test: /\.jsx$/,
+      exclude: /node_modules/,
+      use: {
+        loader: 'babel-loader',
+        options: {
+          presets: ['@babel/preset-env', '@babel/preset-react']
+        }
+      }
+    }, {
+      test: /\.css$/,
+      use: ['style-loader', 'css-loader']
+    }]
   },
-  resolve: {
-    extensions: ['.tsx', '.jsx', '.ts', '.js']
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        global: {
+          name: "global",
+          chunks: "initial"
+        },
+        vendor: {
+          name: "vendor",
+          chunks: "all",
+        },
+        jshint: {
+          name: "jshint",
+          chunks: "all"
+        }
+      }
+    }
   },
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin({
-      names: ['jshint', 'vendor', 'global'],
-      minChunks: Infinity
-    }),
     /* Force moment to only load English locale instead of all */
-    new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en/)
+    new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
+
+    new MonacoWebpackPlugin()
   ]
 };
 
-module.exports = (env) => {
+module.exports = function(env) {
   const targetDir = env.WEBPACK_BUILD_PATH;
   if (!targetDir) {
     throw new Error("Must set WEBPACK_BUILD_PATH in the Webpack environment");
