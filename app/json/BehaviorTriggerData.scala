@@ -8,7 +8,7 @@ case class BehaviorTriggerData(
                                 requiresMention: Boolean,
                                 isRegex: Boolean,
                                 caseSensitive: Boolean,
-                                triggerType: String
+                                triggerType: Option[String]
                                 ) extends Ordered[BehaviorTriggerData] with FuzzyMatchPattern {
 
   val maybeText: Option[String] = Some(text)

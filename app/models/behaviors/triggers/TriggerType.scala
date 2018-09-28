@@ -6,6 +6,7 @@ import utils.Enum
 object TriggerType extends Enum[TriggerType] {
   val values = List(MessageSent, ReactionAdded)
   def definitelyFind(name: String): TriggerType = find(name).getOrElse(MessageSent)
+  def definitelyFind(maybeName: Option[String]): TriggerType = maybeName.map(definitelyFind).getOrElse(MessageSent)
 }
 
 sealed trait TriggerType extends TriggerType.Value {

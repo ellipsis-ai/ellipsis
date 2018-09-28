@@ -170,7 +170,7 @@ object BehaviorVersionData {
       functionBody = "",
       responseTemplate = "",
       inputIds = Seq(),
-      triggers = Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false, triggerType = MessageSent.toString)),
+      triggers = Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false, triggerType = Some(MessageSent.toString))),
       config = BehaviorConfig(
         None,
         maybeName,
@@ -303,7 +303,7 @@ object BehaviorVersionData {
               requiresMention = ea.requiresBotMention,
               isRegex = ea.shouldTreatAsRegex,
               caseSensitive = ea.isCaseSensitive,
-              triggerType = ea.triggerType.toString
+              triggerType = Some(ea.triggerType.toString)
             )
           ),
           config,
