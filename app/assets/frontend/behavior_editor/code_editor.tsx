@@ -1,108 +1,22 @@
-import {JSHINT} from 'jshint';
-declare global {
-  interface Window { JSHINT: JSHINT }
-}
-window.JSHINT = JSHINT;
-
 import * as React from 'react';
-import CodeMirrorWrapper from '../shared_ui/react-codemirror';
-import * as codemirror from 'codemirror';
-import {AsyncLinter, Doc, Editor, Linter} from 'codemirror';
-import 'codemirror/mode/javascript/javascript';
-import 'codemirror/addon/lint/lint';
-import 'codemirror/addon/lint/javascript-lint';
-import 'codemirror/addon/hint/show-hint';
-import 'codemirror/addon/edit/closebrackets';
-import 'codemirror/addon/edit/matchbrackets';
-import 'codemirror/addon/fold/foldcode';
-import 'codemirror/addon/fold/foldgutter';
-import 'codemirror/addon/fold/brace-fold';
-import 'codemirror/addon/comment/comment';
-
-declare module "codemirror" {
-  var lint: {
-    javascript: Linter | AsyncLinter
-  }
-}
+import MonacoEditor from "react-monaco-editor";
+import 'monaco-editor/esm/vs/basic-languages/javascript/javascript';
+import 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
+import 'monaco-editor/esm/vs/language/typescript/tsMode';
+import * as monacoEditor from "monaco-editor";
 
 interface Props {
   firstLineNumber: number
   functionParams: Array<string>
   lineWrapping?: boolean
   onChange: (newValue: string) => void
-  onCursorChange: (cm: Editor) => void
+  onCursorChange: () => void
   value: string
   autocompletions: Array<string>
 }
 
 class CodeEditor extends React.Component<Props> {
-  getJsHintOptions() {
-    return {
-      // Enforcing options
-      bitwise: false,
-      curly: false,
-      eqeqeq: false,
-      esversion: 6,
-      forin: false,
-      freeze: false,
-      funcscope: false,
-      globals: true,
-      iterator: false,
-      latedef: false,
-      noarg: false,
-      nocomma: false,
-      nonbsp: false,
-      nonew: false,
-      notypeof: true,
-      predef: this.props.functionParams,
-      shadow: false,
-      singleGroups: false,
-      strict: false,
-      undef: true,
-      unused: false,
-      varstmt: false,
-
-      // Relaxing options
-      asi: true,
-      boss: true,
-      eqnull: true,
-      evil: true,
-      expr: true,
-      lastsemic: true,
-      loopfunc: true,
-      noyield: true,
-      plusplus: false,
-      proto: true,
-      scripturl: true,
-      supernew: true,
-      withstmt: true,
-
-      // Environment
-      browser: false,
-      browserify: false,
-      couch: false,
-      devel: false,
-      dojo: false,
-      jasmine: false,
-      jquery: false,
-      mocha: false,
-      module: false,
-      mootools: false,
-      node: true,
-      nonstandard: true,
-      phantom: false,
-      prototypejs: false,
-      qunit: false,
-      rhino: false,
-      shelljs: false,
-      typed: false,
-      worker: false,
-      wsh: false,
-      yui: false
-    };
-  }
-
-  autocompleteParams(cm: Doc) {
+  autocompleteParams(cm: any) {
     const matches: Array<string> = [];
     const possibleWords = this.props.autocompletions;
 
@@ -134,46 +48,54 @@ class CodeEditor extends React.Component<Props> {
     };
   }
 
-  replaceTabsWithSpaces(cm: Editor) {
+  replaceTabsWithSpaces(cm: any) {
     var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
     const doc = cm.getDoc();
     doc.replaceSelection(spaces);
   }
 
+  editorWillMount(monaco: typeof monacoEditor): void {
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+      target: monaco.languages.typescript.ScriptTarget.ES2015,
+      module: monaco.languages.typescript.ModuleKind.ES2015,
+      lib: ["ES2015"],
+      allowNonTsExtensions: true,
+      strictNullChecks: true
+    });
+    monaco.languages.typescript.typescriptDefaults.addExtraLib([
+`
+declare function require(path: string): any;
+
+type EllipsisSuccessOptions = {
+  next?: {
+    actionName: string
+  }
+}
+
+declare var ellipsis = {
+  success: (successResult: any, options?: EllipsisSuccessOptions) => void
+};
+`
+    ].join('\n'));
+  }
+
   render() {
     return (
-      <CodeMirrorWrapper
-        value={this.props.value}
-        onChange={this.props.onChange}
-        onCursorChange={this.props.onCursorChange}
-        options={{
-          mode: "javascript",
-          firstLineNumber: this.props.firstLineNumber,
-          gutters: ["CodeMirror-lint-markers","CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-          hintOptions: { hint: this.autocompleteParams },
-          indentUnit: 2,
-          indentWithTabs: false,
-          lineWrapping: this.props.lineWrapping,
-          lineNumbers: true,
-          lint: {
-            getAnnotations: codemirror.lint.javascript,
-            options: this.getJsHintOptions(),
-            async: false,
-            hasGutters: true
-          },
-          smartIndent: true,
-          tabSize: 2,
-          viewportMargin: Infinity,
-          autoCloseBrackets: true,
-          matchBrackets: true,
-          foldGutter: true,
-          extraKeys: {
-            "Esc": "autocomplete",
-            "Tab": this.replaceTabsWithSpaces,
-            "Cmd-/": "toggleComment"
-          }
-        }}
-      />
+      <div className="border" style={{ height: "300px" }}>
+        <MonacoEditor
+          language="typescript"
+          value={this.props.value}
+          onChange={this.props.onChange}
+          options={{
+            automaticLayout: true,
+            fontSize: 15,
+            fontFamily: "Source Code Pro",
+            lineNumbers: (lineNumber) => String(lineNumber + this.props.firstLineNumber - 1),
+            wordWrap: this.props.lineWrapping ? "on" : "off"
+          }}
+          editorWillMount={this.editorWillMount}
+        />
+      </div>
     );
   }
 }

@@ -44,7 +44,7 @@ interface Props {
 
   functionBody: string,
   onChangeFunctionBody: (s: string) => void,
-  onCursorChange: (cm: cursorCoordsProvider) => void,
+  onCursorChange: () => void,
   useLineWrapping: boolean,
   onToggleCodeEditorLineWrapping: () => void,
 

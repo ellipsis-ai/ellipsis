@@ -52,6 +52,7 @@ class ResponseTemplateConfiguration extends React.Component<Props> {
                   value={this.props.template.toString()}
                   onChange={this.props.onChangeTemplate}
                   options={{
+                    automaticLayout: true,
                     folding: false,
                     fontSize: 15,
                     fontFamily: "Source Code Pro",
@@ -64,24 +65,6 @@ class ResponseTemplateConfiguration extends React.Component<Props> {
                 />
               </div>
             </div>
-            {/*<div className="position-relative CodeMirror-container-no-gutter pbm">*/}
-              {/*<CodeMirrorWrapper value={this.props.template.toString()}*/}
-                {/*onChange={this.props.onChangeTemplate}*/}
-                {/*onCursorChange={this.props.onCursorChange}*/}
-                {/*options={{*/}
-                  {/*mode: "gfm",*/}
-                  {/*gutters: ['CodeMirror-no-gutter'],*/}
-                  {/*indentUnit: 4,*/}
-                  {/*indentWithTabs: true,*/}
-                  {/*lineWrapping: true,*/}
-                  {/*lineNumbers: false,*/}
-                  {/*smartIndent: true,*/}
-                  {/*tabSize: 4,*/}
-                  {/*viewportMargin: Infinity,*/}
-                  {/*placeholder: "{successResult}"*/}
-                {/*}}*/}
-              {/*/>*/}
-            {/*</div>*/}
           </div>
         </div>
 
