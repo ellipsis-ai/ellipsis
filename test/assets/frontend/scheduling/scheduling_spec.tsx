@@ -13,6 +13,10 @@ import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
 
 jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test", method: "get", absoluteURL: () => "https://nope/" });
 
+Object.defineProperty(window, "scrollTo", {
+  value: jest.fn()
+});
+
 class Loader extends React.Component<SchedulingProps, SchedulingProps> {
   page: Scheduling;
   constructor(props: SchedulingProps) {

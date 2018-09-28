@@ -25,7 +25,7 @@ const server = new WebpackDevServer(compiler, {
 
   // We need to tell Webpack to serve our bundled application
   // from the build path.
-  publicPath: `/bundles/`,
+  publicPath: `/javascripts/`,
   contentBase: false,
 
   // Configure hot replacement

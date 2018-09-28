@@ -6,6 +6,7 @@ import ResponseTemplate from '../models/response_template';
 import SectionHeading from '../shared_ui/section_heading';
 import {render} from 'react-dom';
 import MonacoEditor from 'react-monaco-editor';
+import 'monaco-editor/esm/vs/basic-languages/markdown/markdown';
 
 interface Props {
   template: ResponseTemplate,
@@ -45,14 +46,23 @@ class ResponseTemplateConfiguration extends React.Component<Props> {
               </ToggleGroup>
             </div>
             <div className="pbm">
-              <MonacoEditor
-                language="markdown"
-                value={this.props.template.toString()}
-                onChange={this.props.onChangeTemplate}
-                options={{
-                  wordWrap: "on"
-                }}
-              />
+              <div className="border" style={{ height: "300px" }}>
+                <MonacoEditor
+                  language="markdown"
+                  value={this.props.template.toString()}
+                  onChange={this.props.onChangeTemplate}
+                  options={{
+                    folding: false,
+                    fontSize: 15,
+                    fontFamily: "Source Code Pro",
+                    lineNumbers: "off",
+                    minimap: {
+                      enabled: false
+                    },
+                    wordWrap: "on"
+                  }}
+                />
+              </div>
             </div>
             {/*<div className="position-relative CodeMirror-container-no-gutter pbm">*/}
               {/*<CodeMirrorWrapper value={this.props.template.toString()}*/}

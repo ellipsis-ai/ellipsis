@@ -23,7 +23,7 @@ class WebpackController @Inject()(
     if (environment.mode == Mode.Dev) {
       val host = configuration.get[String]("webpack.devServer.host")
       val port = configuration.get[String]("webpack.devServer.port")
-      val url = s"http://$host:$port/bundles/$file"
+      val url = s"http://$host:$port/javascripts/$file"
       ws.url(url).get().map { response =>
         val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/octet-stream")
         val headers = response.headers
