@@ -55,6 +55,7 @@ class ResponseTemplateConfiguration extends React.Component<Props> {
                     automaticLayout: true,
                     folding: false,
                     fontSize: 15,
+                    lineHeight: 24,
                     fontFamily: "Source Code Pro",
                     lineNumbers: "off",
                     minimap: {

@@ -142,14 +142,37 @@ class CodeConfiguration extends React.Component<Props, State> {
       return oAuthNotifications.concat(awsNotifications);
     }
 
-    getCodeAutocompletions(): Array<string> {
-      var oauthApiTokens = this.props.oauthApiApplications.map(ea => `ellipsis.accessTokens.${ea.nameInCode}`);
-      var envVars = this.props.envVariableNames.map(function(name) {
-        return `ellipsis.env.${name}`;
-      });
-      var awsTokens = this.props.requiredAWSConfigs.map(ea => `ellipsis.aws.${ea.nameInCode}`);
+    getCodeDefinitions(): string {
+      return `
+declare function require(path: string): any;
 
-      return this.getCodeFunctionParams().concat(oauthApiTokens, awsTokens, envVars);
+interface EllipsisSuccessOptions {
+  next?: {
+    actionName: string
+  }
+}
+
+declare namespace ellipsis {
+  function success(successResult: any, options?: EllipsisSuccessOptions): void,
+  
+  const accessTokens: {
+    ${this.props.oauthApiApplications.map((ea) => `${ea.nameInCode}: string`).join(",\n")}
+  },
+  
+  const env: {
+    ${this.props.envVariableNames.map((ea) => `${ea}: string`).join(",\n")}
+  },
+  
+  const aws: {
+    ${this.props.requiredAWSConfigs.map(ea => `${ea.nameInCode}: any`).join(",\n")}
+  }
+};
+
+${this.props.inputs.map(ea => {
+  return `declare var ${ea.name} = any`;
+}).join("\n")}
+
+`
     }
 
     unsetCanBeMemoized(): void {
@@ -264,7 +287,7 @@ class CodeConfiguration extends React.Component<Props, State> {
               firstLineNumber={this.getFirstLineNumberForCode()}
               lineWrapping={this.props.useLineWrapping}
               functionParams={this.getCodeFunctionParams()}
-              autocompletions={this.getCodeAutocompletions()}
+              definitions={this.getCodeDefinitions()}
             />
             <div className="position-absolute position-top-right position-z-popup-trigger">
               <DropdownMenu
