@@ -243,7 +243,7 @@ ${this.props.inputs.map(ea => {
             </div>
           </div>
 
-          <div>
+          <div className="position-relative">
 
             <div className="pbxs">
               {this.renderToggleCanBeMemoized()}
@@ -276,20 +276,7 @@ ${this.props.inputs.map(ea => {
               />
             </div>
 
-          </div>
-
-          <div className="position-relative">
-            <CodeEditor
-              ref={(el) => this.codeEditor = el}
-              value={this.props.functionBody}
-              onChange={this.props.onChangeFunctionBody}
-              onCursorChange={this.props.onCursorChange}
-              firstLineNumber={this.getFirstLineNumberForCode()}
-              lineWrapping={this.props.useLineWrapping}
-              functionParams={this.getCodeFunctionParams()}
-              definitions={this.getCodeDefinitions()}
-            />
-            <div className="position-absolute position-top-right position-z-popup-trigger">
+            <div className="position-absolute position-bottom-right position-z-popup-trigger">
               <DropdownMenu
                 openWhen={this.props.activeDropdownName === 'codeEditorSettings'}
                 label={this.getCodeEditorDropdownLabel()}
@@ -304,6 +291,19 @@ ${this.props.inputs.map(ea => {
                 />
               </DropdownMenu>
             </div>
+          </div>
+
+          <div className="position-relative">
+            <CodeEditor
+              ref={(el) => this.codeEditor = el}
+              value={this.props.functionBody}
+              onChange={this.props.onChangeFunctionBody}
+              onCursorChange={this.props.onCursorChange}
+              firstLineNumber={this.getFirstLineNumberForCode()}
+              lineWrapping={this.props.useLineWrapping}
+              functionParams={this.getCodeFunctionParams()}
+              definitions={this.getCodeDefinitions()}
+            />
           </div>
 
           <div className="pts mbxxl">

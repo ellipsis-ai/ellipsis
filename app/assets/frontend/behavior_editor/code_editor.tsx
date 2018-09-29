@@ -51,7 +51,7 @@ class CodeEditor extends React.Component<Props> {
 
   render() {
     return (
-      <div className="border" style={{ height: this.getEditorHeight() }}>
+      <div className="position-relative" style={{ height: this.getEditorHeight() }}>
         <MonacoEditor
           language="typescript"
           value={this.props.value}

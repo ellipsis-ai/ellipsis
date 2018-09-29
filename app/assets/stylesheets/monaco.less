@@ -1,6 +1,52 @@
-.monaco-editor .type-label {
-  font-size: inherit;
-  line-height: inherit;
-  text-transform: none;
-  letter-spacing: normal;
+@import (reference) "type";
+@import (reference) "colors";
+@import (reference) "measurements";
+@import (reference) "borders";
+
+.monaco-editor {
+
+  // Monaco uses a class that we define in type.less, so undo that
+  .type-label {
+    font-size: inherit;
+    line-height: inherit;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .line-numbers {
+    .type-disabled();
+  }
+
+  .margin::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    width: 56px;
+    height: 100%;
+    background-color: @almost-white;
+    margin-right: @s;
+    .border-right();
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 56px;
+    right: 0;
+    .border-top();
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 56px;
+    right: 0;
+    .border-top();
+  }
+
+  .scroll-decoration {
+
+  }
 }
