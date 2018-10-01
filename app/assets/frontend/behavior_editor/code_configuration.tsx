@@ -18,7 +18,7 @@ import NotificationData from "../models/notifications/notification_data";
 import autobind from "../lib/autobind";
 
 interface cursorCoordsProvider {
-  cursorCoords: (boolean) => {
+  cursorCoords: (b: boolean) => {
     bottom: number
   }
 }
@@ -29,8 +29,8 @@ interface Props {
 
   activePanelName: string,
   activeDropdownName: string,
-  onToggleActiveDropdown: (string) => void,
-  onToggleActivePanel: (string) => void,
+  onToggleActiveDropdown: (s: string) => void,
+  onToggleActivePanel: (s: string) => void,
   animationIsDisabled: boolean,
 
   behaviorConfig: Option<BehaviorConfig>,
@@ -93,11 +93,6 @@ class CodeConfiguration extends React.Component<Props, State> {
       this.props.onToggleActiveDropdown('codeEditorSettings');
     }
 
-    getCodeFunctionParams(): Array<string> {
-      const userParams = this.props.inputs.map(ea => ea.name);
-      return userParams.concat(this.props.systemParams);
-    }
-
     getCodeEditorDropdownLabel() {
       return (<SVGSettingsIcon label="Editor settings" />);
     }
@@ -146,27 +141,68 @@ class CodeConfiguration extends React.Component<Props, State> {
       return `
 declare function require(path: string): any;
 
-interface EllipsisSuccessOptions {
-  next?: {
-    actionName: string
-  }
-}
+${this.props.systemParams.includes("ellipsis") ? `
 
 declare namespace ellipsis {
-  function success(successResult: any, options?: EllipsisSuccessOptions): void,
-  
+
+  export interface ActionArg {
+    name: string
+    value: any
+  }
+
+  export interface NextAction {
+    actionName: string
+    args?: ActionArg[]
+  }
+
+  export interface ActionChoice {
+    label: string
+    actionName: string
+    args?: ActionArg[]
+    allowOthers?: boolean
+    allowMultipleSelections?: boolean
+    quiet?: boolean
+  }
+
+  export interface InlineFileAttachment {
+    content: string
+    filetype?: string
+  }
+
+  export interface NamedFileAttachment {
+    filename: string
+    filetype?: string
+  }
+
+  export type FileAttachment = InlineFileAttachment | NamedFileAttachment
+
+  export interface SuccessOptions {
+    next?: NextAction
+    choices?: ActionChoice[]
+    files?: FileAttachment[]
+  }
+
+  function success(successResult: any, options?: SuccessOptions): void
+
+  function noResponse(): void
+
+  function error(error: Error | string, options?: {
+    userMessage?: string
+  })
+
   const accessTokens: {
     ${this.props.oauthApiApplications.map((ea) => `${ea.nameInCode}: string`).join(",\n")}
-  },
-  
+  }
+
   const env: {
     ${this.props.envVariableNames.map((ea) => `${ea}: string`).join(",\n")}
-  },
-  
+  }
+
   const aws: {
     ${this.props.requiredAWSConfigs.map(ea => `${ea.nameInCode}: any`).join(",\n")}
   }
 };
+` : ""}
 
 ${this.props.inputs.map(ea => {
   return `declare var ${ea.name} = any`;
@@ -301,7 +337,6 @@ ${this.props.inputs.map(ea => {
               onCursorChange={this.props.onCursorChange}
               firstLineNumber={this.getFirstLineNumberForCode()}
               lineWrapping={this.props.useLineWrapping}
-              functionParams={this.getCodeFunctionParams()}
               definitions={this.getCodeDefinitions()}
             />
           </div>
