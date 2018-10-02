@@ -1,6 +1,6 @@
 import * as React from 'react';
 import BehaviorConfig from '../models/behavior_config';
-import CodeEditor from './code_editor';
+import CodeEditor, {EditorScrollPosition} from './code_editor';
 import DropdownMenu, {DropdownMenuItem} from '../shared_ui/dropdown_menu';
 import HelpButton from '../help/help_button';
 import Input from '../models/input';
@@ -16,12 +16,6 @@ import OAuthApplicationUnusedNotificationData from "../models/notifications/oaut
 import AWSUnusedNotificationData from "../models/notifications/aws_unused_notification_data";
 import NotificationData from "../models/notifications/notification_data";
 import autobind from "../lib/autobind";
-
-interface cursorCoordsProvider {
-  cursorCoords: (b: boolean) => {
-    bottom: number
-  }
-}
 
 interface Props {
   sectionNumber: string,
@@ -44,7 +38,7 @@ interface Props {
 
   functionBody: string,
   onChangeFunctionBody: (s: string) => void,
-  onCursorChange: () => void,
+  onScrollChange: (newPosition: EditorScrollPosition) => void,
   useLineWrapping: boolean,
   onToggleCodeEditorLineWrapping: () => void,
 
@@ -393,12 +387,12 @@ ${this.props.inputs.map(ea => {
             </div>
           </div>
 
-          <div className="position-relative">
+          <div>
             <CodeEditor
               ref={(el) => this.codeEditor = el}
               value={this.props.functionBody}
               onChange={this.props.onChangeFunctionBody}
-              onCursorChange={this.props.onCursorChange}
+              onScrollChange={this.props.onScrollChange}
               firstLineNumber={this.getFirstLineNumberForCode()}
               lineWrapping={this.props.useLineWrapping}
               definitions={this.getCodeDefinitions()}

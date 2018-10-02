@@ -2,7 +2,7 @@ import * as React from 'react';
 import autobind from "../lib/autobind";
 import MonacoEditor from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor";
-import {editor} from "monaco-editor";
+import {editor, IScrollEvent} from "monaco-editor";
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import {lib_es5_dts} from "monaco-editor/esm/vs/language/typescript/lib/lib";
 import {NODE_JS_V6_D_TS} from "../code_editor/definitions/nodejs";
@@ -10,11 +10,16 @@ import 'monaco-editor/esm/vs/basic-languages/javascript/javascript';
 import 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
 import 'monaco-editor/esm/vs/language/typescript/tsMode';
 
+export interface EditorScrollPosition {
+  top: number
+  bottom: number
+}
+
 interface Props {
   firstLineNumber: number
   lineWrapping?: boolean
   onChange: (newValue: string) => void
-  onCursorChange: () => void
+  onScrollChange: (newPosition: EditorScrollPosition) => void
   value: string
   definitions: string
 }
@@ -26,6 +31,7 @@ class CodeEditor extends React.Component<Props> {
   }
 
   editor: Option<IStandaloneCodeEditor>;
+  container: Option<HTMLDivElement>;
 
   wordWrapOptionFor(lineWrapping?: boolean) {
     return lineWrapping ? "on" : "off";
@@ -64,6 +70,19 @@ class CodeEditor extends React.Component<Props> {
 
   editorDidMount(editor: IStandaloneCodeEditor): void {
     this.editor = editor;
+    editor.onDidChangeCursorPosition(this.onEditorPositionChange)
+  }
+
+  onEditorPositionChange(cursorPosition): void {
+    if (this.container && this.editor) {
+      const scrolledPosition = this.editor.getScrolledVisiblePosition(cursorPosition);
+      const rect = this.container.getBoundingClientRect();
+      const top = rect.top + window.scrollY + scrolledPosition.top;
+      this.props.onScrollChange({
+        top: top,
+        bottom: top + scrolledPosition.height
+      });
+    }
   }
 
   getEditorHeight(): string {
@@ -76,7 +95,7 @@ class CodeEditor extends React.Component<Props> {
 
   render() {
     return (
-      <div className="position-relative" style={{ height: this.getEditorHeight() }}>
+      <div ref={(el) => this.container = el} className="position-relative" style={{ height: this.getEditorHeight() }}>
         <MonacoEditor
           language="javascript"
           value={this.props.value}

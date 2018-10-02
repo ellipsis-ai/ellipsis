@@ -1511,13 +1511,12 @@ const BehaviorEditor = React.createClass({
 
   /* Interaction and event handling */
 
-  ensureCursorVisible: function(editor) {
+  ensureCursorVisible: function(newPosition) {
     const height = this.props.footerHeight;
     if (!height) {
       return;
     }
-    var cursorBottom = editor.cursorCoords(false).bottom;
-    BrowserUtils.ensureYPosInView(cursorBottom, height);
+    BrowserUtils.ensureYPosInView(newPosition.bottom, height);
   },
 
   onAddNewEnvVariable: function() {
@@ -1899,7 +1898,7 @@ const BehaviorEditor = React.createClass({
         onChangeFunctionBody={this.updateCode}
         onChangeCanBeMemoized={this.onChangeCanBeMemoized}
         isMemoizationEnabled={codeConfigProps.isMemoizationEnabled}
-        onCursorChange={this.ensureCursorVisible}
+        onScrollChange={this.ensureCursorVisible}
         useLineWrapping={this.state.codeEditorUseLineWrapping}
         onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
 
