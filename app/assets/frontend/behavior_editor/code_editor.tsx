@@ -40,16 +40,22 @@ class CodeEditor extends React.Component<Props> {
   }
 
   editorWillMount(monaco: typeof monacoEditor): void {
-    const defaults = monaco.languages.typescript.typescriptDefaults;
+    const defaults = monaco.languages.typescript.javascriptDefaults;
     defaults.setCompilerOptions({
       target: monaco.languages.typescript.ScriptTarget.ES2015,
       module: monaco.languages.typescript.ModuleKind.ES2015,
       lib: ["es5", "es2015"],
       allowNonTsExtensions: true,
+      allowJs: true,
+      checkJs: true,
       moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
       noImplicitAny: false,
       strictFunctionTypes: true,
       strictNullChecks: true
+    });
+    defaults.setDiagnosticsOptions({
+      noSemanticValidation: false,
+      noSyntaxValidation: false
     });
     defaults.addExtraLib(lib_es5_dts, "es5");
     defaults.addExtraLib(NODE_JS_V6_D_TS, "node_js_v6");
@@ -72,7 +78,7 @@ class CodeEditor extends React.Component<Props> {
     return (
       <div className="position-relative" style={{ height: this.getEditorHeight() }}>
         <MonacoEditor
-          language="typescript"
+          language="javascript"
           value={this.props.value}
           onChange={this.props.onChange}
           options={{

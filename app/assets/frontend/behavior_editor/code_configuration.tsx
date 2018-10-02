@@ -198,9 +198,73 @@ declare namespace ellipsis {
     ${this.props.envVariableNames.map((ea) => `${ea}: string`).join(",\n")}
   }
 
-  const aws: {
-    ${this.props.requiredAWSConfigs.map(ea => `${ea.nameInCode}: any`).join(",\n")}
+  export interface AWSConfig {
+    accessKeyId: string
+    secretAccessKey: string
+    region: string
   }
+
+  const aws: {
+    ${this.props.requiredAWSConfigs.map(ea => `${ea.nameInCode}: AWSConfig`).join(",\n")}
+  }
+
+  export interface OAuthLink {
+    externalSystem: string
+    token: string
+    oauthToken: string
+  }
+
+  const teamInfo: {
+    links: OAuthLink[]
+    botName: string
+    botUserIdForContext: string
+    timeZone: string
+  }
+
+  const userInfo: UserInfo & UserData
+
+  export interface UserInfo {
+    links: OAuthLink[]
+    messageInfo: MessageInfo
+  }
+
+  export interface UserData {
+    context: string
+    userName: string
+    ellipsisUserId?: string
+    userIdForContext?: string
+    fullName?: string
+    email?: string
+    timeZone?: string
+  }
+
+  export interface MessageInfo {
+    text: string
+    medium: string
+    channel?: string
+    thread?: string
+    userId: string
+    usersMentioned: UserData[]
+    permalink?: string
+    details: ContextMessageDetails
+  }
+
+  export interface ContextMessageDetails {
+    channelMembers?: string[]
+    channelName?: string
+    name?: string
+    profile?: ContextUserProfile
+  }
+
+  export interface ContextUserProfile {
+    displayName?: string
+    firstName?: string
+    lastName?: string
+    realName?: string
+    email?: string
+    phone?: string
+  }
+
 };
 ` : ""}
 
