@@ -176,30 +176,10 @@ declare namespace ellipsis {
     files?: FileAttachment[]
   }
 
-  function success(successResult: any, options?: SuccessOptions): void
-
-  function noResponse(): void
-
-  function error(error: Error | string, options?: {
-    userMessage?: string
-  })
-
-  const accessTokens: {
-    ${this.props.oauthApiApplications.map((ea) => `${ea.nameInCode}: string`).join(",\n")}
-  }
-
-  const env: {
-    ${this.props.envVariableNames.map((ea) => `${ea}: string`).join(",\n")}
-  }
-
   export interface AWSConfig {
     accessKeyId: string
     secretAccessKey: string
     region: string
-  }
-
-  const aws: {
-    ${this.props.requiredAWSConfigs.map(ea => `${ea.nameInCode}: AWSConfig`).join(",\n")}
   }
 
   export interface OAuthLink {
@@ -207,15 +187,6 @@ declare namespace ellipsis {
     token: string
     oauthToken: string
   }
-
-  const teamInfo: {
-    links: OAuthLink[]
-    botName: string
-    botUserIdForContext: string
-    timeZone: string
-  }
-
-  const userInfo: UserInfo & UserData
 
   export interface UserInfo {
     links: OAuthLink[]
@@ -258,8 +229,36 @@ declare namespace ellipsis {
     email?: string
     phone?: string
   }
+  
+  function success(successResult: any, options?: SuccessOptions): void
 
-};
+  function noResponse(): void
+
+  function error(error: Error | string, options?: {
+    userMessage?: string
+  })
+
+  const accessTokens: {
+    ${this.props.oauthApiApplications.map((ea) => `${ea.nameInCode}: string`).join(",\n")}
+  }
+
+  const env: {
+    ${this.props.envVariableNames.map((ea) => `${ea}: string`).join(",\n")}
+  }
+
+  const aws: {
+    ${this.props.requiredAWSConfigs.map(ea => `${ea.nameInCode}: AWSConfig`).join(",\n")}
+  }
+
+  const teamInfo: {
+    links: OAuthLink[]
+    botName: string
+    botUserIdForContext: string
+    timeZone: string
+  }
+
+  const userInfo: UserInfo & UserData
+}
 ` : ""}
 
 ${this.props.inputs.map(ea => {

@@ -2,13 +2,34 @@ import * as React from 'react';
 import autobind from "../lib/autobind";
 import MonacoEditor from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor";
-import {editor, IScrollEvent} from "monaco-editor";
+import {editor, IDisposable, languages} from "monaco-editor";
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import {lib_es5_dts} from "monaco-editor/esm/vs/language/typescript/lib/lib";
 import {NODE_JS_V6_D_TS} from "../code_editor/definitions/nodejs";
 import 'monaco-editor/esm/vs/basic-languages/javascript/javascript';
 import 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
 import 'monaco-editor/esm/vs/language/typescript/tsMode';
+
+/* Monaco loads as a global instance, so we only want to set defaults once on page load: */
+const defaults = monacoEditor.languages.typescript.javascriptDefaults;
+defaults.setCompilerOptions({
+  target: monacoEditor.languages.typescript.ScriptTarget.ES2015,
+  module: monacoEditor.languages.typescript.ModuleKind.ES2015,
+  lib: ["es5", "es2015"],
+  allowNonTsExtensions: true,
+  allowJs: true,
+  checkJs: true,
+  moduleResolution: monacoEditor.languages.typescript.ModuleResolutionKind.NodeJs,
+  noImplicitAny: false,
+  strictFunctionTypes: true,
+  strictNullChecks: true
+});
+defaults.setDiagnosticsOptions({
+  noSemanticValidation: false,
+  noSyntaxValidation: false
+});
+defaults.addExtraLib(lib_es5_dts, `es5-${Date.now()}`);
+defaults.addExtraLib(NODE_JS_V6_D_TS, `node_js_v6-${Date.now()}`);
 
 export interface EditorScrollPosition {
   top: number
@@ -28,10 +49,13 @@ class CodeEditor extends React.Component<Props> {
   constructor(props: Props) {
     super(props);
     autobind(this);
+    this.systemDefinitions = [];
   }
 
   editor: Option<IStandaloneCodeEditor>;
   container: Option<HTMLDivElement>;
+  systemDefinitions: Array<IDisposable>;
+  currentDefinitions: Option<IDisposable>;
 
   wordWrapOptionFor(lineWrapping?: boolean) {
     return lineWrapping ? "on" : "off";
@@ -43,29 +67,27 @@ class CodeEditor extends React.Component<Props> {
         wordWrap: this.wordWrapOptionFor(newProps.lineWrapping)
       })
     }
+
+    if (newProps.definitions !== this.props.definitions) {
+      this.resetCurrentDefinitions(newProps.definitions);
+    }
   }
 
-  editorWillMount(monaco: typeof monacoEditor): void {
-    const defaults = monaco.languages.typescript.javascriptDefaults;
-    defaults.setCompilerOptions({
-      target: monaco.languages.typescript.ScriptTarget.ES2015,
-      module: monaco.languages.typescript.ModuleKind.ES2015,
-      lib: ["es5", "es2015"],
-      allowNonTsExtensions: true,
-      allowJs: true,
-      checkJs: true,
-      moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-      noImplicitAny: false,
-      strictFunctionTypes: true,
-      strictNullChecks: true
-    });
-    defaults.setDiagnosticsOptions({
-      noSemanticValidation: false,
-      noSyntaxValidation: false
-    });
-    defaults.addExtraLib(lib_es5_dts, "es5");
-    defaults.addExtraLib(NODE_JS_V6_D_TS, "node_js_v6");
-    defaults.addExtraLib(this.props.definitions, "ellipsis");
+  editorWillMount(): void {
+    this.resetCurrentDefinitions(this.props.definitions);
+  }
+
+  componentWillUnmount(): void {
+    if (this.currentDefinitions) {
+      this.currentDefinitions.dispose();
+    }
+  }
+
+  resetCurrentDefinitions(newDefinitions: string) {
+    if (this.currentDefinitions) {
+      this.currentDefinitions.dispose();
+    }
+    this.currentDefinitions = defaults.addExtraLib(newDefinitions, `ellipsis-${Date.now()}`);
   }
 
   editorDidMount(editor: IStandaloneCodeEditor): void {
