@@ -2,6 +2,7 @@
 @import (reference) "colors";
 @import (reference) "measurements";
 @import (reference) "borders";
+@import (reference) "position";
 
 .monaco-editor {
 
@@ -28,25 +29,22 @@
     .border-right();
   }
 
-  &::before {
+  &::before, &::after {
     content: "";
     position: absolute;
-    top: 0;
     left: 56px;
     right: 0;
     .border-top();
+    .position-z-above();
+  }
+
+
+  &::before {
+    top: 0;
   }
 
   &::after {
-    content: "";
-    position: absolute;
     bottom: 0;
-    left: 56px;
-    right: 0;
-    .border-top();
   }
 
-  .scroll-decoration {
-
-  }
 }

@@ -2,13 +2,15 @@ import * as React from 'react';
 import autobind from "../lib/autobind";
 import MonacoEditor from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor";
-import {editor, IDisposable, languages} from "monaco-editor";
+import {editor, IDisposable} from "monaco-editor";
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import {lib_es5_dts} from "monaco-editor/esm/vs/language/typescript/lib/lib";
 import {NODE_JS_V6_D_TS} from "../code_editor/definitions/nodejs";
 import 'monaco-editor/esm/vs/basic-languages/javascript/javascript';
 import 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
+import 'monaco-editor/esm/vs/basic-languages/markdown/markdown';
 import 'monaco-editor/esm/vs/language/typescript/tsMode';
+import {min} from "moment";
 
 /* Monaco loads as a global instance, so we only want to set defaults once on page load: */
 const defaults = monacoEditor.languages.typescript.javascriptDefaults;
@@ -37,24 +39,29 @@ export interface EditorScrollPosition {
 }
 
 interface Props {
+  availableHeight: number
   firstLineNumber: number
   lineWrapping?: boolean
   onChange: (newValue: string) => void
   onScrollChange: (newPosition: EditorScrollPosition) => void
   value: string
   definitions: string
+  language: string
+  monacoOptions?: monacoEditor.editor.IEditorConstructionOptions
 }
+
+const MIN_EDITOR_LINES = 12;
+const EDITOR_LINE_HEIGHT = 24;
+const EDITOR_FONT_SIZE = 15;
 
 class CodeEditor extends React.Component<Props> {
   constructor(props: Props) {
     super(props);
     autobind(this);
-    this.systemDefinitions = [];
   }
 
   editor: Option<IStandaloneCodeEditor>;
   container: Option<HTMLDivElement>;
-  systemDefinitions: Array<IDisposable>;
   currentDefinitions: Option<IDisposable>;
 
   wordWrapOptionFor(lineWrapping?: boolean) {
@@ -108,28 +115,36 @@ class CodeEditor extends React.Component<Props> {
   }
 
   getEditorHeight(): string {
-    const lines = Math.max(this.props.value.split("\n").length, 12);
-    const lineHeight = 24;
-    const availableHeight = window.innerHeight;
-    const height = Math.min(lines * lineHeight, availableHeight);
+    const minHeight = MIN_EDITOR_LINES * EDITOR_LINE_HEIGHT;
+    const heightForContent = this.props.value.split("\n").length * EDITOR_LINE_HEIGHT;
+    const maxHeightDesired = Math.min(heightForContent, this.props.availableHeight);
+    const height = Math.max(maxHeightDesired, minHeight);
     return `${height}px`;
+  }
+
+  getMonacoOptions(): monacoEditor.editor.IEditorConstructionOptions {
+    return Object.assign({
+      automaticLayout: true,
+      fontSize: EDITOR_FONT_SIZE,
+      lineHeight: EDITOR_LINE_HEIGHT,
+      fontFamily: "Source Code Pro",
+      lineNumbers: (lineNumber) => String(lineNumber + this.props.firstLineNumber - 1),
+      minimap: {
+        enabled: false
+      },
+      wordWrap: this.wordWrapOptionFor(this.props.lineWrapping),
+      scrollBeyondLastLine: false
+    }, this.props.monacoOptions);
   }
 
   render() {
     return (
       <div ref={(el) => this.container = el} className="position-relative" style={{ height: this.getEditorHeight() }}>
         <MonacoEditor
-          language="javascript"
+          language={this.props.language}
           value={this.props.value}
           onChange={this.props.onChange}
-          options={{
-            automaticLayout: true,
-            fontSize: 15,
-            lineHeight: 24,
-            fontFamily: "Source Code Pro",
-            lineNumbers: (lineNumber) => String(lineNumber + this.props.firstLineNumber - 1),
-            wordWrap: this.wordWrapOptionFor(this.props.lineWrapping)
-          }}
+          options={this.getMonacoOptions()}
           editorWillMount={this.editorWillMount}
           editorDidMount={this.editorDidMount}
         />

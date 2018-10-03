@@ -4,26 +4,32 @@ import ToggleGroup from '../form/toggle_group';
 import HelpButton from '../help/help_button';
 import ResponseTemplate from '../models/response_template';
 import SectionHeading from '../shared_ui/section_heading';
-import {render} from 'react-dom';
-import MonacoEditor from 'react-monaco-editor';
-import 'monaco-editor/esm/vs/basic-languages/markdown/markdown';
+import CodeEditor, {EditorScrollPosition} from "./code_editor";
+import autobind from "../lib/autobind";
 
 interface Props {
+  availableHeight: number
   template: ResponseTemplate,
   onChangeTemplate: (newValue: string) => void,
   responseTypeId: string,
   possibleResponseTypes: Array<BehaviorResponseType>,
   onSelectResponseType: (responseTypeId: string) => void,
-//  onCursorChange: (cm: Editor) => void,
+  onScrollChange: (newPosition: EditorScrollPosition) => void
   onToggleHelp: () => void,
   helpVisible: boolean,
   sectionNumber: string
 }
 
 class ResponseTemplateConfiguration extends React.Component<Props> {
-    render() {
-      return (
-        <div className="columns container container-wide">
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+  render() {
+    return (
+      <div>
+        <div className="container container-wide">
 
           <div className="mbl ptxl">
             <SectionHeading number={this.props.sectionNumber}>
@@ -33,7 +39,7 @@ class ResponseTemplateConfiguration extends React.Component<Props> {
               </span>
             </SectionHeading>
 
-            <div className="border-top border-left border-right border-light pas">
+            <div>
               <ToggleGroup className="form-toggle-group-s align-m">
                 {this.props.possibleResponseTypes.map((ea, index) => (
                   <ToggleGroup.Item
@@ -45,32 +51,23 @@ class ResponseTemplateConfiguration extends React.Component<Props> {
                 ))}
               </ToggleGroup>
             </div>
-            <div className="pbm">
-              <div className="border" style={{ height: "300px" }}>
-                <MonacoEditor
-                  language="markdown"
-                  value={this.props.template.toString()}
-                  onChange={this.props.onChangeTemplate}
-                  options={{
-                    automaticLayout: true,
-                    folding: false,
-                    fontSize: 15,
-                    lineHeight: 24,
-                    fontFamily: "Source Code Pro",
-                    lineNumbers: "off",
-                    minimap: {
-                      enabled: false
-                    },
-                    wordWrap: "on"
-                  }}
-                />
-              </div>
-            </div>
           </div>
         </div>
-
-      );
-    }
+        <div className="pbm">
+          <CodeEditor
+            availableHeight={this.props.availableHeight}
+            firstLineNumber={1}
+            onChange={this.props.onChangeTemplate}
+            onScrollChange={this.props.onScrollChange}
+            value={this.props.template.toString()}
+            definitions={""}
+            language={"markdown"}
+            lineWrapping={true}
+          />
+        </div>
+      </div>
+    );
+  }
 }
 
 export default ResponseTemplateConfiguration;

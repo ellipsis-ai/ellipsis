@@ -804,10 +804,7 @@ const BehaviorEditor = React.createClass({
 
   getLeftPanelCoordinates: function() {
     var headerHeight = this.getHeaderHeight();
-    var footerHeight = this.props.activePanelIsModal ? 0 : this.props.footerHeight;
-    var windowHeight = window.innerHeight;
-
-    var availableHeight = windowHeight - headerHeight - footerHeight;
+    var availableHeight = this.getAvailableHeight();
     var newHeight = availableHeight > 0 ? availableHeight : window.innerHeight;
     return {
       top: headerHeight,
@@ -837,6 +834,10 @@ const BehaviorEditor = React.createClass({
     if (this.leftPanel) {
       this.leftPanel.resetCoordinates();
     }
+  },
+
+  getAvailableHeight: function() {
+    return window.innerHeight - this.getHeaderHeight() - (this.props.activePanelIsModal ? 0 : this.props.footerHeight);
   },
 
   getHeaderHeight: function() {
@@ -1878,6 +1879,7 @@ const BehaviorEditor = React.createClass({
   renderCodeEditor: function(codeConfigProps) {
     return (
       <CodeConfiguration
+        availableHeight={this.getAvailableHeight()}
         sectionNumber={codeConfigProps.sectionNumber}
         codeHelpPanelName={codeConfigProps.codeHelpPanelName}
 
@@ -2566,12 +2568,13 @@ const BehaviorEditor = React.createClass({
                 </div>
 
                 <ResponseTemplateConfiguration
+                  availableHeight={this.getAvailableHeight()}
                   template={this.getBehaviorTemplate()}
                   onChangeTemplate={this.updateTemplate}
                   responseTypeId={this.getBehaviorConfig().responseTypeId}
                   possibleResponseTypes={this.props.possibleResponseTypes}
                   onSelectResponseType={this.onSelectResponseType}
-                  onCursorChange={this.ensureCursorVisible}
+                  onScrollChange={this.ensureCursorVisible}
                   onToggleHelp={this.toggleResponseTemplateHelp}
                   helpVisible={this.props.activePanelName === 'helpForResponseTemplate'}
                   sectionNumber={"4"}

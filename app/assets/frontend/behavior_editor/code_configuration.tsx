@@ -19,6 +19,8 @@ import autobind from "../lib/autobind";
 import EllipsisObjectDefinitions from "../code_editor/definitions/ellipsis";
 
 interface Props {
+  availableHeight: number
+
   sectionNumber: string,
   codeHelpPanelName: string,
 
@@ -56,7 +58,6 @@ interface State {
 
 class CodeConfiguration extends React.Component<Props, State> {
     updateNotifications: () => void;
-    codeEditor: Option<CodeEditor>;
     notificationComponent: Option<Notifications>;
 
     constructor(props: Props) {
@@ -267,13 +268,14 @@ ${this.props.inputs.map(ea => {
 
           <div>
             <CodeEditor
-              ref={(el) => this.codeEditor = el}
+              availableHeight={this.props.availableHeight}
               value={this.props.functionBody}
               onChange={this.props.onChangeFunctionBody}
               onScrollChange={this.props.onScrollChange}
               firstLineNumber={this.getFirstLineNumberForCode()}
               lineWrapping={this.props.useLineWrapping}
               definitions={this.getCodeDefinitions()}
+              language={"javascript"}
             />
           </div>
 
