@@ -103,6 +103,16 @@ declare namespace ellipsis {
     phone?: string
   }
 
+  interface EllipsisError extends Error {
+    userMessage: string
+  }
+
+  interface EllipsisErrorConstructor {
+    new (error: Error | string, options?: {
+      userMessage?: string
+    }): EllipsisError;
+  }
+
   function require(moduleName: string): any
 
   function success(successResult: any, options?: SuccessOptions): void
@@ -111,7 +121,11 @@ declare namespace ellipsis {
 
   function error(error: Error | string, options?: {
     userMessage?: string
-  })
+  }): EllipsisError
+
+  const Error: EllipsisErrorConstructor
+
+  const token: string
 
   const accessTokens: {
     ${props.oauthApiApplications.map((ea) => `${ea.nameInCode}: string`).join(",\n")}
@@ -133,6 +147,12 @@ declare namespace ellipsis {
   }
 
   const userInfo: UserInfo & UserData
+
+  type EventType = "scheduled" | "api" | "test" | "chat" | "web"
+
+  const event: {
+    originalEventType: EventType
+  }
 }
 `;
   }

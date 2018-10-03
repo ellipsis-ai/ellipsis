@@ -241,7 +241,7 @@ ${this.props.inputs.map(ea => {
               </div>
             </div>
 
-            <div style={{ marginLeft: "60px" }}>
+            <div style={{ marginLeft: "56px" }}>
               <Notifications
                 ref={(el) => this.notificationComponent = el}
                 notifications={this.state.notifications}
