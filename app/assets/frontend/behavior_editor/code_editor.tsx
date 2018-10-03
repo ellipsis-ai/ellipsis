@@ -5,7 +5,7 @@ import * as monacoEditor from "monaco-editor";
 import {editor, IDisposable} from "monaco-editor";
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import ICursorPositionChangedEvent = editor.ICursorPositionChangedEvent;
-import {lib_es5_dts} from "monaco-editor/esm/vs/language/typescript/lib/lib";
+import {lib_es5_dts, lib_es2015_dts} from "monaco-editor/esm/vs/language/typescript/lib/lib";
 import {NODE_JS_V6_D_TS} from "../code_editor/definitions/nodejs";
 import 'monaco-editor/esm/vs/basic-languages/javascript/javascript';
 import 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
@@ -31,6 +31,7 @@ defaults.setDiagnosticsOptions({
   noSyntaxValidation: false
 });
 defaults.addExtraLib(lib_es5_dts, `es5-${Date.now()}`);
+defaults.addExtraLib(lib_es2015_dts, `es2015-${Date.now()}`);
 defaults.addExtraLib(NODE_JS_V6_D_TS, `node_js_v6-${Date.now()}`);
 
 export interface EditorCursorPosition {
