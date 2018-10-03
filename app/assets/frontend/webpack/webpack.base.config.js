@@ -15,22 +15,6 @@ const webpackConfig = {
     // Used on every page, should include bootstrapping code
     global: ['./app/assets/frontend/page_header/page_header'],
 
-    // Vendor JS used by React pages
-    vendor: [
-      'core-js',
-      'javascript-debounce',
-      'uuid',
-      'react',
-      'react-dom',
-      'urijs',
-      'diff',
-      'whatwg-fetch',
-      'moment'
-    ],
-
-    // JSHint loaded separately just on the skill editor
-    jshint: ['jshint'],
-
     // Simple scripts used on non-React pages:
     add_to_slack: './app/assets/frontend/slack/add_to_slack',
 
@@ -78,17 +62,15 @@ const webpackConfig = {
   optimization: {
     splitChunks: {
       cacheGroups: {
-        global: {
-          name: "global",
-          chunks: "initial"
+        monaco: {
+          name: "monaco",
+          chunks: "all",
+          test: /[\\/]node_modules[\\/]monaco-editor/
         },
         vendor: {
           name: "vendor",
           chunks: "all",
-        },
-        jshint: {
-          name: "jshint",
-          chunks: "all"
+          test: /[\\/]node_modules[\\/](core-js|javascript-debounce|uuid|react|react-dom|urijs|diff|whatwg-fetch|moment)/
         }
       }
     }
