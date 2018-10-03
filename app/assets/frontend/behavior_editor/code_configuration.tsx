@@ -1,6 +1,6 @@
 import * as React from 'react';
 import BehaviorConfig from '../models/behavior_config';
-import CodeEditor, {EditorScrollPosition} from './code_editor';
+import CodeEditor, {EditorCursorPosition} from './code_editor';
 import DropdownMenu, {DropdownMenuItem} from '../shared_ui/dropdown_menu';
 import HelpButton from '../help/help_button';
 import Input from '../models/input';
@@ -41,7 +41,7 @@ interface Props {
 
   functionBody: string,
   onChangeFunctionBody: (s: string) => void,
-  onScrollChange: (newPosition: EditorScrollPosition) => void,
+  onCursorChange: (newPosition: EditorCursorPosition) => void,
   useLineWrapping: boolean,
   onToggleCodeEditorLineWrapping: () => void,
 
@@ -271,7 +271,7 @@ ${this.props.inputs.map(ea => {
               availableHeight={this.props.availableHeight}
               value={this.props.functionBody}
               onChange={this.props.onChangeFunctionBody}
-              onScrollChange={this.props.onScrollChange}
+              onCursorChange={this.props.onCursorChange}
               firstLineNumber={this.getFirstLineNumberForCode()}
               lineWrapping={this.props.useLineWrapping}
               definitions={this.getCodeDefinitions()}

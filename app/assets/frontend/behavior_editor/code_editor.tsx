@@ -4,13 +4,13 @@ import MonacoEditor from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor";
 import {editor, IDisposable} from "monaco-editor";
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
+import ICursorPositionChangedEvent = editor.ICursorPositionChangedEvent;
 import {lib_es5_dts} from "monaco-editor/esm/vs/language/typescript/lib/lib";
 import {NODE_JS_V6_D_TS} from "../code_editor/definitions/nodejs";
 import 'monaco-editor/esm/vs/basic-languages/javascript/javascript';
 import 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
 import 'monaco-editor/esm/vs/basic-languages/markdown/markdown';
 import 'monaco-editor/esm/vs/language/typescript/tsMode';
-import {min} from "moment";
 
 /* Monaco loads as a global instance, so we only want to set defaults once on page load: */
 const defaults = monacoEditor.languages.typescript.javascriptDefaults;
@@ -33,7 +33,7 @@ defaults.setDiagnosticsOptions({
 defaults.addExtraLib(lib_es5_dts, `es5-${Date.now()}`);
 defaults.addExtraLib(NODE_JS_V6_D_TS, `node_js_v6-${Date.now()}`);
 
-export interface EditorScrollPosition {
+export interface EditorCursorPosition {
   top: number
   bottom: number
 }
@@ -43,7 +43,7 @@ interface Props {
   firstLineNumber: number
   lineWrapping?: boolean
   onChange: (newValue: string) => void
-  onScrollChange: (newPosition: EditorScrollPosition) => void
+  onCursorChange: (newPosition: EditorCursorPosition) => void
   value: string
   definitions: string
   language: string
@@ -102,12 +102,12 @@ class CodeEditor extends React.Component<Props> {
     editor.onDidChangeCursorPosition(this.onEditorPositionChange)
   }
 
-  onEditorPositionChange(cursorPosition): void {
+  onEditorPositionChange(event: ICursorPositionChangedEvent): void {
     if (this.container && this.editor) {
-      const scrolledPosition = this.editor.getScrolledVisiblePosition(cursorPosition);
+      const scrolledPosition = this.editor.getScrolledVisiblePosition(event.position);
       const rect = this.container.getBoundingClientRect();
       const top = rect.top + window.scrollY + scrolledPosition.top;
-      this.props.onScrollChange({
+      this.props.onCursorChange({
         top: top,
         bottom: top + scrolledPosition.height
       });

@@ -4,7 +4,7 @@ import ToggleGroup from '../form/toggle_group';
 import HelpButton from '../help/help_button';
 import ResponseTemplate from '../models/response_template';
 import SectionHeading from '../shared_ui/section_heading';
-import CodeEditor, {EditorScrollPosition} from "./code_editor";
+import CodeEditor, {EditorCursorPosition} from "./code_editor";
 import autobind from "../lib/autobind";
 
 interface Props {
@@ -14,7 +14,7 @@ interface Props {
   responseTypeId: string,
   possibleResponseTypes: Array<BehaviorResponseType>,
   onSelectResponseType: (responseTypeId: string) => void,
-  onScrollChange: (newPosition: EditorScrollPosition) => void
+  onCursorChange: (newPosition: EditorCursorPosition) => void
   onToggleHelp: () => void,
   helpVisible: boolean,
   sectionNumber: string
@@ -58,7 +58,7 @@ class ResponseTemplateConfiguration extends React.Component<Props> {
             availableHeight={this.props.availableHeight}
             firstLineNumber={1}
             onChange={this.props.onChangeTemplate}
-            onScrollChange={this.props.onScrollChange}
+            onCursorChange={this.props.onCursorChange}
             value={this.props.template.toString()}
             definitions={""}
             language={"markdown"}

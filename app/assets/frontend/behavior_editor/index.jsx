@@ -1900,7 +1900,7 @@ const BehaviorEditor = React.createClass({
         onChangeFunctionBody={this.updateCode}
         onChangeCanBeMemoized={this.onChangeCanBeMemoized}
         isMemoizationEnabled={codeConfigProps.isMemoizationEnabled}
-        onScrollChange={this.ensureCursorVisible}
+        onCursorChange={this.ensureCursorVisible}
         useLineWrapping={this.state.codeEditorUseLineWrapping}
         onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
 
@@ -2574,7 +2574,7 @@ const BehaviorEditor = React.createClass({
                   responseTypeId={this.getBehaviorConfig().responseTypeId}
                   possibleResponseTypes={this.props.possibleResponseTypes}
                   onSelectResponseType={this.onSelectResponseType}
-                  onScrollChange={this.ensureCursorVisible}
+                  onCursorChange={this.ensureCursorVisible}
                   onToggleHelp={this.toggleResponseTemplateHelp}
                   helpVisible={this.props.activePanelName === 'helpForResponseTemplate'}
                   sectionNumber={"4"}
