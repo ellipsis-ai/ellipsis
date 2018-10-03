@@ -79,7 +79,9 @@ const webpackConfig = {
     /* Force moment to only load English locale instead of all */
     new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
 
-    new MonacoWebpackPlugin()
+    new MonacoWebpackPlugin({
+      languages: ["typescript", "javascript", "markdown"]
+    })
   ]
 };
 

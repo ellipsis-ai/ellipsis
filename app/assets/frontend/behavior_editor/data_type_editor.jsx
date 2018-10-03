@@ -156,6 +156,7 @@ class DataTypeEditor extends React.Component {
       return (
         <div>
           <CodeConfiguration
+            availableHeight={this.props.availableHeight}
             sectionNumber={"3"}
             codeHelpPanelName='helpForBehaviorCode'
 
@@ -268,6 +269,7 @@ class DataTypeEditor extends React.Component {
   }
 
   DataTypeEditor.propTypes = {
+    availableHeight: React.PropTypes.number.isRequired,
     group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
     behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
     paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
@@ -275,6 +277,7 @@ class DataTypeEditor extends React.Component {
     inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
     onChangeConfig: React.PropTypes.func.isRequired,
     onChangeCode: React.PropTypes.func.isRequired,
+    onChangeCanBeMemoized: React.PropTypes.func.isRequired,
     onAddNewInput: React.PropTypes.func.isRequired,
     onDeleteInputs: React.PropTypes.func.isRequired,
     onConfigureType: React.PropTypes.func.isRequired,

@@ -2592,6 +2592,7 @@ const BehaviorEditor = React.createClass({
 
         <DataTypeEditor
           ref={(el) => this.dataTypeEditor = el}
+          availableHeight={this.getAvailableHeight()}
           group={this.getBehaviorGroup()}
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypes()}
