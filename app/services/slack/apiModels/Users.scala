@@ -22,6 +22,15 @@ case class SlackUserProfile (
                               team: Option[String]
                             )
 
+case class SlackEnterpriseUser(
+                              id: String,
+                              enterprise_id: Option[String],
+                              enterprise_name: String,
+                              is_admin: Option[Boolean],
+                              is_owner: Option[Boolean],
+                              teams: Option[Seq[String]]
+                              )
+
 case class SlackUser (
                        id: String,
                        team_id: Option[String],
@@ -40,5 +49,8 @@ case class SlackUser (
                        has_files: Option[Boolean],
                        tz: Option[String],
                        tz_offset: Option[Int],
-                       presence: Option[String]
-                     )
+                       presence: Option[String],
+                       enterprise_user: Option[SlackEnterpriseUser]
+                     ) {
+  val maybeTeamIdToUse: Option[String] = enterprise_user.flatMap(_.enterprise_id).orElse(team_id)
+}

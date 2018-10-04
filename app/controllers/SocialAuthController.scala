@@ -175,7 +175,7 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
-          botProfile <- slackProvider.maybeBotProfileFor(authInfo, dataService).map { maybeBotProfile =>
+          botProfile <- slackProvider.maybeBotProfileFor(profile, authInfo, dataService).map { maybeBotProfile =>
             maybeBotProfile.get // Blow up if we can't get a bot profile
           }
           _ <- authInfoRepository.save(profile.loginInfo, authInfo)

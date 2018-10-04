@@ -19,11 +19,12 @@ class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile, OAut
     val success = (json \ "ok").as[Boolean]
 
     if (success) {
+      val maybeEnterpriseId = (json \ "enterprise_id").asOpt[String]
       val teamId = (json \ "team_id").as[String]
       val userId = (json \ "user_id").as[String]
       val loginInfo = LoginInfo(ID, userId)
       SlackProfile(
-        teamId = teamId,
+        teamId = maybeEnterpriseId.getOrElse(teamId),
         loginInfo = loginInfo)
     } else {
       val maybeError = (json \ "error").asOpt[String]
@@ -36,11 +37,12 @@ class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile, OAut
     val success = (json \ "ok").as[Boolean]
 
     if (success) {
+      val maybeEnterpriseId = (json \ "enterprise_id").asOpt[String]
       val userId = (json \ "user" \ "id").as[String]
       val teamId = (json \ "team" \ "id").as[String]
       val loginInfo = LoginInfo(ID, userId)
       SlackProfile(
-        teamId = teamId,
+        teamId = maybeEnterpriseId.getOrElse(teamId),
         loginInfo = loginInfo)
     } else {
       val maybeError = (json \ "error").asOpt[String]

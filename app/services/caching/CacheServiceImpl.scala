@@ -218,7 +218,7 @@ class CacheServiceImpl @Inject() (
   }
 
   implicit val slackUserProfileJsonFormat = Json.format[SlackUserProfile]
-  implicit val slackUserJsonFormat = Json.format[SlackUser]
+  import services.slack.apiModels.Formatting._
 
   private def fallbackSlackUserCacheKey(slackUserId: String, slackTeamId: String): String = {
     s"fallbackCacheForSlackUserId-${slackUserId}-slackTeamId-${slackTeamId}-v1"

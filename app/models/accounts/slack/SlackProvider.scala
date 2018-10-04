@@ -27,7 +27,12 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
 
   override def withSettings(f: (Settings) => Settings) = new SlackProvider(httpLayer, stateHandler, f(settings))
 
-  protected def urls: Map[String, String] = Map("user" -> USER_API, "auth_test" -> AUTH_TEST_API, "identity" -> IDENTITY_API)
+  protected def urls: Map[String, String] = Map(
+    "user" -> USER_API,
+    "team" -> TEAM_API,
+    "auth_test" -> AUTH_TEST_API,
+    "identity" -> IDENTITY_API
+  )
 
   protected def buildProfile(authInfo: A): Future[SlackProfile] = {
     if (authInfo.params.exists(_.get("scope").exists(_.split(",").contains("identity.basic")))) {
@@ -36,7 +41,6 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
       }
     } else {
       httpLayer.url(urls("auth_test").format(authInfo.accessToken)).get().flatMap { response =>
-        val json = response.json
         profileParser.parseForInstall(response.json)
       }
     }
@@ -63,16 +67,17 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
     )
   }
 
-  def maybeBotProfileFor(authInfo: OAuth2Info, dataService: DataService): Future[Option[SlackBotProfile]] = {
+  def maybeEnterpriseNameFor(authInfo: OAuth2Info): Future[Option[String]] = {
+    httpLayer.url(urls("team").format(authInfo.accessToken)).get().map { response =>
+      (response.json \ "team" \ "enterprise_name").asOpt[String]
+    }
+  }
+
+  def maybeBotProfileFor(slackProfile: SlackProfile, authInfo: OAuth2Info, dataService: DataService): Future[Option[SlackBotProfile]] = {
     val maybeBotJson = authInfo.params.flatMap { params =>
       params.
         find { case (k, v) => k == "bot" }.
         map { case(k, v) => Json.parse(v) }
-    }
-    val maybeSlackTeamId = authInfo.params.flatMap { params =>
-      params.
-        find { case(k, v) => k == "team_id" }.
-        map { case(k, v) => v }
     }
     val maybeSlackTeamName = authInfo.params.flatMap { params =>
       params.
@@ -83,9 +88,12 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
       botJson <- maybeBotJson
       userId <- (botJson \ "bot_user_id").asOpt[String]
       token <- (botJson \ "bot_access_token").asOpt[String]
-      slackTeamId <- maybeSlackTeamId
       slackTeamName <- maybeSlackTeamName
-    } yield dataService.slackBotProfiles.ensure(userId, slackTeamId, slackTeamName, token)
+    } yield {
+      maybeEnterpriseNameFor(authInfo).flatMap { maybeEnterpriseName =>
+        dataService.slackBotProfiles.ensure(userId, slackProfile.teamId, maybeEnterpriseName.getOrElse(slackTeamName), token)
+      }
+    }
 
     maybeFuture.map { future =>
       future.map(Some(_))
@@ -103,6 +111,7 @@ object SlackProvider {
    */
   val ID = "slack"
   val USER_API = "https://slack.com/api/users.info?token=%s&user=%s"
+  val TEAM_API = "https://slack.com/api/team.info?token=%s"
   val AUTH_TEST_API = "https://slack.com/api/auth.test?token=%s"
   val IDENTITY_API = "https://slack.com/api/users.identity?token=%s"
 

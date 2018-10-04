@@ -12,6 +12,7 @@ object Formatting {
   lazy implicit val attachmentFieldFormat: Format[AttachmentField] = Json.format[AttachmentField]
   lazy implicit val attachmentFormat: Format[Attachment] = Json.format[Attachment]
   lazy implicit val slackUserProfileFormat: Format[SlackUserProfile] = Json.format[SlackUserProfile]
+  lazy implicit val slackEnterpriseUserFormat: Format[SlackEnterpriseUser] = Json.format[SlackEnterpriseUser]
   lazy implicit val slackUserFormat: Format[SlackUser] = Json.format[SlackUser]
 
 }
