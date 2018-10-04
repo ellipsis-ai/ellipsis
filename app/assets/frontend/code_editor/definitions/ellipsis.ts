@@ -156,6 +156,6 @@ declare namespace ellipsis {
 }
 `;
   }
-}
+};
 
 export default EllipsisObjectDefinitions;

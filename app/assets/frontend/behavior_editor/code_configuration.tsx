@@ -17,6 +17,8 @@ import AWSUnusedNotificationData from "../models/notifications/aws_unused_notifi
 import NotificationData from "../models/notifications/notification_data";
 import autobind from "../lib/autobind";
 import EllipsisObjectDefinitions from "../code_editor/definitions/ellipsis";
+import NodeModuleVersion from "../models/node_module_version";
+import LibraryVersion from "../models/library_version";
 
 interface Props {
   availableHeight: number
@@ -38,6 +40,10 @@ interface Props {
   requiredAWSConfigs: Array<RequiredAWSConfig>,
 
   oauthApiApplications: Array<RequiredOAuthApplication>,
+
+  libraries: Array<LibraryVersion>,
+
+  nodeModules: Array<NodeModuleVersion>,
 
   functionBody: string,
   onChangeFunctionBody: (s: string) => void,
@@ -133,8 +139,13 @@ class CodeConfiguration extends React.Component<Props, State> {
       return oAuthNotifications.concat(awsNotifications);
     }
 
+    emptyModuleFor(name: string): string {
+      return `declare module "${name}";`;
+    }
+
     getCodeDefinitions(): string {
-      const ellipsisObjectDefinitions = this.props.systemParams.includes("ellipsis") ? EllipsisObjectDefinitions.buildFor({
+      const ellipsisObjectDefinitions = this.props.systemParams.includes("ellipsis") ?
+        EllipsisObjectDefinitions.buildFor({
         requiredAWSConfigs: this.props.requiredAWSConfigs,
         oauthApiApplications: this.props.oauthApiApplications,
         envVariableNames: this.props.envVariableNames
@@ -142,9 +153,11 @@ class CodeConfiguration extends React.Component<Props, State> {
       return `
 ${ellipsisObjectDefinitions}
 
-${this.props.inputs.map(ea => {
-  return `declare var ${ea.name}: any`;
-}).join("\n")}
+${this.props.inputs.map(ea => `declare var ${ea.name}: any;`).join("\n")}
+
+${this.props.libraries.map((ea) => ea.name ? this.emptyModuleFor(ea.name) : "").join("\n")}
+
+${this.props.nodeModules.map((ea) => this.emptyModuleFor(ea.from)).join("\n")}
 `
     }
 

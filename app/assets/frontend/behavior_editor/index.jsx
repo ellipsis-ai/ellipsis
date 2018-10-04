@@ -1895,6 +1895,8 @@ const BehaviorEditor = React.createClass({
         systemParams={codeConfigProps.systemParams || this.getSystemParams()}
         requiredAWSConfigs={this.getRequiredAWSConfigs()}
         oauthApiApplications={this.getOAuthApiApplications()}
+        libraries={this.getLibraries()}
+        nodeModules={this.getNodeModuleVersions()}
 
         functionBody={this.getFunctionBody()}
         onChangeFunctionBody={this.updateCode}
