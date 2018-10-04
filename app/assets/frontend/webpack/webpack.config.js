@@ -1,5 +1,5 @@
-const webpack = require('webpack');
 const config = require('config');
+const baseConfigCreator = require('./webpack.base.config.js');
 const devServerHost = config.get('webpack.devServer.host');
 const devServerPort = config.get('webpack.devServer.port');
 
@@ -7,8 +7,8 @@ if (!devServerHost || !devServerPort) {
   throw new Error("You must set webpack.devServer.host and webpack.devServer.port in the shared config.");
 }
 
-module.exports = exports = (env) => {
-  const webpackConfig = Object.create(require('./webpack.base.config.js')(env));
+module.exports = exports = function(env) {
+  const webpackConfig = Object.assign({}, baseConfigCreator(env));
   webpackConfig.devtool = 'inline-source-map';
   webpackConfig.entry = Object.assign({}, webpackConfig.entry, {
     devServer: 'webpack/hot/dev-server',
@@ -17,5 +17,6 @@ module.exports = exports = (env) => {
   webpackConfig.output = Object.assign({}, webpackConfig.output, {
     devtoolModuleFilenameTemplate: "file://[absolute-resource-path]"
   });
+  webpackConfig.mode = 'development';
   return webpackConfig;
 };

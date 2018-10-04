@@ -177,4 +177,4 @@ GET         /assets/*file                             @controllers.RemoteAssets.
 GET         /styleguide/colors                        @controllers.StyleguideController.colors
 
 # Webpack routes
-GET         /bundles/*file                            @controllers.WebpackController.bundle(file)
+GET         /javascripts/*file                            @controllers.WebpackController.bundle(file)

@@ -18,28 +18,14 @@ if (!devServerHost || !devServerPort) {
 console.log('[Webpack] Server running at location: ' + __dirname);
 
 // First we fire up Webpack and pass in the configuration file
-let bundleStart = null;
+// let bundleStart = null;
 const webpackConfig = webpackConfigLoader(({ WEBPACK_BUILD_PATH: process.env.WEBPACK_BUILD_PATH }));
 const compiler = webpack(webpackConfig);
-
-// We give notice in the terminal when it starts bundling and
-// set the time it started
-compiler.plugin('compile', function() {
-  console.log('[Webpack] Bundling...');
-  bundleStart = Date.now();
-});
-
-// We also give notice when it is done compiling, including the
-// time it took. Nice to have
-compiler.plugin('done', function() {
-  console.log('[Webpack] Bundled in ' + (bundleStart ? Date.now() - bundleStart : "?") + 'ms!');
-});
-
 const server = new WebpackDevServer(compiler, {
 
   // We need to tell Webpack to serve our bundled application
   // from the build path.
-  publicPath: `/bundles/`,
+  publicPath: `/javascripts/`,
   contentBase: false,
 
   // Configure hot replacement

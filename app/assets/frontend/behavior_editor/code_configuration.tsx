@@ -1,6 +1,6 @@
 import * as React from 'react';
 import BehaviorConfig from '../models/behavior_config';
-import CodeEditor from './code_editor';
+import CodeEditor, {EditorCursorPosition} from './code_editor';
 import DropdownMenu, {DropdownMenuItem} from '../shared_ui/dropdown_menu';
 import HelpButton from '../help/help_button';
 import Input from '../models/input';
@@ -16,21 +16,18 @@ import OAuthApplicationUnusedNotificationData from "../models/notifications/oaut
 import AWSUnusedNotificationData from "../models/notifications/aws_unused_notification_data";
 import NotificationData from "../models/notifications/notification_data";
 import autobind from "../lib/autobind";
-
-interface cursorCoordsProvider {
-  cursorCoords: (boolean) => {
-    bottom: number
-  }
-}
+import EllipsisObjectDefinitions from "../code_editor/definitions/ellipsis";
 
 interface Props {
+  availableHeight: number
+
   sectionNumber: string,
   codeHelpPanelName: string,
 
   activePanelName: string,
   activeDropdownName: string,
-  onToggleActiveDropdown: (string) => void,
-  onToggleActivePanel: (string) => void,
+  onToggleActiveDropdown: (s: string) => void,
+  onToggleActivePanel: (s: string) => void,
   animationIsDisabled: boolean,
 
   behaviorConfig: Option<BehaviorConfig>,
@@ -44,7 +41,7 @@ interface Props {
 
   functionBody: string,
   onChangeFunctionBody: (s: string) => void,
-  onCursorChange: (cm: cursorCoordsProvider) => void,
+  onCursorChange: (newPosition: EditorCursorPosition) => void,
   useLineWrapping: boolean,
   onToggleCodeEditorLineWrapping: () => void,
 
@@ -61,7 +58,6 @@ interface State {
 
 class CodeConfiguration extends React.Component<Props, State> {
     updateNotifications: () => void;
-    codeEditor: Option<CodeEditor>;
     notificationComponent: Option<Notifications>;
 
     constructor(props: Props) {
@@ -91,11 +87,6 @@ class CodeConfiguration extends React.Component<Props, State> {
 
     toggleEditorSettingsMenu(): void {
       this.props.onToggleActiveDropdown('codeEditorSettings');
-    }
-
-    getCodeFunctionParams(): Array<string> {
-      const userParams = this.props.inputs.map(ea => ea.name);
-      return userParams.concat(this.props.systemParams);
     }
 
     getCodeEditorDropdownLabel() {
@@ -142,14 +133,19 @@ class CodeConfiguration extends React.Component<Props, State> {
       return oAuthNotifications.concat(awsNotifications);
     }
 
-    getCodeAutocompletions(): Array<string> {
-      var oauthApiTokens = this.props.oauthApiApplications.map(ea => `ellipsis.accessTokens.${ea.nameInCode}`);
-      var envVars = this.props.envVariableNames.map(function(name) {
-        return `ellipsis.env.${name}`;
-      });
-      var awsTokens = this.props.requiredAWSConfigs.map(ea => `ellipsis.aws.${ea.nameInCode}`);
+    getCodeDefinitions(): string {
+      const ellipsisObjectDefinitions = this.props.systemParams.includes("ellipsis") ? EllipsisObjectDefinitions.buildFor({
+        requiredAWSConfigs: this.props.requiredAWSConfigs,
+        oauthApiApplications: this.props.oauthApiApplications,
+        envVariableNames: this.props.envVariableNames
+      }) : "";
+      return `
+${ellipsisObjectDefinitions}
 
-      return this.getCodeFunctionParams().concat(oauthApiTokens, awsTokens, envVars);
+${this.props.inputs.map(ea => {
+  return `declare var ${ea.name}: any`;
+}).join("\n")}
+`
     }
 
     unsetCanBeMemoized(): void {
@@ -220,7 +216,7 @@ class CodeConfiguration extends React.Component<Props, State> {
             </div>
           </div>
 
-          <div>
+          <div className="position-relative">
 
             <div className="pbxs">
               {this.renderToggleCanBeMemoized()}
@@ -245,7 +241,7 @@ class CodeConfiguration extends React.Component<Props, State> {
               </div>
             </div>
 
-            <div style={{ marginLeft: "60px" }}>
+            <div style={{ marginLeft: "56px" }}>
               <Notifications
                 ref={(el) => this.notificationComponent = el}
                 notifications={this.state.notifications}
@@ -253,20 +249,7 @@ class CodeConfiguration extends React.Component<Props, State> {
               />
             </div>
 
-          </div>
-
-          <div className="position-relative">
-            <CodeEditor
-              ref={(el) => this.codeEditor = el}
-              value={this.props.functionBody}
-              onChange={this.props.onChangeFunctionBody}
-              onCursorChange={this.props.onCursorChange}
-              firstLineNumber={this.getFirstLineNumberForCode()}
-              lineWrapping={this.props.useLineWrapping}
-              functionParams={this.getCodeFunctionParams()}
-              autocompletions={this.getCodeAutocompletions()}
-            />
-            <div className="position-absolute position-top-right position-z-popup-trigger">
+            <div className="position-absolute position-bottom-right position-z-popup-trigger">
               <DropdownMenu
                 openWhen={this.props.activeDropdownName === 'codeEditorSettings'}
                 label={this.getCodeEditorDropdownLabel()}
@@ -281,6 +264,19 @@ class CodeConfiguration extends React.Component<Props, State> {
                 />
               </DropdownMenu>
             </div>
+          </div>
+
+          <div>
+            <CodeEditor
+              availableHeight={this.props.availableHeight}
+              value={this.props.functionBody}
+              onChange={this.props.onChangeFunctionBody}
+              onCursorChange={this.props.onCursorChange}
+              firstLineNumber={this.getFirstLineNumberForCode()}
+              lineWrapping={this.props.useLineWrapping}
+              definitions={this.getCodeDefinitions()}
+              language={"javascript"}
+            />
           </div>
 
           <div className="pts mbxxl">
