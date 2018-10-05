@@ -119,10 +119,6 @@ class SlackController @Inject() (
     val workspaceId: String
     val maybeAuthedTeamIds: Option[Seq[String]]
     val event: EventInfo
-
-    def slackWorkspaceIdForUser: String = maybeAuthedTeamIds.flatMap(_.headOption).getOrElse(workspaceId)
-    def slackTeamIdForUser: String = maybeEnterpriseId.getOrElse(slackWorkspaceIdForUser)
-    def slackTeamIdForBot: String = maybeEnterpriseId.getOrElse(workspaceId)
   }
 
   case class ValidEventRequestInfo(
@@ -164,6 +160,11 @@ class SlackController @Inject() (
     val message: String
     val maybeThreadTs: Option[String]
     val ts: String
+
+    def slackWorkspaceIdForUser: String
+    def slackTeamIdForUser: String = maybeEnterpriseId.getOrElse(slackWorkspaceIdForUser)
+    def slackTeamIdsForBots: Seq[String] = maybeEnterpriseId.map(Seq(_)).getOrElse(maybeAuthedTeamIds.getOrElse(Seq(workspaceId)))
+
   }
 
   case class FileInfo(
@@ -195,7 +196,7 @@ class SlackController @Inject() (
     val ts: String = event.ts
     val maybeThreadTs: Option[String] = event.maybeThreadTs
 
-    override def slackWorkspaceIdForUser: String = event.maybeSourceTeamId.getOrElse(super.slackWorkspaceIdForUser)
+    def slackWorkspaceIdForUser: String = event.maybeSourceTeamId.getOrElse(workspaceId)
   }
   private val messageSentRequestForm = Form(
     mapping(
@@ -254,7 +255,7 @@ class SlackController @Inject() (
     val ts: String = event.ts
     val maybeThreadTs: Option[String] = event.maybeThreadTs
 
-    override def slackWorkspaceIdForUser: String = event.message.maybeSourceTeamId.getOrElse(super.slackWorkspaceIdForUser)
+    def slackWorkspaceIdForUser: String = event.message.maybeSourceTeamId.getOrElse(workspaceId)
   }
 
   private val messageChangedRequestForm = Form(
@@ -268,7 +269,7 @@ class SlackController @Inject() (
           "type" -> nonEmptyText,
           "ts" -> nonEmptyText,
           "user" -> nonEmptyText,
-          "source_team" -> optional(nonEmptyText),
+          "team" -> optional(nonEmptyText),
           "text" -> nonEmptyText,
           "edited" -> mapping(
             "user" -> nonEmptyText,
@@ -333,7 +334,7 @@ class SlackController @Inject() (
       Ok("We are ignoring retries for now")
     } else {
       for {
-        profiles <- dataService.slackBotProfiles.allForSlackTeamId(info.slackTeamIdForBot)
+        profiles <- Future.sequence(info.slackTeamIdsForBots.map(dataService.slackBotProfiles.allForSlackTeamId)).map(_.flatten)
         _ <- Future.sequence(
           profiles.map { profile =>
             processEventsFor(info, profile)
@@ -723,7 +724,9 @@ class SlackController @Inject() (
   }
 
   private def sendEphemeralMessage(message: String, info: MessageRequestInfo): Future[Unit] = {
-    sendEphemeralMessage(message, info.slackTeamIdForBot, info.channel, info.userId)
+    info.slackTeamIdsForBots.headOption.map { slackTeamId =>
+      sendEphemeralMessage(message, slackTeamId, info.channel, info.userId)
+    }.getOrElse(Future.successful({}))
   }
 
   private def updateActionsMessageFor(
