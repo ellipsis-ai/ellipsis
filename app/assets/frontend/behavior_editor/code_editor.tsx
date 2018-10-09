@@ -47,7 +47,7 @@ interface Props {
   onCursorChange: (newPosition: EditorCursorPosition) => void
   value: string
   definitions: string
-  language: string
+  language: "javascript" | "typescript" | "markdown"
   monacoOptions?: monacoEditor.editor.IEditorConstructionOptions
 }
 
@@ -100,7 +100,13 @@ class CodeEditor extends React.Component<Props> {
 
   editorDidMount(editor: IStandaloneCodeEditor): void {
     this.editor = editor;
-    editor.onDidChangeCursorPosition(this.onEditorPositionChange)
+    editor.onDidChangeCursorPosition(this.onEditorPositionChange);
+    const tabSize = this.tabSizeForLanguage();
+    if (tabSize) {
+      editor.getModel().updateOptions({
+        tabSize: tabSize
+      });
+    }
   }
 
   onEditorPositionChange(event: ICursorPositionChangedEvent): void {
@@ -134,8 +140,18 @@ class CodeEditor extends React.Component<Props> {
         enabled: false
       },
       wordWrap: this.wordWrapOptionFor(this.props.lineWrapping),
-      scrollBeyondLastLine: false
+      scrollBeyondLastLine: false,
     }, this.props.monacoOptions);
+  }
+
+  tabSizeForLanguage(): Option<number> {
+    if (this.props.language === "markdown") {
+      return 4;
+    } else if (this.props.language === "javascript" || this.props.language === "typescript") {
+      return 2;
+    } else {
+      return;
+    }
   }
 
   render() {
