@@ -18,6 +18,8 @@ import ParamType from '../models/param_type';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import autobind from '../lib/autobind';
 import SectionHeading from "../shared_ui/section_heading";
+import LibraryVersion from "../models/library_version";
+import NodeModuleVersion from "../models/node_module_version";
 
 class DataTypeEditor extends React.Component {
     constructor(props) {
@@ -172,6 +174,8 @@ class DataTypeEditor extends React.Component {
             systemParams={this.props.systemParams}
             requiredAWSConfigs={this.props.requiredAWSConfigs}
             oauthApiApplications={this.props.oauthApiApplications}
+            libraries={this.props.libraries}
+            nodeModules={this.props.nodeModules}
 
             functionBody={this.getSelectedBehavior().getFunctionBody()}
             onChangeFunctionBody={this.props.onChangeCode}
@@ -296,6 +300,9 @@ class DataTypeEditor extends React.Component {
     requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
 
     oauthApiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuthApplication)).isRequired,
+
+    libraries: React.PropTypes.arrayOf(React.PropTypes.instanceOf(LibraryVersion)).isRequired,
+    nodeModules: React.PropTypes.arrayOf(React.PropTypes.instanceOf(NodeModuleVersion)).isRequired,
 
     onCursorChange: React.PropTypes.func.isRequired,
     useLineWrapping: React.PropTypes.bool.isRequired,

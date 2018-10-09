@@ -2619,6 +2619,8 @@ const BehaviorEditor = React.createClass({
           systemParams={this.getSystemParams()}
           requiredAWSConfigs={this.getRequiredAWSConfigs()}
           oauthApiApplications={this.getOAuthApiApplications()}
+          libraries={this.getLibraries()}
+          nodeModules={this.getNodeModuleVersions()}
 
           onCursorChange={this.ensureCursorVisible}
           useLineWrapping={this.state.codeEditorUseLineWrapping}
