@@ -74,7 +74,7 @@ case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option
       maybeUserData.flatMap(_.context).getOrElse("unknown"),
       maybeUserData.map(_.userNameOrDefault).getOrElse("unknown"),
       Some(user.id),
-      Some(user.loginInfo.providerKey),
+      maybeUserData.flatMap(_.userIdForContext).orElse(maybeMessageInfo.map(_.userId)),
       maybeUserData.flatMap(_.fullName),
       maybeUserData.flatMap(_.email),
       maybeUserData.flatMap(_.tz)
