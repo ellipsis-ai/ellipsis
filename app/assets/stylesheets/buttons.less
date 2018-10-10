@@ -54,6 +54,12 @@ a.button,
   width: 100%;
 }
 
+/* Removes unwanted dotted line from Firefox: https://stackoverflow.com/questions/3773430/remove-outline-from-select-box-in-ff/18853002#18853002 */
+select.form-select-element:-moz-focusring {
+  color: transparent;
+  text-shadow: 0 0 0 #000;
+}
+
 a.button, .form-toggle-group, .checkbox-button {
   display: inline-block;
 }
@@ -139,6 +145,13 @@ button.button-s,
   padding: (@xs - @border-width + 1) (@m - @border-width) (@xs - @border-width - 1);
   height: @button-small-height;
   border-radius: @border-radius-small;
+}
+
+/* Workaround for Firefox not supporting line-height on <select>: https://bugzilla.mozilla.org/show_bug.cgi?id=454625 */
+.form-select-s .form-select-element {
+  line-height: @button-small-height - @border-width;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 
 .form-select-s {
@@ -399,7 +412,9 @@ button.button-dropdown-trigger-menu-open,
 }
 
 .form-select-s .form-select-element:focus {
-  padding: (@xs - @border-width-thick + 1) (@m - @border-width-thick) (@xs - @border-width-thick - 1);
+  line-height: @button-small-height - @border-width-thick;
+  padding-left: @m - @border-width-thick;
+  padding-right: @dropdown-trigger-small-right-padding - @border-width-thick;
 }
 
 .form-select-borderless.form-select-s .form-select-element:focus {
@@ -422,8 +437,7 @@ button.button-dropdown-trigger-menu-open.button-l {
 }
 
 button.button-dropdown-trigger.button-s:focus,
-button.button-dropdown-trigger-menu-open.button-s,
-.form-select-s .form-select-element:focus {
+button.button-dropdown-trigger-menu-open.button-s {
   padding-top: (@xs - @border-width-thick + 1);
   padding-left: (@m - @border-width-thick);
   padding-right: @dropdown-trigger-small-right-padding - @border-width-thick;

@@ -68,20 +68,21 @@ object MessageInfo {
 case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option[MessageInfo], maybeUserData: Option[UserData]) {
 
   def toJson: JsObject = {
-    val linkParts = Json.obj("links" -> JsArray(links.map(_.toJson)))
-    val messageInfoPart = maybeMessageInfo.map { info =>
-      Json.obj("messageInfo" -> Json.toJson(info))
-    }.getOrElse(Json.obj())
+    val linkInfo = JsArray(links.map(_.toJson))
+    val messageInfo = maybeMessageInfo.map(info => Json.toJsObject(info)).getOrElse(Json.obj())
     val userDataPart = Json.toJsObject(MessageUserData(
       maybeUserData.flatMap(_.context).getOrElse("unknown"),
       maybeUserData.map(_.userNameOrDefault).getOrElse("unknown"),
       Some(user.id),
-      Some(user.loginInfo.providerKey),
+      maybeUserData.flatMap(_.userIdForContext).orElse(maybeMessageInfo.map(_.userId)),
       maybeUserData.flatMap(_.fullName),
       maybeUserData.flatMap(_.email),
       maybeUserData.flatMap(_.tz)
     ))
-    linkParts ++ messageInfoPart ++ userDataPart
+    Json.obj(
+      "links" -> linkInfo,
+      "messageInfo" -> messageInfo
+    ) ++ userDataPart
   }
 }
 

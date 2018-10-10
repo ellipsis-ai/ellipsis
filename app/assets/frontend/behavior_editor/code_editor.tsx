@@ -1,179 +1,171 @@
-import {JSHINT} from 'jshint';
-declare global {
-  interface Window { JSHINT: JSHINT }
-}
-window.JSHINT = JSHINT;
-
 import * as React from 'react';
-import CodeMirrorWrapper from '../shared_ui/react-codemirror';
-import * as codemirror from 'codemirror';
-import {AsyncLinter, Doc, Editor, Linter} from 'codemirror';
-import 'codemirror/mode/javascript/javascript';
-import 'codemirror/addon/lint/lint';
-import 'codemirror/addon/lint/javascript-lint';
-import 'codemirror/addon/hint/show-hint';
-import 'codemirror/addon/edit/closebrackets';
-import 'codemirror/addon/edit/matchbrackets';
-import 'codemirror/addon/fold/foldcode';
-import 'codemirror/addon/fold/foldgutter';
-import 'codemirror/addon/fold/brace-fold';
-import 'codemirror/addon/comment/comment';
+import autobind from "../lib/autobind";
+import MonacoEditor from "react-monaco-editor";
+import * as monacoEditor from "monaco-editor";
+import {editor, IDisposable} from "monaco-editor";
+import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
+import ICursorPositionChangedEvent = editor.ICursorPositionChangedEvent;
+import {lib_es5_dts, lib_es2015_dts} from "monaco-editor/esm/vs/language/typescript/lib/lib";
+import {NODE_JS_V6_D_TS} from "../code_editor/definitions/nodejs";
+import 'monaco-editor/esm/vs/basic-languages/javascript/javascript';
+import 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
+import 'monaco-editor/esm/vs/basic-languages/markdown/markdown';
+import 'monaco-editor/esm/vs/language/typescript/tsMode';
 
-declare module "codemirror" {
-  var lint: {
-    javascript: Linter | AsyncLinter
-  }
+/* Monaco loads as a global instance, so we only want to set defaults once on page load: */
+const defaults = monacoEditor.languages.typescript.javascriptDefaults;
+defaults.setCompilerOptions({
+  target: monacoEditor.languages.typescript.ScriptTarget.ES2015,
+  module: monacoEditor.languages.typescript.ModuleKind.ES2015,
+  lib: ["es5", "es2015"],
+  allowNonTsExtensions: true,
+  allowJs: true,
+  checkJs: true,
+  moduleResolution: monacoEditor.languages.typescript.ModuleResolutionKind.NodeJs,
+  noImplicitAny: false,
+  strictFunctionTypes: true,
+  strictNullChecks: true
+});
+defaults.setDiagnosticsOptions({
+  noSemanticValidation: false,
+  noSyntaxValidation: false
+});
+defaults.addExtraLib(lib_es5_dts, `es5-${Date.now()}`);
+defaults.addExtraLib(lib_es2015_dts, `es2015-${Date.now()}`);
+defaults.addExtraLib(NODE_JS_V6_D_TS, `node_js_v6-${Date.now()}`);
+
+export interface EditorCursorPosition {
+  top: number
+  bottom: number
 }
 
 interface Props {
+  availableHeight: number
   firstLineNumber: number
-  functionParams: Array<string>
   lineWrapping?: boolean
   onChange: (newValue: string) => void
-  onCursorChange: (cm: Editor) => void
+  onCursorChange: (newPosition: EditorCursorPosition) => void
   value: string
-  autocompletions: Array<string>
+  definitions: string
+  language: "javascript" | "typescript" | "markdown"
+  monacoOptions?: monacoEditor.editor.IEditorConstructionOptions
 }
 
+const MIN_EDITOR_LINES = 12;
+const EDITOR_LINE_HEIGHT = 24;
+const EDITOR_FONT_SIZE = 15;
+
 class CodeEditor extends React.Component<Props> {
-  getJsHintOptions() {
-    return {
-      // Enforcing options
-      bitwise: false,
-      curly: false,
-      eqeqeq: false,
-      esversion: 6,
-      forin: false,
-      freeze: false,
-      funcscope: false,
-      globals: true,
-      iterator: false,
-      latedef: false,
-      noarg: false,
-      nocomma: false,
-      nonbsp: false,
-      nonew: false,
-      notypeof: true,
-      predef: this.props.functionParams,
-      shadow: false,
-      singleGroups: false,
-      strict: false,
-      undef: true,
-      unused: false,
-      varstmt: false,
-
-      // Relaxing options
-      asi: true,
-      boss: true,
-      eqnull: true,
-      evil: true,
-      expr: true,
-      lastsemic: true,
-      loopfunc: true,
-      noyield: true,
-      plusplus: false,
-      proto: true,
-      scripturl: true,
-      supernew: true,
-      withstmt: true,
-
-      // Environment
-      browser: false,
-      browserify: false,
-      couch: false,
-      devel: false,
-      dojo: false,
-      jasmine: false,
-      jquery: false,
-      mocha: false,
-      module: false,
-      mootools: false,
-      node: true,
-      nonstandard: true,
-      phantom: false,
-      prototypejs: false,
-      qunit: false,
-      rhino: false,
-      shelljs: false,
-      typed: false,
-      worker: false,
-      wsh: false,
-      yui: false
-    };
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
   }
 
-  autocompleteParams(cm: Doc) {
-    const matches: Array<string> = [];
-    const possibleWords = this.props.autocompletions;
+  editor: Option<IStandaloneCodeEditor>;
+  container: Option<HTMLDivElement>;
+  currentDefinitions: Option<IDisposable>;
 
-    const cursor = cm.getCursor();
-    const line = cm.getLine(cursor.line);
-    let start = cursor.ch;
-    let end = cursor.ch;
-
-    while (start && /\w/.test(line.charAt(start - 1))) {
-      --start;
-    }
-    while (end < line.length && /\w/.test(line.charAt(end))) {
-      ++end;
-    }
-
-    const word = line.slice(start, end).toLowerCase();
-
-    possibleWords.forEach(function(w) {
-      const lowercase = w.toLowerCase();
-      if (lowercase.indexOf(word) !== -1) {
-        matches.push(w);
-      }
-    });
-
-    return {
-      list: matches,
-      from: { line: cursor.line, ch: start },
-      to: { line: cursor.line, ch: end }
-    };
+  wordWrapOptionFor(lineWrapping?: boolean) {
+    return lineWrapping ? "on" : "off";
   }
 
-  replaceTabsWithSpaces(cm: Editor) {
-    var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
-    const doc = cm.getDoc();
-    doc.replaceSelection(spaces);
+  componentWillReceiveProps(newProps: Props): void {
+    if (newProps.lineWrapping !== this.props.lineWrapping && this.editor) {
+      this.editor.updateOptions({
+        wordWrap: this.wordWrapOptionFor(newProps.lineWrapping)
+      })
+    }
+
+    if (newProps.definitions !== this.props.definitions) {
+      this.resetCurrentDefinitions(newProps.definitions);
+    }
+  }
+
+  editorWillMount(): void {
+    this.resetCurrentDefinitions(this.props.definitions);
+  }
+
+  componentWillUnmount(): void {
+    if (this.currentDefinitions) {
+      this.currentDefinitions.dispose();
+    }
+  }
+
+  resetCurrentDefinitions(newDefinitions: string) {
+    if (this.currentDefinitions) {
+      this.currentDefinitions.dispose();
+    }
+    this.currentDefinitions = defaults.addExtraLib(newDefinitions, `ellipsis-${Date.now()}`);
+  }
+
+  editorDidMount(editor: IStandaloneCodeEditor): void {
+    this.editor = editor;
+    editor.onDidChangeCursorPosition(this.onEditorPositionChange);
+    const tabSize = this.tabSizeForLanguage();
+    if (tabSize) {
+      editor.getModel().updateOptions({
+        tabSize: tabSize
+      });
+    }
+  }
+
+  onEditorPositionChange(event: ICursorPositionChangedEvent): void {
+    if (this.container && this.editor) {
+      const scrolledPosition = this.editor.getScrolledVisiblePosition(event.position);
+      const rect = this.container.getBoundingClientRect();
+      const top = rect.top + window.scrollY + scrolledPosition.top;
+      this.props.onCursorChange({
+        top: top,
+        bottom: top + scrolledPosition.height
+      });
+    }
+  }
+
+  getEditorHeight(): string {
+    const minHeight = MIN_EDITOR_LINES * EDITOR_LINE_HEIGHT;
+    const heightForContent = this.props.value.split("\n").length * EDITOR_LINE_HEIGHT;
+    const maxHeightDesired = Math.min(heightForContent, this.props.availableHeight);
+    const height = Math.max(maxHeightDesired, minHeight);
+    return `${height}px`;
+  }
+
+  getMonacoOptions(): monacoEditor.editor.IEditorConstructionOptions {
+    return Object.assign({
+      automaticLayout: true,
+      fontSize: EDITOR_FONT_SIZE,
+      lineHeight: EDITOR_LINE_HEIGHT,
+      fontFamily: "Source Code Pro",
+      lineNumbers: (lineNumber) => String(lineNumber + this.props.firstLineNumber - 1),
+      minimap: {
+        enabled: false
+      },
+      wordWrap: this.wordWrapOptionFor(this.props.lineWrapping),
+      scrollBeyondLastLine: false,
+    }, this.props.monacoOptions);
+  }
+
+  tabSizeForLanguage(): Option<number> {
+    if (this.props.language === "markdown") {
+      return 4;
+    } else if (this.props.language === "javascript" || this.props.language === "typescript") {
+      return 2;
+    } else {
+      return;
+    }
   }
 
   render() {
     return (
-      <CodeMirrorWrapper
-        value={this.props.value}
-        onChange={this.props.onChange}
-        onCursorChange={this.props.onCursorChange}
-        options={{
-          mode: "javascript",
-          firstLineNumber: this.props.firstLineNumber,
-          gutters: ["CodeMirror-lint-markers","CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-          hintOptions: { hint: this.autocompleteParams },
-          indentUnit: 2,
-          indentWithTabs: false,
-          lineWrapping: this.props.lineWrapping,
-          lineNumbers: true,
-          lint: {
-            getAnnotations: codemirror.lint.javascript,
-            options: this.getJsHintOptions(),
-            async: false,
-            hasGutters: true
-          },
-          smartIndent: true,
-          tabSize: 2,
-          viewportMargin: Infinity,
-          autoCloseBrackets: true,
-          matchBrackets: true,
-          foldGutter: true,
-          extraKeys: {
-            "Esc": "autocomplete",
-            "Tab": this.replaceTabsWithSpaces,
-            "Cmd-/": "toggleComment"
-          }
-        }}
-      />
+      <div ref={(el) => this.container = el} className="position-relative" style={{ height: this.getEditorHeight() }}>
+        <MonacoEditor
+          language={this.props.language}
+          value={this.props.value}
+          onChange={this.props.onChange}
+          options={this.getMonacoOptions()}
+          editorWillMount={this.editorWillMount}
+          editorDidMount={this.editorDidMount}
+        />
+      </div>
     );
   }
 }
