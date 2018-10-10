@@ -141,7 +141,7 @@ class UserServiceImpl @Inject() (
         client <- maybeClient
         linkedAccount <- maybeLinkedAccount
       } yield {
-        slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, client, (_) => None).map { maybeSlackUserData =>
+        slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, client, (_) => None).map { maybeSlackUserData =>
           maybeSlackUserData.exists(_.accountTeamId == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
         }
       }).getOrElse(Future.successful(false))
@@ -204,7 +204,7 @@ class UserServiceImpl @Inject() (
       } yield {
         val slackUserId = slackAccount.loginInfo.providerKey
         val slackTeamId = slackBotProfile.slackTeamId
-        slackEventService.maybeSlackUserDataFor(slackUserId, slackTeamId, slackApiService.clientFor(slackBotProfile), (e) => {
+        slackEventService.maybeSlackUserDataFor(slackUserId, slackApiService.clientFor(slackBotProfile), (e) => {
           Logger.error(
             s"""Slack API reported user not found while trying to build user data for an Ellipsis user.
                |Ellipsis user ID: ${user.id}
@@ -237,24 +237,28 @@ class UserServiceImpl @Inject() (
     } yield maybeUserData
   }
 
-  def maybeSlackTeamIdFor(user: User): Future[Option[String]] = {
+  def maybeSlackUserDataFor(user: User): Future[Option[SlackUserData]] = {
     for {
       maybeTeam <- dataService.teams.find(user.teamId)
       maybeSlackUserData <- maybeTeam.map { team =>
         maybeSlackUserDataFor(user, team)
       }.getOrElse(Future.successful(None))
-    } yield maybeSlackUserData.map(_.accountTeamId)
+    } yield maybeSlackUserData
+  }
+
+  def maybeSlackTeamIdFor(user: User): Future[Option[String]] = {
+    maybeSlackUserDataFor(user).map(_.map(_.accountTeamId))
   }
 
   def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]] = {
     for {
       maybeLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-      maybeSlackTeamId <- maybeSlackTeamIdFor(user)
+      maybeSlackUserData <- maybeSlackUserDataFor(user)
     } yield {
       for {
         linkedAccount <- maybeLinkedAccount
-        slackTeamId <- maybeSlackTeamId
-      } yield SlackProfile(slackTeamId, linkedAccount.loginInfo)
+        slackTeamId <- maybeSlackUserData.map(_.accountTeamId)
+      } yield SlackProfile(slackTeamId, linkedAccount.loginInfo, maybeSlackUserData.flatMap(_.accountEnterpriseId))
     }
   }
 

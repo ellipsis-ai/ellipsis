@@ -2,6 +2,7 @@ package json
 
 case class SlackUserData(
                           accountId: String,
+                          accountEnterpriseId: Option[String],
                           accountTeamId: String,
                           accountName: String,
                           isPrimaryOwner: Boolean,

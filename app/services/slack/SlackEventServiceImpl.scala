@@ -47,9 +47,8 @@ class SlackEventServiceImpl @Inject()(
 
   def slackUserDataList(slackUserIds: Set[String], botProfile: SlackBotProfile): Future[Set[SlackUserData]] = {
     val client = clientFor(botProfile)
-    val slackTeamId = botProfile.slackTeamId
     Future.sequence(slackUserIds.map { userId =>
-      maybeSlackUserDataFor(userId, slackTeamId, client, (e) => {
+      maybeSlackUserDataFor(userId, client, (e) => {
         Logger.info(
           s"""Slack API reported user not found while trying to convert user IDs to username:
             |Slack user ID: ${userId}
@@ -61,7 +60,7 @@ class SlackEventServiceImpl @Inject()(
     }).map(_.flatten)
   }
 
-  private def slackUserDataFromSlackUser(user: SlackUser, slackTeamId: String): SlackUserData = {
+  private def slackUserDataFromSlackUser(user: SlackUser, client: SlackApiClient): SlackUserData = {
     val maybeProfile = user.profile.map { profile =>
       SlackUserProfileData(
         profile.display_name,
@@ -74,7 +73,8 @@ class SlackEventServiceImpl @Inject()(
     }
     SlackUserData(
       user.id,
-      user.maybeTeamIdToUse.getOrElse(slackTeamId),
+      client.profile.maybeSlackEnterpriseId,
+      user.maybeTeamIdToUse.getOrElse(client.profile.slackTeamId),
       user.name,
       isPrimaryOwner = user.is_primary_owner.getOrElse(false),
       isOwner = user.is_owner.getOrElse(false),
@@ -109,17 +109,18 @@ class SlackEventServiceImpl @Inject()(
           }
         }
       } yield {
-        maybeInfo.map(info => slackUserDataFromSlackUser(info, slackTeamId))
+        maybeInfo.map(info => slackUserDataFromSlackUser(info, client))
       }
     }
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
+  def maybeSlackUserDataFor(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
+    val slackTeamId = client.profile.slackTeamId
     cacheService.getSlackUserData(SlackUserDataCacheKey(slackUserId, slackTeamId), fetchSlackUserDataFn(slackUserId, slackTeamId, client, onUserNotFound))
   }
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
-    maybeSlackUserDataFor(botProfile.userId, botProfile.slackTeamId, clientFor(botProfile), (e) => {
+    maybeSlackUserDataFor(botProfile.userId, clientFor(botProfile), (e) => {
       Logger.error(s"Slack said the Ellipsis bot Slack user could not be found for Ellipsis team ${botProfile.teamId} on Slack team ${botProfile.slackTeamId} with slack user ID ${botProfile.userId}", e)
       None
     })
@@ -134,7 +135,7 @@ class SlackEventServiceImpl @Inject()(
       for {
         maybeInfo <- client.getUserInfoByEmail(key.email)
       } yield {
-        maybeInfo.map(info => slackUserDataFromSlackUser(info, key.slackTeamId))
+        maybeInfo.map(info => slackUserDataFromSlackUser(info, client))
       }
     }
   }

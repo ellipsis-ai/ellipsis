@@ -104,7 +104,7 @@ trait SlackEvent {
     val client = services.slackApiService.clientFor(profile)
     val slackChannels = SlackChannels(client)
     for {
-      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, client, (e) => {
+      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, client, (e) => {
         Logger.error(
           s"""Slack API reported user not found while generating details about the user to send to an action:
              |Slack user ID: ${user}

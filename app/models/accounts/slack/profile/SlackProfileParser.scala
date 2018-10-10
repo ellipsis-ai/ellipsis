@@ -24,8 +24,10 @@ class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile, OAut
       val userId = (json \ "user_id").as[String]
       val loginInfo = LoginInfo(ID, userId)
       SlackProfile(
-        teamId = maybeEnterpriseId.getOrElse(teamId),
-        loginInfo = loginInfo)
+        teamId = teamId,
+        loginInfo = loginInfo,
+        maybeEnterpriseId
+      )
     } else {
       val maybeError = (json \ "error").asOpt[String]
       val message = maybeError.getOrElse("error")
@@ -42,8 +44,10 @@ class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile, OAut
       val teamId = (json \ "team" \ "id").as[String]
       val loginInfo = LoginInfo(ID, userId)
       SlackProfile(
-        teamId = maybeEnterpriseId.getOrElse(teamId),
-        loginInfo = loginInfo)
+        teamId = teamId,
+        loginInfo = loginInfo,
+        maybeEnterpriseId
+      )
     } else {
       val maybeError = (json \ "error").asOpt[String]
       val message = maybeError.getOrElse("error")

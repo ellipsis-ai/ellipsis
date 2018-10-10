@@ -44,6 +44,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
   val profileData = SlackUserProfileData(Some(displayName), Some(firstName), Some(lastName), Some(fullName), Some(email), Some(phone))
   val slackUserData = SlackUserData(
     slackUserId,
+    None,
     slackTeamId,
     username,
     isPrimaryOwner = false,
@@ -61,7 +62,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
   val members = Seq(slackUserId, otherSlackUserId)
 
   val ellipsisTeamId = IDs.next
-  val slackBotProfile = SlackBotProfile("U55555555", ellipsisTeamId, slackTeamId, IDs.next, OffsetDateTime.now, allowShortcutMention = true)
+  val slackBotProfile = SlackBotProfile("U55555555", ellipsisTeamId, None, slackTeamId, IDs.next, OffsetDateTime.now, allowShortcutMention = true)
 
   "detailsFor" should {
     "preserve the legacy format of the Slack user and channel details" in new TestContext {
@@ -69,7 +70,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
 
         newMockSlackApiClientFor(slackApiService, slackBotProfile, channel, members, Some(channelName))
 
-        when(services.slackEventService.maybeSlackUserDataFor(org.mockito.Matchers.eq[String](slackUserData.accountId), org.mockito.Matchers.eq[String](slackTeamId), any[SlackApiClient], any())).thenReturn(
+        when(services.slackEventService.maybeSlackUserDataFor(org.mockito.Matchers.eq[String](slackUserData.accountId), any[SlackApiClient], any())).thenReturn(
           Future.successful(Some(slackUserData))
         )
 

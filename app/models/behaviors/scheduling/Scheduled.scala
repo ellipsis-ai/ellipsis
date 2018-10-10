@@ -202,7 +202,7 @@ trait Scheduled {
     slackUserId: String => {
       val client = services.slackApiService.clientFor(profile)
       for {
-        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, profile.slackTeamId, client, (e) => {
+        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, client, (e) => {
           Logger.error(
             s"""Slack API reported user not found while trying to send a scheduled message:
                |Slack user ID: $slackUserId

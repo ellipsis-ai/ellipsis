@@ -4,13 +4,13 @@ import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
 import models.behaviors.behaviorversion.Normal
-import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events._
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.Logger
 import services.DefaultServices
 import slick.dbio.DBIO
-import utils.{SlackChannels, SlackMessageSenderChannelException}
+import utils.SlackChannels
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,7 +28,7 @@ trait SlackBotProfileService {
 
   def allSince(when: OffsetDateTime): Future[Seq[SlackBotProfile]]
 
-  def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile]
+  def ensure(userId: String, maybeEnterpriseId: Option[String], slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile]
 
   def channelsFor(botProfile: SlackBotProfile): SlackChannels
 

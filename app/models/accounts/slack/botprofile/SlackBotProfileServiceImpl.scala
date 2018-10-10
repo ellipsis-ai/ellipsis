@@ -23,12 +23,13 @@ import scala.concurrent.{ExecutionContext, Future}
 class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_bot_profiles") {
   def userId = column[String]("user_id", O.PrimaryKey)
   def teamId = column[String]("team_id")
+  def maybeEnterpriseId = column[Option[String]]("enterprise_id")
   def slackTeamId = column[String]("slack_team_id")
   def token = column[String]("token")
   def createdAt = column[OffsetDateTime]("created_at")
   def allowShortcutMention = column[Boolean]("allow_shortcut_mention")
 
-  def * = (userId, teamId, slackTeamId, token, createdAt, allowShortcutMention) <> ((SlackBotProfile.apply _).tupled, SlackBotProfile.unapply _)
+  def * = (userId, teamId, maybeEnterpriseId, slackTeamId, token, createdAt, allowShortcutMention) <> ((SlackBotProfile.apply _).tupled, SlackBotProfile.unapply _)
 
 }
 
@@ -55,8 +56,13 @@ class SlackBotProfileServiceImpl @Inject() (
 
   def allProfiles: Future[Seq[SlackBotProfile]] = dataService.run(all.result)
 
-  def uncompiledFindQuery(userId: Rep[String]) = {
+  def uncompiledAllForUserIdQuery(userId: Rep[String]) = {
     all.filter(_.userId === userId)
+  }
+  val allForUserIdQuery = Compiled(uncompiledAllForUserIdQuery _)
+
+  def uncompiledFindQuery(userId: Rep[String], slackTeamId: Rep[String]) = {
+    uncompiledAllForUserIdQuery(userId).filter(_.slackTeamId === slackTeamId)
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
@@ -93,11 +99,11 @@ class SlackBotProfileServiceImpl @Inject() (
     dataService.run(allSinceQuery(when).result)
   }
 
-  def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile] = {
-    val query = findQuery(userId)
+  def ensure(userId: String, maybeEnterpriseId: Option[String], slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile] = {
+    val query = findQuery(userId, slackTeamId)
     val action = query.result.headOption.flatMap {
       case Some(existing) => {
-        val profile = SlackBotProfile(userId, existing.teamId, slackTeamId, token, existing.createdAt, existing.allowShortcutMention)
+        val profile = SlackBotProfile(userId, existing.teamId, maybeEnterpriseId, slackTeamId, token, existing.createdAt, existing.allowShortcutMention)
         for {
           maybeTeam <- DBIO.from(dataService.teams.find(existing.teamId))
           _ <- query.update(profile)
@@ -107,17 +113,25 @@ class SlackBotProfileServiceImpl @Inject() (
         } yield profile
       }
       case None => {
-        DBIO.from(registrationService.registerNewTeam(slackTeamName)).flatMap { team =>
-          val newProfile = SlackBotProfile(
-            userId,
-            team.id,
-            slackTeamId,
-            token,
-            OffsetDateTime.now,
-            allowShortcutMention = SlackBotProfile.ALLOW_SHORTCUT_MENTION_DEFAULT
-          )
-          (all += newProfile).map { _ => newProfile }
-        }
+        for {
+          maybeExistingTeamId <- allForUserIdQuery(userId).result.map(_.headOption.map(_.teamId))
+          maybeExistingTeam <- maybeExistingTeamId.map { existingTeamId =>
+            dataService.teams.findAction(existingTeamId)
+          }.getOrElse(DBIO.successful(None))
+          team <- maybeExistingTeam.map(DBIO.successful).getOrElse(registrationService.registerNewTeamAction(slackTeamName))
+          profile <- {
+            val newProfile = SlackBotProfile(
+              userId,
+              team.id,
+              maybeEnterpriseId,
+              slackTeamId,
+              token,
+              OffsetDateTime.now,
+              allowShortcutMention = SlackBotProfile.ALLOW_SHORTCUT_MENTION_DEFAULT
+            )
+            (all += newProfile).map { _ => newProfile }
+          }
+        } yield profile
       }
     }
     dataService.run(action)
@@ -184,8 +198,9 @@ class SlackBotProfileServiceImpl @Inject() (
     }
   }
 
+  // TODO: this might need to be at the team level for enterprise grid cases
   def toggleMentionShortcut(botProfile: SlackBotProfile, enableShortcut: Boolean): Future[Option[Boolean]] = {
-    val query = findQuery(botProfile.userId)
+    val query = findQuery(botProfile.userId, botProfile.slackTeamId)
     val action = query.result.headOption.flatMap {
       case Some(existing) => {
         for {

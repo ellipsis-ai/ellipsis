@@ -18,6 +18,7 @@ class SlackMessageSpec extends PlaySpec {
   val tz = Some("America/Toronto")
   val user = SlackUserData(
     userId,
+    None,
     "T1234",
     username,
     isPrimaryOwner = false,
@@ -120,8 +121,8 @@ class SlackMessageSpec extends PlaySpec {
   }
 
   "removeBotPrefix" should {
-    val profileWithShortcuts = SlackBotProfile("UTHEBOT", "1", "T1", "token", OffsetDateTime.now, allowShortcutMention = true)
-    val profileNoShortcuts = SlackBotProfile("UTHEBOT", "1", "T1", "token", OffsetDateTime.now, allowShortcutMention = false)
+    val profileWithShortcuts = SlackBotProfile("UTHEBOT", "1", None, "T1", "token", OffsetDateTime.now, allowShortcutMention = true)
+    val profileNoShortcuts = SlackBotProfile("UTHEBOT", "1", None, "T1", "token", OffsetDateTime.now, allowShortcutMention = false)
 
     "remove the bot user link from the beginning of the message" in {
       SlackMessage.removeBotPrefix("<@UTHEBOT> hello", profileWithShortcuts) mustBe "hello"

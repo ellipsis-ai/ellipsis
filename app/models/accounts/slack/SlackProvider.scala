@@ -35,14 +35,8 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
   )
 
   protected def buildProfile(authInfo: A): Future[SlackProfile] = {
-    if (authInfo.params.exists(_.get("scope").exists(_.split(",").contains("identity.basic")))) {
-      httpLayer.url(urls("identity").format(authInfo.accessToken)).get().flatMap { response =>
-        profileParser.parseForSignIn(response.json)
-      }
-    } else {
-      httpLayer.url(urls("auth_test").format(authInfo.accessToken)).get().flatMap { response =>
-        profileParser.parseForInstall(response.json)
-      }
+    httpLayer.url(urls("auth_test").format(authInfo.accessToken)).get().flatMap { response =>
+      profileParser.parseForInstall(response.json)
     }
   }
 
@@ -91,7 +85,7 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
       slackTeamName <- maybeSlackTeamName
     } yield {
       maybeEnterpriseNameFor(authInfo).flatMap { maybeEnterpriseName =>
-        dataService.slackBotProfiles.ensure(userId, slackProfile.teamId, maybeEnterpriseName.getOrElse(slackTeamName), token)
+        dataService.slackBotProfiles.ensure(userId, slackProfile.maybeEnterpriseId, slackProfile.teamId, maybeEnterpriseName.getOrElse(slackTeamName), token)
       }
     }
 
