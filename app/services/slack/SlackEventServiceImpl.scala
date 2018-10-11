@@ -74,7 +74,7 @@ class SlackEventServiceImpl @Inject()(
     SlackUserData(
       user.id,
       client.profile.maybeSlackEnterpriseId,
-      user.maybeTeamIdToUse.getOrElse(client.profile.slackTeamId),
+      user.team_id.getOrElse(client.profile.slackTeamId),
       user.name,
       isPrimaryOwner = user.is_primary_owner.getOrElse(false),
       isOwner = user.is_owner.getOrElse(false),

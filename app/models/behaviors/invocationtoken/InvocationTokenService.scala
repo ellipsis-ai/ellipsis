@@ -11,6 +11,11 @@ trait InvocationTokenService {
 
   def findNotExpired(id: String): Future[Option[InvocationToken]]
 
-  def createForAction(user: User, behaviorVersion: BehaviorVersion, maybeScheduled: Option[Scheduled]): DBIO[InvocationToken]
+  def createForAction(
+                       user: User,
+                       behaviorVersion: BehaviorVersion,
+                       maybeScheduled: Option[Scheduled],
+                       maybeTeamIdForContext: Option[String]
+                     ): DBIO[InvocationToken]
 
 }

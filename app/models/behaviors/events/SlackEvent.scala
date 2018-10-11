@@ -18,6 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait SlackEvent {
   val user: String
   val userSlackTeamId: String
+  val teamIdForContext: String = profile.slackTeamId
   val channel: String
   val profile: SlackBotProfile
   val isUninterruptedConversation: Boolean

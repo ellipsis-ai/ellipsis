@@ -64,6 +64,7 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
   lazy val invocationLogText: String = underlying.invocationLogText
   lazy val isResponseExpected: Boolean = underlying.isResponseExpected
   lazy val userIdForContext: String = underlying.userIdForContext
+  lazy val teamIdForContext: String = underlying.teamIdForContext
   lazy val messageRecipientPrefix: String = underlying.messageRecipientPrefix
   override val maybeScheduled: Option[Scheduled] = Some(scheduled)
   lazy val isPublicChannel: Boolean = underlying.isPublicChannel

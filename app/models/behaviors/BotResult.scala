@@ -72,18 +72,7 @@ case class ActionChoice(
       for {
         maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(bvid)
         maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
-        maybeActionChoiceSlackTeamId <- maybeGroupVersion.map { gv =>
-          dataService.slackBotProfiles.allFor(gv.team).map(_.headOption.map(_.slackTeamId))
-        }.getOrElse(Future.successful(None))
-        maybeAttemptingUserSlackTeamId <- dataService.users.maybeSlackTeamIdFor(user)
-      } yield {
-        (for {
-          actionChoiceSlackTeamId <- maybeActionChoiceSlackTeamId
-          attemptingUserSlackTeamId <- maybeAttemptingUserSlackTeamId
-        } yield {
-          areOthersAllowed && actionChoiceSlackTeamId == attemptingUserSlackTeamId
-        }).getOrElse(false)
-      }
+      } yield areOthersAllowed && maybeGroupVersion.map(_.team.id).contains(user.teamId)
     }.getOrElse(Future.successful(false))
   }
 

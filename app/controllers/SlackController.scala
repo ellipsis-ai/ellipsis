@@ -162,7 +162,13 @@ class SlackController @Inject() (
     val ts: String
 
     def slackTeamIdForUser: String
-    def slackTeamIdsForBots: Seq[String] = maybeAuthedTeamIds.getOrElse(Seq(teamId))
+    def slackTeamIdsForBots: Seq[String] = {
+      if (maybeEnterpriseId.isDefined) {
+        Seq(teamId)
+      } else {
+        maybeAuthedTeamIds.getOrElse(Seq(teamId))
+      }
+    }
 
   }
 
@@ -1200,7 +1206,7 @@ class SlackController @Inject() (
         }.getOrElse(Future.successful(None))
       } yield {
         val isSameTeam = maybeAttemptingSlackTeamId.contains(botProfile.slackTeamId)
-        val isIncorrectTeam = !isSameTeam && !isAdmin
+        val isIncorrectTeam = !botProfile.isForEnterpriseGrid && !isSameTeam && !isAdmin
         buildFor(value, info, isIncorrectTeam, botProfile)
       }
     }

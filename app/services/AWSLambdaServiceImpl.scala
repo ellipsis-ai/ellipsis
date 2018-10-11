@@ -250,7 +250,7 @@ class AWSLambdaServiceImpl @Inject() (
       developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
       userInfo <- event.userInfoAction(maybeConversation, defaultServices)
       botName <- DBIO.from(event.botName(defaultServices))
-      token <- dataService.invocationTokens.createForAction(userInfo.user, behaviorVersion, event.maybeScheduled)
+      token <- dataService.invocationTokens.createForAction(userInfo.user, behaviorVersion, event.maybeScheduled, Some(event.teamIdForContext))
       teamInfo <- teamInfoFor(behaviorVersion, userInfo, BotInfo(botName, event.botUserIdForContext))
       result <- {
         val invocationJson = invocationJsonFor(

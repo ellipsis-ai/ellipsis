@@ -196,26 +196,26 @@ class UserServiceImpl @Inject() (
 
   private def maybeSlackUserDataFor(user: User, team: Team): Future[Option[SlackUserData]] = {
     for {
-      maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+      slackBotProfiles <- dataService.slackBotProfiles.allFor(team)
       maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-      maybeUserData <- (for {
-        slackBotProfile <- maybeSlackBotProfile
-        slackAccount <- maybeSlackAccount
-      } yield {
+      maybeUserData <- maybeSlackAccount.map { slackAccount =>
         val slackUserId = slackAccount.loginInfo.providerKey
-        val slackTeamId = slackBotProfile.slackTeamId
-        slackEventService.maybeSlackUserDataFor(slackUserId, slackApiService.clientFor(slackBotProfile), (e) => {
-          Logger.error(
-            s"""Slack API reported user not found while trying to build user data for an Ellipsis user.
-               |Ellipsis user ID: ${user.id}
-               |Ellipsis user’s team ID: ${user.teamId}
-               |Ellipsis team ID for this requeust: ${team.id}
-               |Slack user ID: $slackUserId
-               |Slack team ID for this team’s bot: $slackTeamId
+        val slackTeamIds = slackBotProfiles.map(_.slackTeamId)
+        val maybeClient = slackBotProfiles.headOption.map(slackApiService.clientFor)
+        maybeClient.map { client =>
+          slackEventService.maybeSlackUserDataFor(slackUserId, client, (e) => {
+            Logger.error(
+              s"""Slack API reported user not found while trying to build user data for an Ellipsis user.
+                 |Ellipsis user ID: ${user.id}
+                 |Ellipsis user’s team ID: ${user.teamId}
+                 |Ellipsis team ID for this requeust: ${team.id}
+                 |Slack user ID: $slackUserId
+                 |Slack team IDs for this team’s bot: ${slackTeamIds.mkString(",")}
              """.stripMargin, e)
-          None
-        })
-      }).getOrElse(Future.successful(None))
+            None
+          })
+        }.getOrElse(Future.successful(None))
+      }.getOrElse(Future.successful(None))
     } yield maybeUserData
   }
 

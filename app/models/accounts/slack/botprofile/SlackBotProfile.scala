@@ -20,6 +20,8 @@ case class SlackBotProfile(
   }
 
   val botDMDeepLink: String = s"slack://user?team=${slackTeamId}&id=${userId}"
+
+  val isForEnterpriseGrid: Boolean = maybeSlackEnterpriseId.nonEmpty
 }
 
 object SlackBotProfile {

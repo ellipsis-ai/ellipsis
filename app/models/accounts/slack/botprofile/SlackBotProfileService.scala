@@ -22,6 +22,8 @@ trait SlackBotProfileService {
 
   def allFor(team: Team): Future[Seq[SlackBotProfile]]
 
+  def allForSlackTeamIdAction(slackTeamId: String): DBIO[Seq[SlackBotProfile]]
+
   def allForSlackTeamId(slackTeamId: String): Future[Seq[SlackBotProfile]]
 
   def admin: Future[SlackBotProfile]

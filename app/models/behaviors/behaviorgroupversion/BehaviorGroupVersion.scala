@@ -35,12 +35,11 @@ case class BehaviorGroupVersion(
   private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       maybeAttemptingUserSlackTeamId <- dataService.users.maybeSlackTeamIdFor(user)
-      maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+      slackTeamIds <- dataService.slackBotProfiles.allFor(team).map(_.map(_.slackTeamId))
     } yield {
-      (for {
-        attemptingUserSlackTeamId <- maybeAttemptingUserSlackTeamId
-        requiredSlackTeamId <- maybeBotProfile.map(_.slackTeamId)
-      } yield attemptingUserSlackTeamId == requiredSlackTeamId).getOrElse(false)
+      maybeAttemptingUserSlackTeamId.exists { attemptingUserSlackTeamId =>
+        slackTeamIds.contains(attemptingUserSlackTeamId)
+      }
     }
   }
 

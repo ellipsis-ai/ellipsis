@@ -51,6 +51,4 @@ case class SlackUser (
                        tz_offset: Option[Int],
                        presence: Option[String],
                        enterprise_user: Option[SlackEnterpriseUser]
-                     ) {
-  val maybeTeamIdToUse: Option[String] = enterprise_user.flatMap(_.enterprise_id).orElse(team_id)
-}
+                     )

@@ -192,8 +192,8 @@ class APIController @Inject() (
         }.getOrElse {
           throw new InvalidTokenException()
         }
-        maybeBotProfile <- maybeTeam.map { team =>
-          dataService.slackBotProfiles.allFor(team).map(_.headOption)
+        maybeBotProfile <- maybeInvocationToken.flatMap(_.maybeTeamIdForContext).map { slackTeamId =>
+          dataService.slackBotProfiles.allForSlackTeamId(slackTeamId).map(_.headOption)
         }.getOrElse(Future.successful(None))
         maybeSlackProfile <- maybeUser.map { user =>
           dataService.users.maybeSlackProfileFor(user)

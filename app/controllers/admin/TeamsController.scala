@@ -36,7 +36,7 @@ class TeamsController @Inject() (
         team.name,
         team.timeZone.toString,
         team.createdAt,
-        maybeSlackBotProfile.exists(_.allowShortcutMention),
+        maybeSlackBotProfile.exists(_.allowShortcutMention), // TODO: enterprise grid
         maybeLastInvocationDate
       )
     }
@@ -77,6 +77,7 @@ class TeamsController @Inject() (
       "enableShortcut" -> boolean
     )(ToggleSlackBotShortcutInfo.apply)(ToggleSlackBotShortcutInfo.unapply)
   )
+  // TODO: enterprise grid
   def toggleBotShortcutForTeam() = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
       toggleSlackBotShortcutForm.bindFromRequest.fold(

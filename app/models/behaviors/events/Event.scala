@@ -22,6 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait Event {
   val name: String
   val userIdForContext: String
+  val teamIdForContext: String
   val botUserIdForContext: String
   val teamId: String
   val maybeChannel: Option[String]

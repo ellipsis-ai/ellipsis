@@ -69,6 +69,7 @@ object ScheduledActionsConfig {
     }
   }
 
+  // TODO: handle multiple workspaces in an enterprise grid
   def buildConfigFor(
                       user: User,
                       teamAccess: UserTeamAccess,
