@@ -1062,7 +1062,7 @@ class SlackController @Inject() (
         canBeTriggered <- for {
           maybeUser <- dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, info.user.id), botProfile.teamId).map(Some(_))
           canBeTriggered <- maybeUser.map { user =>
-            actionChoice.canBeTriggeredBy(user, dataService)
+            actionChoice.canBeTriggeredBy(user, info.slackTeamIdForUser, botProfile.slackTeamId, dataService)
           }.getOrElse(Future.successful(false))
         } yield canBeTriggered
       } yield ActionChoicePermission(

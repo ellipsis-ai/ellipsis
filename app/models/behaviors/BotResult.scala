@@ -67,22 +67,11 @@ case class ActionChoice(
     }
   }
 
-  private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    originatingBehaviorVersionId.map { bvid =>
-      for {
-        maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(bvid)
-        maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
-      } yield areOthersAllowed && maybeGroupVersion.map(_.team.id).contains(user.teamId)
-    }.getOrElse(Future.successful(false))
-  }
-
-  def canBeTriggeredBy(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+  def canBeTriggeredBy(user: User, userTeamIdForContext: String, botTeamIdForContext: String, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     val noUser = userId.isEmpty
     val sameUser = userId.contains(user.id)
-    for {
-      admin <- isAllowedBecauseAdmin(user, dataService)
-      sameTeam <- isAllowedBecauseSameTeam(user, dataService)
-    } yield {
+    isAllowedBecauseAdmin(user, dataService).map { admin =>
+      val sameTeam = areOthersAllowed && userTeamIdForContext == botTeamIdForContext
       noUser || sameUser || sameTeam || admin
     }
   }
