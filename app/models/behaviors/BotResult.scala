@@ -68,11 +68,10 @@ case class ActionChoice(
   }
 
   def canBeTriggeredBy(user: User, userTeamIdForContext: String, botTeamIdForContext: String, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val noUser = userId.isEmpty
     val sameUser = userId.contains(user.id)
     val sameTeam = areOthersAllowed && userTeamIdForContext == botTeamIdForContext
     isAllowedBecauseAdmin(user, dataService).map { admin =>
-      noUser || sameUser || sameTeam || admin
+      sameUser || sameTeam || admin
     }
   }
 
