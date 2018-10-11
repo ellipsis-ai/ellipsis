@@ -46,14 +46,36 @@ case class ActionArg(name: String, value: String)
 
 case class NextAction(actionName: String, args: Option[Seq[ActionArg]]) extends WithActionArgs
 
+case class SkillCodeActionChoice(
+                                   label: String,
+                                   actionName: String,
+                                   args: Option[Seq[ActionArg]],
+                                   allowOthers: Option[Boolean],
+                                   allowMultipleSelections: Option[Boolean],
+                                   quiet: Option[Boolean]
+                               ) extends WithActionArgs {
+  def toActionChoiceWith(user: User, behaviorVersion: BehaviorVersion): ActionChoice = {
+    ActionChoice(
+      label,
+      actionName,
+      args,
+      allowOthers,
+      allowMultipleSelections,
+      user.id,
+      behaviorVersion.id,
+      quiet
+    )
+  }
+}
+
 case class ActionChoice(
                          label: String,
                          actionName: String,
                          args: Option[Seq[ActionArg]],
                          allowOthers: Option[Boolean],
                          allowMultipleSelections: Option[Boolean],
-                         userId: Option[String],
-                         originatingBehaviorVersionId: Option[String],
+                         userId: String,
+                         originatingBehaviorVersionId: String,
                          quiet: Option[Boolean]
                        ) extends WithActionArgs {
 
@@ -68,7 +90,7 @@ case class ActionChoice(
   }
 
   def canBeTriggeredBy(user: User, userTeamIdForContext: String, botTeamIdForContext: String, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val sameUser = userId.contains(user.id)
+    val sameUser = userId == user.id
     val sameTeam = areOthersAllowed && userTeamIdForContext == botTeamIdForContext
     isAllowedBecauseAdmin(user, dataService).map { admin =>
       sameUser || sameTeam || admin
@@ -264,13 +286,8 @@ case class SuccessResult(
 
   override def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = {
     event.ensureUserAction(dataService).map { user =>
-      (payloadJson \ "choices").asOpt[Seq[ActionChoice]].map { choices =>
-        choices.map { ea =>
-          ea.copy(
-            userId = Some(user.id),
-            originatingBehaviorVersionId = Some(behaviorVersion.id)
-          )
-        }
+      (payloadJson \ "choices").asOpt[Seq[SkillCodeActionChoice]].map { choices =>
+        choices.map(_.toActionChoiceWith(user, behaviorVersion))
       }
     }
   }

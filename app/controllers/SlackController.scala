@@ -807,13 +807,11 @@ class SlackController @Inject() (
   }
 
   private def maybeSlackUserIdForActionChoice(actionChoice: ActionChoice): Future[Option[String]] = {
-    actionChoice.userId.map { userId =>
-      dataService.users.find(userId).flatMap { maybeUser =>
-        maybeUser.map { user =>
-          dataService.linkedAccounts.maybeSlackUserIdFor(user)
-        }.getOrElse(Future.successful(None))
-      }
-    }.getOrElse(Future.successful(None))
+    dataService.users.find(actionChoice.userId).flatMap { maybeUser =>
+      maybeUser.map { user =>
+        dataService.linkedAccounts.maybeSlackUserIdFor(user)
+      }.getOrElse(Future.successful(None))
+    }
   }
 
   private def cannotBeTriggeredMessageFor(
@@ -854,15 +852,13 @@ class SlackController @Inject() (
                                                      ): Future[Unit] = {
     for {
       maybeThreadIdToUse <- info.maybeOriginalMessageThreadId.map(tid => Future.successful(Some(tid))).getOrElse {
-        actionChoice.originatingBehaviorVersionId.map { bvid =>
-          dataService.behaviorVersions.findWithoutAccessCheck(bvid).map { maybeOriginatingBehaviorVersion =>
-            if (maybeOriginatingBehaviorVersion.exists(_.responseType == Threaded)) {
-              maybeInstantResponseTs.orElse(info.original_message.map(_.ts))
-            } else {
-              None
-            }
+        dataService.behaviorVersions.findWithoutAccessCheck(actionChoice.originatingBehaviorVersionId).map { maybeOriginatingBehaviorVersion =>
+          if (maybeOriginatingBehaviorVersion.exists(_.responseType == Threaded)) {
+            maybeInstantResponseTs.orElse(info.original_message.map(_.ts))
+          } else {
+            None
           }
-        }.getOrElse(Future.successful(None))
+        }
       }
       _ <- dataService.slackBotProfiles.sendResultWithNewEvent(
         s"run action named ${actionChoice.actionName}",
@@ -1042,9 +1038,7 @@ class SlackController @Inject() (
 
     def buildFor(actionChoice: ActionChoice, info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[ActionChoicePermission] = {
       for {
-        maybeOriginatingBehaviorVersion <- actionChoice.originatingBehaviorVersionId.map { behaviorVersionId =>
-          dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
-        }.getOrElse(Future.successful(None))
+        maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(actionChoice.originatingBehaviorVersionId)
         maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
         maybeActiveGroupVersion <- maybeGroupVersion.map { groupVersion =>
           dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(groupVersion.group, Conversation.SLACK_CONTEXT, info.channel.id)
