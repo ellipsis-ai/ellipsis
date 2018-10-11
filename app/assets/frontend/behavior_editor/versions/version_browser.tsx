@@ -50,7 +50,6 @@ type Props = {
 type State = {
   selectedMenuItem: string,
   diffFromSelectedToCurrent: boolean,
-  headerHeight: number,
   footerHeight: number,
   branch: string,
   isChangingBranchName: boolean,
@@ -86,7 +85,6 @@ class VersionBrowser extends React.Component<Props, State> {
     this.state = {
       selectedMenuItem: this.getDefaultSelectedItem(props),
       diffFromSelectedToCurrent: true,
-      headerHeight: 0,
       footerHeight: 0,
       branch: props.linkedGithubRepo && props.linkedGithubRepo.currentBranch ? props.linkedGithubRepo.currentBranch : "master",
       isFetching: false,
@@ -362,10 +360,6 @@ class VersionBrowser extends React.Component<Props, State> {
     } else {
       return null;
     }
-  }
-
-  getHeaderHeight(): number {
-    return this.state.headerHeight;
   }
 
   getFooterHeight(): number {
@@ -743,19 +737,9 @@ class VersionBrowser extends React.Component<Props, State> {
     );
   }
 
-  getMainHeaderHeight(): number {
-    const mainHeader = document.getElementById("main-header");
-    return mainHeader ? mainHeader.offsetHeight : 0;
-  }
-
-  getContainerStyle() {
-    const myHeaderHeight = this.getHeaderHeight();
-    const mainHeaderHeight = this.getMainHeaderHeight();
-    const headerHeight = Math.max(0, myHeaderHeight - mainHeaderHeight);
-    const footerHeight = this.getFooterHeight();
+  getContainerStyle(): React.CSSProperties {
     return {
-      paddingTop: `${headerHeight}px`,
-      paddingBottom: `${footerHeight}px`
+      paddingBottom: `${this.getFooterHeight()}px`
     };
   }
 
