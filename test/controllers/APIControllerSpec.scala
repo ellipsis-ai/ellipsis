@@ -63,7 +63,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.apiTokens.find(token)).thenReturn(Future.successful(None))
     val behaviorId = maybeTokenBehaviorId.getOrElse(IDs.next)
     val maybeInvocationToken = if (isTokenValid) {
-      Some(InvocationToken(token, defaultSlackUserId, behaviorId, None, now))
+      Some(InvocationToken(token, defaultSlackUserId, behaviorId, None, Some(defaultSlackTeamId), now))
     } else {
       None
     }
@@ -98,7 +98,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       maybeResponseUrl = None,
       beQuiet = false
     )
-    when(dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(botProfile)))
+    when(dataService.slackBotProfiles.allForSlackTeamId(defaultSlackTeamId)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
     val slackProfile = SlackProfile(defaultSlackTeamId, loginInfo, None)
     when(dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(Some(slackProfile)))
@@ -697,7 +697,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val tokenBehaviorId = IDs.next
         val now = OffsetDateTime.now
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(tokenBehaviorId), app, eventHandler, dataService, cacheService, slackEventService, botResultService, now)
-        val invocationToken = InvocationToken(token, defaultSlackUserId, tokenBehaviorId, None, now)
+        val invocationToken = InvocationToken(token, defaultSlackUserId, tokenBehaviorId, None, Some(defaultSlackTeamId), now)
         val newToken = APIToken(IDs.next, IDs.next, user.id, None, isOneTime = false, isRevoked = false, None, OffsetDateTime.now)
         when(dataService.apiTokens.createFor(invocationToken, None, false)).thenReturn(Future.successful(newToken))
         val body = JsObject(Seq(
