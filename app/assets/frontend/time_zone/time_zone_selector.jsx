@@ -149,13 +149,14 @@ class TimeZoneSelector extends React.PureComponent {
     }
 
     render() {
+      const optionGroups = [{ options: this.getFilteredTzInfo().map((tz) => ({ name: tz.name, value: tz.key })) }];
       return (
         <div>
           <SearchWithResults
             ref={(searchInput) => this.searchInput = searchInput}
             placeholder="Search for a city"
             value={this.state.selectedCity}
-            options={this.getFilteredTzInfo().map((tz) => ({ name: tz.name, value: tz.key }))}
+            optionGroups={optionGroups}
             isSearching={this.state.isSearching}
             noMatches={this.state.noMatches}
             error={this.state.error}

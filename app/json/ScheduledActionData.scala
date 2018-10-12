@@ -78,7 +78,7 @@ object ScheduledActionData {
                               team: Team,
                               teamAccess: UserTeamAccess,
                               dataService: DataService,
-                              maybeConversationList: Option[Seq[ScheduleChannelData]],
+                              teamChannelsData: Seq[TeamChannelsData],
                               maybeSlackUserId: Option[String],
                               forceAdmin: Boolean
                             )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
@@ -86,12 +86,10 @@ object ScheduledActionData {
       if (teamAccess.isAdminAccess || forceAdmin) {
         allScheduledActions
       } else {
-        maybeConversationList.map { conversationList =>
-          val convoIds = conversationList.map(_.id)
-          allScheduledActions.filter { action =>
-            action.userId.contains(teamAccess.user.id) || convoIds.contains(action.channel)
-          }
-        }.getOrElse(Seq())
+        val convoIds = teamChannelsData.flatMap(_.channelList.map(_.id))
+        allScheduledActions.filter { action =>
+          action.userId.contains(teamAccess.user.id) || convoIds.contains(action.channel)
+        }
       }
     }
   }

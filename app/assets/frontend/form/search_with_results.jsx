@@ -7,9 +7,12 @@ const SearchWithResults = React.createClass({
     propTypes: {
       placeholder: React.PropTypes.string,
       value: React.PropTypes.string.isRequired,
-      options: React.PropTypes.arrayOf(React.PropTypes.shape({
-        name: React.PropTypes.string.isRequired,
-        value: React.PropTypes.string.isRequired
+      optionGroups: React.PropTypes.arrayOf(React.PropTypes.shape({
+        label: React.PropTypes.string,
+        options: React.PropTypes.arrayOf(React.PropTypes.shape({
+          name: React.PropTypes.string.isRequired,
+          value: React.PropTypes.string.isRequired
+        })).isRequired
       })).isRequired,
       isSearching: React.PropTypes.bool.isRequired,
       noMatches: React.PropTypes.bool.isRequired,
@@ -113,6 +116,22 @@ const SearchWithResults = React.createClass({
       }
     },
 
+    renderGroup: function(group) {
+      if (group.options.length > 0) {
+        return (
+          <optgroup label={group.label} key={group.label || "empty"}>
+            {group.options.map(ea => {
+              return (
+                <option key={ea.value} value={ea.value} className={ea.value ? "" : "type-italic"}>{ea.name}</option>
+              );
+            })}
+          </optgroup>
+        );
+      } else {
+        return null;
+      }
+    },
+
     render: function() {
       return (
         <div>
@@ -136,9 +155,7 @@ const SearchWithResults = React.createClass({
                   size="5"
                   withSearch={true}
                 >
-                  {this.props.options.map((ea) => (
-                    <option key={ea.value} value={ea.value} className={ea.value ? "" : "type-italic"}>{ea.name}</option>
-                  ))}
+                  {this.props.optionGroups.map(this.renderGroup)}
                 </Select>
                 <div className="position-absolute position-z-popup position-top-left">
                   {this.renderSearchMessage()}
