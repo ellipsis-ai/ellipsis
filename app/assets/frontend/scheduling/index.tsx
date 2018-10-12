@@ -152,7 +152,7 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     hasChannelList(): boolean {
-      return Boolean(this.props.channelList) && this.props.channelList.length > 0;
+      return this.props.orgChannels.allChannels().length > 0;
     }
 
     getDefaultSelectedItem(): Option<ScheduledAction> {
