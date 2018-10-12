@@ -7,6 +7,8 @@ import scala.util.matching.Regex
 
 case class SlackChannels(client: SlackApiClient) {
 
+  def botUserId: String = client.profile.userId
+
   def getInfoFor(convoId: String)(implicit ec: ExecutionContext): Future[Option[SlackConversation]] = {
     client.conversationInfo(convoId)
   }

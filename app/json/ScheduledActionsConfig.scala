@@ -7,6 +7,7 @@ import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.{User, UserTeamAccess}
 import services.DefaultServices
+import services.slack.SlackApiError
 import utils.{SlackChannels, SlackConversation}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,7 +33,7 @@ object ScheduledActionsConfig {
   private def maybeIsPrivateMemberAlongWithBotFor(convo: SlackConversation, slackUserId: String, channels: SlackChannels)(implicit ec: ExecutionContext): Future[Option[Boolean]] = {
     if (convo.isIm || convo.isMpim || convo.isPrivateChannel) {
       channels.getMembersFor(convo.id).map { members =>
-        Some(members.contains(slackUserId) && members.contains(channels.client.profile.userId))
+        Some(members.contains(slackUserId) && members.contains(channels.botUserId))
       }
     } else {
       Future.successful(None)
@@ -146,7 +147,9 @@ object ScheduledActionsConfig {
         }
         teamChannelsData <- Future.sequence(botProfiles.map { botProfile =>
           maybeTeamChannelsDataFor(botProfile, maybeSlackUserId.get, forceAdmin, services)
-        }).map(_.flatten)
+        }).map(_.flatten).recover {
+          case e: SlackApiError => Seq()
+        }
         scheduledActions <- ScheduledActionData.buildForUserTeamAccess(team, teamAccess, dataService, teamChannelsData, maybeSlackUserId, forceAdmin)
         behaviorGroups <- dataService.behaviorGroups.allFor(team)
         groupData <- Future.sequence(behaviorGroups.map { group =>
