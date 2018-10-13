@@ -113,22 +113,6 @@ const SearchWithResults = React.createClass({
       }
     },
 
-    renderGroup: function(group) {
-      if (group.options.length > 0) {
-        return (
-          <optgroup label={group.label} key={group.label || "empty"}>
-            {group.options.map(ea => {
-              return (
-                <option key={ea.value} value={ea.value} className={ea.value ? "" : "type-italic"}>{ea.name}</option>
-              );
-            })}
-          </optgroup>
-        );
-      } else {
-        return null;
-      }
-    },
-
     render: function() {
       return (
         <div>
