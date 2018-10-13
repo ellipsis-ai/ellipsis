@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Checkbox from '../form/checkbox';
 import Collapsible from '../shared_ui/collapsible';
-import SearchWithResults from '../form/search_with_results';
+import SearchWithGroupedResults from '../form/search_with_grouped_results';
 import ChannelName from './channel_name';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
@@ -32,7 +32,7 @@ interface ScheduleChannelOption {
 }
 
 class ScheduleChannelEditor extends React.Component<Props, State> {
-  searcher: Option<SearchWithResults>;
+  searcher: Option<SearchWithGroupedResults>;
 
   constructor(props: Props) {
     super(props);
@@ -241,7 +241,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
       return (
         <div>
           <Collapsible revealWhen={this.shouldShowChannels()}>
-            <SearchWithResults
+            <SearchWithGroupedResults
               ref={(searcher) => this.searcher = searcher}
               placeholder="Search for a channel"
               value={this.props.scheduledAction.channel || ""}

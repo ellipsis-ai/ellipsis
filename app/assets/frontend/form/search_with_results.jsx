@@ -7,12 +7,9 @@ const SearchWithResults = React.createClass({
     propTypes: {
       placeholder: React.PropTypes.string,
       value: React.PropTypes.string.isRequired,
-      optionGroups: React.PropTypes.arrayOf(React.PropTypes.shape({
-        label: React.PropTypes.string,
-        options: React.PropTypes.arrayOf(React.PropTypes.shape({
-          name: React.PropTypes.string.isRequired,
-          value: React.PropTypes.string.isRequired
-        })).isRequired
+      options: React.PropTypes.arrayOf(React.PropTypes.shape({
+        name: React.PropTypes.string.isRequired,
+        value: React.PropTypes.string.isRequired
       })).isRequired,
       isSearching: React.PropTypes.bool.isRequired,
       noMatches: React.PropTypes.bool.isRequired,
@@ -155,7 +152,9 @@ const SearchWithResults = React.createClass({
                   size="5"
                   withSearch={true}
                 >
-                  {this.props.optionGroups.map(this.renderGroup)}
+                  {this.props.options.map((ea) => (
+                    <option key={ea.value} value={ea.value} className={ea.value ? "" : "type-italic"}>{ea.name}</option>
+                  ))}
                 </Select>
                 <div className="position-absolute position-z-popup position-top-left">
                   {this.renderSearchMessage()}
