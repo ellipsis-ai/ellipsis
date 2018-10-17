@@ -841,8 +841,7 @@ const BehaviorEditor = React.createClass({
   },
 
   getHeaderHeight: function() {
-    var mainHeader = document.getElementById('main-header');
-    return mainHeader ? mainHeader.offsetHeight : 0;
+    return this.props.headerHeight;
   },
 
   updateBehaviorScrollPosition: function() {
