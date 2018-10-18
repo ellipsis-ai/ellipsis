@@ -4,7 +4,7 @@ import scala.collection.AbstractSet
 
 case class NonEmptyStringSet(
                               override val head: String,
-                              rest: Seq[String]
+                              rest: Seq[String] = Seq.empty
                             ) extends AbstractSet[String] {
   private val set: Set[String] = Set(head) ++ rest
   val iterator: Iterator[String] = set.iterator

@@ -35,7 +35,7 @@ import services.caching.CacheService
 import services.slack.apiModels.Attachment
 import services.slack.{SlackApiClient, SlackEventService}
 import support.ControllerTestContext
-import utils.{SlackChannels, SlackTimestamp}
+import utils.{NonEmptyStringSet, SlackChannels, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -85,7 +85,6 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     val event = SlackMessageEvent(
       botProfile,
-      defaultSlackTeamId,
       defaultChannel,
       None,
       defaultSlackUserId,
@@ -100,7 +99,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     )
     when(dataService.slackBotProfiles.allForSlackTeamId(defaultSlackTeamId)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
-    val slackProfile = SlackProfile(defaultSlackTeamId, loginInfo, None)
+    val slackProfile = SlackProfile(NonEmptyStringSet(defaultSlackTeamId), loginInfo, None)
     when(dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(Some(slackProfile)))
     val mockSlackChannels = mock[SlackChannels]
     when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile])).thenReturn(mockSlackChannels)

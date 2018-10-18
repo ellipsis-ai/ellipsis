@@ -22,6 +22,7 @@ import play.api.test.Helpers._
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import support.TestContext
+import utils.NonEmptyStringSet
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -152,7 +153,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val slackTeamId = "T1234567"
         val botProfile = SlackBotProfile("UMOCKBOT", team.id, None, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         val userSlackId = "U1000"
-        val userSlackProfile = SlackProfile(slackTeamId, LoginInfo("slack", userSlackId), None)
+        val userSlackProfile = SlackProfile(NonEmptyStringSet(slackTeamId), LoginInfo("slack", userSlackId), None)
         when(services.dataService.users.maybeSlackProfileFor(user))
           .thenReturn(Future.successful(Some(userSlackProfile)))
         val sbSpy = scheduledBehaviorSpy(user, team, channel)

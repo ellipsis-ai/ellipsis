@@ -4,6 +4,7 @@ import json.{SlackUserData, SlackUserProfileData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.SlackMessage
 import org.scalatestplus.play.PlaySpec
+import utils.NonEmptyStringSet
 
 class SlackMessageSpec extends PlaySpec {
 
@@ -16,7 +17,7 @@ class SlackMessageSpec extends PlaySpec {
   val email = "luke@ellipsis.ai"
   val phone = "647-123-4567"
   val tz = Some("America/Toronto")
-  val user = SlackUserData(userId, None, "T1234", username, isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, tz, deleted = false, Some(SlackUserProfileData(
+  val user = SlackUserData(userId, None, NonEmptyStringSet("T1234"), username, isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, tz, deleted = false, Some(SlackUserProfileData(
         Some(displayName),
         Some(firstName),
         Some(lastName),
