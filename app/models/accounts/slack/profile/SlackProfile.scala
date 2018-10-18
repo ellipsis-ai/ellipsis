@@ -6,4 +6,5 @@ import utils.NonEmptyStringSet
 
 case class SlackProfile(teamIds: NonEmptyStringSet, loginInfo: LoginInfo, maybeEnterpriseId: Option[String]) extends SocialProfile {
   val firstTeamId: String = teamIds.head
+  def slackUserId = loginInfo.providerKey
 }
