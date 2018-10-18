@@ -1,10 +1,14 @@
 import java.time.{LocalTime, OffsetDateTime, ZoneId}
 
 import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
 import json.ScheduledActionsConfig
 import models.IDs
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.{User, UserTeamAccess}
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.recurrence.Daily
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
@@ -28,6 +32,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
   val slackUserIdsWithoutUser = Seq(slackBotUserId, otherSlackUserId)
   val slackUserIdsWithUser = slackUserIdsWithoutUser ++ Seq(slackUserId)
   val slackTeamId = "T1234"
+  val slackAdminTeamId = "TADMIN"
   val channel1Id = "G1234"
   val channel2Id = "G5678"
   val aTimestamp: Long = OffsetDateTime.now.minusYears(1).toEpochSecond
@@ -57,9 +62,11 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
     )
   }
 
-  def setup(user: User, team: Team, services: DefaultServices, blowup: Boolean = false)
+  def setup(user: User, team: Team, services: DefaultServices, blowup: Boolean = false, userSlackTeamId: String = slackTeamId)
            (implicit actorSystem: ActorSystem, ec: ExecutionContext): Unit = {
     val slackBotProfile = SlackBotProfile(slackBotUserId, team.id, None, slackTeamId, "ABCD", OffsetDateTime.now, allowShortcutMention = true)
+    val slackUserProfile = SlackProfile(SlackUserTeamIds(userSlackTeamId), LoginInfo(Conversation.SLACK_CONTEXT, slackUserId), None)
+    when(services.dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(Some(slackUserProfile)))
     when(services.dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(slackBotProfile)))
     when(services.dataService.linkedAccounts.maybeSlackUserIdFor(user)(ec)).thenReturn(Future.successful(Some(slackUserId)))
 
@@ -123,7 +130,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
 
     "return the whole list of scheduled actions in admin mode" in new TestContext {
       running(app) {
-        setup(user, team, services)(actorSystem, ec)
+        setup(user, team, services, userSlackTeamId = slackAdminTeamId)(actorSystem, ec)
         val teamAccess = UserTeamAccess(user, otherTeam, Some(team), Some("TestBot"), isAdminAccess = true)
         val schedules = setupSchedules(team, dataService)
         val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(user, teamAccess, services, None, None, maybeCsrfToken, forceAdmin = false)(actorSystem, ec))

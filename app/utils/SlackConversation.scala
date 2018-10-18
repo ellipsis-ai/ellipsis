@@ -56,8 +56,8 @@ case class SlackConversation(
 
   val isBotMember: Boolean = is_member.exists(identity)
 
-  def isVisibleToUserWhere(isPrivateMember: Boolean, forceAdmin: Boolean): Boolean = {
-    isPublic || isPrivateMember || forceAdmin
+  def isVisibleToUserWhere(isPrivateMember: Boolean, isAdmin: Boolean): Boolean = {
+    isPublic || isPrivateMember || isAdmin
   }
 
   val maybeImPurpose: Option[String] = {

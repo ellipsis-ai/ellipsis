@@ -51,7 +51,7 @@ object ScheduledActionsConfig {
                                    convo: SlackConversation,
                                    maybeSlackUserProfile: Option[SlackProfile],
                                    channels: SlackChannels,
-                                   forceAdmin: Boolean
+                                   isAdmin: Boolean
                                  )(implicit ec: ExecutionContext): Future[Option[ScheduleChannelData]] = {
     maybeIsPrivateMemberAlongWithBotFor(convo, maybeSlackUserProfile, channels).map { maybeIsPrivateMemberAlongWithBot =>
       val baseData = ScheduleChannelData(
@@ -69,7 +69,7 @@ object ScheduledActionsConfig {
         convo.isOrgShared
       )
       maybeIsPrivateMemberAlongWithBot.map { isPrivateMemberAlongWithBot =>
-        if (convo.isVisibleToUserWhere(isPrivateMemberAlongWithBot, forceAdmin)) {
+        if (convo.isVisibleToUserWhere(isPrivateMemberAlongWithBot, isAdmin)) {
           Some(
             baseData.copy(
               isSelfDm = convo.isIm && isPrivateMemberAlongWithBot,
@@ -111,14 +111,14 @@ object ScheduledActionsConfig {
   private def maybeTeamChannelsDataFor(
                                         botProfile: SlackBotProfile,
                                         maybeSlackUserProfile: Option[SlackProfile],
-                                        forceAdmin: Boolean,
+                                        isAdmin: Boolean,
                                         services: DefaultServices
                                       )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[TeamChannelsData]] = {
     val channels = services.dataService.slackBotProfiles.channelsFor(botProfile)
     for {
       channelList <- channels.getList
       channelData <- Future.sequence(channelList.sortBy(_.sortKey).map { ea =>
-        maybeChannelDataFor(ea, maybeSlackUserProfile, channels, forceAdmin)
+        maybeChannelDataFor(ea, maybeSlackUserProfile, channels, isAdmin)
       }).map(_.flatten)
       maybeTeamInfo <- services.slackApiService.clientFor(botProfile).getTeamInfo
     } yield {
@@ -142,11 +142,16 @@ object ScheduledActionsConfig {
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ScheduledActionsConfig]] = {
     val dataService = services.dataService
     val cacheService = services.cacheService
+    val isAdminMode = teamAccess.isAdminAccess || forceAdmin
     teamAccess.maybeTargetTeam.map { team =>
       for {
-        maybeSlackUserProfile <- dataService.users.maybeSlackProfileFor(user)
+        maybeSlackUserProfile <- if (isAdminMode && !teamAccess.maybeTargetTeam.contains(teamAccess.loggedInTeam)) {
+          Future.successful(None)
+        } else {
+          dataService.users.maybeSlackProfileFor(user)
+        }
         botProfiles <- dataService.slackBotProfiles.allFor(team).map { allBotProfiles =>
-          if (teamAccess.isAdminAccess || forceAdmin) {
+          if (isAdminMode) {
             allBotProfiles
           } else {
             allBotProfiles.filter { profile =>
@@ -156,7 +161,7 @@ object ScheduledActionsConfig {
         }
         teamChannelsData <- {
           Future.sequence(botProfiles.map { botProfile =>
-            maybeTeamChannelsDataFor(botProfile, maybeSlackUserProfile, forceAdmin, services)
+            maybeTeamChannelsDataFor(botProfile, maybeSlackUserProfile, isAdminMode, services)
           }).map(_.flatten).recover {
             case e: SlackApiError => Seq()
           }
