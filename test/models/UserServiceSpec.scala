@@ -3,6 +3,7 @@ package models
 import json.SlackUserData
 import mocks.{MockAWSLambdaService, MockCacheService}
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.slack.SlackUserTeamIds
 import modules.ActorModule
 import org.mockito.Matchers
 import org.mockito.Matchers._
@@ -15,7 +16,6 @@ import services.{AWSLambdaService, GithubService}
 import services.caching.CacheService
 import services.slack.{SlackApiClient, SlackEventService}
 import support.DBSpec
-import utils.NonEmptyStringSet
 
 import scala.concurrent.Future
 
@@ -50,7 +50,7 @@ class UserServiceSpec extends DBSpec with MockitoSugar {
         val botProfile = runNow(dataService.slackBotProfiles.ensure(IDs.next, None, adminSlackTeamId, IDs.next, IDs.next))
         val client = mock[SlackApiClient]
         when(slackEventService.clientFor(botProfile)).thenReturn(client)
-        val slackUserData = SlackUserData(accountId = linkedAccount.loginInfo.providerKey, accountEnterpriseId = None, accountTeamIds = NonEmptyStringSet(adminSlackTeamId), accountName = "", isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, tz = None, deleted = false, profile = None)
+        val slackUserData = SlackUserData(accountId = linkedAccount.loginInfo.providerKey, accountEnterpriseId = None, accountTeamIds = SlackUserTeamIds(adminSlackTeamId), accountName = "", isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, tz = None, deleted = false, profile = None)
         when(slackEventService.maybeSlackUserDataFor(Matchers.eq(linkedAccount.loginInfo.providerKey), Matchers.eq(client), any())).thenReturn(Future.successful(Some(slackUserData)))
 
         runNow(dataService.users.isAdmin(linkedAccount.user)) mustBe true

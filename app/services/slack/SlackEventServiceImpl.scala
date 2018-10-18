@@ -3,6 +3,7 @@ package services.slack
 import akka.actor.ActorSystem
 import javax.inject._
 import json.{SlackUserData, SlackUserProfileData}
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
 import models.behaviors.events.{EventHandler, SlackMessageEvent}
@@ -11,7 +12,6 @@ import play.api.i18n.MessagesApi
 import services.DataService
 import services.caching.{CacheService, SlackUserDataByEmailCacheKey, SlackUserDataCacheKey}
 import services.slack.apiModels.SlackUser
-import utils.NonEmptyStringSet
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -80,7 +80,7 @@ class SlackEventServiceImpl @Inject()(
     SlackUserData(
       user.id,
       client.profile.maybeSlackEnterpriseId,
-      NonEmptyStringSet(firstTeam, otherTeams),
+      SlackUserTeamIds(firstTeam, otherTeams),
       user.name,
       isPrimaryOwner = user.is_primary_owner.getOrElse(false),
       isOwner = user.is_owner.getOrElse(false),

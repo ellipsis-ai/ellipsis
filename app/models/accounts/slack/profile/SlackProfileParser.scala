@@ -3,9 +3,8 @@ package models.accounts.slack.profile
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException
 import com.mohiva.play.silhouette.impl.providers.{OAuth2Info, SocialProfileParser}
-import models.accounts.slack.SlackProvider
+import models.accounts.slack.{SlackProvider, SlackUserTeamIds}
 import play.api.libs.json._
-import utils.NonEmptyStringSet
 
 import scala.concurrent.Future
 
@@ -25,7 +24,7 @@ class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile, OAut
       val userId = (json \ "user_id").as[String]
       val loginInfo = LoginInfo(ID, userId)
       SlackProfile(
-        NonEmptyStringSet(teamId, Seq.empty),
+        SlackUserTeamIds(teamId),
         loginInfo = loginInfo,
         maybeEnterpriseId
       )
@@ -45,7 +44,7 @@ class SlackProfileParser extends SocialProfileParser[JsValue, SlackProfile, OAut
       val teamId = (json \ "team" \ "id").as[String]
       val loginInfo = LoginInfo(ID, userId)
       SlackProfile(
-        NonEmptyStringSet(teamId, Seq.empty),
+        SlackUserTeamIds(teamId),
         loginInfo = loginInfo,
         maybeEnterpriseId
       )

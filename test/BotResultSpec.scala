@@ -37,7 +37,6 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
   def newEventFor(profile: SlackBotProfile, maybeThreadId: Option[String] = defaultThreadId): SlackMessageEvent = {
     SlackMessageEvent(
       profile,
-      defaultSlackTeamId,
       defaultChannel,
       maybeThreadId,
       defaultSlackUserId,

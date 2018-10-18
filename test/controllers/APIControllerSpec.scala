@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import json.{APIErrorData, APIResultWithErrorsData, APITokenData}
 import models.IDs
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -35,7 +36,7 @@ import services.caching.CacheService
 import services.slack.apiModels.Attachment
 import services.slack.{SlackApiClient, SlackEventService}
 import support.ControllerTestContext
-import utils.{NonEmptyStringSet, SlackChannels, SlackTimestamp}
+import utils.{SlackChannels, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -99,7 +100,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     )
     when(dataService.slackBotProfiles.allForSlackTeamId(defaultSlackTeamId)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
-    val slackProfile = SlackProfile(NonEmptyStringSet(defaultSlackTeamId), loginInfo, None)
+    val slackProfile = SlackProfile(SlackUserTeamIds(defaultSlackTeamId), loginInfo, None)
     when(dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(Some(slackProfile)))
     val mockSlackChannels = mock[SlackChannels]
     when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile])).thenReturn(mockSlackChannels)

@@ -2,12 +2,12 @@ package utils
 
 import scala.collection.AbstractSet
 
-case class NonEmptyStringSet(
-                              override val head: String,
-                              rest: Seq[String] = Seq.empty
-                            ) extends AbstractSet[String] {
-  private val set: Set[String] = Set(head) ++ rest
-  val iterator: Iterator[String] = set.iterator
+trait NonEmptyStringSet extends AbstractSet[String] {
+  def head: String
+  def others: Seq[String]
+
+  private def set: Set[String] = Set(head) ++ others
+  def iterator: Iterator[String] = set.iterator
   def +(elem: String): Set[String] = set.+(elem)
   def -(elem: String): Set[String] = set.-(elem)
   def contains(elem: String): Boolean = set.contains(elem)

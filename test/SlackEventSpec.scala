@@ -2,6 +2,7 @@ import java.time.OffsetDateTime
 
 import json.{SlackUserData, SlackUserProfileData}
 import models.IDs
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.SlackEvent
 import org.mockito.Matchers._
@@ -12,7 +13,6 @@ import play.api.libs.json.JsObject
 import play.api.test.Helpers._
 import services.slack.SlackApiClient
 import support.{SlackContext, TestContext}
-import utils.NonEmptyStringSet
 
 import scala.concurrent.Future
 
@@ -42,7 +42,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
   val phone = "647-123-4567"
   val tz = "America/New_York"
   val profileData = SlackUserProfileData(Some(displayName), Some(firstName), Some(lastName), Some(fullName), Some(email), Some(phone))
-  val slackUserData = SlackUserData(slackUserId, None, NonEmptyStringSet(slackTeamId), username, isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, Some(tz), deleted = false, Some(profileData))
+  val slackUserData = SlackUserData(slackUserId, None, SlackUserTeamIds(slackTeamId), username, isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, Some(tz), deleted = false, Some(profileData))
 
   val date = OffsetDateTime.now.minusDays(365).toInstant.toEpochMilli
 

@@ -1,6 +1,7 @@
 package json
 
 import json.web.settings.IntegrationListConfig
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors._
 import models.behaviors.behaviorparameter.ValidValue
@@ -72,7 +73,7 @@ object Formatting {
   lazy implicit val slackUserProfileDataReads = Json.reads[SlackUserProfileData]
   lazy implicit val slackUserProfileDataWrites = Json.writes[SlackUserProfileData]
 
-  lazy implicit val nonEmptyStringSetFormat = Json.format[NonEmptyStringSet]
+  lazy implicit val slackUserTeamIdsFormat = Json.format[SlackUserTeamIds]
 
   lazy implicit val slackUserDataReads = Json.reads[SlackUserData]
   lazy implicit val slackUserDataWrites = Json.writes[SlackUserData]

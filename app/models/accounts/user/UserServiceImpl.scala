@@ -19,7 +19,7 @@ import play.api.libs.json.Json
 import services.DefaultServices
 import services.slack.SlackApiClient
 import json.Formatting._
-import utils.NonEmptyStringSet
+import models.accounts.slack.SlackUserTeamIds
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -247,7 +247,7 @@ class UserServiceImpl @Inject() (
     } yield maybeSlackUserData
   }
 
-  def maybeSlackTeamIdsFor(user: User): Future[Option[NonEmptyStringSet]] = {
+  def maybeSlackTeamIdsFor(user: User): Future[Option[SlackUserTeamIds]] = {
     maybeSlackUserDataFor(user).map(_.map(_.accountTeamIds))
   }
 

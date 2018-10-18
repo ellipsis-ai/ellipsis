@@ -1,11 +1,11 @@
 package json
 
-import utils.NonEmptyStringSet
+import models.accounts.slack.SlackUserTeamIds
 
 case class SlackUserData(
                           accountId: String,
                           accountEnterpriseId: Option[String],
-                          accountTeamIds: NonEmptyStringSet,
+                          accountTeamIds: SlackUserTeamIds,
                           accountName: String,
                           isPrimaryOwner: Boolean,
                           isOwner: Boolean,
