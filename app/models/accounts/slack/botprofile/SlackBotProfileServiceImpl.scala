@@ -139,6 +139,7 @@ class SlackBotProfileServiceImpl @Inject() (
             dataService.teams.findAction(existingTeamId)
           }.getOrElse(DBIO.successful(None))
           team <- maybeExistingTeam.map(DBIO.successful).getOrElse(registrationService.registerNewTeamAction(slackTeamName))
+          existingTeamSlackBotProfiles <- dataService.slackBotProfiles.allForAction(team)
           profile <- {
             val newProfile = SlackBotProfile(
               userId,
@@ -147,7 +148,9 @@ class SlackBotProfileServiceImpl @Inject() (
               slackTeamId,
               token,
               OffsetDateTime.now,
-              allowShortcutMention = SlackBotProfile.ALLOW_SHORTCUT_MENTION_DEFAULT
+              allowShortcutMention = existingTeamSlackBotProfiles.headOption.map(_.allowShortcutMention).getOrElse {
+                SlackBotProfile.ALLOW_SHORTCUT_MENTION_DEFAULT
+              }
             )
             (all += newProfile).map { _ => newProfile }
           }
