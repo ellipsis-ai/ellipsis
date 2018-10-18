@@ -33,7 +33,7 @@ case class SlackEnterpriseUser(
 
 case class SlackUser (
                        id: String,
-                       team_id: Option[String],
+                       team_id: Option[String], // Single team ID/non-enterprise
                        name: String,
                        deleted: Option[Boolean],
                        color: Option[String],

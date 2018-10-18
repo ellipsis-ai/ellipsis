@@ -53,20 +53,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
   }
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
-    Future.successful(Some(SlackUserData(
-      botProfile.userId,
-      None,
-      botProfile.slackTeamId,
-      "MockBot",
-      isPrimaryOwner = false,
-      isOwner = false,
-      isRestricted = false,
-      isUltraRestricted = false,
-      isBot = false,
-      None,
-      deleted = false,
-      Some(SlackUserProfileData(Some("MockBot"), None, None, None, None, None))
-    )))
+    Future.successful(Some(SlackUserData(botProfile.userId, None, botProfile.slackTeamId, "MockBot", isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, None, deleted = false, Some(SlackUserProfileData(Some("MockBot"), None, None, None, None, None)))))
   }
 
   def maybeSlackUserDataForEmail(email: String, client: SlackApiClient): Future[Option[SlackUserData]] = {

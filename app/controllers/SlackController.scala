@@ -317,7 +317,6 @@ class SlackController @Inject() (
           _ <- slackEventService.onEvent(
             SlackMessageEvent(
               botProfile,
-              info.slackTeamIdForUser,
               info.channel,
               info.maybeThreadTs,
               info.userId,
@@ -390,7 +389,6 @@ class SlackController @Inject() (
       slackMessage <- SlackMessage.fromFormattedText(info.text, botProfile, slackEventService)
       event <- Future.successful(SlashCommandEvent(
         botProfile,
-        info.teamId,
         info.channelId,
         info.userId,
         slackMessage,
@@ -787,7 +785,6 @@ class SlackController @Inject() (
       } yield {
         slackEventService.onEvent(SlackMessageEvent(
           profile,
-          info.slackTeamIdForUser,
           info.channel.id,
           info.maybeOriginalMessageThreadId,
           info.user.id,
@@ -889,7 +886,6 @@ class SlackController @Inject() (
             response.result.map(Some(_))
           }.getOrElse(Future.successful(None))
         } yield maybeResult,
-        info.slackTeamIdForUser,
         botProfile,
         info.channel.id,
         info.user.id,
@@ -936,7 +932,6 @@ class SlackController @Inject() (
                   shouldInterrupt = false
                 ))
               },
-              botProfile.slackTeamId,
               botProfile,
               info.channel.id,
               info.user.id,
@@ -1195,11 +1190,11 @@ class SlackController @Inject() (
         isAdmin <- maybeUser.map { user =>
           dataService.users.isAdmin(user)
         }.getOrElse(Future.successful(false))
-        maybeAttemptingSlackTeamId <- maybeUser.map { user =>
-          dataService.users.maybeSlackTeamIdFor(user)
+        maybeAttemptingSlackTeamIds <- maybeUser.map { user =>
+          dataService.users.maybeSlackTeamIdsFor(user)
         }.getOrElse(Future.successful(None))
       } yield {
-        val isSameTeam = maybeAttemptingSlackTeamId.contains(botProfile.slackTeamId)
+        val isSameTeam = maybeAttemptingSlackTeamIds.exists(_.contains(botProfile.slackTeamId))
         val isIncorrectTeam = !botProfile.isForEnterpriseGrid && !isSameTeam && !isAdmin
         buildFor(value, info, isIncorrectTeam, botProfile)
       }
@@ -1229,7 +1224,6 @@ class SlackController @Inject() (
           event,
           services
         ).result.map(Some(_)),
-        info.slackTeamIdForUser,
         botProfile,
         info.channel.id,
         info.user.id,
@@ -1284,7 +1278,6 @@ class SlackController @Inject() (
           event,
           services
         ).result.map(Some(_)),
-        info.slackTeamIdForUser,
         botProfile,
         info.channel.id,
         info.user.id,
@@ -1335,7 +1328,6 @@ class SlackController @Inject() (
           event,
           services
         ).result.map(Some(_)),
-        info.slackTeamIdForUser,
         botProfile,
         info.channel.id,
         info.user.id,
@@ -1530,7 +1522,6 @@ class SlackController @Inject() (
             response.result.map(Some(_))
           }.getOrElse(Future.successful(None))
         } yield maybeResult,
-        info.slackTeamIdForUser,
         botProfile,
         info.channel.id,
         info.user.id,

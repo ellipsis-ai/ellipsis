@@ -27,7 +27,6 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
                              profile: SlackBotProfile
                            ) extends SlackEvent {
 
-    val userSlackTeamId: String = slackTeamId
     val isUninterruptedConversation: Boolean = false
   }
 
@@ -42,20 +41,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
   val phone = "647-123-4567"
   val tz = "America/New_York"
   val profileData = SlackUserProfileData(Some(displayName), Some(firstName), Some(lastName), Some(fullName), Some(email), Some(phone))
-  val slackUserData = SlackUserData(
-    slackUserId,
-    None,
-    slackTeamId,
-    username,
-    isPrimaryOwner = false,
-    isOwner = false,
-    isRestricted = false,
-    isUltraRestricted = false,
-    isBot = false,
-    Some(tz),
-    deleted = false,
-    Some(profileData)
-  )
+  val slackUserData = SlackUserData(slackUserId, None, slackTeamId, username, isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, Some(tz), deleted = false, Some(profileData))
 
   val date = OffsetDateTime.now.minusDays(365).toInstant.toEpochMilli
 

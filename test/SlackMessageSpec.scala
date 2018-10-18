@@ -16,27 +16,14 @@ class SlackMessageSpec extends PlaySpec {
   val email = "luke@ellipsis.ai"
   val phone = "647-123-4567"
   val tz = Some("America/Toronto")
-  val user = SlackUserData(
-    userId,
-    None,
-    "T1234",
-    username,
-    isPrimaryOwner = false,
-    isOwner = false,
-    isRestricted = false,
-    isUltraRestricted = false,
-    isBot = false,
-    tz,
-    deleted = false,
-    Some(SlackUserProfileData(
-      Some(displayName),
-      Some(firstName),
-      Some(lastName),
-      Some(fullName),
-      Some(email),
-      Some(phone)
-    ))
-  )
+  val user = SlackUserData(userId, None, "T1234", username, isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, tz, deleted = false, Some(SlackUserProfileData(
+        Some(displayName),
+        Some(firstName),
+        Some(lastName),
+        Some(fullName),
+        Some(email),
+        Some(phone)
+      )))
   val userList = Set(user)
 
   "unformatLinks" should {

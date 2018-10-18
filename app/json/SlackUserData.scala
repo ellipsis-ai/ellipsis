@@ -1,9 +1,11 @@
 package json
 
+import utils.NonEmptyStringSet
+
 case class SlackUserData(
                           accountId: String,
                           accountEnterpriseId: Option[String],
-                          accountTeamId: String,
+                          accountTeamIds: NonEmptyStringSet,
                           accountName: String,
                           isPrimaryOwner: Boolean,
                           isOwner: Boolean,
@@ -21,4 +23,6 @@ case class SlackUserData(
   def maybeRealName: Option[String] = {
     profile.flatMap(_.realName)
   }
+
+  def firstTeamId: String = accountTeamIds.head
 }

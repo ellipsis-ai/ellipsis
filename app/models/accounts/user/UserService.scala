@@ -9,6 +9,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.events.Event
 import models.team.Team
 import slick.dbio.DBIO
+import utils.NonEmptyStringSet
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -37,7 +38,7 @@ trait UserService extends IdentityService[User] {
 
   def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]]
 
-  def maybeSlackTeamIdFor(user: User): Future[Option[String]]
+  def maybeSlackTeamIdsFor(user: User): Future[Option[NonEmptyStringSet]]
 
   def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]]
 

@@ -56,7 +56,6 @@ case class ScheduledBehavior(
         ScheduledEvent(
           RunEvent(
             profile,
-            profile.slackTeamId,
             behaviorVersion,
             arguments,
             channel,

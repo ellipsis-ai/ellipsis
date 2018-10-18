@@ -36,7 +36,6 @@ case class ScheduledMessage(
         ScheduledEvent(
           SlackMessageEvent(
             profile,
-            profile.slackTeamId,
             channel,
             None,
             slackUserId,

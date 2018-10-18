@@ -19,6 +19,7 @@ import play.api.libs.json.Json
 import services.DefaultServices
 import services.slack.SlackApiClient
 import json.Formatting._
+import utils.NonEmptyStringSet
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -119,11 +120,11 @@ class UserServiceImpl @Inject() (
       }.getOrElse {
         dataService.teams.findAction(user.teamId)
       }
-      maybeSlackBotProfile <- maybeTeam.map { team =>
-        dataService.slackBotProfiles.allForAction(team).map(_.headOption)
+      maybeBotProfile <- maybeTeam.map { team =>
+        dataService.slackBotProfiles.maybeFirstForAction(team, user)
       }.getOrElse(DBIO.successful(None))
-      maybeBotName <- maybeSlackBotProfile.map { slackBotProfile =>
-        DBIO.from(dataService.slackBotProfiles.maybeNameFor(slackBotProfile))
+      maybeBotName <- maybeBotProfile.map { botProfile =>
+        DBIO.from(dataService.slackBotProfiles.maybeNameFor(botProfile))
       }.getOrElse(DBIO.successful(None))
     } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeBotName, maybeTeam.exists(t => t.id != user.teamId))
   }
@@ -142,7 +143,7 @@ class UserServiceImpl @Inject() (
         linkedAccount <- maybeLinkedAccount
       } yield {
         slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, client, (_) => None).map { maybeSlackUserData =>
-          maybeSlackUserData.exists(_.accountTeamId == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
+          maybeSlackUserData.exists(_.accountTeamIds.contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID))
         }
       }).getOrElse(Future.successful(false))
     } yield isAdmin
@@ -246,8 +247,8 @@ class UserServiceImpl @Inject() (
     } yield maybeSlackUserData
   }
 
-  def maybeSlackTeamIdFor(user: User): Future[Option[String]] = {
-    maybeSlackUserDataFor(user).map(_.map(_.accountTeamId))
+  def maybeSlackTeamIdsFor(user: User): Future[Option[NonEmptyStringSet]] = {
+    maybeSlackUserDataFor(user).map(_.map(_.accountTeamIds))
   }
 
   def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]] = {
@@ -257,8 +258,8 @@ class UserServiceImpl @Inject() (
     } yield {
       for {
         linkedAccount <- maybeLinkedAccount
-        slackTeamId <- maybeSlackUserData.map(_.accountTeamId)
-      } yield SlackProfile(slackTeamId, linkedAccount.loginInfo, maybeSlackUserData.flatMap(_.accountEnterpriseId))
+        slackTeamIds <- maybeSlackUserData.map(_.accountTeamIds)
+      } yield SlackProfile(slackTeamIds, linkedAccount.loginInfo, maybeSlackUserData.flatMap(_.accountEnterpriseId))
     }
   }
 

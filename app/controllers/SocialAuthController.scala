@@ -233,7 +233,9 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
-          botProfiles <- dataService.slackBotProfiles.allForSlackTeamId(profile.teamId)
+          botProfiles <- Future.sequence(profile.teamIds.toSeq.map(teamId => {
+            dataService.slackBotProfiles.allForSlackTeamId(teamId)
+          })).map(_.flatten)
           result <- if (botProfiles.isEmpty) {
             Future.successful(Redirect(routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId)))
           } else {

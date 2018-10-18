@@ -17,7 +17,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait SlackEvent {
   val user: String
-  val userSlackTeamId: String
   val teamIdForContext: String = profile.slackTeamId
   val channel: String
   val profile: SlackBotProfile
@@ -38,7 +37,7 @@ trait SlackEvent {
         case e: SlackApiError => {
           if (e.code != "cannot_dm_bot") {
             val msg =
-              s"""Couldn't open DM channel to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}
+              s"""Couldn't open DM channel to user with ID ${user} on Slack team ${profile.slackTeamId} due to Slack API error: ${e.code}
                  |Original event channel: $channel
                """.stripMargin
             Logger.error(msg, e)

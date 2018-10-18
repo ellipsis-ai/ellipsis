@@ -15,7 +15,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class RunEvent(
                      profile: SlackBotProfile,
-                     userSlackTeamId: String,
                      behaviorVersion: BehaviorVersion,
                      arguments: Map[String, String],
                      channel: String,

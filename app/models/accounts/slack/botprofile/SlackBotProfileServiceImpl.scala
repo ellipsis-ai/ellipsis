@@ -7,6 +7,7 @@ import drivers.SlickPostgresDriver.api._
 import javax.inject.{Inject, Provider}
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.registration.RegistrationService
+import models.accounts.user.User
 import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
@@ -77,6 +78,21 @@ class SlackBotProfileServiceImpl @Inject() (
 
   def allFor(team: Team): Future[Seq[SlackBotProfile]] = {
     dataService.run(allForAction(team))
+  }
+
+  def maybeFirstForAction(team: Team, user: User): DBIO[Option[SlackBotProfile]] = {
+    for {
+      botProfiles <- allForAction(team)
+      maybeUserProfiles <- DBIO.from(dataService.users.maybeSlackTeamIdsFor(user))
+    } yield {
+      botProfiles.find { botProfile =>
+        maybeUserProfiles.exists(_.contains(botProfile.slackTeamId))
+      }.orElse(botProfiles.headOption)
+    }
+  }
+
+  def maybeFirstFor(team: Team, user: User): Future[Option[SlackBotProfile]] = {
+    dataService.run(maybeFirstForAction(team, user))
   }
 
   def uncompiledAllForSlackTeamQuery(slackTeamId: Rep[String]) = {
@@ -153,7 +169,6 @@ class SlackBotProfileServiceImpl @Inject() (
         // https://github.com/ellipsis-ai/ellipsis/issues/1719
         SlackMessageEvent(
           botProfile,
-          slackTeamId,
           channelId,
           None,
           maybeUserId.getOrElse(botProfile.userId),
@@ -230,7 +245,6 @@ class SlackBotProfileServiceImpl @Inject() (
   def sendResultWithNewEvent(
                               description: String,
                               getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
-                              userSlackTeamId: String,
                               botProfile: SlackBotProfile,
                               channelId: String,
                               userId: String,
@@ -243,7 +257,6 @@ class SlackBotProfileServiceImpl @Inject() (
     val delayMilliseconds = 1000
     val event = SlackMessageEvent(
       botProfile,
-      userSlackTeamId,
       channelId,
       maybeThreadTs,
       userId,

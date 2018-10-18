@@ -53,7 +53,6 @@ class BotResultServiceImpl @Inject() (
       maybeBotProfile <- dataService.slackBotProfiles.allForSlackTeamIdAction(botResult.event.teamIdForContext).map(_.headOption)
       user <- botResult.event.ensureUserAction(dataService)
       maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
-      maybeSlackTeamIdForUser <- DBIO.from(dataService.users.maybeSlackTeamIdFor(user))
       maybeThreadId <- DBIO.successful(if (botResult.responseType == Threaded) {
         botResult.maybeConversation.flatMap(_.maybeThreadId).orElse(maybeMessageTs)
       } else {
@@ -62,13 +61,11 @@ class BotResultServiceImpl @Inject() (
       maybeEvent <- DBIO.successful(
         for {
           botProfile <- maybeBotProfile
-          slackTeamIdForUser <- maybeSlackTeamIdForUser
           linkedAccount <- maybeSlackLinkedAccount
           behaviorVersion <- maybeBehaviorVersion
           channel <- maybeSlackChannelId
         } yield RunEvent(
           botProfile,
-          slackTeamIdForUser,
           behaviorVersion,
           nextAction.argumentsMap,
           channel,

@@ -11,6 +11,7 @@ import play.api.i18n.MessagesApi
 import services.DataService
 import services.caching.{CacheService, SlackUserDataByEmailCacheKey, SlackUserDataCacheKey}
 import services.slack.apiModels.SlackUser
+import utils.NonEmptyStringSet
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -71,10 +72,15 @@ class SlackEventServiceImpl @Inject()(
         profile.phone
       )
     }
+    val maybeTeams = user.enterprise_user.flatMap(_.teams)
+    val firstTeam = user.team_id.
+      orElse(maybeTeams.flatMap(_.headOption)).
+      getOrElse(client.profile.slackTeamId)
+    val otherTeams = maybeTeams.filter(_ != firstTeam).getOrElse(Seq.empty)
     SlackUserData(
       user.id,
       client.profile.maybeSlackEnterpriseId,
-      user.team_id.getOrElse(client.profile.slackTeamId),
+      NonEmptyStringSet(firstTeam, otherTeams),
       user.name,
       isPrimaryOwner = user.is_primary_owner.getOrElse(false),
       isOwner = user.is_owner.getOrElse(false),

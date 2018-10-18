@@ -72,6 +72,8 @@ object Formatting {
   lazy implicit val slackUserProfileDataReads = Json.reads[SlackUserProfileData]
   lazy implicit val slackUserProfileDataWrites = Json.writes[SlackUserProfileData]
 
+  lazy implicit val nonEmptyStringSetFormat = Json.format[NonEmptyStringSet]
+
   lazy implicit val slackUserDataReads = Json.reads[SlackUserData]
   lazy implicit val slackUserDataWrites = Json.writes[SlackUserData]
 

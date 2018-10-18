@@ -28,7 +28,6 @@ import scala.reflect.ClassTag
 
 case class SlackMessageEventData(
                                   profile: SlackBotProfile,
-                                  userSlackTeamId: String,
                                   channel: String,
                                   maybeThreadId: Option[String],
                                   user: String,
@@ -99,7 +98,6 @@ class CacheServiceImpl @Inject() (
       case ev: SlackMessageEvent => {
         val eventData = SlackMessageEventData(
           ev.profile,
-          ev.userSlackTeamId,
           ev.channel,
           ev.maybeThreadId,
           ev.user,
@@ -124,7 +122,6 @@ class CacheServiceImpl @Inject() (
         case JsSuccess(event, jsPath) => {
           Some(SlackMessageEvent(
             event.profile,
-            event.userSlackTeamId,
             event.channel,
             event.maybeThreadId,
             event.user,
