@@ -194,12 +194,16 @@ class APIController @Inject() (
         maybeSlackProfile <- maybeUser.map { user =>
           dataService.users.maybeSlackProfileFor(user)
         }.getOrElse(Future.successful(None))
-        maybeBotProfile <- maybeInvocationToken.flatMap(_.maybeTeamIdForContext).map { slackTeamId =>
-          dataService.slackBotProfiles.allForSlackTeamId(slackTeamId).map { profiles =>
-            profiles.find { botProfile =>
-              maybeSlackProfile.exists(_.teamIds.contains(botProfile.slackTeamId))
-            }.orElse(profiles.headOption)
+        maybeSlackTeamIdForBot <- Future.successful {
+          if (maybeUserForApiToken.isDefined) {
+            // TODO: This makes it impossible for a user's API token to work on other Slack Enterprise Grid workspaces
+            maybeSlackProfile.map(_.teamIds.primary)
+          } else {
+            maybeInvocationToken.flatMap(_.maybeTeamIdForContext)
           }
+        }
+        maybeBotProfile <- maybeSlackTeamIdForBot.map { slackTeamId =>
+          dataService.slackBotProfiles.allForSlackTeamId(slackTeamId).map(_.headOption)
         }.getOrElse(Future.successful(None))
       } yield {
         ApiMethodContext(
