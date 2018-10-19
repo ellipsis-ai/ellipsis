@@ -23,7 +23,11 @@ class OrgChannels implements OrgChannelsInterface {
     this.teamChannels.forEach(ea => {
       channels = channels.concat(ea.channelList);
     });
-    return channels.concat(this.orgSharedChannels).concat(this.dmChannels).concat(this.mpimChannels);
+    return channels.
+        concat(this.orgSharedChannels).
+        concat(this.dmChannels).
+        concat(this.mpimChannels).
+        concat(this.externallySharedChannels);
   }
 
   constructor(props: OrgChannelsInterface) {
