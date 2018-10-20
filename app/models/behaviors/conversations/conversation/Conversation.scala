@@ -58,7 +58,6 @@ trait Conversation {
       // https://github.com/ellipsis-ai/ellipsis/issues/1719
       } yield SlackMessageEvent(
         botProfile,
-        maybeTeamIdForContext.getOrElse(botProfile.slackTeamId),
         channel,
         None,
         userIdForContext,

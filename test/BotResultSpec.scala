@@ -31,13 +31,12 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
   implicit val system = ActorSystem("slack")
 
   def newSavedBotProfile: SlackBotProfile = {
-    runNow(dataService.slackBotProfiles.ensure(IDs.next, IDs.next, IDs.next, IDs.next))
+    runNow(dataService.slackBotProfiles.ensure(IDs.next, None, IDs.next, IDs.next, IDs.next))
   }
 
   def newEventFor(profile: SlackBotProfile, maybeThreadId: Option[String] = defaultThreadId): SlackMessageEvent = {
     SlackMessageEvent(
       profile,
-      defaultSlackTeamId,
       defaultChannel,
       maybeThreadId,
       defaultSlackUserId,

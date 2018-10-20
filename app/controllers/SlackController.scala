@@ -115,25 +115,26 @@ class SlackController @Inject() (
   case class AnyEventInfo(eventType: String) extends EventInfo
 
   trait EventRequestInfo {
+    val maybeEnterpriseId: Option[String]
     val teamId: String
     val maybeAuthedTeamIds: Option[Seq[String]]
     val event: EventInfo
-
-    val teamIds: Seq[String] = maybeAuthedTeamIds.getOrElse(Seq(teamId))
   }
 
   case class ValidEventRequestInfo(
-                                  token: String,
-                                  teamId: String,
-                                  maybeAuthedTeamIds: Option[Seq[String]],
-                                  event: AnyEventInfo,
-                                  requestType: String,
-                                  eventId: String
+                                    token: String,
+                                    maybeEnterpriseId: Option[String],
+                                    teamId: String,
+                                    maybeAuthedTeamIds: Option[Seq[String]],
+                                    event: AnyEventInfo,
+                                    requestType: String,
+                                    eventId: String
                                 ) extends EventRequestInfo with RequestInfo
 
   private val validEventRequestForm = Form(
     mapping(
       "token" -> nonEmptyText,
+      "enterprise_id" -> optional(nonEmptyText),
       "team_id" -> nonEmptyText,
       "authed_teams" -> optional(seq(nonEmptyText)),
       "event" -> mapping(
@@ -159,6 +160,16 @@ class SlackController @Inject() (
     val message: String
     val maybeThreadTs: Option[String]
     val ts: String
+
+    def slackTeamIdForUser: String
+    def slackTeamIdsForBots: Seq[String] = {
+      if (maybeEnterpriseId.isDefined) {
+        Seq(teamId)
+      } else {
+        maybeAuthedTeamIds.getOrElse(Seq(teamId))
+      }
+    }
+
   }
 
   case class FileInfo(
@@ -179,18 +190,22 @@ class SlackController @Inject() (
                                   ) extends EventInfo
 
   case class MessageSentRequestInfo(
-                                          teamId: String,
-                                          maybeAuthedTeamIds: Option[Seq[String]],
-                                          event: MessageSentEventInfo
-                                        ) extends MessageRequestInfo {
+                                     maybeEnterpriseId: Option[String],
+                                     teamId: String,
+                                     maybeAuthedTeamIds: Option[Seq[String]],
+                                     event: MessageSentEventInfo
+                                   ) extends MessageRequestInfo {
     val message: String = event.text.trim
     val userId: String = event.userId
     val channel: String = event.channel
     val ts: String = event.ts
     val maybeThreadTs: Option[String] = event.maybeThreadTs
+
+    def slackTeamIdForUser: String = event.maybeSourceTeamId.getOrElse(teamId)
   }
   private val messageSentRequestForm = Form(
     mapping(
+      "enterprise_id" -> optional(nonEmptyText),
       "team_id" -> nonEmptyText,
       "authed_teams" -> optional(seq(nonEmptyText)),
       "event" -> mapping(
@@ -198,7 +213,7 @@ class SlackController @Inject() (
         "ts" -> nonEmptyText,
         "thread_ts" -> optional(nonEmptyText),
         "user" -> nonEmptyText,
-        "source_team" -> optional(nonEmptyText),
+        "team" -> optional(nonEmptyText),
         "channel" -> nonEmptyText,
         "text" -> text,
         "files" -> optional(seq(mapping(
@@ -234,19 +249,23 @@ class SlackController @Inject() (
                                    ) extends EventInfo
 
   case class MessageChangedRequestInfo(
-                                             teamId: String,
-                                             maybeAuthedTeamIds: Option[Seq[String]],
-                                             event: MessageChangedEventInfo
-                                          ) extends MessageRequestInfo {
+                                        maybeEnterpriseId: Option[String],
+                                        teamId: String,
+                                        maybeAuthedTeamIds: Option[Seq[String]],
+                                        event: MessageChangedEventInfo
+                                      ) extends MessageRequestInfo {
     val message: String = event.message.text.trim
     val userId: String = event.message.userId
     val channel: String = event.channel
     val ts: String = event.ts
     val maybeThreadTs: Option[String] = event.maybeThreadTs
+
+    def slackTeamIdForUser: String = event.message.maybeSourceTeamId.getOrElse(teamId)
   }
 
   private val messageChangedRequestForm = Form(
     mapping(
+      "enterprise_id" -> optional(nonEmptyText),
       "team_id" -> nonEmptyText,
       "authed_teams" -> optional(seq(nonEmptyText)),
       "event" -> mapping(
@@ -255,7 +274,7 @@ class SlackController @Inject() (
           "type" -> nonEmptyText,
           "ts" -> nonEmptyText,
           "user" -> nonEmptyText,
-          "source_team" -> optional(nonEmptyText),
+          "team" -> optional(nonEmptyText),
           "text" -> nonEmptyText,
           "edited" -> mapping(
             "user" -> nonEmptyText,
@@ -274,13 +293,11 @@ class SlackController @Inject() (
   )
 
   private def processEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
-    val maybeSourceTeamId = info.event match {
-      case e: MessageChangedEventInfo => e.message.maybeSourceTeamId
-      case e: MessageSentEventInfo => e.maybeSourceTeamId
-      case _ => None
-    }
     SlackMessage.fromFormattedText(info.message, botProfile, slackEventService).flatMap { slackMessage =>
-      if (maybeSourceTeamId.exists(tid => botProfile.slackTeamId != tid && tid != LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)) {
+      val isEnterpriseGrid = info.maybeEnterpriseId.nonEmpty
+      val isAdminUser = info.slackTeamIdForUser == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID
+      val userTeamMatchesBotTeam = info.slackTeamIdForUser == botProfile.slackTeamId
+      if (!isEnterpriseGrid && !isAdminUser && !userTeamMatchesBotTeam) {
         if (info.channel.startsWith("D") || botProfile.includesBotMention(slackMessage)) {
           dataService.teams.find(botProfile.teamId).flatMap { maybeTeam =>
             val teamText = maybeTeam.map { team =>
@@ -300,7 +317,6 @@ class SlackController @Inject() (
           _ <- slackEventService.onEvent(
             SlackMessageEvent(
               botProfile,
-              maybeSourceTeamId.getOrElse(botProfile.slackTeamId),
               info.channel,
               info.maybeThreadTs,
               info.userId,
@@ -325,9 +341,7 @@ class SlackController @Inject() (
       Ok("We are ignoring retries for now")
     } else {
       for {
-        profiles <- Future.sequence(info.teamIds.map { teamId =>
-          dataService.slackBotProfiles.allForSlackTeamId(teamId)
-        }).map(_.flatten)
+        profiles <- Future.sequence(info.slackTeamIdsForBots.map(dataService.slackBotProfiles.allForSlackTeamId)).map(_.flatten)
         _ <- Future.sequence(
           profiles.map { profile =>
             processEventsFor(info, profile)
@@ -375,7 +389,6 @@ class SlackController @Inject() (
       slackMessage <- SlackMessage.fromFormattedText(info.text, botProfile, slackEventService)
       event <- Future.successful(SlashCommandEvent(
         botProfile,
-        info.teamId,
         info.channelId,
         info.userId,
         slackMessage,
@@ -439,7 +452,7 @@ class SlackController @Inject() (
                          options: Option[Seq[ActionSelectOptionInfo]],
                          selected_options: Option[Seq[ActionSelectOptionInfo]]
                        )
-  case class TeamInfo(id: String, domain: String)
+  case class TeamInfo(id: String, enterprise_id: Option[String], domain: String)
   case class ChannelInfo(id: String, name: String) {
     val isDirectMessage: Boolean = id.startsWith("D")
   }
@@ -491,10 +504,11 @@ class SlackController @Inject() (
     val maybeOriginalMessageThreadId: Option[String] = original_message.flatMap(_.thread_ts)
     val isEphemeral: Boolean = original_message.isEmpty
 
-    def slackTeamIdToUse: String = user.team_id.getOrElse(team.id)
+    def slackTeamIdForUser: String = user.team_id.getOrElse(team.id)
+    def slackTeamIdForBot: String = team.id
 
     def maybeBotProfile: Future[Option[SlackBotProfile]] = {
-      dataService.slackBotProfiles.allForSlackTeamId(team.id).map(_.headOption)
+      dataService.slackBotProfiles.allForSlackTeamId(slackTeamIdForBot).map(_.headOption)
     }
 
     def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
@@ -710,11 +724,13 @@ class SlackController @Inject() (
   }
 
   private def sendEphemeralMessage(message: String, info: ActionsTriggeredInfo): Future[Unit] = {
-    sendEphemeralMessage(message, info.team.id, info.channel.id, info.user.id)
+    sendEphemeralMessage(message, info.slackTeamIdForBot, info.channel.id, info.user.id)
   }
 
   private def sendEphemeralMessage(message: String, info: MessageRequestInfo): Future[Unit] = {
-    sendEphemeralMessage(message, info.teamId, info.channel, info.userId)
+    info.slackTeamIdsForBots.headOption.map { slackTeamId =>
+      sendEphemeralMessage(message, slackTeamId, info.channel, info.userId)
+    }.getOrElse(Future.successful({}))
   }
 
   private def updateActionsMessageFor(
@@ -769,7 +785,6 @@ class SlackController @Inject() (
       } yield {
         slackEventService.onEvent(SlackMessageEvent(
           profile,
-          info.slackTeamIdToUse,
           info.channel.id,
           info.maybeOriginalMessageThreadId,
           info.user.id,
@@ -789,13 +804,11 @@ class SlackController @Inject() (
   }
 
   private def maybeSlackUserIdForActionChoice(actionChoice: ActionChoice): Future[Option[String]] = {
-    actionChoice.userId.map { userId =>
-      dataService.users.find(userId).flatMap { maybeUser =>
-        maybeUser.map { user =>
-          dataService.linkedAccounts.maybeSlackUserIdFor(user)
-        }.getOrElse(Future.successful(None))
-      }
-    }.getOrElse(Future.successful(None))
+    dataService.users.find(actionChoice.userId).flatMap { maybeUser =>
+      maybeUser.map { user =>
+        dataService.linkedAccounts.maybeSlackUserIdFor(user)
+      }.getOrElse(Future.successful(None))
+    }
   }
 
   private def cannotBeTriggeredMessageFor(
@@ -836,15 +849,13 @@ class SlackController @Inject() (
                                                      ): Future[Unit] = {
     for {
       maybeThreadIdToUse <- info.maybeOriginalMessageThreadId.map(tid => Future.successful(Some(tid))).getOrElse {
-        actionChoice.originatingBehaviorVersionId.map { bvid =>
-          dataService.behaviorVersions.findWithoutAccessCheck(bvid).map { maybeOriginatingBehaviorVersion =>
-            if (maybeOriginatingBehaviorVersion.exists(_.responseType == Threaded)) {
-              maybeInstantResponseTs.orElse(info.original_message.map(_.ts))
-            } else {
-              None
-            }
+        dataService.behaviorVersions.findWithoutAccessCheck(actionChoice.originatingBehaviorVersionId).map { maybeOriginatingBehaviorVersion =>
+          if (maybeOriginatingBehaviorVersion.exists(_.responseType == Threaded)) {
+            maybeInstantResponseTs.orElse(info.original_message.map(_.ts))
+          } else {
+            None
           }
-        }.getOrElse(Future.successful(None))
+        }
       }
       _ <- dataService.slackBotProfiles.sendResultWithNewEvent(
         s"run action named ${actionChoice.actionName}",
@@ -875,7 +886,6 @@ class SlackController @Inject() (
             response.result.map(Some(_))
           }.getOrElse(Future.successful(None))
         } yield maybeResult,
-        info.slackTeamIdToUse,
         botProfile,
         info.channel.id,
         info.user.id,
@@ -922,7 +932,6 @@ class SlackController @Inject() (
                   shouldInterrupt = false
                 ))
               },
-              botProfile.slackTeamId,
               botProfile,
               info.channel.id,
               info.user.id,
@@ -1024,9 +1033,7 @@ class SlackController @Inject() (
 
     def buildFor(actionChoice: ActionChoice, info: ActionsTriggeredInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[ActionChoicePermission] = {
       for {
-        maybeOriginatingBehaviorVersion <- actionChoice.originatingBehaviorVersionId.map { behaviorVersionId =>
-          dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
-        }.getOrElse(Future.successful(None))
+        maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(actionChoice.originatingBehaviorVersionId)
         maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
         maybeActiveGroupVersion <- maybeGroupVersion.map { groupVersion =>
           dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(groupVersion.group, Conversation.SLACK_CONTEXT, info.channel.id)
@@ -1044,7 +1051,7 @@ class SlackController @Inject() (
         canBeTriggered <- for {
           maybeUser <- dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, info.user.id), botProfile.teamId).map(Some(_))
           canBeTriggered <- maybeUser.map { user =>
-            actionChoice.canBeTriggeredBy(user, dataService)
+            actionChoice.canBeTriggeredBy(user, info.slackTeamIdForUser, botProfile.slackTeamId, dataService)
           }.getOrElse(Future.successful(false))
         } yield canBeTriggered
       } yield ActionChoicePermission(
@@ -1183,12 +1190,12 @@ class SlackController @Inject() (
         isAdmin <- maybeUser.map { user =>
           dataService.users.isAdmin(user)
         }.getOrElse(Future.successful(false))
-        maybeAttemptingSlackTeamId <- maybeUser.map { user =>
-          dataService.users.maybeSlackTeamIdFor(user)
+        maybeAttemptingSlackTeamIds <- maybeUser.map { user =>
+          dataService.users.maybeSlackTeamIdsFor(user)
         }.getOrElse(Future.successful(None))
       } yield {
-        val isSameTeam = maybeAttemptingSlackTeamId.contains(botProfile.slackTeamId)
-        val isIncorrectTeam = !isSameTeam && !isAdmin
+        val isSameTeam = maybeAttemptingSlackTeamIds.exists(_.contains(botProfile.slackTeamId))
+        val isIncorrectTeam = !botProfile.isForEnterpriseGrid && !isSameTeam && !isAdmin
         buildFor(value, info, isIncorrectTeam, botProfile)
       }
     }
@@ -1217,7 +1224,6 @@ class SlackController @Inject() (
           event,
           services
         ).result.map(Some(_)),
-        info.slackTeamIdToUse,
         botProfile,
         info.channel.id,
         info.user.id,
@@ -1272,7 +1278,6 @@ class SlackController @Inject() (
           event,
           services
         ).result.map(Some(_)),
-        info.slackTeamIdToUse,
         botProfile,
         info.channel.id,
         info.user.id,
@@ -1323,7 +1328,6 @@ class SlackController @Inject() (
           event,
           services
         ).result.map(Some(_)),
-        info.slackTeamIdToUse,
         botProfile,
         info.channel.id,
         info.user.id,
@@ -1518,7 +1522,6 @@ class SlackController @Inject() (
             response.result.map(Some(_))
           }.getOrElse(Future.successful(None))
         } yield maybeResult,
-        info.slackTeamIdToUse,
         botProfile,
         info.channel.id,
         info.user.id,

@@ -127,7 +127,7 @@ object BehaviorEditorData {
               )(implicit ec: ExecutionContext): Future[BehaviorEditorData] = {
     for {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
-      maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+      maybeSlackBotProfile <- dataService.slackBotProfiles.maybeFirstFor(team, user)
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
       awsConfigs <- dataService.awsConfigs.allFor(team)
       oAuth1Applications <- dataService.oauth1Applications.allUsableFor(team)

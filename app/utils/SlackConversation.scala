@@ -50,13 +50,14 @@ case class SlackConversation(
   val isPrivateChannel: Boolean = !isMpim && !isIm && is_private.exists(identity)
   val isPublic: Boolean = !isPrivateChannel && !isGroup && !isIm && !isMpim
   val isArchived: Boolean = is_archived.exists(identity)
-  val isShared: Boolean = is_ext_shared.exists(identity)
+  val isExternallyShared: Boolean = is_ext_shared.exists(identity)
+  val isOrgShared: Boolean = is_org_shared.exists(identity)
   val isReadOnly: Boolean = is_read_only.exists(identity)
 
   val isBotMember: Boolean = is_member.exists(identity)
 
-  def isVisibleToUserWhere(isPrivateMember: Boolean, forceAdmin: Boolean): Boolean = {
-    isPublic || isPrivateMember || forceAdmin
+  def isVisibleToUserWhere(isPrivateMember: Boolean, isAdmin: Boolean): Boolean = {
+    isPublic || isPrivateMember || isAdmin
   }
 
   val maybeImPurpose: Option[String] = {

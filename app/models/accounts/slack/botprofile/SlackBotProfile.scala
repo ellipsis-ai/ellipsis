@@ -7,6 +7,7 @@ import models.behaviors.events.{MessageEvent, SlackMessage, SlackMessageEvent}
 case class SlackBotProfile(
                             userId: String,
                             teamId: String,
+                            maybeSlackEnterpriseId: Option[String],
                             slackTeamId: String,
                             token: String,
                             createdAt: OffsetDateTime,
@@ -19,6 +20,8 @@ case class SlackBotProfile(
   }
 
   val botDMDeepLink: String = s"slack://user?team=${slackTeamId}&id=${userId}"
+
+  val isForEnterpriseGrid: Boolean = maybeSlackEnterpriseId.nonEmpty
 }
 
 object SlackBotProfile {

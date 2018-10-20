@@ -202,7 +202,7 @@ trait Scheduled {
     slackUserId: String => {
       val client = services.slackApiService.clientFor(profile)
       for {
-        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, profile.slackTeamId, client, (e) => {
+        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, client, (e) => {
           Logger.error(
             s"""Slack API reported user not found while trying to send a scheduled message:
                |Slack user ID: $slackUserId
@@ -216,10 +216,10 @@ trait Scheduled {
           userData.accountId != profile.userId && !userData.deleted && !userData.isBot
         }.map { userData =>
           services.slackApiService.clientFor(profile).openConversationFor(userData.accountId).map { dmChannel =>
-            Some(SlackDMInfo(userData.accountId, userData.accountTeamId, dmChannel))
+            Some(SlackDMInfo(userData.accountId, userData.firstTeamId, dmChannel))
           }.recover {
             case e: SlackApiError => {
-              val msg = s"""Couldn't open DM for scheduled message to @${userData.getDisplayName} (${userData.accountId}) on Slack team ${userData.accountTeamId} due to Slack API error: ${e.code}"""
+              val msg = s"""Couldn't open DM for scheduled message to @${userData.getDisplayName} (${userData.accountId}) on Slack team ${userData.firstTeamId} due to Slack API error: ${e.code}"""
               Logger.error(msg, e)
               None
             }

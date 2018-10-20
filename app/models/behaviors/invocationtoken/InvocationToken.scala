@@ -7,5 +7,6 @@ case class InvocationToken(
                             userId: String,
                             behaviorVersionId: String,
                             maybeScheduledMessageId: Option[String],
+                            maybeTeamIdForContext: Option[String],
                             createdAt: OffsetDateTime
                           )

@@ -1,25 +1,23 @@
 package models.accounts.registration
 
 
-import javax.inject.Inject
-
 import drivers.SlickPostgresDriver.api._
+import javax.inject.Inject
 import models.team.Team
 import services.DataService
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class RegistrationServiceImpl @Inject() (
                                           val dataService: DataService,
                                           implicit val ec: ExecutionContext
                                         ) extends RegistrationService {
 
-  def registerNewTeam(name: String): Future[Team] = {
-    val action = for {
+  def registerNewTeamAction(name: String): DBIO[Team] = {
+    (for {
       org <- dataService.organizations.createAction(name)
       team <- dataService.teams.createAction(name, org)
-    } yield team
-    dataService.run(action.transactionally)
+    } yield team).transactionally
   }
 
 }

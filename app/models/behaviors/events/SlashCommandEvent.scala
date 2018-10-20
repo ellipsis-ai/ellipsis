@@ -15,7 +15,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class SlashCommandEvent(
                               profile: SlackBotProfile,
-                              userSlackTeamId: String,
                               channel: String,
                               user: String,
                               message: SlackMessage,

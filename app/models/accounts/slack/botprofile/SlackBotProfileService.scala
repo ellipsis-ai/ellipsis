@@ -3,14 +3,15 @@ package models.accounts.slack.botprofile
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
+import models.accounts.user.User
 import models.behaviors.behaviorversion.Normal
-import models.behaviors.{BotResult, SimpleTextResult}
 import models.behaviors.events._
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.Logger
 import services.DefaultServices
 import slick.dbio.DBIO
-import utils.{SlackChannels, SlackMessageSenderChannelException}
+import utils.SlackChannels
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,13 +23,19 @@ trait SlackBotProfileService {
 
   def allFor(team: Team): Future[Seq[SlackBotProfile]]
 
+  def maybeFirstForAction(team: Team, user: User): DBIO[Option[SlackBotProfile]]
+
+  def maybeFirstFor(team: Team, user: User): Future[Option[SlackBotProfile]]
+
+  def allForSlackTeamIdAction(slackTeamId: String): DBIO[Seq[SlackBotProfile]]
+
   def allForSlackTeamId(slackTeamId: String): Future[Seq[SlackBotProfile]]
 
   def admin: Future[SlackBotProfile]
 
   def allSince(when: OffsetDateTime): Future[Seq[SlackBotProfile]]
 
-  def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile]
+  def ensure(userId: String, maybeEnterpriseId: Option[String], slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile]
 
   def channelsFor(botProfile: SlackBotProfile): SlackChannels
 
@@ -43,7 +50,6 @@ trait SlackBotProfileService {
   def sendResultWithNewEvent(
     description: String,
     getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
-    slackTeamId: String,
     botProfile: SlackBotProfile,
     channelId: String,
     userId: String,
@@ -71,7 +77,6 @@ trait SlackBotProfileService {
           sendResultWithNewEvent(
             "Warning message to user via DM",
             (newEvent) => Future.successful(Some(SimpleTextResult(newEvent, None, wholeMessage, Normal, shouldInterrupt = false))),
-            profile.slackTeamId,
             profile,
             dmChannel,
             slackUserId,

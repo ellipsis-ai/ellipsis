@@ -17,10 +17,11 @@ import autobind from '../lib/autobind';
 import {UserMap} from "./loader";
 import User from '../models/user';
 import SVGWarning from "../svg/warning";
+import OrgChannels from "../models/org_channels";
 
 export interface SchedulingProps {
-  scheduledActions: Array<ScheduledAction>
-  channelList: Array<ScheduleChannel>,
+  scheduledActions: Array<ScheduledAction>,
+  orgChannels: OrgChannels,
   behaviorGroups: Array<BehaviorGroup>,
   teamId: string,
   teamTimeZone: Option<string>,
@@ -151,7 +152,7 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     hasChannelList(): boolean {
-      return Boolean(this.props.channelList) && this.props.channelList.length > 0;
+      return this.props.orgChannels.allChannels().length > 0;
     }
 
     getDefaultSelectedItem(): Option<ScheduledAction> {
@@ -189,7 +190,7 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     findChannelFor(channelId): Option<ScheduleChannel> {
-      return this.hasChannelList() && this.props.channelList.find((ea) => ea.id === channelId) || null;
+      return this.hasChannelList() && this.props.orgChannels.allChannels().find((ea) => ea.id === channelId) || null;
     }
 
     getScheduleByChannel(): Array<ScheduleGroup> {
@@ -512,7 +513,7 @@ class Scheduling extends React.Component<Props, State> {
           <Collapsible revealWhen={this.isEditing()}>
             <ScheduledItemEditor
               scheduledAction={selectedItem}
-              channelList={this.props.channelList}
+              orgChannels={this.props.orgChannels}
               behaviorGroups={this.props.behaviorGroups}
               onChange={this.updateSelectedItem}
               teamTimeZone={this.props.teamTimeZone || "America/New_York"}

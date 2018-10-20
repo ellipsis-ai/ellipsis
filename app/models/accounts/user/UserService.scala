@@ -3,6 +3,7 @@ package models.accounts.user
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import json.UserData
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.profile.SlackProfile
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
@@ -37,7 +38,7 @@ trait UserService extends IdentityService[User] {
 
   def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]]
 
-  def maybeSlackTeamIdFor(user: User): Future[Option[String]]
+  def maybeSlackTeamIdsFor(user: User): Future[Option[SlackUserTeamIds]]
 
   def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]]
 

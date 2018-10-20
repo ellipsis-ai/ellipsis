@@ -2,6 +2,7 @@ package mocks
 
 import akka.actor.ActorSystem
 import json.{SlackUserData, SlackUserProfileData}
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.SlackMessageEvent
 import org.mockito.Matchers._
@@ -48,24 +49,12 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
     Future.successful(Set())
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
+  def maybeSlackUserDataFor(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
     Future.successful(None)
   }
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
-    Future.successful(Some(SlackUserData(
-      botProfile.userId,
-      botProfile.slackTeamId,
-      "MockBot",
-      isPrimaryOwner = false,
-      isOwner = false,
-      isRestricted = false,
-      isUltraRestricted = false,
-      isBot = false,
-      None,
-      deleted = false,
-      Some(SlackUserProfileData(Some("MockBot"), None, None, None, None, None))
-    )))
+    Future.successful(Some(SlackUserData(botProfile.userId, None, SlackUserTeamIds(botProfile.slackTeamId), "MockBot", isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, None, deleted = false, Some(SlackUserProfileData(Some("MockBot"), None, None, None, None, None)))))
   }
 
   def maybeSlackUserDataForEmail(email: String, client: SlackApiClient): Future[Option[SlackUserData]] = {
