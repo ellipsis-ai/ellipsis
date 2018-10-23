@@ -15,7 +15,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class SlackReactionAddedEvent(
                                     profile: SlackBotProfile,
-                                    userSlackTeamId: String,
                                     channel: String,
                                     user: String,
                                     reaction: String,
@@ -116,7 +115,8 @@ case class SlackReactionAddedEvent(
         messageUserDataList(maybeConversation, services),
         services,
         isEphemeral,
-        maybeResponseUrl
+        maybeResponseUrl,
+        beQuiet = false
       ).send
     } yield maybeTs
   }

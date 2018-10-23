@@ -119,6 +119,20 @@ class SlackController @Inject() (
     val teamId: String
     val maybeAuthedTeamIds: Option[Seq[String]]
     val event: EventInfo
+
+
+    def slackTeamIdForUser: String
+    def slackTeamIdsForBots: Seq[String] = {
+      if (maybeEnterpriseId.isDefined) {
+        Seq(teamId)
+      } else {
+        maybeAuthedTeamIds.getOrElse(Seq(teamId))
+      }
+    }
+
+    def isEnterpriseGrid: Boolean = maybeEnterpriseId.nonEmpty
+    def isAdminUser: Boolean = slackTeamIdForUser == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID
+    def userTeamMatchesBotTeam(botProfile: SlackBotProfile): Boolean = slackTeamIdForUser == botProfile.slackTeamId
   }
 
   case class ValidEventRequestInfo(
@@ -129,7 +143,9 @@ class SlackController @Inject() (
                                     event: AnyEventInfo,
                                     requestType: String,
                                     eventId: String
-                                ) extends EventRequestInfo with RequestInfo
+                                ) extends EventRequestInfo with RequestInfo {
+    def slackTeamIdForUser: String = teamId
+  }
 
   private val validEventRequestForm = Form(
     mapping(
@@ -160,16 +176,6 @@ class SlackController @Inject() (
     val message: String
     val maybeThreadTs: Option[String]
     val ts: String
-
-    def slackTeamIdForUser: String
-    def slackTeamIdsForBots: Seq[String] = {
-      if (maybeEnterpriseId.isDefined) {
-        Seq(teamId)
-      } else {
-        maybeAuthedTeamIds.getOrElse(Seq(teamId))
-      }
-    }
-
   }
 
   case class FileInfo(
@@ -199,6 +205,7 @@ class SlackController @Inject() (
                                    ) extends EventInfo
 
   case class ReactionAddedRequestInfo(
+                                     maybeEnterpriseId: Option[String],
                                      teamId: String,
                                      maybeAuthedTeamIds: Option[Seq[String]],
                                      event: ReactionAddedEventInfo
@@ -206,9 +213,11 @@ class SlackController @Inject() (
     val userId: String = event.userId
     val channel: String = event.item.channel
     val ts: String = event.eventTs
+    def slackTeamIdForUser: String = teamId // TODO: check this
   }
   private val reactionAddedRequestForm = Form(
     mapping(
+      "enterprise_id" -> optional(nonEmptyText),
       "team_id" -> nonEmptyText,
       "authed_teams" -> optional(seq(nonEmptyText)),
       "event" -> mapping(
@@ -344,41 +353,25 @@ class SlackController @Inject() (
   )
 
   private def processReactionEventsFor(info: ReactionAddedRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
-    val maybeSourceTeamId = None // TODO: see if we ever get this
     SlackMessage.maybeFromMessageTs(info.event.item.ts, info.event.item.channel, botProfile, services).flatMap { maybeSlackMessage =>
-      maybeSlackMessage.map { slackMessage =>
-        if (maybeSourceTeamId.exists(tid => botProfile.slackTeamId != tid && tid != LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)) {
-          if (info.channel.startsWith("D") || botProfile.includesBotMention(slackMessage)) {
-            dataService.teams.find(botProfile.teamId).flatMap { maybeTeam =>
-              val teamText = maybeTeam.map { team =>
-                s"the ${team.name} team"
-              }.getOrElse("another team")
-              sendEphemeralMessage(s"Sorry, I'm only able to respond to people from ${teamText}.", info)
-            }
-          } else {
-            Future.successful({})
-          }
-        } else {
-          val event = SlackReactionAddedEvent(
-            botProfile,
-            maybeSourceTeamId.getOrElse(botProfile.slackTeamId),
-            info.channel,
-            info.userId,
-            info.event.reaction,
-            maybeSlackMessage
-          )
-          slackEventService.onEvent(event)
-        }
-      }.getOrElse(Future.successful({}))
+      if (!info.isEnterpriseGrid && !info.isAdminUser && !info.userTeamMatchesBotTeam(botProfile)) {
+        Future.successful({})
+      } else {
+        val event = SlackReactionAddedEvent(
+          botProfile,
+          info.channel,
+          info.userId,
+          info.event.reaction,
+          maybeSlackMessage
+        )
+        slackEventService.onEvent(event)
+      }
     }
   }
 
-  private def processEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
+  private def processMessageEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     SlackMessage.fromFormattedText(info.message, botProfile, slackEventService).flatMap { slackMessage =>
-      val isEnterpriseGrid = info.maybeEnterpriseId.nonEmpty
-      val isAdminUser = info.slackTeamIdForUser == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID
-      val userTeamMatchesBotTeam = info.slackTeamIdForUser == botProfile.slackTeamId
-      if (!isEnterpriseGrid && !isAdminUser && !userTeamMatchesBotTeam) {
+      if (!info.isEnterpriseGrid && !info.isAdminUser && !info.userTeamMatchesBotTeam(botProfile)) {
         if (info.channel.startsWith("D") || botProfile.includesBotMention(slackMessage)) {
           dataService.teams.find(botProfile.teamId).flatMap { maybeTeam =>
             val teamText = maybeTeam.map { team =>
@@ -422,7 +415,7 @@ class SlackController @Inject() (
       Ok("We are ignoring retries for now")
     } else {
       for {
-        profiles <- Future.sequence(info.teamIds.map { teamId =>
+        profiles <- Future.sequence(info.slackTeamIdsForBots.map { teamId =>
           dataService.slackBotProfiles.allForSlackTeamId(teamId)
         }).map(_.flatten)
         _ <- Future.sequence(
