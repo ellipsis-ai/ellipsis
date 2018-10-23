@@ -134,7 +134,6 @@ class APIController @Inject() (
         } yield {
           val slackEvent = SlackMessageEvent(
             botProfile,
-            slackProfile.teamId,
             maybeSlackChannelId.getOrElse(channel),
             None,
             slackProfile.loginInfo.providerKey,
@@ -144,7 +143,8 @@ class APIController @Inject() (
             maybeOriginalEventType,
             isUninterruptedConversation = false,
             isEphemeral = false,
-            None
+            None,
+            beQuiet = false
           )
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(slackEvent, scheduledMessage)
@@ -191,11 +191,19 @@ class APIController @Inject() (
         }.getOrElse {
           throw new InvalidTokenException()
         }
-        maybeBotProfile <- maybeTeam.map { team =>
-          dataService.slackBotProfiles.allFor(team).map(_.headOption)
-        }.getOrElse(Future.successful(None))
         maybeSlackProfile <- maybeUser.map { user =>
           dataService.users.maybeSlackProfileFor(user)
+        }.getOrElse(Future.successful(None))
+        maybeSlackTeamIdForBot <- Future.successful {
+          if (maybeUserForApiToken.isDefined) {
+            // TODO: This makes it impossible for a user's API token to work on other Slack Enterprise Grid workspaces
+            maybeSlackProfile.map(_.teamIds.primary)
+          } else {
+            maybeInvocationToken.flatMap(_.maybeTeamIdForContext)
+          }
+        }
+        maybeBotProfile <- maybeSlackTeamIdForBot.map { slackTeamId =>
+          dataService.slackBotProfiles.allForSlackTeamId(slackTeamId).map(_.headOption)
         }.getOrElse(Future.successful(None))
       } yield {
         ApiMethodContext(
@@ -356,7 +364,6 @@ class APIController @Inject() (
           behaviorVersion <- maybeBehaviorVersion
         } yield RunEvent(
           botProfile,
-          slackProfile.teamId,
           behaviorVersion,
           info.argumentsMap,
           maybeSlackChannelId.getOrElse(info.channel),

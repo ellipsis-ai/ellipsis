@@ -1,4 +1,5 @@
-import {ResponseError} from '../../app/assets/frontend/lib/data_request';
+
+class ResponseError extends Error {}
 
 const DataRequest = {
   jsonGet: jest.fn(() => {

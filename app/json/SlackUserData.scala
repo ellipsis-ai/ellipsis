@@ -1,8 +1,11 @@
 package json
 
+import models.accounts.slack.SlackUserTeamIds
+
 case class SlackUserData(
                           accountId: String,
-                          accountTeamId: String,
+                          accountEnterpriseId: Option[String],
+                          accountTeamIds: SlackUserTeamIds,
                           accountName: String,
                           isPrimaryOwner: Boolean,
                           isOwner: Boolean,
@@ -20,4 +23,6 @@ case class SlackUserData(
   def maybeRealName: Option[String] = {
     profile.flatMap(_.realName)
   }
+
+  def firstTeamId: String = accountTeamIds.head
 }

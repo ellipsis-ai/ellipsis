@@ -144,8 +144,6 @@ class ScheduledActionsController @Inject()(
             arguments = newArguments,
             recurrence = recurrence,
             nextSentAt = recurrence.nextAfter(OffsetDateTime.now),
-            maybeUser = Some(user),
-            team = team,
             maybeChannel = maybeChannel,
             isForIndividualMembers = newData.useDM
           ))
@@ -153,14 +151,7 @@ class ScheduledActionsController @Inject()(
           dataService.scheduledBehaviors.createFor(behavior, newArguments, recurrence, user, team, maybeChannel, newData.useDM)
         }.map(Some(_))
       }).getOrElse(Future.successful(None))
-    } yield {
-      if (maybeNewScheduledBehavior.isDefined) {
-        maybeOriginal.map { original =>
-          dataService.scheduledBehaviors.delete(original)
-        }
-      }
-      maybeNewScheduledBehavior
-    }
+    } yield maybeNewScheduledBehavior
   }
 
   private def maybeNewScheduledMessage(
@@ -181,8 +172,6 @@ class ScheduledActionsController @Inject()(
               text = trigger,
               recurrence = recurrence,
               nextSentAt = recurrence.nextAfter(OffsetDateTime.now),
-              maybeUser = Some(user),
-              team = team,
               maybeChannel = maybeChannel,
               isForIndividualMembers = newData.useDM
             ))
@@ -190,9 +179,7 @@ class ScheduledActionsController @Inject()(
             dataService.scheduledMessages.createFor(trigger, recurrence, user, team, maybeChannel, newData.useDM)
           }.map(Some(_))
         }.getOrElse(Future.successful(None))
-      } yield {
-        maybeNewScheduledMessage
-      }
+      } yield maybeNewScheduledMessage
     }.getOrElse(Future.successful(None))
   }
 

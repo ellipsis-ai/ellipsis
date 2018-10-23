@@ -17,6 +17,9 @@ import TriggerType from "../../../../app/assets/frontend/models/trigger_type";
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
 import {OAuthApplicationRef} from '../../../../app/assets/frontend/models/oauth';
 import {SimpleTokenApiRef} from '../../../../app/assets/frontend/models/simple_token';
+global.fetch = jest.fn(function() {
+  return new Promise(() => {})
+});
 
 jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
 jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));

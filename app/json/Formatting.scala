@@ -1,6 +1,7 @@
 package json
 
 import json.web.settings.IntegrationListConfig
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors._
 import models.behaviors.behaviorparameter.ValidValue
@@ -74,6 +75,8 @@ object Formatting {
   lazy implicit val slackUserProfileDataReads = Json.reads[SlackUserProfileData]
   lazy implicit val slackUserProfileDataWrites = Json.writes[SlackUserProfileData]
 
+  lazy implicit val slackUserTeamIdsFormat = Json.format[SlackUserTeamIds]
+
   lazy implicit val slackUserDataReads = Json.reads[SlackUserData]
   lazy implicit val slackUserDataWrites = Json.writes[SlackUserData]
 
@@ -135,6 +138,9 @@ object Formatting {
   lazy implicit val scheduleChannelDataReads = Json.reads[ScheduleChannelData]
   lazy implicit val scheduleChannelDataWrites = Json.writes[ScheduleChannelData]
 
+  lazy implicit val teamChannelsDataFormat = Json.format[TeamChannelsData]
+  lazy implicit val orgChannelsDataFormat = Json.format[OrgChannelsData]
+
   lazy implicit val scheduledActionsConfigReads = Json.reads[ScheduledActionsConfig]
   lazy implicit val scheduledActionsConfigWrites = Json.writes[ScheduledActionsConfig]
 
@@ -193,6 +199,7 @@ object Formatting {
 
   lazy implicit val actionArgFormat = Json.format[ActionArg]
   lazy implicit val nextActionFormat = Json.format[NextAction]
+  lazy implicit val skillCodeActionChoiceFormat = Json.format[SkillCodeActionChoice]
   lazy implicit val actionChoiceFormat = Json.format[ActionChoice]
 
   implicit val supportRequestConfigFormat = Json.format[SupportRequestConfig]

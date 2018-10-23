@@ -53,9 +53,7 @@ class ApplicationController @Inject() (
             Future.successful(None)
           }
           maybeSlackTeamId <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.slackBotProfiles.allFor(team).map { botProfiles =>
-              botProfiles.headOption.map(_.slackTeamId)
-            }
+            dataService.slackBotProfiles.maybeFirstFor(team, user).map(_.map(_.slackTeamId))
           }.getOrElse(Future.successful(None))
           groupData <- maybeBehaviorGroups.map { groups =>
             Future.sequence(groups.map { group =>

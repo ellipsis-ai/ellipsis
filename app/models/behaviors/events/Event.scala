@@ -22,6 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait Event {
   val name: String
   val userIdForContext: String
+  val teamIdForContext: String
   val botUserIdForContext: String
   val teamId: String
   val maybeChannel: Option[String]
@@ -42,6 +43,7 @@ trait Event {
   val isEphemeral: Boolean = false
   val maybeResponseUrl: Option[String] = None
   val isBotMessage: Boolean = false
+  val beQuiet: Boolean = false
 
   def originalEventType: EventType = {
     maybeOriginalEventType.getOrElse(eventType)

@@ -173,4 +173,42 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
       }
     }
   }
+
+  new TestContext {
+    running(app) {
+      "GithubPusher.remoteUrl" should {
+        "be constructed from the owner and repo for GitHub by default" in {
+          GithubPusher(
+            "ellipsis-ai",
+            "give_kudos",
+            "master",
+            "Nothing to commit here",
+            "token",
+            GithubCommitterInfo("Tester McTesterson", "test@test.test"),
+            setupGroup(user, team, dataService),
+            user,
+            services,
+            None,
+            ec
+          ).remoteUrl mustBe "https://github.com/ellipsis-ai/give_kudos.git"
+        }
+
+        "use the URL provided if set" in {
+          GithubPusher(
+            "ellipsis-ai",
+            "give_kudos",
+            "master",
+            "Nothing to commit here",
+            "token",
+            GithubCommitterInfo("Tester McTesterson", "test@test.test"),
+            setupGroup(user, team, dataService),
+            user,
+            services,
+            Some("https://nowhere.com/some/repo"),
+            ec
+          ).remoteUrl mustBe "https://nowhere.com/some/repo"
+        }
+      }
+    }
+  }
 }

@@ -16,6 +16,7 @@ export interface PageRequiredProps {
   onRenderNavItems: (items: Array<NavItemContent>) => void,
   onRenderNavActions: (content) => void,
   onRenderPanel: (panelName: string, panel) => void,
+  headerHeight: number,
   footerHeight: number,
   ref?: any
 }
@@ -41,6 +42,7 @@ type State = {
   activePanelIsModal: boolean,
   previousPanelName: string,
   previousPanelIsModal: boolean,
+  headerHeight: number,
   footerHeight: number
 }
 
@@ -48,6 +50,7 @@ class Page extends React.Component<Props, State> {
     panels: { [prop: string]: any };
     footer: any;
     component: any;
+    header: Option<HTMLElement>;
     navItems: Option<HTMLElement>;
     navActions: Option<HTMLElement>;
     static requiredPropTypes: {};
@@ -61,6 +64,7 @@ class Page extends React.Component<Props, State> {
       this.panels = {};
       this.navItems = document.getElementById("mainNavItems");
       this.navActions = document.getElementById("mainNavActions");
+      this.header = document.getElementById("main-header");
     }
 
     getDefaultState(): State {
@@ -69,6 +73,7 @@ class Page extends React.Component<Props, State> {
         activePanelIsModal: false,
         previousPanelName: "",
         previousPanelIsModal: false,
+        headerHeight: this.state ? this.state.headerHeight : 0,
         footerHeight: this.state ? this.state.footerHeight : 0
       };
     }
@@ -153,6 +158,14 @@ class Page extends React.Component<Props, State> {
       }
     }
 
+    componentWillMount(): void {
+      if (this.header) {
+        this.setState({
+          headerHeight: this.header.offsetHeight
+        });
+      }
+    }
+
     componentDidMount(): void {
       window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
       window.document.addEventListener('focus', this.handleModalFocus, true);
@@ -166,6 +179,18 @@ class Page extends React.Component<Props, State> {
 
     getFooterHeight(): number {
       return this.state.footerHeight;
+    }
+
+    getHeaderHeight(): number {
+      return this.state.headerHeight;
+    }
+
+    resetHeaderHeight(): void {
+      if (this.header && this.header.offsetHeight !== this.state.headerHeight) {
+        this.setState({
+          headerHeight: this.header.offsetHeight
+        });
+      }
     }
 
     setFooterHeight(number: number): void {
@@ -204,6 +229,7 @@ class Page extends React.Component<Props, State> {
           </div>
         ), el);
       }
+      this.resetHeaderHeight();
     }
 
     onRenderNavActions(content) {
@@ -214,6 +240,7 @@ class Page extends React.Component<Props, State> {
           <div>{content}</div>
         ), el);
       }
+      this.resetHeaderHeight();
     }
 
     renderFeedbackLink() {
@@ -234,6 +261,7 @@ class Page extends React.Component<Props, State> {
             onRenderPanel: this.onRenderPanel,
             onRenderNavItems: this.onRenderNavItems,
             onRenderNavActions: this.onRenderNavActions,
+            headerHeight: this.getHeaderHeight(),
             footerHeight: this.getFooterHeight(),
             ref: (component) => this.component = component
           })}
@@ -251,6 +279,7 @@ class Page extends React.Component<Props, State> {
         onRenderPanel: Page.placeholderCallback,
         onRenderNavItems: Page.placeholderCallback,
         onRenderNavActions: Page.placeholderCallback,
+        headerHeight: 0,
         footerHeight: 0
       };
     }
@@ -269,6 +298,7 @@ Page.requiredPropTypes = {
   onRenderPanel: React.PropTypes.func.isRequired,
   onRenderNavItems: React.PropTypes.func.isRequired,
   onRenderNavActions: React.PropTypes.func.isRequired,
+  headerHeight: React.PropTypes.number.isRequired,
   footerHeight: React.PropTypes.number.isRequired
 };
 

@@ -2,26 +2,31 @@
 
   class HeaderHandler {
     header: Option<HTMLElement>;
+    headerHeight: number;
     timerId: Option<number>;
 
     constructor() {
       this.header = document.getElementById('main-header');
       this.timerId = null;
-      window.addEventListener('resize', this.adjustPadding.bind(this));
+      this.headerHeight = 0;
       this.adjustPadding();
     }
 
+    getCurrentHeaderHeight(): number {
+      return this.header ? this.header.offsetHeight : 0;
+    }
+
     adjustPadding() {
-      if (this.timerId) {
-        window.clearTimeout(this.timerId);
-      }
       if (document.body && this.header) {
-        const body = document.body;
-        const header = this.header;
-        this.timerId = window.setTimeout(function() {
-          body.style.paddingTop = header.offsetHeight + 'px';
-        }, 50);
+        const newHeight = this.getCurrentHeaderHeight();
+        if (newHeight !== this.headerHeight) {
+          document.body.style.paddingTop = newHeight + 'px';
+          this.headerHeight = newHeight;
+        }
       }
+      window.setTimeout(() => {
+        this.adjustPadding();
+      }, 50);
     }
   }
 

@@ -27,7 +27,7 @@ class TeamsController @Inject() (
 
   private def adminTeamDataFor(team: Team): Future[AdminTeamData] = {
     for {
-      maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+      botProfiles <- dataService.slackBotProfiles.allFor(team)
       /* TODO: This is super slow, not sure why: */
       maybeLastInvocationDate <- Future.successful(None) /*dataService.invocationLogEntries.lastInvocationDateForTeam(team)*/
     } yield {
@@ -36,7 +36,7 @@ class TeamsController @Inject() (
         team.name,
         team.timeZone.toString,
         team.createdAt,
-        maybeSlackBotProfile.exists(_.allowShortcutMention),
+        botProfiles.exists(_.allowShortcutMention),
         maybeLastInvocationDate
       )
     }
@@ -77,6 +77,7 @@ class TeamsController @Inject() (
       "enableShortcut" -> boolean
     )(ToggleSlackBotShortcutInfo.apply)(ToggleSlackBotShortcutInfo.unapply)
   )
+
   def toggleBotShortcutForTeam() = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
       toggleSlackBotShortcutForm.bindFromRequest.fold(
@@ -86,17 +87,17 @@ class TeamsController @Inject() (
         info => {
           for {
             maybeTeam <- dataService.teams.find(info.teamId)
-            maybeSlackBotProfile <- maybeTeam.map { team =>
-              dataService.slackBotProfiles.allFor(team).map(_.headOption)
-            }.getOrElse(Future.successful(None))
-            maybeEnabled <- maybeSlackBotProfile.map { botProfile =>
+            botProfiles <- maybeTeam.map { team =>
+              dataService.slackBotProfiles.allFor(team)
+            }.getOrElse(Future.successful(Seq()))
+            enabledFlags <- Future.sequence(botProfiles.map { botProfile =>
               dataService.slackBotProfiles.toggleMentionShortcut(botProfile, info.enableShortcut)
-            }.getOrElse(Future.successful(None))
+            })
           } yield {
-            maybeEnabled.map { _ =>
-              Redirect(routes.TeamsController.list(0, 10, Some(info.teamId)))
-            }.getOrElse {
+            if (enabledFlags.contains(None)) {
               NotFound(s"Unable to modify shortcut setting for team ${info.teamId}")
+            } else {
+              Redirect(routes.TeamsController.list(1, 10, Some(info.teamId)))
             }
           }
         }

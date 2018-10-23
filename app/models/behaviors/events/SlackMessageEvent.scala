@@ -14,7 +14,6 @@ import scala.util.matching.Regex
 
 case class SlackMessageEvent(
                               profile: SlackBotProfile,
-                              userSlackTeamId: String,
                               channel: String,
                               maybeThreadId: Option[String],
                               user: String,
@@ -24,7 +23,8 @@ case class SlackMessageEvent(
                               maybeOriginalEventType: Option[EventType],
                               override val isUninterruptedConversation: Boolean,
                               override val isEphemeral: Boolean,
-                              override val maybeResponseUrl: Option[String]
+                              override val maybeResponseUrl: Option[String],
+                              override val beQuiet: Boolean
                             ) extends MessageEvent with SlackEvent {
 
   val eventType: EventType = EventType.chat
@@ -130,7 +130,8 @@ case class SlackMessageEvent(
         messageUserDataList(maybeConversation, services),
         services,
         isEphemeral,
-        maybeResponseUrl
+        maybeResponseUrl,
+        beQuiet
       ).send
     } yield maybeTs
   }

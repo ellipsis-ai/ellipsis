@@ -1,6 +1,7 @@
 import java.time.OffsetDateTime
 
 import json.{SlackUserData, SlackUserProfileData}
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.SlackMessage
 import org.scalatestplus.play.PlaySpec
@@ -16,26 +17,14 @@ class SlackMessageSpec extends PlaySpec {
   val email = "luke@ellipsis.ai"
   val phone = "647-123-4567"
   val tz = Some("America/Toronto")
-  val user = SlackUserData(
-    userId,
-    "T1234",
-    username,
-    isPrimaryOwner = false,
-    isOwner = false,
-    isRestricted = false,
-    isUltraRestricted = false,
-    isBot = false,
-    tz,
-    deleted = false,
-    Some(SlackUserProfileData(
-      Some(displayName),
-      Some(firstName),
-      Some(lastName),
-      Some(fullName),
-      Some(email),
-      Some(phone)
-    ))
-  )
+  val user = SlackUserData(userId, None, SlackUserTeamIds("T1234"), username, isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, tz, deleted = false, Some(SlackUserProfileData(
+        Some(displayName),
+        Some(firstName),
+        Some(lastName),
+        Some(fullName),
+        Some(email),
+        Some(phone)
+      )))
   val userList = Set(user)
 
   "unformatLinks" should {
@@ -120,8 +109,8 @@ class SlackMessageSpec extends PlaySpec {
   }
 
   "removeBotPrefix" should {
-    val profileWithShortcuts = SlackBotProfile("UTHEBOT", "1", "T1", "token", OffsetDateTime.now, allowShortcutMention = true)
-    val profileNoShortcuts = SlackBotProfile("UTHEBOT", "1", "T1", "token", OffsetDateTime.now, allowShortcutMention = false)
+    val profileWithShortcuts = SlackBotProfile("UTHEBOT", "1", None, "T1", "token", OffsetDateTime.now, allowShortcutMention = true)
+    val profileNoShortcuts = SlackBotProfile("UTHEBOT", "1", None, "T1", "token", OffsetDateTime.now, allowShortcutMention = false)
 
     "remove the bot user link from the beginning of the message" in {
       SlackMessage.removeBotPrefix("<@UTHEBOT> hello", profileWithShortcuts) mustBe "hello"

@@ -58,7 +58,6 @@ trait Conversation {
       // https://github.com/ellipsis-ai/ellipsis/issues/1719
       } yield SlackMessageEvent(
         botProfile,
-        maybeTeamIdForContext.getOrElse(botProfile.slackTeamId),
         channel,
         None,
         userIdForContext,
@@ -68,7 +67,8 @@ trait Conversation {
         None, // TODO: Pass the original event type down to here if we actually care about it, but it doesn't seem useful at present
         isUninterruptedConversation = false,
         isEphemeral = false,
-        None
+        None,
+        beQuiet = false
       )
     }
   }

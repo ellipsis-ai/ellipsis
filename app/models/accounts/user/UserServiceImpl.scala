@@ -19,6 +19,7 @@ import play.api.libs.json.Json
 import services.DefaultServices
 import services.slack.SlackApiClient
 import json.Formatting._
+import models.accounts.slack.SlackUserTeamIds
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -119,11 +120,11 @@ class UserServiceImpl @Inject() (
       }.getOrElse {
         dataService.teams.findAction(user.teamId)
       }
-      maybeSlackBotProfile <- maybeTeam.map { team =>
-        dataService.slackBotProfiles.allForAction(team).map(_.headOption)
+      maybeBotProfile <- maybeTeam.map { team =>
+        dataService.slackBotProfiles.maybeFirstForAction(team, user)
       }.getOrElse(DBIO.successful(None))
-      maybeBotName <- maybeSlackBotProfile.map { slackBotProfile =>
-        DBIO.from(dataService.slackBotProfiles.maybeNameFor(slackBotProfile))
+      maybeBotName <- maybeBotProfile.map { botProfile =>
+        DBIO.from(dataService.slackBotProfiles.maybeNameFor(botProfile))
       }.getOrElse(DBIO.successful(None))
     } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeBotName, maybeTeam.exists(t => t.id != user.teamId))
   }
@@ -141,8 +142,8 @@ class UserServiceImpl @Inject() (
         client <- maybeClient
         linkedAccount <- maybeLinkedAccount
       } yield {
-        slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, LinkedAccount.ELLIPSIS_SLACK_TEAM_ID, client, (_) => None).map { maybeSlackUserData =>
-          maybeSlackUserData.exists(_.accountTeamId == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
+        slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, client, (_) => None).map { maybeSlackUserData =>
+          maybeSlackUserData.exists(_.accountTeamIds.contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID))
         }
       }).getOrElse(Future.successful(false))
     } yield isAdmin
@@ -196,26 +197,26 @@ class UserServiceImpl @Inject() (
 
   private def maybeSlackUserDataFor(user: User, team: Team): Future[Option[SlackUserData]] = {
     for {
-      maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+      slackBotProfiles <- dataService.slackBotProfiles.allFor(team)
       maybeSlackAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-      maybeUserData <- (for {
-        slackBotProfile <- maybeSlackBotProfile
-        slackAccount <- maybeSlackAccount
-      } yield {
+      maybeUserData <- maybeSlackAccount.map { slackAccount =>
         val slackUserId = slackAccount.loginInfo.providerKey
-        val slackTeamId = slackBotProfile.slackTeamId
-        slackEventService.maybeSlackUserDataFor(slackUserId, slackTeamId, slackApiService.clientFor(slackBotProfile), (e) => {
-          Logger.error(
-            s"""Slack API reported user not found while trying to build user data for an Ellipsis user.
-               |Ellipsis user ID: ${user.id}
-               |Ellipsis user’s team ID: ${user.teamId}
-               |Ellipsis team ID for this requeust: ${team.id}
-               |Slack user ID: $slackUserId
-               |Slack team ID for this team’s bot: $slackTeamId
+        val slackTeamIds = slackBotProfiles.map(_.slackTeamId)
+        val maybeClient = slackBotProfiles.headOption.map(slackApiService.clientFor)
+        maybeClient.map { client =>
+          slackEventService.maybeSlackUserDataFor(slackUserId, client, (e) => {
+            Logger.error(
+              s"""Slack API reported user not found while trying to build user data for an Ellipsis user.
+                 |Ellipsis user ID: ${user.id}
+                 |Ellipsis user’s team ID: ${user.teamId}
+                 |Ellipsis team ID for this requeust: ${team.id}
+                 |Slack user ID: $slackUserId
+                 |Slack team IDs for this team’s bot: ${slackTeamIds.mkString(",")}
              """.stripMargin, e)
-          None
-        })
-      }).getOrElse(Future.successful(None))
+            None
+          })
+        }.getOrElse(Future.successful(None))
+      }.getOrElse(Future.successful(None))
     } yield maybeUserData
   }
 
@@ -237,24 +238,28 @@ class UserServiceImpl @Inject() (
     } yield maybeUserData
   }
 
-  def maybeSlackTeamIdFor(user: User): Future[Option[String]] = {
+  def maybeSlackUserDataFor(user: User): Future[Option[SlackUserData]] = {
     for {
       maybeTeam <- dataService.teams.find(user.teamId)
       maybeSlackUserData <- maybeTeam.map { team =>
         maybeSlackUserDataFor(user, team)
       }.getOrElse(Future.successful(None))
-    } yield maybeSlackUserData.map(_.accountTeamId)
+    } yield maybeSlackUserData
+  }
+
+  def maybeSlackTeamIdsFor(user: User): Future[Option[SlackUserTeamIds]] = {
+    maybeSlackUserDataFor(user).map(_.map(_.accountTeamIds))
   }
 
   def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]] = {
     for {
       maybeLinkedAccount <- dataService.linkedAccounts.maybeForSlackFor(user)
-      maybeSlackTeamId <- maybeSlackTeamIdFor(user)
+      maybeSlackUserData <- maybeSlackUserDataFor(user)
     } yield {
       for {
         linkedAccount <- maybeLinkedAccount
-        slackTeamId <- maybeSlackTeamId
-      } yield SlackProfile(slackTeamId, linkedAccount.loginInfo)
+        slackTeamIds <- maybeSlackUserData.map(_.accountTeamIds)
+      } yield SlackProfile(slackTeamIds, linkedAccount.loginInfo, maybeSlackUserData.flatMap(_.accountEnterpriseId))
     }
   }
 

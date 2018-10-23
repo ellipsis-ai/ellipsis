@@ -15,7 +15,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class SlashCommandEvent(
                               profile: SlackBotProfile,
-                              userSlackTeamId: String,
                               channel: String,
                               user: String,
                               message: SlackMessage,
@@ -41,6 +40,8 @@ case class SlashCommandEvent(
 
   override val isResponseExpected: Boolean = true
   val includesBotMention: Boolean = true
+
+  override val beQuiet: Boolean = true
 
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
     Future.successful(Seq())
@@ -115,7 +116,8 @@ case class SlashCommandEvent(
         messageUserDataList(maybeConversation, services),
         services,
         isEphemeral,
-        maybeResponseUrl
+        maybeResponseUrl,
+        beQuiet
       ).send
     } yield maybeTs
   }

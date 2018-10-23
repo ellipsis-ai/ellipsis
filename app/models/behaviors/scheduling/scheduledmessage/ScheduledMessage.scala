@@ -36,7 +36,6 @@ case class ScheduledMessage(
         ScheduledEvent(
           SlackMessageEvent(
             profile,
-            profile.slackTeamId,
             channel,
             None,
             slackUserId,
@@ -46,7 +45,8 @@ case class ScheduledMessage(
             Some(EventType.scheduled),
             isUninterruptedConversation = false,
             isEphemeral = false,
-            None
+            None,
+            beQuiet = false
           ),
           this
         )

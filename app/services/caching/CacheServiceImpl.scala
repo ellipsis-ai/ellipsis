@@ -28,7 +28,6 @@ import scala.reflect.ClassTag
 
 case class SlackMessageEventData(
                                   profile: SlackBotProfile,
-                                  userSlackTeamId: String,
                                   channel: String,
                                   maybeThreadId: Option[String],
                                   user: String,
@@ -38,7 +37,8 @@ case class SlackMessageEventData(
                                   maybeOriginalEventType: Option[String],
                                   isUninterruptedConversation: Boolean,
                                   isEphemeral: Boolean,
-                                  maybeResponseUrl: Option[String]
+                                  maybeResponseUrl: Option[String],
+                                  beQuiet: Boolean
                                 )
 
 case class InvokeResultData(
@@ -96,7 +96,20 @@ class CacheServiceImpl @Inject() (
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {
     event match {
       case ev: SlackMessageEvent => {
-        val eventData = SlackMessageEventData(ev.profile, ev.userSlackTeamId, ev.channel, ev.maybeThreadId, ev.user, ev.message, ev.maybeFile, ev.ts, ev.maybeOriginalEventType.map(_.toString), ev.isUninterruptedConversation, ev.isEphemeral, ev.maybeResponseUrl)
+        val eventData = SlackMessageEventData(
+          ev.profile,
+          ev.channel,
+          ev.maybeThreadId,
+          ev.user,
+          ev.message,
+          ev.maybeFile,
+          ev.ts,
+          ev.maybeOriginalEventType.map(_.toString),
+          ev.isUninterruptedConversation,
+          ev.isEphemeral,
+          ev.maybeResponseUrl,
+          ev.beQuiet
+        )
         set(key, Json.toJson(eventData), expiration)
       }
       case _ =>
@@ -109,7 +122,6 @@ class CacheServiceImpl @Inject() (
         case JsSuccess(event, jsPath) => {
           Some(SlackMessageEvent(
             event.profile,
-            event.userSlackTeamId,
             event.channel,
             event.maybeThreadId,
             event.user,
@@ -119,7 +131,8 @@ class CacheServiceImpl @Inject() (
             EventType.maybeFrom(event.maybeOriginalEventType),
             event.isUninterruptedConversation,
             event.isEphemeral,
-            event.maybeResponseUrl
+            event.maybeResponseUrl,
+            event.beQuiet
           ))
         }
         case JsError(err) => None
@@ -202,7 +215,7 @@ class CacheServiceImpl @Inject() (
   }
 
   implicit val slackUserProfileJsonFormat = Json.format[SlackUserProfile]
-  implicit val slackUserJsonFormat = Json.format[SlackUser]
+  import services.slack.apiModels.Formatting._
 
   private def fallbackSlackUserCacheKey(slackUserId: String, slackTeamId: String): String = {
     s"fallbackCacheForSlackUserId-${slackUserId}-slackTeamId-${slackTeamId}-v1"

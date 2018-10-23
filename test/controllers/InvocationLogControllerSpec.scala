@@ -31,6 +31,7 @@ import scala.concurrent.Future
 class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
 
   val token: String = IDs.next
+  val defaultSlackTeamId: String = IDs.next
   val behaviorName = "test"
   val now: OffsetDateTime = OffsetDateTime.now
 
@@ -63,7 +64,7 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
     val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
     val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
     val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, Some(behaviorName), None, None, Normal, false, false, OffsetDateTime.now)
-    val invocationToken = InvocationToken(IDs.next, user.id, originatingBehaviorVersion.id, None, now)
+    val invocationToken = InvocationToken(IDs.next, user.id, originatingBehaviorVersion.id, None, Some(defaultSlackTeamId), now)
 
     val logs = makeLogs(targetBehaviorVersion, user)
     when(dataService.invocationTokens.findNotExpired(token)).thenReturn(Future.successful(Some(invocationToken)))

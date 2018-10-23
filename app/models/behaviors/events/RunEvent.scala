@@ -15,7 +15,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class RunEvent(
                      profile: SlackBotProfile,
-                     userSlackTeamId: String,
                      behaviorVersion: BehaviorVersion,
                      arguments: Map[String, String],
                      channel: String,
@@ -89,7 +88,8 @@ case class RunEvent(
         Set.empty[MessageUserData],
         services,
         isEphemeral,
-        maybeResponseUrl
+        maybeResponseUrl,
+        beQuiet
       ).send
     } yield maybeTs
   }

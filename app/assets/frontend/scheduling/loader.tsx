@@ -5,12 +5,12 @@ import * as ReactDOM from 'react-dom';
 import Scheduling from './index';
 import Page from '../shared_ui/page';
 import ScheduledAction, {ScheduledActionJson} from '../models/scheduled_action';
-import ScheduleChannel, {ScheduleChannelJson} from '../models/schedule_channel';
 import BehaviorGroup, {BehaviorGroupJson} from '../models/behavior_group';
-import {DataRequest, ResponseError} from '../lib/data_request';
+import {DataRequest} from '../lib/data_request';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import autobind from "../lib/autobind";
 import User, {UserJson} from "../models/user";
+import OrgChannels, {OrgChannelsJson} from "../models/org_channels";
 
 interface Props {
   containerId: string
@@ -18,7 +18,7 @@ interface Props {
   teamId: string
   scheduledActions: Array<ScheduledActionJson>
   behaviorGroups: Array<BehaviorGroupJson>
-  channelList: Array<ScheduleChannelJson>
+  orgChannels: OrgChannelsJson,
   teamTimeZone: Option<string>
   teamTimeZoneName: Option<string>
   slackUserId: string
@@ -166,7 +166,7 @@ class SchedulingLoader extends React.Component<Props, State> {
               onRender={(pageProps) => (
               <Scheduling
                 scheduledActions={this.state.scheduledActions}
-                channelList={this.props.channelList ? this.props.channelList.map(ScheduleChannel.fromJson) : []}
+                orgChannels={OrgChannels.fromJson(this.props.orgChannels)}
                 behaviorGroups={this.state.behaviorGroups}
                 onSave={this.onSave}
                 isSaving={this.state.isSaving}

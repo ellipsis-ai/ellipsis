@@ -98,7 +98,7 @@ class SocialAuthController @Inject() (
           withLocale(java.util.Locale.ENGLISH).
           withZone(ZoneId.of("America/Toronto"))
       )
-      val isNewTeam = team.createdAt.isBefore(OffsetDateTime.now.minusDays(1))
+      val isNewTeam = team.createdAt.isAfter(OffsetDateTime.now.minusDays(1))
       val heading = if (isNewTeam) {
         "New Slack team installed"
       } else {
@@ -175,7 +175,7 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
-          botProfile <- slackProvider.maybeBotProfileFor(authInfo, dataService).map { maybeBotProfile =>
+          botProfile <- slackProvider.maybeBotProfileFor(profile, authInfo, dataService).map { maybeBotProfile =>
             maybeBotProfile.get // Blow up if we can't get a bot profile
           }
           _ <- authInfoRepository.save(profile.loginInfo, authInfo)
@@ -233,7 +233,9 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- slackProvider.retrieveProfile(authInfo)
-          botProfiles <- dataService.slackBotProfiles.allForSlackTeamId(profile.teamId)
+          botProfiles <- Future.sequence(profile.teamIds.toSeq.map(teamId => {
+            dataService.slackBotProfiles.allForSlackTeamId(teamId)
+          })).map(_.flatten)
           result <- if (botProfiles.isEmpty) {
             Future.successful(Redirect(routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId)))
           } else {

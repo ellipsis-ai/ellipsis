@@ -806,10 +806,7 @@ const BehaviorEditor = React.createClass({
 
   getLeftPanelCoordinates: function() {
     var headerHeight = this.getHeaderHeight();
-    var footerHeight = this.props.activePanelIsModal ? 0 : this.props.footerHeight;
-    var windowHeight = window.innerHeight;
-
-    var availableHeight = windowHeight - headerHeight - footerHeight;
+    var availableHeight = this.getAvailableHeight();
     var newHeight = availableHeight > 0 ? availableHeight : window.innerHeight;
     return {
       top: headerHeight,
@@ -841,9 +838,12 @@ const BehaviorEditor = React.createClass({
     }
   },
 
+  getAvailableHeight: function() {
+    return window.innerHeight - this.getHeaderHeight() - (this.props.activePanelIsModal ? 0 : this.props.footerHeight);
+  },
+
   getHeaderHeight: function() {
-    var mainHeader = document.getElementById('main-header');
-    return mainHeader ? mainHeader.offsetHeight : 0;
+    return this.props.headerHeight;
   },
 
   updateBehaviorScrollPosition: function() {
@@ -1513,13 +1513,12 @@ const BehaviorEditor = React.createClass({
 
   /* Interaction and event handling */
 
-  ensureCursorVisible: function(editor) {
+  ensureCursorVisible: function(newPosition) {
     const height = this.props.footerHeight;
     if (!height) {
       return;
     }
-    var cursorBottom = editor.cursorCoords(false).bottom;
-    BrowserUtils.ensureYPosInView(cursorBottom, height);
+    BrowserUtils.ensureYPosInView(newPosition.bottom, height);
   },
 
   onAddNewEnvVariable: function() {
@@ -1881,6 +1880,7 @@ const BehaviorEditor = React.createClass({
   renderCodeEditor: function(codeConfigProps) {
     return (
       <CodeConfiguration
+        availableHeight={this.getAvailableHeight()}
         sectionNumber={codeConfigProps.sectionNumber}
         codeHelpPanelName={codeConfigProps.codeHelpPanelName}
 
@@ -1896,6 +1896,8 @@ const BehaviorEditor = React.createClass({
         systemParams={codeConfigProps.systemParams || this.getSystemParams()}
         requiredAWSConfigs={this.getRequiredAWSConfigs()}
         oauthApiApplications={this.getOAuthApiApplications()}
+        libraries={this.getLibraries()}
+        nodeModules={this.getNodeModuleVersions()}
 
         functionBody={this.getFunctionBody()}
         onChangeFunctionBody={this.updateCode}
@@ -2570,6 +2572,7 @@ const BehaviorEditor = React.createClass({
                 </div>
 
                 <ResponseTemplateConfiguration
+                  availableHeight={this.getAvailableHeight()}
                   template={this.getBehaviorTemplate()}
                   onChangeTemplate={this.updateTemplate}
                   responseTypeId={this.getBehaviorConfig().responseTypeId}
@@ -2593,6 +2596,7 @@ const BehaviorEditor = React.createClass({
 
         <DataTypeEditor
           ref={(el) => this.dataTypeEditor = el}
+          availableHeight={this.getAvailableHeight()}
           group={this.getBehaviorGroup()}
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypes()}
@@ -2617,6 +2621,8 @@ const BehaviorEditor = React.createClass({
           systemParams={this.getSystemParams()}
           requiredAWSConfigs={this.getRequiredAWSConfigs()}
           oauthApiApplications={this.getOAuthApiApplications()}
+          libraries={this.getLibraries()}
+          nodeModules={this.getNodeModuleVersions()}
 
           onCursorChange={this.ensureCursorVisible}
           useLineWrapping={this.state.codeEditorUseLineWrapping}

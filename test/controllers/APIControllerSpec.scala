@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import json.{APIErrorData, APIResultWithErrorsData, APITokenData}
 import models.IDs
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -63,7 +64,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.apiTokens.find(token)).thenReturn(Future.successful(None))
     val behaviorId = maybeTokenBehaviorId.getOrElse(IDs.next)
     val maybeInvocationToken = if (isTokenValid) {
-      Some(InvocationToken(token, defaultSlackUserId, behaviorId, None, now))
+      Some(InvocationToken(token, defaultSlackUserId, behaviorId, None, Some(defaultSlackTeamId), now))
     } else {
       None
     }
@@ -71,7 +72,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.invocationTokens.findNotExpired(token)).thenReturn(Future.successful(maybeInvocationToken))
     when(dataService.users.findForInvocationToken(token)).thenReturn(Future.successful(maybeUserForToken))
     when(dataService.teams.find(user.teamId)).thenReturn(Future.successful(Some(team)))
-    val botProfile = SlackBotProfile(defaultChannel, team.id, defaultSlackTeamId, defaultSlackToken, OffsetDateTime.now, allowShortcutMention = true)
+    val botProfile = SlackBotProfile(defaultChannel, team.id, None, defaultSlackTeamId, defaultSlackToken, OffsetDateTime.now, allowShortcutMention = true)
 
     val apiController = app.injector.instanceOf(classOf[APIController])
     implicit val actorSystem = apiController.actorSystem
@@ -85,7 +86,6 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     val event = SlackMessageEvent(
       botProfile,
-      defaultSlackTeamId,
       defaultChannel,
       None,
       defaultSlackUserId,
@@ -95,11 +95,12 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       Some(EventType.api),
       isUninterruptedConversation = false,
       isEphemeral = false,
-      maybeResponseUrl = None
+      maybeResponseUrl = None,
+      beQuiet = false
     )
-    when(dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(botProfile)))
+    when(dataService.slackBotProfiles.allForSlackTeamId(defaultSlackTeamId)).thenReturn(Future.successful(Seq(botProfile)))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
-    val slackProfile = SlackProfile(defaultSlackTeamId, loginInfo)
+    val slackProfile = SlackProfile(SlackUserTeamIds(defaultSlackTeamId), loginInfo, None)
     when(dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(Some(slackProfile)))
     val mockSlackChannels = mock[SlackChannels]
     when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile])).thenReturn(mockSlackChannels)
@@ -696,7 +697,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val tokenBehaviorId = IDs.next
         val now = OffsetDateTime.now
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(tokenBehaviorId), app, eventHandler, dataService, cacheService, slackEventService, botResultService, now)
-        val invocationToken = InvocationToken(token, defaultSlackUserId, tokenBehaviorId, None, now)
+        val invocationToken = InvocationToken(token, defaultSlackUserId, tokenBehaviorId, None, Some(defaultSlackTeamId), now)
         val newToken = APIToken(IDs.next, IDs.next, user.id, None, isOneTime = false, isRevoked = false, None, OffsetDateTime.now)
         when(dataService.apiTokens.createFor(invocationToken, None, false)).thenReturn(Future.successful(newToken))
         val body = JsObject(Seq(

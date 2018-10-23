@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait SlackEvent {
   val user: String
-  val userSlackTeamId: String
+  val teamIdForContext: String = profile.slackTeamId
   val channel: String
   val profile: SlackBotProfile
   val isUninterruptedConversation: Boolean
@@ -37,7 +37,7 @@ trait SlackEvent {
         case e: SlackApiError => {
           if (e.code != "cannot_dm_bot") {
             val msg =
-              s"""Couldn't open DM channel to user with ID ${user} on Slack team ${userSlackTeamId} due to Slack API error: ${e.code}
+              s"""Couldn't open DM channel to user with ID ${user} on Slack team ${profile.slackTeamId} due to Slack API error: ${e.code}
                  |Original event channel: $channel
                """.stripMargin
             Logger.error(msg, e)
@@ -104,7 +104,7 @@ trait SlackEvent {
     val client = services.slackApiService.clientFor(profile)
     val slackChannels = SlackChannels(client)
     for {
-      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, profile.slackTeamId, client, (e) => {
+      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, client, (e) => {
         Logger.error(
           s"""Slack API reported user not found while generating details about the user to send to an action:
              |Slack user ID: ${user}

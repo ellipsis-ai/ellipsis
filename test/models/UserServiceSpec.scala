@@ -3,6 +3,7 @@ package models
 import json.SlackUserData
 import mocks.{MockAWSLambdaService, MockCacheService}
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.slack.SlackUserTeamIds
 import modules.ActorModule
 import org.mockito.Matchers
 import org.mockito.Matchers._
@@ -46,23 +47,11 @@ class UserServiceSpec extends DBSpec with MockitoSugar {
         val adminSlackTeamId = LinkedAccount.ELLIPSIS_SLACK_TEAM_ID
         val linkedAccount = newSavedLinkedAccountFor(user)
 
-        val botProfile = runNow(dataService.slackBotProfiles.ensure(IDs.next, adminSlackTeamId, IDs.next, IDs.next))
+        val botProfile = runNow(dataService.slackBotProfiles.ensure(IDs.next, None, adminSlackTeamId, IDs.next, IDs.next))
         val client = mock[SlackApiClient]
         when(slackEventService.clientFor(botProfile)).thenReturn(client)
-        val slackUserData = SlackUserData(
-          accountId = linkedAccount.loginInfo.providerKey,
-          accountTeamId = adminSlackTeamId,
-          accountName = "",
-          isPrimaryOwner = false,
-          isOwner = false,
-          isRestricted = false,
-          isUltraRestricted = false,
-          isBot = false,
-          tz = None,
-          deleted = false,
-          profile = None
-        )
-        when(slackEventService.maybeSlackUserDataFor(Matchers.eq(linkedAccount.loginInfo.providerKey), Matchers.eq(adminSlackTeamId), Matchers.eq(client), any())).thenReturn(Future.successful(Some(slackUserData)))
+        val slackUserData = SlackUserData(accountId = linkedAccount.loginInfo.providerKey, accountEnterpriseId = None, accountTeamIds = SlackUserTeamIds(adminSlackTeamId), accountName = "", isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, tz = None, deleted = false, profile = None)
+        when(slackEventService.maybeSlackUserDataFor(Matchers.eq(linkedAccount.loginInfo.providerKey), Matchers.eq(client), any())).thenReturn(Future.successful(Some(slackUserData)))
 
         runNow(dataService.users.isAdmin(linkedAccount.user)) mustBe true
       })

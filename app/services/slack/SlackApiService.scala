@@ -227,6 +227,22 @@ case class SlackApiClient(
     }
   }
 
+  def getTeamInfo: Future[Option[SlackTeam]] = {
+    getResponseFor("team.info", Seq()).
+      map(r => Some(extract[SlackTeam](r, "team"))).
+      recover {
+        case SlackApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve team info: $err
+               |
+               |Team ID: ${profile.slackTeamId}
+             """.stripMargin)
+          None
+        }
+      }
+  }
+
   def getUserInfoByEmail(email: String): Future[Option[SlackUser]] = {
     postResponseFor("users.lookupByEmail", Map("email" -> email)).map { r =>
       Some(extract[SlackUser](r, "user"))

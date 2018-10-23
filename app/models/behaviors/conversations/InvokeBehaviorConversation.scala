@@ -179,7 +179,7 @@ object InvokeBehaviorConversation {
                  cacheService: CacheService
                  )(implicit ec: ExecutionContext): Future[InvokeBehaviorConversation] = {
     val maybeTeamIdForContext = event match {
-      case e: SlackEvent => Some(e.userSlackTeamId)
+      case e: SlackEvent => Some(e.teamIdForContext)
       case _ => None
     }
     val action = for {

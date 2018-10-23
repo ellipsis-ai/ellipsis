@@ -21,11 +21,10 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
   val botName = "MockieBot"
 
   def newEvent(channel: String, services: DefaultServices, maybeBotName: Option[String] = Some(botName)): SlackMessageEvent = {
-    val profile = SlackBotProfile(botUserId, botTeamId, slackTeamId, botToken, OffsetDateTime.now, allowShortcutMention = true)
+    val profile = SlackBotProfile(botUserId, botTeamId, None, slackTeamId, botToken, OffsetDateTime.now, allowShortcutMention = true)
     when(services.dataService.slackBotProfiles.maybeNameFor(profile)).thenReturn(Future.successful(maybeBotName))
     SlackMessageEvent(
       profile,
-      slackTeamId,
       channel,
       None,
       IDs.next,
@@ -35,7 +34,8 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
       None,
       isUninterruptedConversation = false,
       isEphemeral = false,
-      maybeResponseUrl = None
+      maybeResponseUrl = None,
+      beQuiet = false
     )
   }
 

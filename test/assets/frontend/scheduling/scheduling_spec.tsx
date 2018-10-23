@@ -1,8 +1,6 @@
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 import * as MockDataRequest from '../../../mocks/mock_data_request';
-jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
-jest.mock('../../../../app/assets/frontend/lib/browser_utils');
 import Scheduling from '../../../../app/assets/frontend/scheduling/index';
 import Recurrence from '../../../../app/assets/frontend/models/recurrence';
 import ScheduledAction, {ScheduledActionInterface} from '../../../../app/assets/frontend/models/scheduled_action';
@@ -10,8 +8,17 @@ import ScheduleChannel, {ScheduleChannelInterface} from '../../../../app/assets/
 import ID from '../../../../app/assets/frontend/lib/id';
 import Page from '../../../../app/assets/frontend/shared_ui/page';
 import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
+import OrgChannels from "../../../../app/assets/frontend/models/org_channels";
+import TeamChannels from "../../../../app/assets/frontend/models/team_channels";
+
+jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
+jest.mock('../../../../app/assets/frontend/lib/browser_utils');
 
 jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test", method: "get", absoluteURL: () => "https://nope/" });
+
+Object.defineProperty(window, "scrollTo", {
+  value: jest.fn()
+});
 
 class Loader extends React.Component<SchedulingProps, SchedulingProps> {
   page: Scheduling;
@@ -45,7 +52,13 @@ const defaultTimeZoneName = "Eastern Time";
 
 const emptyConfig: SchedulingProps = {
   scheduledActions: [],
-  channelList: [],
+  orgChannels: OrgChannels.fromJson({
+    dmChannels: [],
+    mpimChannels: [],
+    orgSharedChannels: [],
+    externallySharedChannels: [],
+    teamChannels: []
+  }),
   behaviorGroups: [],
   teamId: "1234",
   teamTimeZone: defaultTimeZone,
@@ -97,7 +110,8 @@ function newChannel(props?: Partial<ScheduleChannelInterface>) {
     isPrivateChannel: false,
     isPrivateGroup: false,
     isArchived: false,
-    isShared: false,
+    isOrgShared: false,
+    isExternallyShared: false,
     isReadOnly: false
   }, props));
 }
@@ -105,9 +119,7 @@ function newChannel(props?: Partial<ScheduleChannelInterface>) {
 describe('Scheduling', () => {
   describe('render', () => {
     it('renders an error message when there are no scheduled items and no channels', () => {
-      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
-        channelList: null
-      }));
+      const wrapper = createIndexWrapper(emptyConfig);
       const page = wrapper.page;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
       const errorMessageSpy = jest.spyOn(page, 'renderErrorMessage');
@@ -122,7 +134,9 @@ describe('Scheduling', () => {
 
     it('renders the no schedules message with channels but with no scheduled items', () => {
       const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
-        channelList: [newChannel()]
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: [newChannel()] })]
+        })
       }));
       const page = wrapper.page;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
@@ -178,7 +192,12 @@ describe('Scheduling', () => {
       }), newSchedule()];
       const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
         scheduledActions: schedules,
-        channelList: channels,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [{
+            teamName: "Test team",
+            channelList: channels
+          }]
+        }),
         selectedScheduleId: schedules[0].id
       }));
       const page = wrapper.page;

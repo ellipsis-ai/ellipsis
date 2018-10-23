@@ -2,6 +2,7 @@ import java.time.OffsetDateTime
 
 import json.{SlackUserData, SlackUserProfileData}
 import models.IDs
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.SlackEvent
 import org.mockito.Matchers._
@@ -27,7 +28,6 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
                              profile: SlackBotProfile
                            ) extends SlackEvent {
 
-    val userSlackTeamId: String = slackTeamId
     val isUninterruptedConversation: Boolean = false
   }
 
@@ -42,26 +42,14 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
   val phone = "647-123-4567"
   val tz = "America/New_York"
   val profileData = SlackUserProfileData(Some(displayName), Some(firstName), Some(lastName), Some(fullName), Some(email), Some(phone))
-  val slackUserData = SlackUserData(
-    slackUserId,
-    slackTeamId,
-    username,
-    isPrimaryOwner = false,
-    isOwner = false,
-    isRestricted = false,
-    isUltraRestricted = false,
-    isBot = false,
-    Some(tz),
-    deleted = false,
-    Some(profileData)
-  )
+  val slackUserData = SlackUserData(slackUserId, None, SlackUserTeamIds(slackTeamId), username, isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, Some(tz), deleted = false, Some(profileData))
 
   val date = OffsetDateTime.now.minusDays(365).toInstant.toEpochMilli
 
   val members = Seq(slackUserId, otherSlackUserId)
 
   val ellipsisTeamId = IDs.next
-  val slackBotProfile = SlackBotProfile("U55555555", ellipsisTeamId, slackTeamId, IDs.next, OffsetDateTime.now, allowShortcutMention = true)
+  val slackBotProfile = SlackBotProfile("U55555555", ellipsisTeamId, None, slackTeamId, IDs.next, OffsetDateTime.now, allowShortcutMention = true)
 
   "detailsFor" should {
     "preserve the legacy format of the Slack user and channel details" in new TestContext {
@@ -69,7 +57,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
 
         newMockSlackApiClientFor(slackApiService, slackBotProfile, channel, members, Some(channelName))
 
-        when(services.slackEventService.maybeSlackUserDataFor(org.mockito.Matchers.eq[String](slackUserData.accountId), org.mockito.Matchers.eq[String](slackTeamId), any[SlackApiClient], any())).thenReturn(
+        when(services.slackEventService.maybeSlackUserDataFor(org.mockito.Matchers.eq[String](slackUserData.accountId), any[SlackApiClient], any())).thenReturn(
           Future.successful(Some(slackUserData))
         )
 

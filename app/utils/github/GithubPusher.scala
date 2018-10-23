@@ -96,7 +96,7 @@ case class GithubPusher(
   val cacheService: CacheService = services.cacheService
 
   val remoteUrl: String = maybeRemoteUrl.getOrElse {
-    "https://github.com/$owner/$repoName.git"
+    s"https://github.com/$owner/$repoName.git"
   }
 
   private val credentialsProvider = new UsernamePasswordCredentialsProvider(repoAccessToken, "")
