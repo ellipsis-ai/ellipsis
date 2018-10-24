@@ -6,6 +6,8 @@ import TriggerType from '../../../../app/assets/frontend/models/trigger_type';
 import ParamNotInFunctionNotificationData from "../../../../app/assets/frontend/models/notifications/param_not_in_function_notification_data";
 import InvalidParamInTriggerNotificationData from "../../../../app/assets/frontend/models/notifications/invalid_param_in_trigger_notification_data";
 
+jest.mock('emoji-mart/css/emoji-mart.css', () => '');
+
 describe('TriggerConfiguration', () => {
   const defaultConfig = {
     isFinishedBehavior: false,

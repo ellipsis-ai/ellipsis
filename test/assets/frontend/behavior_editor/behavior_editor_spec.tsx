@@ -6,6 +6,7 @@ jest.mock('../../../../app/assets/frontend/behavior_editor/response_template_con
 )));
 import * as MockDataRequest from '../../../mocks/mock_data_request';
 jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
+jest.mock('emoji-mart/css/emoji-mart.css', () => '');
 
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
