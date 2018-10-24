@@ -250,8 +250,8 @@ const TriggerInput = React.createClass({
             onClick={this.onClickEmoji}
             title={this.props.trigger.text || "Pick your emoji…"}
             emoji={this.props.trigger.text}
-            showPreview={true}
-            perLine={18}
+            showPreview={false}
+            perLine={12}
           />
         </Collapsible>
       </div>
