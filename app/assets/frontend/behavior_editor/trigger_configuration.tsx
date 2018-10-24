@@ -8,64 +8,76 @@ import Trigger from '../models/trigger';
 import TriggerType from '../models/trigger_type';
 import ParamNotInFunctionNotificationData from "../models/notifications/param_not_in_function_notification_data";
 import InvalidParamInTriggerNotificationData from "../models/notifications/invalid_param_in_trigger_notification_data";
+import autobind from "../lib/autobind";
 
-const TriggerConfiguration = React.createClass({
-    propTypes: {
-      triggerTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(TriggerType)).isRequired,
-      triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
-      inputNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-      onToggleHelp: React.PropTypes.func.isRequired,
-      helpVisible: React.PropTypes.bool.isRequired,
-      onTriggerAdd: React.PropTypes.func.isRequired,
-      onTriggerChange: React.PropTypes.func.isRequired,
-      onTriggerDelete: React.PropTypes.func.isRequired,
-      onTriggerDropdownToggle: React.PropTypes.func.isRequired,
-      onAddNewInput: React.PropTypes.func.isRequired,
-      openDropdownName: React.PropTypes.string.isRequired
-    },
+interface Props {
+  triggerTypes: Array<TriggerType>
+  triggers: Array<Trigger>
+  inputNames: Array<string>
+  onToggleHelp: () => void
+  helpVisible: boolean
+  onTriggerAdd: (callback?: () => void) => void
+  onTriggerChange: (index: number, newTrigger: Trigger) => void
+  onTriggerDelete: (index: number) => void
+  onTriggerDropdownToggle: (dropdownName: string) => void
+  onAddNewInput: (name: string) => void
+  openDropdownName: string
+}
 
-    hasPrimaryTrigger: function() {
+class TriggerConfiguration extends React.Component<Props> {
+    triggerInputs: Array<Option<TriggerInput>>;
+
+    constructor(props) {
+      super(props);
+      autobind(this);
+      this.triggerInputs = [];
+    }
+
+    hasPrimaryTrigger(): boolean {
       return !!(this.props.triggers.length > 0 && this.props.triggers[0].text);
-    },
+    }
 
-    onTriggerEnterKey: function(index) {
+    onTriggerEnterKey(index: number) {
       if (index + 1 < this.props.triggers.length) {
         this.focusOnTriggerIndex(index + 1);
       } else if (this.props.triggers[index].text) {
         this.addTrigger();
       }
-    },
+    }
 
-    focusOnTriggerIndex: function(index) {
-      this.refs['trigger' + index].focus();
-    },
-
-    focusOnFirstBlankTrigger: function() {
-      var blankTrigger = Object.keys(this.refs).find(function(key) {
-        return key.match(/^trigger\d+$/) && this.refs[key].isEmpty();
-      }, this);
-      if (blankTrigger) {
-        this.refs[blankTrigger].focus();
+    focusOnTriggerIndex(index: number) {
+      const input = this.triggerInputs[index];
+      if (input) {
+        input.focus();
       }
-    },
+    }
 
-    addTrigger: function() {
+    focusOnFirstBlankTrigger(): void {
+      const blankTriggerInput = this.triggerInputs.find((maybeInput) => {
+        return Boolean(maybeInput && maybeInput.isEmpty());
+      });
+      if (blankTriggerInput) {
+        blankTriggerInput.focus();
+      }
+    }
+
+    addTrigger(): void {
       this.props.onTriggerAdd(this.focusOnFirstBlankTrigger);
-    },
+    }
 
-    changeTrigger: function(index, newTrigger) {
+    changeTrigger(index: number, newTrigger: Trigger) {
       this.props.onTriggerChange(index, newTrigger);
-    },
+    }
 
-    deleteTrigger: function(index) {
+    deleteTrigger(index: number) {
       this.props.onTriggerDelete(index);
-    },
+    }
 
-    toggleDropdown: function(dropdownName) {
+    toggleDropdown(dropdownName: string) {
       this.props.onTriggerDropdownToggle(dropdownName);
-    },
+    }
 
-    getNotificationsFor: function(trigger) {
+    getNotificationsFor(trigger: Trigger) {
       const unknownParamNames = trigger.paramNames().filter((ea) => !this.props.inputNames.includes(ea));
       return unknownParamNames.map((name) => {
         if (Formatter.isValidNameForCode(name)) {
@@ -81,9 +93,9 @@ const TriggerConfiguration = React.createClass({
           });
         }
       });
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div className="columns container container-narrow ptxl">
           <div className="mbxxl">
@@ -96,24 +108,20 @@ const TriggerConfiguration = React.createClass({
               </span>
             </SectionHeading>
             <div className="mbm">
-              {this.props.triggers.map(function(trigger, index) {
+              {this.props.triggers.map((trigger, index) => {
                 const notifications = this.getNotificationsFor(trigger);
                 return (
                   <div key={`trigger${index}`}>
                     <TriggerInput
-                      matchTypeDropdownIsOpen={this.props.openDropdownName === `BehaviorEditorTriggerMatchTypeDropdown${index}`}
-                      triggerTypeDropdownIsOpen={this.props.openDropdownName === `BehaviorEditorTriggerTriggerTypeDropdown${index}`}
                       key={`BehaviorEditorTrigger${index}`}
                       id={`trigger${index}`}
-                      ref={`trigger${index}`}
+                      ref={(el) => this.triggerInputs[index] = el}
                       triggerTypes={this.props.triggerTypes}
                       trigger={trigger}
                       onChange={this.changeTrigger.bind(this, index)}
                       onDelete={this.deleteTrigger.bind(this, index)}
                       onEnterKey={this.onTriggerEnterKey.bind(this, index)}
                       onHelpClick={this.props.onToggleHelp}
-                      onToggleMatchTypeDropdown={this.toggleDropdown.bind(this, `BehaviorEditorTriggerMatchTypeDropdown${index}`)}
-                      onToggleTriggerTypeDropdown={this.toggleDropdown.bind(this, `BehaviorEditorTriggerTriggerTypeDropdown${index}`)}
                       helpVisible={this.props.helpVisible}
                     />
                     <div className={notifications.length > 0 ? "mtneg1 mbxs" : ""}>
@@ -133,6 +141,6 @@ const TriggerConfiguration = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default TriggerConfiguration;

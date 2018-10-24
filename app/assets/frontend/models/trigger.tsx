@@ -8,7 +8,7 @@ export interface TriggerJson {
   triggerType: string
 }
 
-interface TriggerInterface extends TriggerJson {}
+export interface TriggerInterface extends TriggerJson {}
 
 class Trigger implements Diffable, TriggerInterface {
   readonly isRegex: boolean;

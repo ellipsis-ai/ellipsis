@@ -5,84 +5,115 @@ import { Picker } from 'emoji-mart';
 import { Emoji } from 'emoji-mart';
 import DeleteButton from '../shared_ui/delete_button';
 import HelpButton from '../help/help_button';
-import Input from '../form/input';
+import FormInput from '../form/input';
 import Collapsible from '../shared_ui/collapsible';
 import ToggleGroup from '../form/toggle_group';
-import Trigger from '../models/trigger';
+import Trigger, {TriggerInterface} from '../models/trigger';
 import TriggerType from '../models/trigger_type';
 import Button from "../form/button";
+import autobind from "../lib/autobind";
 
-const TriggerInput = React.createClass({
-  propTypes: {
-    triggerTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(TriggerType)).isRequired,
-    trigger: React.PropTypes.instanceOf(Trigger).isRequired,
-    matchTypeDropdownIsOpen: React.PropTypes.bool.isRequired,
-    triggerTypeDropdownIsOpen: React.PropTypes.bool.isRequired,
-    helpVisible: React.PropTypes.bool.isRequired,
-    id: React.PropTypes.oneOfType([
-      React.PropTypes.number,
-      React.PropTypes.string
-    ]).isRequired,
-    onChange: React.PropTypes.func.isRequired,
-    onDelete: React.PropTypes.func.isRequired,
-    onEnterKey: React.PropTypes.func.isRequired,
-    onHelpClick: React.PropTypes.func.isRequired,
-    onToggleMatchTypeDropdown: React.PropTypes.func.isRequired,
-    onToggleTriggerTypeDropdown: React.PropTypes.func.isRequired
-  },
-  emojiSize: 36,
-  getInitialState: function() {
-    return {
+interface EmojiInterface {
+  id: string
+  name: string
+  colons: string
+  text: string
+  emoticons: Array<string>
+  skin?: Option<number>
+  native?: Option<string>
+  custom?: Option<boolean>
+  imageUrl?: Option<string>
+}
+
+interface Props {
+  triggerTypes: Array<TriggerType>
+  trigger: Trigger
+  helpVisible: boolean
+  id: string
+  onChange: (newTrigger: Trigger) => void
+  onDelete: () => void,
+  onEnterKey: () => void,
+  onHelpClick: () => void
+}
+
+interface State {
+  validated: boolean
+  regexError: string | null,
+  showError: boolean,
+  isShowingEmojiPicker: boolean
+}
+
+const EMOJI_SIZE = 36;
+
+class TriggerInput extends React.Component<Props, State> {
+  validateTrigger: () => void;
+  input: Option<FormInput>;
+
+  constructor(props) {
+    super(props);
+    autobind(this);
+    this.state = {
+      validated: false,
       regexError: null,
-      showError: false
+      showError: false,
+      isShowingEmojiPicker: false
     };
-  },
-  clearError: function() {
+    this.validateTrigger = debounce(this._validateTrigger, 500);
+  }
+
+  clearError(): void {
     this.setState({
       regexError: null,
       showError: false
     });
-  },
-  changeTrigger: function(props) {
+  }
+
+  changeTrigger(props: Partial<TriggerInterface>): void {
     var newTrigger = this.props.trigger.clone(props);
     this.props.onChange(newTrigger);
-  },
-  onChange: function(propName, newValue) {
-    var changes = {};
+  }
+
+  onChange<K extends keyof TriggerInterface>(propName: K, newValue: TriggerInterface[K]) {
+    var changes: Partial<TriggerInterface> = {};
     changes[propName] = newValue;
     this.changeTrigger(changes);
     this.focus();
-  },
-  onClickEmoji: function(emoji) {
+  }
+
+  onClickEmoji(emoji: EmojiInterface): void {
     this.onChange('text', emoji.id);
     this.toggleReactionPicker();
-  },
-  setTriggerType: function(id) {
+  }
+
+  setTriggerType(id: string): void {
     if (this.props.trigger.triggerType !== id) {
       this.changeTrigger({
         triggerType: id
       });
     }
-  },
-  setNormalPhrase: function() {
+  }
+
+  setNormalPhrase(): void {
     if (this.isRegex()) {
       this.changeTrigger({
         isRegex: false
       });
     }
-  },
-  isRegex: function() {
+  }
+
+  isRegex(): boolean {
     return this.props.trigger.isRegex;
-  },
-  setRegex: function() {
+  }
+
+  setRegex(): void {
     if (!this.isRegex()) {
       this.changeTrigger({
         isRegex: true
       });
     }
-  },
+  }
 
-  validateTrigger: debounce(function() {
+  _validateTrigger(): void {
     if (!this.props.trigger.text || !this.props.trigger.isRegex) {
       this.clearError();
       return;
@@ -102,11 +133,11 @@ const TriggerInput = React.createClass({
         // TODO: figure out what to do if there's a request error; for now clear user-visible errors
         this.clearError();
       });
-  }, 500),
+  }
 
-  getHelpForRegexError: function() {
+  getHelpForRegexError() {
     var isIllegalRepetitionError = /^Illegal repetition/.test(this.state.regexError || "");
-    var containsProbableParamName = /\{.+?\}/.test(this.state.regexError || "");
+    var containsProbableParamName = /{.+?}/.test(this.state.regexError || "");
     if (isIllegalRepetitionError && containsProbableParamName) {
       return (
         <div className="mts">
@@ -128,41 +159,34 @@ const TriggerInput = React.createClass({
     } else {
       return null;
     }
-  },
+  }
 
-  isEmpty: function() {
+  isEmpty(): boolean {
     return !this.props.trigger.text;
-  },
-  toggleError: function() {
+  }
+
+  toggleError(): void {
     this.setState({ showError: !this.state.showError });
     this.focus();
-  },
-  focus: function() {
-    if (this.refs.input) {
-      this.refs.input.focus();
+  }
+
+  focus(): void {
+    if (this.input) {
+      this.input.focus();
     }
-  },
+  }
 
-  getPrefix: function() {
-    return this.isRegex() ? "Regex pattern" : "Phrase";
-  },
-
-  componentDidMount: function() {
+  componentDidMount(): void {
     this.validateTrigger();
-  },
+  }
 
-  componentDidUpdate: function(prevProps) {
+  componentDidUpdate(prevProps: Props): void {
     if (this.props.trigger !== prevProps.trigger) {
       this.validateTrigger();
     }
-  },
+  }
 
-  getTriggerTypeDisplayString: function() {
-    const found = this.props.triggerTypes.find(ea => ea.id === this.props.trigger.triggerType);
-    return found ? found.displayString : "MessageSent";
-  },
-
-  renderErrorMessage: function() {
+  renderErrorMessage() {
     return (
       <div style={{ marginTop: -4 }} className="border bg-blue-lighter border-blue border-error-top pts phm type-s popup-shadow">
         <div className="position-absolute position-top-right ptxs prxs">
@@ -177,19 +201,19 @@ const TriggerInput = React.createClass({
         <div>{this.getHelpForRegexError()}</div>
       </div>
     );
-  },
+  }
 
-  renderMessageInput: function() {
+  renderMessageInput() {
     return (
       <div>
         <div className="position-relative">
-          <Input
+          <FormInput
+            ref={(el) => this.input = el}
             className={
               " form-input-borderless " +
               (this.props.trigger.isRegex ? " type-monospace " : "")
             }
             id={this.props.id}
-            ref="input"
             value={this.props.trigger.text}
             placeholder="Add a trigger phrase"
             onChange={this.onChange.bind(this, 'text')}
@@ -213,68 +237,70 @@ const TriggerInput = React.createClass({
         </div>
       </div>
     );
-  },
+  }
 
-  renderSelectedEmoji: function() {
+  renderSelectedEmoji() {
     const text = this.props.trigger.text;
     if (text) {
       return (
-        <Emoji emoji={{ id: this.props.trigger.text, skin: 3 }} size={this.emojiSize} />
+        <Emoji emoji={{ id: this.props.trigger.text, skin: 3 }} size={EMOJI_SIZE} />
       );
     } else {
       return (
         <span className="type-l type-disabled">??</span>
       );
     }
-  },
+  }
 
-  getEmojiColonText: function() {
+  getEmojiColonText(): string {
     const text = this.props.trigger.text;
     if (text && text.trim().length > 0) {
       return `:${text.trim()}:`;
     } else {
       return "";
     }
-  },
+  }
 
-  toggleReactionPicker: function() {
+  toggleReactionPicker(): void {
     this.setState({
       isShowingEmojiPicker: !this.state.isShowingEmojiPicker
     });
-  },
+  }
 
-  renderReactionInput: function() {
+  renderReactionInput() {
     return (
       <div>
         <div className="mtm">
-          <button type="button" className="button-block" onClick={this.toggleReactionPicker}>
+          <Button className="button-block" onClick={this.toggleReactionPicker}>
             <span className="display-inline-block align-m mrm">{this.renderSelectedEmoji()}</span>
             <span className="display-inline-block align-m type-s">{this.getEmojiColonText()}</span>
-          </button>
+          </Button>
         </div>
-        <Collapsible revealWhen={this.state.isShowingEmojiPicker} className="popup popup-demoted display-limit-width">
-          <Picker
-            set="emojione"
-            onClick={this.onClickEmoji}
-            title={this.props.trigger.text || "Pick your emoji…"}
-            emoji={this.props.trigger.text}
-            showPreview={false}
-            perLine={12}
-          />
-        </Collapsible>
+        {this.state.isShowingEmojiPicker ? (
+          <div className="popup popup-shadow popup-demoted fade-in">
+            <Picker
+              set="emojione"
+              onClick={this.onClickEmoji}
+              title={this.props.trigger.text || "Pick your emoji…"}
+              emoji={this.props.trigger.text}
+              showPreview={false}
+              perLine={12}
+            />
+          </div>
+        ) : null}
       </div>
     );
-  },
+  }
 
-  renderInput: function() {
+  renderInput() {
     if (this.props.trigger.triggerType === "ReactionAdded") {
       return this.renderReactionInput();
     } else {
       return this.renderMessageInput();
     }
-  },
+  }
 
-  renderTriggerTypeToggle: function() {
+  renderTriggerTypeToggle() {
     return (
       <ToggleGroup className="form-toggle-group-s align-m">
         {this.props.triggerTypes.map(ea => {
@@ -289,9 +315,9 @@ const TriggerInput = React.createClass({
         })}
       </ToggleGroup>
     );
-  },
+  }
 
-  renderMatchTypeToggle: function() {
+  renderMatchTypeToggle() {
     if (this.props.trigger.triggerType === "ReactionAdded") {
       return null;
     } else {
@@ -310,9 +336,9 @@ const TriggerInput = React.createClass({
         </ToggleGroup>
       );
     }
-  },
+  }
 
-  renderRequiresMentionToggle: function() {
+  renderRequiresMentionToggle() {
     if (this.props.trigger.triggerType === "ReactionAdded") {
       return null;
     } else {
@@ -336,9 +362,9 @@ const TriggerInput = React.createClass({
         </div>
       );
     }
-  },
+  }
 
-  render: function() {
+  render() {
     return (
       <div className="border border-light bg-white plm pbm">
         <div className="columns columns-elastic mobile-columns-float">
@@ -357,6 +383,6 @@ const TriggerInput = React.createClass({
       </div>
     );
   }
-});
+}
 
 export default TriggerInput;
