@@ -10,6 +10,7 @@ import Collapsible from '../shared_ui/collapsible';
 import ToggleGroup from '../form/toggle_group';
 import Trigger from '../models/trigger';
 import TriggerType from '../models/trigger_type';
+import Button from "../form/button";
 
 const TriggerInput = React.createClass({
   propTypes: {
@@ -215,9 +216,16 @@ const TriggerInput = React.createClass({
   },
 
   renderSelectedEmoji: function() {
-    return (
-      <Emoji emoji={{ id: this.props.trigger.text, skin: 3 }} size={this.emojiSize} />
-    );
+    const text = this.props.trigger.text;
+    if (text) {
+      return (
+        <Emoji emoji={{ id: this.props.trigger.text, skin: 3 }} size={this.emojiSize} />
+      );
+    } else {
+      return (
+        <span className="type-l type-disabled">??</span>
+      );
+    }
   },
 
   getEmojiColonText: function() {
@@ -239,10 +247,10 @@ const TriggerInput = React.createClass({
     return (
       <div>
         <div className="mtm">
-          <a onClick={this.toggleReactionPicker}>
-            {this.renderSelectedEmoji()}
-            <span className="type-ml height-full align-m">{this.getEmojiColonText()}</span>
-          </a>
+          <button type="button" className="button-block" onClick={this.toggleReactionPicker}>
+            <span className="display-inline-block align-m mrm">{this.renderSelectedEmoji()}</span>
+            <span className="display-inline-block align-m type-s">{this.getEmojiColonText()}</span>
+          </button>
         </div>
         <Collapsible revealWhen={this.state.isShowingEmojiPicker} className="popup popup-demoted display-limit-width">
           <Picker
