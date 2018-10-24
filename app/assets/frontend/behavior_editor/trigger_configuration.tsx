@@ -123,6 +123,8 @@ class TriggerConfiguration extends React.Component<Props> {
                       onEnterKey={this.onTriggerEnterKey.bind(this, index)}
                       onHelpClick={this.props.onToggleHelp}
                       helpVisible={this.props.helpVisible}
+                      isShowingEmojiPicker={this.props.openDropdownName === `BehaviorEditorTriggerEmojiPicker${index}`}
+                      onToggleEmojiPicker={this.toggleDropdown.bind(this, `BehaviorEditorTriggerEmojiPicker${index}`)}
                     />
                     <div className={notifications.length > 0 ? "mtneg1 mbxs" : ""}>
                       <Notifications notifications={notifications} inline={true}/>

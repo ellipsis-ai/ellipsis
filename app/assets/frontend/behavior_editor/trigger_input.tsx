@@ -11,6 +11,7 @@ import Trigger, {TriggerInterface} from '../models/trigger';
 import TriggerType from '../models/trigger_type';
 import Button from "../form/button";
 import autobind from "../lib/autobind";
+import DropdownContainer from "../shared_ui/dropdown_container";
 
 interface EmojiInterface {
   id: string
@@ -30,16 +31,17 @@ interface Props {
   helpVisible: boolean
   id: string
   onChange: (newTrigger: Trigger) => void
-  onDelete: () => void,
-  onEnterKey: () => void,
+  onDelete: () => void
+  onEnterKey: () => void
   onHelpClick: () => void
+  isShowingEmojiPicker: boolean
+  onToggleEmojiPicker: () => void
 }
 
 interface State {
   validated: boolean
   regexError: string | null,
-  showError: boolean,
-  isShowingEmojiPicker: boolean
+  showError: boolean
 }
 
 const EMOJI_SIZE = 36;
@@ -47,6 +49,7 @@ const EMOJI_SIZE = 36;
 class TriggerInput extends React.Component<Props, State> {
   validateTrigger: () => void;
   input: Option<FormInput>;
+  inputContainer: Option<HTMLDivElement>;
 
   constructor(props) {
     super(props);
@@ -54,8 +57,7 @@ class TriggerInput extends React.Component<Props, State> {
     this.state = {
       validated: false,
       regexError: null,
-      showError: false,
-      isShowingEmojiPicker: false
+      showError: false
     };
     this.validateTrigger = debounce(this._validateTrigger, 500);
   }
@@ -261,31 +263,31 @@ class TriggerInput extends React.Component<Props, State> {
   }
 
   toggleReactionPicker(): void {
-    this.setState({
-      isShowingEmojiPicker: !this.state.isShowingEmojiPicker
-    });
+    this.props.onToggleEmojiPicker();
   }
 
   renderReactionInput() {
     return (
       <div>
         <div className="mtm">
-          <Button className="button-block" onClick={this.toggleReactionPicker}>
+          <Button className="button-block" onClick={this.toggleReactionPicker} stopPropagation={true}>
             <span className="display-inline-block align-m mrm">{this.renderSelectedEmoji()}</span>
             <span className="display-inline-block align-m type-s">{this.getEmojiColonText()}</span>
           </Button>
         </div>
-        {this.state.isShowingEmojiPicker ? (
-          <div className="popup popup-shadow popup-demoted fade-in">
-            <Picker
-              set="emojione"
-              onClick={this.onClickEmoji}
-              title={this.props.trigger.text || "Pick your emoji…"}
-              emoji={this.props.trigger.text}
-              showPreview={false}
-              perLine={12}
-            />
-          </div>
+        {this.props.isShowingEmojiPicker ? (
+          <DropdownContainer>
+            <div className="popup popup-shadow popup-demoted fade-in">
+              <Picker
+                set="emojione"
+                onClick={this.onClickEmoji}
+                title={this.props.trigger.text || "Pick your emoji…"}
+                emoji={this.props.trigger.text}
+                showPreview={false}
+                perLine={12}
+              />
+            </div>
+          </DropdownContainer>
         ) : null}
       </div>
     );

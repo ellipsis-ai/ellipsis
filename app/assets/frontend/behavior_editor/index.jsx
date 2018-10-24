@@ -887,8 +887,8 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  onDocumentClick: function() {
-    if (this.getActiveDropdown()) {
+  onDocumentClick: function(event) {
+    if (!event.ELLIPSIS_DROPDOWN && this.getActiveDropdown()) {
       this.hideActiveDropdown();
     }
   },
