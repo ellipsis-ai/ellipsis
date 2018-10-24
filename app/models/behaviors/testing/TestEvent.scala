@@ -16,12 +16,9 @@ import utils.UploadFileSpec
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
-case class TestEvent(
-                      user: User,
-                      team: Team,
-                      messageText: String,
-                      includesBotMention: Boolean
-                    ) extends MessageEvent {
+trait TestEvent extends Event {
+  val user: User
+  val team: Team
 
   val eventType: EventType = EventType.test
   val maybeOriginalEventType: Option[EventType] = None
@@ -83,5 +80,4 @@ case class TestEvent(
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     Future.successful(JsObject(Seq()))
   }
-
 }

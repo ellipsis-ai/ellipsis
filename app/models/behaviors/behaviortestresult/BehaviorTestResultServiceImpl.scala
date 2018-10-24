@@ -9,7 +9,7 @@ import javax.inject.Inject
 import models.IDs
 import models.behaviors.SuccessResult
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.testing.TestEvent
+import models.behaviors.testing.TestMessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,7 +41,7 @@ class BehaviorTestResultServiceImpl @Inject() (
   private def createForAction(behaviorVersion: BehaviorVersion)
                              (implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BehaviorTestResult] = {
     val author = behaviorVersion.groupVersion.maybeAuthor.get
-    val event = TestEvent(author, behaviorVersion.team, "", includesBotMention = true)
+    val event = TestMessageEvent(author, behaviorVersion.team, "", includesBotMention = true)
     DBIO.from(dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), event, None)).flatMap { result =>
       val outputText = result.fullText ++ result.maybeLog.map(l => s"\n\n$l").getOrElse("")
       val newInstance = BehaviorTestResult(

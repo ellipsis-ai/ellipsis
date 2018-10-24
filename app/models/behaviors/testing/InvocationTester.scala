@@ -19,7 +19,7 @@ case class InvocationTester(
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
       event <- Future.successful {
-        TestEvent(user, behaviorVersion.team, "", includesBotMention = true)
+        TestMessageEvent(user, behaviorVersion.team, "", includesBotMention = true)
       }
       paramValueMaybes <- Future.successful {
         params.map { param =>
