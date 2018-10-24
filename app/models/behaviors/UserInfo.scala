@@ -36,7 +36,8 @@ case class MessageInfo(
                         userId: String,
                         details: JsObject,
                         usersMentioned: Set[MessageUserData],
-                        permalink: Option[String]
+                        permalink: Option[String],
+                        reactionAdded: Option[String]
                       )
 
 object MessageInfo {
@@ -58,7 +59,8 @@ object MessageInfo {
         event.userIdForContext,
         details,
         event.messageUserDataList(maybeConversation, services),
-        maybePermalink
+        maybePermalink,
+        event.maybeReactionAdded
       )
     }
   }

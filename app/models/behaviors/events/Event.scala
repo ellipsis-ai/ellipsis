@@ -44,6 +44,7 @@ trait Event {
   val maybeResponseUrl: Option[String] = None
   val isBotMessage: Boolean = false
   val beQuiet: Boolean = false
+  val maybeReactionAdded: Option[String] = None
 
   def originalEventType: EventType = {
     maybeOriginalEventType.getOrElse(eventType)

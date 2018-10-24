@@ -40,6 +40,8 @@ case class SlackReactionAddedEvent(
   override val isResponseExpected: Boolean = true
   val includesBotMention: Boolean = true
 
+  override val maybeReactionAdded: Option[String] = Some(reaction)
+
   def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
     Future.successful(Seq())
   }
