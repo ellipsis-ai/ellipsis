@@ -181,40 +181,43 @@ class APIController @Inject() (
       } yield result
     }
 
+    val mediumText: String
+    lazy val notSupportedMessage: String = s"This API method is not supported for ${mediumText}"
+
     def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(""))
+      Future.successful(BadRequest(notSupportedMessage))
     }
 
     def scheduleByName(
                         actionName: String,
                         info: ScheduleActionInfo
                       )(implicit request: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(""))
+      Future.successful(BadRequest(notSupportedMessage))
     }
 
     def scheduleByTrigger(
                            trigger: String,
                            info: ScheduleActionInfo
                          )(implicit request: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(""))
+      Future.successful(BadRequest(notSupportedMessage))
     }
 
     def unscheduleByName(
                           actionName: String,
                           info: UnscheduleActionInfo
                         )(implicit request: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(""))
+      Future.successful(BadRequest(notSupportedMessage))
     }
 
     def unscheduleByTrigger(
                             trigger: String,
                             info: UnscheduleActionInfo
                           )(implicit request: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(""))
+      Future.successful(BadRequest(notSupportedMessage))
     }
 
     def addMessageListener(info: AddMessageListenerInfo)(implicit request: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(""))
+      Future.successful(BadRequest(notSupportedMessage))
     }
 
     def printEventCreationError(): Unit
@@ -249,8 +252,7 @@ class APIController @Inject() (
                                     isInvokedExternally: Boolean
                                   ) extends ApiMethodContext {
 
-    val maybeBotProfile: Option[SlackBotProfile] = Some(botProfile)
-    val maybeSlackProfile: Option[SlackProfile] = Some(slackProfile)
+    val mediumText: String = "Slack"
 
     def maybeSlackChannelIdFor(channel: String): Future[Option[String]] = {
       dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
@@ -616,8 +618,7 @@ class APIController @Inject() (
                                      ) extends ApiMethodContext {
     val maybeUser: Option[User] = Some(user)
     val maybeTeam: Option[Team] = Some(team)
-    val maybeBotProfile: Option[SlackBotProfile] = None
-    val maybeSlackProfile: Option[SlackProfile] = None
+    val mediumText: String = "requests with no target medium"
 
     def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
       Future.successful(Some(TestMessageEvent(user, team, message, includesBotMention = true)))
