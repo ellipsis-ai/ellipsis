@@ -195,7 +195,7 @@ class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
 
               {this.renderAddButtons(true, !hasReactionTriggers)}
 
-              <div className={`mtm ${hasReactionTriggers ? "fade-in" : "display-none"}`}>
+              <div className={`mtm ${hasReactionTriggers ? "" : "display-none"}`}>
                 <h5>Reaction triggers</h5>
                 <div>
                   {reactionTriggers.map((trigger, index) => {
