@@ -181,6 +181,41 @@ class APIController @Inject() (
       } yield result
     }
 
+    def runByName(
+                   actionName: String,
+                   info: RunActionInfo
+                 )(implicit request: Request[AnyContent]): Future[Result] = {
+      for {
+        maybeOriginatingBehaviorVersion <- maybeOriginatingBehaviorVersion
+        maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
+        maybeEvent <- maybeRunEventForName(
+          actionName,
+          info.argumentsMap,
+          info.channel,
+          info.originalEventType.flatMap(EventType.find),
+          maybeOriginatingBehaviorVersion
+        )
+        result <- (for {
+          originatingBehaviorVersion <- maybeOriginatingBehaviorVersion
+          behaviorVersion <- maybeBehaviorVersion
+        } yield {
+          runBehaviorFor(maybeEvent, Left(originatingBehaviorVersion))
+        }).getOrElse {
+          Future.successful(notFound(APIErrorData(s"Action named `$actionName` not found", Some("actionName")), Json.toJson(info)))
+        }
+      } yield result
+    }
+
+    def runByTrigger(
+                      trigger: String,
+                      info: RunActionInfo
+                    )(implicit request: Request[AnyContent]): Future[Result] = {
+      for {
+        maybeEvent <- maybeMessageEventFor(trigger, info.channel, EventType.maybeFrom(info.originalEventType))
+        result <- runBehaviorFor(maybeEvent, Right(trigger))
+      } yield result
+    }
+
     val mediumText: String
     def notSupportedResult(details: JsValue)(implicit r: Request[AnyContent]): Future[Result] = {
       val message = s"This API method is not supported for ${mediumText}"
@@ -780,43 +815,6 @@ class APIController @Inject() (
     )(RunActionInfo.apply)(RunActionInfo.unapply) verifying(actionNameAndTriggerError, checkActionNameAndTrigger _)
   )
 
-  private def runByName(
-                         actionName: String,
-                         info: RunActionInfo,
-                         context: ApiMethodContext
-                       )(implicit request: Request[AnyContent]): Future[Result] = {
-    for {
-      maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
-      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
-      maybeEvent <- context.maybeRunEventForName(
-        actionName,
-        info.argumentsMap,
-        info.channel,
-        info.originalEventType.flatMap(EventType.find),
-        maybeOriginatingBehaviorVersion
-      )
-      result <- (for {
-        originatingBehaviorVersion <- maybeOriginatingBehaviorVersion
-        behaviorVersion <- maybeBehaviorVersion
-      } yield {
-        context.runBehaviorFor(maybeEvent, Left(originatingBehaviorVersion))
-      }).getOrElse {
-        Future.successful(notFound(APIErrorData(s"Action named `$actionName` not found", Some("actionName")), Json.toJson(info)))
-      }
-    } yield result
-  }
-
-  private def runByTrigger(
-                         trigger: String,
-                         info: RunActionInfo,
-                         context: ApiMethodContext
-                       )(implicit request: Request[AnyContent]): Future[Result] = {
-    for {
-      maybeEvent <- context.maybeMessageEventFor(trigger, info.channel, EventType.maybeFrom(info.originalEventType))
-      result <- context.runBehaviorFor(maybeEvent, Right(trigger))
-    } yield result
-  }
-
   def runAction = Action.async { implicit request =>
     runActionForm.bindFromRequest.fold(
       formWithErrors => {
@@ -826,10 +824,10 @@ class APIController @Inject() (
         val eventualResult = for {
           context <- ApiMethodContextBuilder.createFor(info.token)
           result <- info.actionName.map { name =>
-            runByName(name, info, context)
+            context.runByName(name, info)
           }.getOrElse {
             info.trigger.map { trigger =>
-              runByTrigger(trigger, info, context)
+              context.runByTrigger(trigger, info)
             }.getOrElse {
               Future.successful(badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
             }
