@@ -21,6 +21,7 @@ import DataTypeSourceHelp from './data_type_source_help';
 import DefaultStorageAdder from './default_storage_adder';
 import DefaultStorageBrowser from './default_storage_browser';
 import DevModeChannelsHelp from './dev_mode_channels_help';
+import DropdownContainer from '../shared_ui/dropdown_container';
 import DynamicLabelButton from '../form/dynamic_label_button';
 import EnvVariableAdder from '../settings/environment_variables/adder';
 import EnvVariableSetter from '../settings/environment_variables/setter';
@@ -888,7 +889,7 @@ const BehaviorEditor = React.createClass({
   },
 
   onDocumentClick: function(event) {
-    if (!event.ELLIPSIS_DROPDOWN && this.getActiveDropdown()) {
+    if (this.getActiveDropdown() && !DropdownContainer.eventIsFromDropdown(event)) {
       this.hideActiveDropdown();
     }
   },

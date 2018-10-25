@@ -277,7 +277,7 @@ class TriggerInput extends React.Component<Props, State> {
         </div>
         {this.props.isShowingEmojiPicker ? (
           <DropdownContainer>
-            <div className="popup popup-shadow popup-demoted fade-in">
+            <div className="popup popup-shadow popup-demoted">
               <Picker
                 set="emojione"
                 onClick={this.onClickEmoji}

@@ -1,30 +1,24 @@
 import * as React from 'react';
-import autobind from '../lib/autobind';
 
 interface Props {
   children: any
 }
 
+export const DROPDOWN_CONTAINER_CLASS_NAME = "popup-dropdown-container";
+
 class DropdownContainer extends React.Component<Props> {
-  container: Option<HTMLDivElement>;
-
-  constructor(props: Props) {
-    super(props);
-    autobind(this);
-  }
-
-  componentDidMount() {
-    if (this.container) {
-      this.container.addEventListener('click', (event) => {
-        // TODO: Make this kosher
-        event.ELLIPSIS_DROPDOWN = true;
-      });
+  static eventIsFromDropdown(event: Event): boolean {
+    const target = event.target;
+    if (target instanceof Element) {
+      return Boolean(target.closest(`.${DROPDOWN_CONTAINER_CLASS_NAME}`));
+    } else {
+      return false;
     }
   }
 
   render() {
     return (
-      <div ref={(el) => this.container = el}>
+      <div className={`${DROPDOWN_CONTAINER_CLASS_NAME} position-relative`}>
         {this.props.children}
       </div>
     );
