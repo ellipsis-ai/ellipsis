@@ -18,9 +18,11 @@ interface EmojiInterface {
   native?: Option<string>
   custom?: Option<boolean>
   imageUrl?: Option<string>
+  short_names?: Array<string>
 }
 
 interface Props {
+  existingTriggerEmojiIds: Array<string>
   trigger: Trigger
   id: string
   onChange: (newTrigger: Trigger) => void
@@ -30,6 +32,8 @@ interface Props {
 }
 
 const EMOJI_SIZE = 32;
+const EMOJI_SHEET_SIZE = 64;
+const EMOJI_SET = "apple";
 
 class ReactionTriggerInput extends React.Component<Props> {
   input: Option<FormInput>;
@@ -70,7 +74,12 @@ class ReactionTriggerInput extends React.Component<Props> {
     const text = this.props.trigger.text;
     if (text) {
       return (
-        <Emoji emoji={{ id: this.props.trigger.text, skin: 3 }} size={EMOJI_SIZE} />
+        <Emoji
+          emoji={{ id: this.props.trigger.text, skin: 3 }}
+          size={EMOJI_SIZE}
+          sheetSize={EMOJI_SHEET_SIZE}
+          set={EMOJI_SET}
+        />
       );
     } else {
       return (
@@ -96,6 +105,15 @@ class ReactionTriggerInput extends React.Component<Props> {
     this.props.onToggleEmojiPicker();
   }
 
+  filterExistingEmoji(emoji: EmojiInterface): boolean {
+    const shortName = emoji.short_names && emoji.short_names[0];
+    if (shortName) {
+      return !this.props.existingTriggerEmojiIds.includes(shortName);
+    } else {
+      return true;
+    }
+  }
+
   render() {
     return (
       <div className="border border-light bg-white mrm mbm display-inline-block">
@@ -109,12 +127,16 @@ class ReactionTriggerInput extends React.Component<Props> {
               <DropdownContainer>
                 <div className="popup popup-shadow popup-demoted">
                   <Picker
-                    set="emojione"
+                    set={EMOJI_SET}
                     onClick={this.onClickEmoji}
+                    sheetSize={EMOJI_SHEET_SIZE}
+                    emojiSize={24}
+                    autoFocus={true}
                     title={this.props.trigger.text || "Pick your emoji…"}
                     emoji={this.props.trigger.text}
                     showPreview={false}
                     perLine={12}
+                    emojisToShowFilter={this.filterExistingEmoji}
                   />
                 </div>
               </DropdownContainer>

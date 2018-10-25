@@ -209,7 +209,8 @@ class TriggerConfiguration extends React.Component<Props> {
                           onChange={this.onChangeHandlerForTrigger(trigger)}
                           onDelete={this.onDeleteHandlerForTrigger(trigger)}
                           isShowingEmojiPicker={this.props.openDropdownName === `${key}EmojiPicker`}
-                          onToggleEmojiPicker={this.toggleDropdownHandlerFor(`${key}Dropdown`)}
+                          onToggleEmojiPicker={this.toggleDropdownHandlerFor(`${key}EmojiPicker`)}
+                          existingTriggerEmojiIds={reactionTriggers.map((ea) => ea.text).filter((ea) => ea !== trigger.text)}
                         />
                       )
                     })}
