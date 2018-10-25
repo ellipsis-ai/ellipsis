@@ -2,12 +2,18 @@
 
 /* Hard widths */
 
+@iconWidth: @xxl;
+
 .width, .height {
   box-sizing: border-box;
 }
 
 .width-full {
   width: 100%;
+}
+
+.width-icon {
+  width: @iconWidth;
 }
 
 .height-full {
@@ -26,8 +32,8 @@
   height: @xl;
 }
 
-.height-logo {
-  height: 32px;
+.height-logo, .height-icon {
+  height: @iconWidth;
 }
 
 .height-logo-s {

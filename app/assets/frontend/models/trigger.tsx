@@ -1,11 +1,13 @@
 import {Diffable, DiffableProp} from "./diffs";
 
+export type TriggerType = "MessageSent" | "ReactionAdded"
+
 export interface TriggerJson {
   text: string,
   isRegex: boolean,
   requiresMention: boolean,
   caseSensitive: boolean,
-  triggerType: string
+  triggerType: TriggerType
 }
 
 export interface TriggerInterface extends TriggerJson {}
@@ -15,10 +17,10 @@ class Trigger implements Diffable, TriggerInterface {
   readonly requiresMention: boolean;
   readonly caseSensitive: boolean;
   readonly text: string;
-  readonly triggerType: string;
+  readonly triggerType: TriggerType;
 
   constructor(
-    triggerType: string,
+    triggerType: TriggerType,
     maybeText?: Option<string>,
     maybeIsRegex?: Option<boolean>,
     maybeRequiresMention?: Option<boolean>
@@ -125,6 +127,14 @@ class Trigger implements Diffable, TriggerInterface {
       } else {
         return this.getText();
       }
+    }
+
+    isMessageSentTrigger(): boolean {
+      return this.triggerType === "MessageSent";
+    }
+
+    isReactionAddedTrigger(): boolean {
+      return this.triggerType === "ReactionAdded";
     }
 
     clone(props: Partial<TriggerInterface>): Trigger {

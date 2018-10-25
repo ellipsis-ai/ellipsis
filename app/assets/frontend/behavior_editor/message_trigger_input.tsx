@@ -1,32 +1,14 @@
 import * as React from 'react';
 import * as debounce from 'javascript-debounce';
-import { Picker } from 'emoji-mart';
-import { Emoji } from 'emoji-mart';
 import DeleteButton from '../shared_ui/delete_button';
 import HelpButton from '../help/help_button';
 import FormInput from '../form/input';
 import Collapsible from '../shared_ui/collapsible';
 import ToggleGroup from '../form/toggle_group';
 import Trigger, {TriggerInterface} from '../models/trigger';
-import TriggerType from '../models/trigger_type';
-import Button from "../form/button";
 import autobind from "../lib/autobind";
-import DropdownContainer from "../shared_ui/dropdown_container";
-
-interface EmojiInterface {
-  id: string
-  name: string
-  colons: string
-  text: string
-  emoticons: Array<string>
-  skin?: Option<number>
-  native?: Option<string>
-  custom?: Option<boolean>
-  imageUrl?: Option<string>
-}
 
 interface Props {
-  triggerTypes: Array<TriggerType>
   trigger: Trigger
   helpVisible: boolean
   id: string
@@ -34,8 +16,6 @@ interface Props {
   onDelete: () => void
   onEnterKey: () => void
   onHelpClick: () => void
-  isShowingEmojiPicker: boolean
-  onToggleEmojiPicker: () => void
 }
 
 interface State {
@@ -44,12 +24,9 @@ interface State {
   showError: boolean
 }
 
-const EMOJI_SIZE = 36;
-
-class TriggerInput extends React.Component<Props, State> {
+class MessageTriggerInput extends React.Component<Props, State> {
   validateTrigger: () => void;
   input: Option<FormInput>;
-  inputContainer: Option<HTMLDivElement>;
 
   constructor(props) {
     super(props);
@@ -79,19 +56,6 @@ class TriggerInput extends React.Component<Props, State> {
     changes[propName] = newValue;
     this.changeTrigger(changes);
     this.focus();
-  }
-
-  onClickEmoji(emoji: EmojiInterface): void {
-    this.onChange('text', emoji.id);
-    this.toggleReactionPicker();
-  }
-
-  setTriggerType(id: string): void {
-    if (this.props.trigger.triggerType !== id) {
-      this.changeTrigger({
-        triggerType: id
-      });
-    }
   }
 
   setNormalPhrase(): void {
@@ -240,129 +204,43 @@ class TriggerInput extends React.Component<Props, State> {
     );
   }
 
-  renderSelectedEmoji() {
-    const text = this.props.trigger.text;
-    if (text) {
-      return (
-        <Emoji emoji={{ id: this.props.trigger.text, skin: 3 }} size={EMOJI_SIZE} />
-      );
-    } else {
-      return (
-        <span className="type-l type-disabled">??</span>
-      );
-    }
-  }
-
-  getEmojiColonText(): string {
-    const text = this.props.trigger.text;
-    if (text && text.trim().length > 0) {
-      return `:${text.trim()}:`;
-    } else {
-      return "";
-    }
-  }
-
-  toggleReactionPicker(): void {
-    this.props.onToggleEmojiPicker();
-  }
-
-  renderReactionInput() {
+  renderMatchTypeToggle() {
     return (
-      <div>
-        <div className="mtm">
-          <Button className="button-block" onClick={this.toggleReactionPicker} stopPropagation={true}>
-            <span className="display-inline-block align-m mrm">{this.renderSelectedEmoji()}</span>
-            <span className="display-inline-block align-m type-s">{this.getEmojiColonText()}</span>
-          </Button>
-        </div>
-        {this.props.isShowingEmojiPicker ? (
-          <DropdownContainer>
-            <div className="popup popup-shadow popup-demoted">
-              <Picker
-                set="emojione"
-                onClick={this.onClickEmoji}
-                title={this.props.trigger.text || "Pick your emoji…"}
-                emoji={this.props.trigger.text}
-                showPreview={false}
-                perLine={12}
-              />
-            </div>
-          </DropdownContainer>
-        ) : null}
-      </div>
-    );
-  }
-
-  renderInput() {
-    if (this.props.trigger.triggerType === "ReactionAdded") {
-      return this.renderReactionInput();
-    } else {
-      return this.renderMessageInput();
-    }
-  }
-
-  renderTriggerTypeToggle() {
-    return (
-      <ToggleGroup className="form-toggle-group-s align-m">
-        {this.props.triggerTypes.map(ea => {
-          return (
-            <ToggleGroup.Item
-              key={`triggerType${ea.id}`}
-              onClick={() => this.setTriggerType(ea.id)}
-              label={ea.displayString}
-              activeWhen={this.props.trigger.triggerType === ea.id}
-            />
-          );
-        })}
+      <ToggleGroup className="form-toggle-group-s align-m mll">
+        <ToggleGroup.Item
+          onClick={this.setNormalPhrase}
+          label="Normal phrase"
+          activeWhen={!this.isRegex()}
+        />
+        <ToggleGroup.Item
+          onClick={this.setRegex}
+          label="Regular expression"
+          activeWhen={this.isRegex()}
+        />
       </ToggleGroup>
     );
   }
 
-  renderMatchTypeToggle() {
-    if (this.props.trigger.triggerType === "ReactionAdded") {
-      return null;
-    } else {
-      return (
-        <ToggleGroup className="form-toggle-group-s align-m mll">
+  renderRequiresMentionToggle() {
+    return (
+      <div className="column column-shrink align-b display-ellipsis prn mobile-pts mobile-pln pbs">
+        <ToggleGroup className="form-toggle-group-s align-m">
           <ToggleGroup.Item
-            onClick={this.setNormalPhrase}
-            label="Normal phrase"
-            activeWhen={!this.isRegex()}
+            title="Ellipsis will only respond when mentioned, or when a message begins with three periods
+              “…”."
+            label="To Ellipsis"
+            activeWhen={this.props.trigger.requiresMention}
+            onClick={this.onChange.bind(this, 'requiresMention', true)}
           />
           <ToggleGroup.Item
-            onClick={this.setRegex}
-            label="Regular expression"
-            activeWhen={this.isRegex()}
+            title="Ellipsis will respond to any message with this phrase"
+            label="Any message"
+            activeWhen={!this.props.trigger.requiresMention}
+            onClick={this.onChange.bind(this, 'requiresMention', false)}
           />
         </ToggleGroup>
-      );
-    }
-  }
-
-  renderRequiresMentionToggle() {
-    if (this.props.trigger.triggerType === "ReactionAdded") {
-      return null;
-    } else {
-      return (
-        <div className="column column-shrink align-b display-ellipsis prn mobile-pts mobile-pln pbs">
-          <ToggleGroup className="form-toggle-group-s align-m">
-            <ToggleGroup.Item
-              title="Ellipsis will only respond when mentioned, or when a message begins with three periods
-                “…”."
-              label="To Ellipsis"
-              activeWhen={this.props.trigger.requiresMention}
-              onClick={this.onChange.bind(this, 'requiresMention', true)}
-            />
-            <ToggleGroup.Item
-              title="Ellipsis will respond to any message with this phrase"
-              label="Any message"
-              activeWhen={!this.props.trigger.requiresMention}
-              onClick={this.onChange.bind(this, 'requiresMention', false)}
-            />
-          </ToggleGroup>
-        </div>
-      );
-    }
+      </div>
+    );
   }
 
   render() {
@@ -371,10 +249,9 @@ class TriggerInput extends React.Component<Props, State> {
         <div className="columns columns-elastic mobile-columns-float">
           <div className="column column-expand ptxs">
             <div>
-              {this.renderTriggerTypeToggle()}
               {this.renderMatchTypeToggle()}
             </div>
-            {this.renderInput()}
+            {this.renderMessageInput()}
           </div>
           {this.renderRequiresMentionToggle()}
           <div className="column column-shrink align-t">
@@ -386,4 +263,4 @@ class TriggerInput extends React.Component<Props, State> {
   }
 }
 
-export default TriggerInput;
+export default MessageTriggerInput;

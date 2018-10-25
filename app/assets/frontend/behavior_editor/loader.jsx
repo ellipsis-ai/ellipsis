@@ -9,7 +9,6 @@ import BehaviorGroup from '../models/behavior_group';
 import BehaviorGroupDeployment from '../models/behavior_group_deployment';
 import BehaviorResponseType from '../models/behavior_response_type';
 import ParamType from '../models/param_type';
-import TriggerType from '../models/trigger_type';
 import {AWSConfigRef} from '../models/aws';
 import {OAuthApplicationRef} from '../models/oauth';
 import {SimpleTokenApiRef} from '../models/simple_token';
@@ -129,7 +128,6 @@ class BehaviorEditorLoader extends React.Component {
             <Page csrfToken={this.props.csrfToken}
               onRender={(pageProps) => (
               <BehaviorEditor
-                triggerTypes={this.props.triggerTypes.map(TriggerType.fromProps)}
                 group={this.state.group}
                 selectedId={this.state.selectedId}
                 csrfToken={this.props.csrfToken}
