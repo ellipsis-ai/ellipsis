@@ -1,5 +1,5 @@
 import * as React from 'react';
-import debounce from 'javascript-debounce';
+import * as debounce from 'javascript-debounce';
 import { Picker } from 'emoji-mart';
 import { Emoji } from 'emoji-mart';
 import DeleteButton from '../shared_ui/delete_button';
