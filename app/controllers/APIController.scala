@@ -182,43 +182,36 @@ class APIController @Inject() (
     }
 
     val mediumText: String
-    lazy val notSupportedMessage: String = s"This API method is not supported for ${mediumText}"
-
-    def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(notSupportedMessage))
+    def notSupportedResult(details: JsValue)(implicit r: Request[AnyContent]): Future[Result] = {
+      val message = s"This API method is not supported for ${mediumText}"
+      Future.successful(badRequest(Some(APIErrorData(message, None)), None, details))
     }
+
+    def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = notSupportedResult(JsNull)
 
     def scheduleByName(
                         actionName: String,
                         info: ScheduleActionInfo
-                      )(implicit request: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(notSupportedMessage))
-    }
+                      )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult(Json.toJson(info))
 
     def scheduleByTrigger(
                            trigger: String,
                            info: ScheduleActionInfo
-                         )(implicit request: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(notSupportedMessage))
-    }
+                         )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult(Json.toJson(info))
 
     def unscheduleByName(
                           actionName: String,
                           info: UnscheduleActionInfo
-                        )(implicit request: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(notSupportedMessage))
-    }
+                        )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult(Json.toJson(info))
 
     def unscheduleByTrigger(
                             trigger: String,
                             info: UnscheduleActionInfo
-                          )(implicit request: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(notSupportedMessage))
-    }
+                          )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult(Json.toJson(info))
 
-    def addMessageListener(info: AddMessageListenerInfo)(implicit request: Request[AnyContent]): Future[Result] = {
-      Future.successful(BadRequest(notSupportedMessage))
-    }
+    def addMessageListener(
+                            info: AddMessageListenerInfo
+                          )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult(Json.toJson(info))
 
     def printEventCreationError(): Unit
 
@@ -800,7 +793,7 @@ class APIController @Inject() (
         info.argumentsMap,
         info.channel,
         info.originalEventType.flatMap(EventType.find),
-        None
+        maybeOriginatingBehaviorVersion
       )
       result <- (for {
         originatingBehaviorVersion <- maybeOriginatingBehaviorVersion
