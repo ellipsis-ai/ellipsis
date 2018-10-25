@@ -14,6 +14,7 @@ import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.events._
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
+import models.behaviors.testing.{TestMessageEvent, TestRunEvent}
 import models.behaviors.{BotResult, BotResultService, SimpleTextResult}
 import models.team.Team
 import play.api.data.{Form, FormError}
@@ -126,13 +127,13 @@ class APIController @Inject() (
       } yield maybeBehaviorVersion
     }
 
-    def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
+    def maybeSlackMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
       maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
         for {
           botProfile <- maybeBotProfile
           slackProfile <- maybeSlackProfile
         } yield {
-          val slackEvent = SlackMessageEvent(
+          SlackMessageEvent(
             botProfile,
             maybeSlackChannelId.getOrElse(channel),
             None,
@@ -146,11 +147,90 @@ class APIController @Inject() (
             None,
             beQuiet = false
           )
+        }
+      }
+    }
+
+    def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
+      maybeSlackMessageEventFor(message, channel, maybeOriginalEventType).map { maybeSlackEvent =>
+        val maybeMessageEvent = maybeSlackEvent.orElse {
+          for {
+            user <- maybeUser
+            team <- maybeTeam
+          } yield {
+            TestMessageEvent(user, team, message, includesBotMention = true)
+          }
+        }
+        maybeMessageEvent.map { messageEvent =>
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
-            ScheduledEvent(slackEvent, scheduledMessage)
-          }.getOrElse(slackEvent)
+            ScheduledEvent(messageEvent, scheduledMessage)
+          }.getOrElse(messageEvent)
           event
         }
+      }
+    }
+
+    def maybeSlackRunEventFor(
+                                maybeBehaviorVersion: Option[BehaviorVersion],
+                                argumentsMap: Map[String, String],
+                                channel: String,
+                                maybeOriginalEventType: Option[EventType],
+                                maybeOriginatingBehaviorVersion: Option[BehaviorVersion]
+                        ): Future[Option[Event]] = {
+      for {
+        maybeSlackChannelId <- maybeSlackChannelIdFor(channel)
+        maybeEvent <- Future.successful(
+          for {
+            botProfile <- maybeBotProfile
+            slackProfile <- maybeSlackProfile
+            behaviorVersion <- maybeBehaviorVersion
+          } yield RunEvent(
+            botProfile,
+            behaviorVersion,
+            argumentsMap,
+            maybeSlackChannelId.getOrElse(channel),
+            None,
+            slackProfile.loginInfo.providerKey,
+            SlackTimestamp.now,
+            maybeOriginalEventType,
+            isEphemeral = false,
+            None
+          )
+        )
+      } yield maybeEvent
+    }
+
+    def maybeTestRunEventFor(
+                              maybeBehaviorVersion: Option[BehaviorVersion],
+                              argumentsMap: Map[String, String],
+                              maybeOriginatingBehaviorVersion: Option[BehaviorVersion]
+                            ): Option[Event] = {
+      for {
+        user <- maybeUser
+        team <- maybeTeam
+        behaviorVersion <- maybeBehaviorVersion
+      } yield {
+        TestRunEvent(
+          user,
+          team,
+          behaviorVersion,
+          argumentsMap
+        )
+      }
+    }
+
+    def maybeRunEventFor(
+                          actionName: String,
+                          argumentsMap: Map[String, String],
+                          channel: String,
+                          maybeOriginalEventType: Option[EventType]
+                        ): Future[Option[Event]] = {
+      for {
+        maybeOriginatingBehaviorVersion <- maybeOriginatingBehaviorVersion
+        maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
+        maybeSlackRunEvent <- maybeSlackRunEventFor(maybeBehaviorVersion, argumentsMap, channel, maybeOriginalEventType, maybeOriginatingBehaviorVersion)
+      } yield maybeSlackRunEvent.orElse {
+        maybeTestRunEventFor(maybeBehaviorVersion, argumentsMap, maybeOriginatingBehaviorVersion)
       }
     }
 
@@ -354,26 +434,13 @@ class APIController @Inject() (
                          context: ApiMethodContext
                        )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
-      maybeSlackChannelId <- context.maybeSlackChannelIdFor(info.channel)
       maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
       maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
-      maybeEvent <- Future.successful(
-        for {
-          botProfile <- context.maybeBotProfile
-          slackProfile <- context.maybeSlackProfile
-          behaviorVersion <- maybeBehaviorVersion
-        } yield RunEvent(
-          botProfile,
-          behaviorVersion,
-          info.argumentsMap,
-          maybeSlackChannelId.getOrElse(info.channel),
-          None,
-          slackProfile.loginInfo.providerKey,
-          SlackTimestamp.now,
-          info.originalEventType.flatMap(EventType.find),
-          isEphemeral = false,
-          None
-        )
+      maybeEvent <- context.maybeRunEventFor(
+        actionName,
+        info.argumentsMap,
+        info.channel,
+        info.originalEventType.flatMap(EventType.find)
       )
       result <- (for {
         originatingBehaviorVersion <- maybeOriginatingBehaviorVersion
