@@ -11,6 +11,7 @@ import MessageTriggerInput from "./message_trigger_input";
 import ReactionTriggerInput from "./reaction_trigger_input";
 import Button from "../form/button";
 import SVGPlus from "../svg/plus";
+import DropdownContainer from "../shared_ui/dropdown_container";
 
 export interface TriggerConfigurationProps {
   triggers: Array<Trigger>
@@ -62,19 +63,22 @@ class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
       }
     }
 
-    addTriggerType(triggerType: TriggerType): void {
+    addTriggerType(triggerType: TriggerType, callback?: () => void): void {
       const newTrigger = new Trigger(triggerType);
-      this.props.onTriggerAdd(newTrigger, () => {
+      this.props.onTriggerAdd(newTrigger, callback);
+    }
+
+    addMessageTrigger(): void {
+      this.addTriggerType(TriggerType.MessageSent, () => {
         this.focusOnFirstBlankTrigger();
       });
     }
 
-    addMessageTrigger(): void {
-      this.addTriggerType(TriggerType.MessageSent);
-    }
-
     addReactionTrigger(): void {
-      this.addTriggerType(TriggerType.ReactionAdded);
+      const numReactionTriggers = this.getReactionAddedTriggers().length;
+      this.addTriggerType(TriggerType.ReactionAdded, () => {
+        this.props.onTriggerDropdownToggle(`reactionTrigger${numReactionTriggers}EmojiPicker`);
+      });
     }
 
     onChangeHandlerForTrigger(trigger: Trigger): (newTrigger: Trigger) => void {
@@ -132,12 +136,14 @@ class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
     renderAddButtons(renderMessageButton: boolean, renderReactionButton: boolean) {
       return (
         <div className="mtm">
-          {renderMessageButton ? (
-            <Button className="button-s mrm mbm" onClick={this.addMessageTrigger}>Add message trigger</Button>
-          ) : null}
-          {renderReactionButton ? (
-            <Button className="button-s mrm mbm" onClick={this.addReactionTrigger}>Add reaction trigger</Button>
-          ) : null}
+          <DropdownContainer>
+            {renderMessageButton ? (
+              <Button className="button-s mrm mbm" onClick={this.addMessageTrigger}>Add message trigger</Button>
+            ) : null}
+            {renderReactionButton ? (
+              <Button className="button-s mrm mbm" onClick={this.addReactionTrigger}>Add reaction trigger</Button>
+            ) : null}
+          </DropdownContainer>
         </div>
       )
     }
@@ -215,9 +221,11 @@ class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
                       )
                     })}
                     <div className="display-inline-block align-t mts mrm mbm">
-                      <Button onClick={this.addReactionTrigger} className="button-symbol">
-                        <SVGPlus label={"Add reaction trigger"} />
-                      </Button>
+                      <DropdownContainer>
+                        <Button onClick={this.addReactionTrigger} className="button-symbol">
+                          <SVGPlus label={"Add reaction trigger"} />
+                        </Button>
+                      </DropdownContainer>
                     </div>
                   </div>
                 </div>
