@@ -11,9 +11,9 @@ case class TriggerTestReportOutput(
                                      )
 
 case class TriggerTestReport(
-                               event: TestEvent,
-                               behaviorVersion: BehaviorVersion,
-                               maybeBehaviorResponse: Option[BehaviorResponse]
+                              event: TestMessageEvent,
+                              behaviorVersion: BehaviorVersion,
+                              maybeBehaviorResponse: Option[BehaviorResponse]
                                ) {
 
   val maybeActivatedTrigger = maybeBehaviorResponse.flatMap(_.maybeActivatedTrigger)

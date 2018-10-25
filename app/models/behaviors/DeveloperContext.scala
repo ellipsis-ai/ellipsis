@@ -2,7 +2,7 @@ package models.behaviors
 
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.Event
-import models.behaviors.testing.TestEvent
+import models.behaviors.testing.TestMessageEvent
 import services.DataService
 import slick.dbio.DBIO
 
@@ -32,7 +32,7 @@ object DeveloperContext {
       isInDevMode <- dataService.devModeChannels.isEnabledForAction(event, behaviorVersion)
     } yield {
       val isInInvocationTester = event match {
-        case _: TestEvent => true
+        case _: TestMessageEvent => true
         case _ => false
       }
       DeveloperContext(isForUndeployed, hasUndeployedVersionForAuthor, isInDevMode, isInInvocationTester)
