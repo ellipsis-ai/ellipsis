@@ -1,6 +1,9 @@
 import {Diffable, DiffableProp} from "./diffs";
 
-export type TriggerType = "MessageSent" | "ReactionAdded"
+export enum TriggerType {
+  MessageSent = "MessageSent",
+  ReactionAdded = "ReactionAdded"
+}
 
 export interface TriggerJson {
   text: string,
@@ -150,12 +153,8 @@ class Trigger implements Diffable, TriggerInterface {
       );
     }
 
-    static triggersFromJson(jsonArrayOrNull: Option<Array<TriggerJson>>) {
-      if (jsonArrayOrNull) {
-        return jsonArrayOrNull.map((triggerObj) => Trigger.fromProps(triggerObj));
-      } else {
-        return null;
-      }
+    static triggersFromJson(jsonArray: Array<TriggerJson>) {
+      return jsonArray.map((triggerObj) => Trigger.fromProps(triggerObj));
     }
 }
 

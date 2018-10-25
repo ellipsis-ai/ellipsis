@@ -6,7 +6,7 @@ import Editable, {EditableInterface, EditableJson} from './editable';
 import Input from './input';
 import ParamType from './param_type';
 import ResponseTemplate, {ResponseTemplateJson} from './response_template';
-import Trigger, {TriggerJson} from './trigger';
+import Trigger, {TriggerJson, TriggerType} from './trigger';
 import DataTypeField from "./data_type_field";
 import {Timestamp} from "../lib/formatter";
 import {NODE_JS_VERSION} from "../lib/constants";
@@ -380,7 +380,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
           ResponseTemplate.fromString(props.responseTemplate || '') :
           new ResponseTemplate(props.responseTemplate && props.responseTemplate.text),
         config: BehaviorConfig.fromJson(props.config),
-        triggers: Trigger.triggersFromJson(props.triggers)
+        triggers: Trigger.triggersFromJson(props.triggers || [])
       });
       return BehaviorVersion.fromProps(materializedProps);
     }
@@ -393,7 +393,7 @@ const name = ellipsis.userInfo.fullName || "friend";
 ellipsis.success(\`Hello, \${name}.\`);
 `);
       const template = ResponseTemplate.fromString("{successResult}");
-      const triggers = [new Trigger("MessageSent", `run ${optionalName || "action"}`, false, true)];
+      const triggers = [new Trigger(TriggerType.MessageSent, `run ${optionalName || "action"}`, false, true)];
       const props: DefaultActionProps = {
         triggers: triggers,
         functionBody: functionBody,

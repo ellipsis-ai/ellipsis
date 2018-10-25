@@ -1,4 +1,5 @@
 import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
+import {TriggerType} from "../../../../app/assets/frontend/models/trigger";
 
 const normalResponseType = "Normal";
 
@@ -13,13 +14,13 @@ const behaviorVersionTask1: BehaviorVersionJson = Object.freeze({
     "requiresMention": false,
     "isRegex": true,
     "caseSensitive": false,
-    "triggerType": "MessageSent"
+    "triggerType": "MessageSent" as TriggerType
   }, {
     "text": "C",
     "requiresMention": false,
     "isRegex": false,
     "caseSensitive": false,
-    "triggerType": "MessageSent"
+    "triggerType": "MessageSent" as TriggerType
   }],
   "config": {
     "aws": {
@@ -46,13 +47,13 @@ const behaviorVersionTask2: BehaviorVersionJson = Object.freeze({
     "requiresMention": true,
     "isRegex": true,
     "caseSensitive": false,
-    "triggerType": "MessageSent"
+    "triggerType": "MessageSent" as TriggerType
   }, {
     "text": ".+",
     "requiresMention": false,
     "isRegex": true,
     "caseSensitive": false,
-    "triggerType": "MessageSent"
+    "triggerType": "MessageSent" as TriggerType
   }],
   "config": {
     "aws": {
@@ -78,13 +79,13 @@ const behaviorVersionKnowledge1: BehaviorVersionJson = Object.freeze({
     "requiresMention": false,
     "isRegex": false,
     "caseSensitive": false,
-    "triggerType": "MessageSent"
+    "triggerType": "MessageSent" as TriggerType
   }, {
     "text": "",
     "requiresMention": false,
     "isRegex": false,
     "caseSensitive": false,
-    "triggerType": "MessageSent"
+    "triggerType": "MessageSent" as TriggerType
   }],
   "config": {
     isDataType: false,

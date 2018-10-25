@@ -12,7 +12,7 @@ import ReactionTriggerInput from "./reaction_trigger_input";
 import Button from "../form/button";
 import SVGPlus from "../svg/plus";
 
-interface Props {
+export interface TriggerConfigurationProps {
   triggers: Array<Trigger>
   inputNames: Array<string>
   onToggleHelp: () => void
@@ -25,7 +25,7 @@ interface Props {
   openDropdownName: string
 }
 
-class TriggerConfiguration extends React.Component<Props> {
+class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
     messageTriggerInputs: Array<Option<MessageTriggerInput>>;
 
     constructor(props) {
@@ -70,11 +70,11 @@ class TriggerConfiguration extends React.Component<Props> {
     }
 
     addMessageTrigger(): void {
-      this.addTriggerType("MessageSent");
+      this.addTriggerType(TriggerType.MessageSent);
     }
 
     addReactionTrigger(): void {
-      this.addTriggerType("ReactionAdded");
+      this.addTriggerType(TriggerType.ReactionAdded);
     }
 
     onChangeHandlerForTrigger(trigger: Trigger): (newTrigger: Trigger) => void {

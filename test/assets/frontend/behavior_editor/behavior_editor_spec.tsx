@@ -1,23 +1,24 @@
-jest.mock('../../../../app/assets/frontend/behavior_editor/code_configuration', () => (() => (
-  <div/>
-)));
-jest.mock('../../../../app/assets/frontend/behavior_editor/response_template_configuration', () => (() => (
-  <div/>
-)));
 import * as MockDataRequest from '../../../mocks/mock_data_request';
-jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
-jest.mock('emoji-mart/css/emoji-mart.css', () => '');
-
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 import BehaviorEditor from '../../../../app/assets/frontend/behavior_editor/index';
 import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
 import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
 import ParamType from '../../../../app/assets/frontend/models/param_type';
-import TriggerType from "../../../../app/assets/frontend/models/trigger_type";
+import {TriggerType} from "../../../../app/assets/frontend/models/trigger";
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
 import {OAuthApplicationRef} from '../../../../app/assets/frontend/models/oauth';
 import {SimpleTokenApiRef} from '../../../../app/assets/frontend/models/simple_token';
+
+jest.mock('../../../../app/assets/frontend/behavior_editor/code_configuration', () => (() => (
+  <div/>
+)));
+jest.mock('../../../../app/assets/frontend/behavior_editor/response_template_configuration', () => (() => (
+  <div/>
+)));
+jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
+jest.mock('emoji-mart/css/emoji-mart.css', () => '');
+
 global.fetch = jest.fn(function() {
   return new Promise(() => {})
 });
@@ -52,7 +53,7 @@ describe('BehaviorEditor', () => {
           requiresMention: false,
           isRegex: false,
           caseSensitive: false,
-          triggerType: "MessageSent"
+          triggerType: TriggerType.MessageSent
         }],
         config: {
           isDataType: false,
@@ -154,7 +155,7 @@ describe('BehaviorEditor', () => {
       "functionBody": "",
       "responseTemplate": "",
       "inputIds": [],
-      "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false, triggerType: "MessageSent" }],
+      "triggers": [{ "text": "", "requiresMention": true, "isRegex": false, "caseSensitive": false, triggerType: TriggerType.MessageSent }],
       "config": { "isDataType": false, "isTest": false, responseTypeId: normalResponseType },
     }],
     "libraryVersions": [],
@@ -241,7 +242,6 @@ describe('BehaviorEditor', () => {
 
   function createEditor(config): BehaviorEditor {
     const props = Object.assign({}, config, {
-      triggerTypes: config.triggerTypes.map(ea => TriggerType.fromProps(ea)),
       group: BehaviorGroup.fromJson(config.group),
       awsConfigs: config.awsConfigs.map(AWSConfigRef.fromJson),
       oauthApplications: config.oauthApplications.map(OAuthApplicationRef.fromJson),
