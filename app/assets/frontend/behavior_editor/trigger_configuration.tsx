@@ -137,12 +137,8 @@ class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
       return (
         <div className="mtm">
           <DropdownContainer>
-            {renderMessageButton ? (
-              <Button className="button-s mrm mbm" onClick={this.addMessageTrigger}>Add message trigger</Button>
-            ) : null}
-            {renderReactionButton ? (
-              <Button className="button-s mrm mbm" onClick={this.addReactionTrigger}>Add reaction trigger</Button>
-            ) : null}
+            <Button className={`button-s mrm mbm ${renderMessageButton ? "fade-in" : "display-none"}`} onClick={this.addMessageTrigger}>Add message trigger</Button>
+            <Button className={`button-s mrm mbm ${renderReactionButton ? "fade-in" : "display-none"}`} onClick={this.addReactionTrigger}>Add reaction trigger</Button>
           </DropdownContainer>
         </div>
       )
@@ -166,70 +162,66 @@ class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
               </span>
             </SectionHeading>
             <div className="mbm">
-              {hasMessageTriggers ? (
-                <div>
-                  <h5>Message triggers</h5>
-                  {messageTriggers.map((trigger, index) => {
-                    const notifications = this.getNotificationsFor(trigger);
-                    const key = `messageTrigger${index}`;
-                    return (
-                      <div key={`${key}Container`}>
-                        <MessageTriggerInput
-                          id={`${key}Input`}
-                          ref={(el) => this.messageTriggerInputs[index] = el}
-                          trigger={trigger}
-                          onChange={this.onChangeHandlerForTrigger(trigger)}
-                          onDelete={this.onDeleteHandlerForTrigger(trigger)}
-                          onEnterKey={() => this.onMessageTriggerEnterKey(index)}
-                          onHelpClick={this.props.onToggleHelp}
-                          helpVisible={this.props.helpVisible}
-                          dropdownIsOpen={this.props.openDropdownName === `${key}Dropdown`}
-                          onToggleDropdown={this.toggleDropdownHandlerFor(`${key}Dropdown`)}
-                        />
-                        <div className={notifications.length > 0 ? "mtneg1 mbxs" : ""}>
-                          <Notifications notifications={notifications} inline={true}/>
-                        </div>
-                        {index + 1 < messageTriggers.length ? (
-                          <div className="pvxs type-label type-disabled align-c">or</div>
-                        ) : null}
+              <div className={hasMessageTriggers ? "fade-in" : "display-none"}>
+                <h5>Message triggers</h5>
+                {messageTriggers.map((trigger, index) => {
+                  const notifications = this.getNotificationsFor(trigger);
+                  const key = `messageTrigger${index}`;
+                  return (
+                    <div key={`${key}Container`}>
+                      <MessageTriggerInput
+                        id={`${key}Input`}
+                        ref={(el) => this.messageTriggerInputs[index] = el}
+                        trigger={trigger}
+                        onChange={this.onChangeHandlerForTrigger(trigger)}
+                        onDelete={this.onDeleteHandlerForTrigger(trigger)}
+                        onEnterKey={() => this.onMessageTriggerEnterKey(index)}
+                        onHelpClick={this.props.onToggleHelp}
+                        helpVisible={this.props.helpVisible}
+                        dropdownIsOpen={this.props.openDropdownName === `${key}Dropdown`}
+                        onToggleDropdown={this.toggleDropdownHandlerFor(`${key}Dropdown`)}
+                      />
+                      <div className={notifications.length > 0 ? "mtneg1 mbxs" : ""}>
+                        <Notifications notifications={notifications} inline={true}/>
                       </div>
-                    );
-                  })}
+                      {index + 1 < messageTriggers.length ? (
+                        <div className="pvxs type-label type-disabled align-c">or</div>
+                      ) : null}
+                    </div>
+                  );
+                })}
 
-                </div>
-              ) : null}
+              </div>
 
               {this.renderAddButtons(true, !hasReactionTriggers)}
 
-              {hasReactionTriggers ? (
-                <div className="mtm">
-                  <h5>Reaction triggers</h5>
-                  <div>
-                    {reactionTriggers.map((trigger, index) => {
-                      const key = `reactionTrigger${index}`;
-                      return (
-                        <ReactionTriggerInput
-                          key={`${key}Input`}
-                          trigger={trigger}
-                          id={`${key}Input`}
-                          onChange={this.onChangeHandlerForTrigger(trigger)}
-                          onDelete={this.onDeleteHandlerForTrigger(trigger)}
-                          isShowingEmojiPicker={this.props.openDropdownName === `${key}EmojiPicker`}
-                          onToggleEmojiPicker={this.toggleDropdownHandlerFor(`${key}EmojiPicker`)}
-                          existingTriggerEmojiIds={reactionTriggers.map((ea) => ea.text).filter((ea) => ea !== trigger.text)}
-                        />
-                      )
-                    })}
-                    <div className="display-inline-block align-t mts mrm mbm">
-                      <DropdownContainer>
-                        <Button onClick={this.addReactionTrigger} className="button-symbol">
-                          <SVGPlus label={"Add reaction trigger"} />
-                        </Button>
-                      </DropdownContainer>
-                    </div>
+              <div className={`mtm ${hasReactionTriggers ? "fade-in" : "display-none"}`}>
+                <h5>Reaction triggers</h5>
+                <div>
+                  {reactionTriggers.map((trigger, index) => {
+                    const key = `reactionTrigger${index}`;
+                    return (
+                      <ReactionTriggerInput
+                        key={`${key}Input`}
+                        trigger={trigger}
+                        id={`${key}Input`}
+                        onChange={this.onChangeHandlerForTrigger(trigger)}
+                        onDelete={this.onDeleteHandlerForTrigger(trigger)}
+                        isShowingEmojiPicker={this.props.openDropdownName === `${key}EmojiPicker`}
+                        onToggleEmojiPicker={this.toggleDropdownHandlerFor(`${key}EmojiPicker`)}
+                        existingTriggerEmojiIds={reactionTriggers.map((ea) => ea.text).filter((ea) => ea !== trigger.text)}
+                      />
+                    )
+                  })}
+                  <div className="display-inline-block align-t mts mrm mbm">
+                    <DropdownContainer>
+                      <Button onClick={this.addReactionTrigger} className="button-symbol">
+                        <SVGPlus label={"Add reaction trigger"} />
+                      </Button>
+                    </DropdownContainer>
                   </div>
                 </div>
-              ) : null}
+              </div>
             </div>
           </div>
         </div>
