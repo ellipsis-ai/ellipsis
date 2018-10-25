@@ -9,7 +9,8 @@ import InvalidParamInTriggerNotificationData from "../models/notifications/inval
 import autobind from "../lib/autobind";
 import MessageTriggerInput from "./message_trigger_input";
 import ReactionTriggerInput from "./reaction_trigger_input";
-import DropdownMenu, {DropdownMenuItem} from "../shared_ui/dropdown_menu";
+import Button from "../form/button";
+import SVGPlus from "../svg/plus";
 
 interface Props {
   triggers: Array<Trigger>
@@ -128,13 +129,25 @@ class TriggerConfiguration extends React.Component<Props> {
       return this.props.triggers.filter((ea) => ea.isReactionAddedTrigger());
     }
 
-    toggleAddTriggerDropdown(): void {
-      this.toggleDropdown("addTrigger");
+    renderAddButtons(renderMessageButton: boolean, renderReactionButton: boolean) {
+      return (
+        <div className="mtm">
+          {renderMessageButton ? (
+            <Button className="button-s mrm mbm" onClick={this.addMessageTrigger}>Add message trigger</Button>
+          ) : null}
+          {renderReactionButton ? (
+            <Button className="button-s mrm mbm" onClick={this.addReactionTrigger}>Add reaction trigger</Button>
+          ) : null}
+        </div>
+      )
     }
 
     render() {
       const messageTriggers = this.getMessageSentTriggers();
       const reactionTriggers = this.getReactionAddedTriggers();
+      const hasMessageTriggers = messageTriggers.length > 0;
+      const hasReactionTriggers = reactionTriggers.length > 0;
+
       return (
         <div className="columns container container-narrow ptxl">
           <div className="mbxxl">
@@ -147,7 +160,7 @@ class TriggerConfiguration extends React.Component<Props> {
               </span>
             </SectionHeading>
             <div className="mbm">
-              {messageTriggers.length > 0 ? (
+              {hasMessageTriggers ? (
                 <div>
                   <h5>Message triggers</h5>
                   {messageTriggers.map((trigger, index) => {
@@ -174,42 +187,36 @@ class TriggerConfiguration extends React.Component<Props> {
                       </div>
                     );
                   })}
+
                 </div>
               ) : null}
 
-              {reactionTriggers.length > 0 ? (
-                <div>
+              {this.renderAddButtons(true, !hasReactionTriggers)}
+
+              {hasReactionTriggers ? (
+                <div className="mtm">
                   <h5>Reaction triggers</h5>
                   <div>
-                  {reactionTriggers.map((trigger, index) => {
-                    const key = `reactionTrigger${index}`;
-                    return (
-                      <ReactionTriggerInput
-                        key={`${key}Input`}
-                        trigger={trigger}
-                        id={`${key}Input`}
-                        onChange={this.onChangeHandlerForTrigger(trigger)}
-                        onDelete={this.onDeleteHandlerForTrigger(trigger)}
-                        isShowingEmojiPicker={this.props.openDropdownName === `${key}EmojiPicker`}
-                        onToggleEmojiPicker={this.toggleDropdown.bind(this, `${key}EmojiPicker`)}
-                      />
-                    )
-                  })}
+                    {reactionTriggers.map((trigger, index) => {
+                      const key = `reactionTrigger${index}`;
+                      return (
+                        <ReactionTriggerInput
+                          key={`${key}Input`}
+                          trigger={trigger}
+                          id={`${key}Input`}
+                          onChange={this.onChangeHandlerForTrigger(trigger)}
+                          onDelete={this.onDeleteHandlerForTrigger(trigger)}
+                          isShowingEmojiPicker={this.props.openDropdownName === `${key}EmojiPicker`}
+                          onToggleEmojiPicker={this.toggleDropdown.bind(this, `${key}EmojiPicker`)}
+                        />
+                      )
+                    })}
+                    <div className="display-inline-block align-t mts mrm mbm">
+                      <Button onClick={this.addReactionTrigger} className="button-symbol" title="Add another reaction trigger"><SVGPlus /></Button>
+                    </div>
                   </div>
                 </div>
               ) : null}
-
-              <div className="mtm">
-                <DropdownMenu
-                  label={"Add trigger"}
-                  openWhen={this.props.openDropdownName === "addTrigger"}
-                  toggle={this.toggleAddTriggerDropdown}
-                  labelClassName={"button-s"}
-                >
-                  <DropdownMenuItem label={"When a message is sent"} onClick={this.addMessageTrigger} />
-                  <DropdownMenuItem label={"When a reaction is added to a message"} onClick={this.addReactionTrigger} />
-                </DropdownMenu>
-              </div>
             </div>
           </div>
         </div>
