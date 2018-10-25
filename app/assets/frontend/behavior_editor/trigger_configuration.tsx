@@ -85,22 +85,22 @@ class TriggerConfiguration extends React.Component<Props> {
       return (() => this.deleteTrigger(trigger));
     }
 
-    changeTrigger(oldTrigger: Trigger, newTrigger: Trigger) {
+    changeTrigger(oldTrigger: Trigger, newTrigger: Trigger): void {
       const index = this.props.triggers.findIndex((ea) => ea === oldTrigger);
       if (index >= 0) {
         this.props.onTriggerChange(index, newTrigger);
       }
     }
 
-    deleteTrigger(trigger: Trigger) {
+    deleteTrigger(trigger: Trigger): void {
       const index = this.props.triggers.findIndex((ea) => ea === trigger);
       if (index >= 0) {
         this.props.onTriggerDelete(index);
       }
     }
 
-    toggleDropdown(dropdownName: string) {
-      this.props.onTriggerDropdownToggle(dropdownName);
+    toggleDropdownHandlerFor(dropdownName: string): () => void {
+      return () => this.props.onTriggerDropdownToggle(dropdownName);
     }
 
     getNotificationsFor(trigger: Trigger) {
@@ -177,6 +177,8 @@ class TriggerConfiguration extends React.Component<Props> {
                           onEnterKey={() => this.onMessageTriggerEnterKey(index)}
                           onHelpClick={this.props.onToggleHelp}
                           helpVisible={this.props.helpVisible}
+                          dropdownIsOpen={this.props.openDropdownName === `${key}Dropdown`}
+                          onToggleDropdown={this.toggleDropdownHandlerFor(`${key}Dropdown`)}
                         />
                         <div className={notifications.length > 0 ? "mtneg1 mbxs" : ""}>
                           <Notifications notifications={notifications} inline={true}/>
@@ -207,12 +209,14 @@ class TriggerConfiguration extends React.Component<Props> {
                           onChange={this.onChangeHandlerForTrigger(trigger)}
                           onDelete={this.onDeleteHandlerForTrigger(trigger)}
                           isShowingEmojiPicker={this.props.openDropdownName === `${key}EmojiPicker`}
-                          onToggleEmojiPicker={this.toggleDropdown.bind(this, `${key}EmojiPicker`)}
+                          onToggleEmojiPicker={this.toggleDropdownHandlerFor(`${key}Dropdown`)}
                         />
                       )
                     })}
                     <div className="display-inline-block align-t mts mrm mbm">
-                      <Button onClick={this.addReactionTrigger} className="button-symbol" title="Add another reaction trigger"><SVGPlus /></Button>
+                      <Button onClick={this.addReactionTrigger} className="button-symbol">
+                        <SVGPlus label={"Add reaction trigger"} />
+                      </Button>
                     </div>
                   </div>
                 </div>

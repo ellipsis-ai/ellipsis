@@ -7,6 +7,7 @@ import Collapsible from '../shared_ui/collapsible';
 import ToggleGroup from '../form/toggle_group';
 import Trigger, {TriggerInterface} from '../models/trigger';
 import autobind from "../lib/autobind";
+import DropdownMenu, {DropdownMenuItem} from "../shared_ui/dropdown_menu";
 
 interface Props {
   trigger: Trigger
@@ -16,6 +17,8 @@ interface Props {
   onDelete: () => void
   onEnterKey: () => void
   onHelpClick: () => void
+  dropdownIsOpen: boolean
+  onToggleDropdown: () => void
 }
 
 interface State {
@@ -204,20 +207,30 @@ class MessageTriggerInput extends React.Component<Props, State> {
     );
   }
 
+  getPrefix(): string {
+    return this.isRegex() ? "Regex pattern" : "Phrase";
+  }
+
   renderMatchTypeToggle() {
     return (
-      <ToggleGroup className="form-toggle-group-s align-m mll">
-        <ToggleGroup.Item
+      <DropdownMenu
+        openWhen={this.props.dropdownIsOpen}
+        label={this.getPrefix()}
+        labelClassName="button-dropdown-trigger-borderless type-label type-weak button-s"
+        toggle={this.props.onToggleDropdown}
+        menuClassName="width-20"
+      >
+        <DropdownMenuItem
           onClick={this.setNormalPhrase}
           label="Normal phrase"
-          activeWhen={!this.isRegex()}
+          checkedWhen={!this.isRegex()}
         />
-        <ToggleGroup.Item
+        <DropdownMenuItem
           onClick={this.setRegex}
           label="Regular expression"
-          activeWhen={this.isRegex()}
+          checkedWhen={this.isRegex()}
         />
-      </ToggleGroup>
+      </DropdownMenu>
     );
   }
 
