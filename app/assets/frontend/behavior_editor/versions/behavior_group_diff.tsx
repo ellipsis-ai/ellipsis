@@ -58,12 +58,16 @@ class BehaviorGroupDiff extends React.Component<Props> {
       return this.renderSimpleDiff(diff, index, childClassName);
     } else if (diff instanceof AddedOrRemovedDiff || diff instanceof ModifiedDiff) {
       return this.renderAddedRemovedModifiedDiff(diff, index, childClassName);
+    } else {
+      return undefined;
     }
   }
 
   renderDiffChildren(diff: Diff, childClassName?: Option<string>) {
     if (diff instanceof ModifiedDiff || diff instanceof AddedOrRemovedDiff) {
       return diff.children.map((ea, index) => this.renderSingleDiff(ea, index, childClassName));
+    } else {
+      return undefined;
     }
   }
 
