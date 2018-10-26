@@ -147,7 +147,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = postMessageBodyFor("foo", defaultChannel, token)
-        val request = FakeRequest(controllers.routes.APIController.postMessage()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.postMessage()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
@@ -159,7 +159,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = true, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = postMessageBodyFor("foo", defaultChannel, token)
-        val request = FakeRequest(controllers.routes.APIController.postMessage()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.postMessage()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
         val resultJson = contentAsJson(result)
@@ -204,7 +204,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = runActionBodyFor(Some("foo"), None, defaultChannel, token)
-        val request = FakeRequest(controllers.routes.APIController.runAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
@@ -219,7 +219,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
 
         val body = runActionBodyFor(None, None, defaultChannel, token)
-        val request = FakeRequest(controllers.routes.APIController.runAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("One and only one of actionName and trigger must be set", None))
@@ -233,7 +233,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
 
         val body = runActionBodyFor(Some("foo"), Some("bar"), defaultChannel, token)
-        val request = FakeRequest(controllers.routes.APIController.runAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("One and only one of actionName and trigger must be set", None))
@@ -254,7 +254,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviorVersions.findByName(actionName, groupVersion)).thenReturn(Future.successful(Some(targetBehaviorVersion)))
 
         val body = runActionBodyFor(Some(actionName), None, defaultChannel, token)
-        val request = FakeRequest(controllers.routes.APIController.runAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
         val resultJson = contentAsJson(result)
@@ -278,7 +278,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val trigger = "foo"
 
         val body = runActionBodyFor(None, Some(trigger), defaultChannel, token)
-        val request = FakeRequest(controllers.routes.APIController.runAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
         val resultJson = contentAsJson(result)
@@ -303,7 +303,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = postMessageBodyFor("foo", defaultChannel, token)
-        val request = FakeRequest(controllers.routes.APIController.say()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.say()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
@@ -316,7 +316,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val token = setUpMocksFor(team, user, isTokenValid = true, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val message = "foo"
         val body = postMessageBodyFor(message, defaultChannel, token)
-        val request = FakeRequest(controllers.routes.APIController.say()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.say()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
         val resultJson = contentAsJson(result)
@@ -361,7 +361,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = scheduleActionBodyFor(Some("foo"), None, defaultChannel, "every day at noon", token)
-        val request = FakeRequest(controllers.routes.APIController.scheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
@@ -373,7 +373,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = scheduleActionBodyFor(None, None, defaultChannel, "every day at noon", token)
-        val request = FakeRequest(controllers.routes.APIController.scheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("One and only one of actionName and trigger must be set", None))
@@ -384,7 +384,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = scheduleActionBodyFor(Some("foo"), Some("bar"), defaultChannel, "every day at noon", token)
-        val request = FakeRequest(controllers.routes.APIController.scheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("One and only one of actionName and trigger must be set", None))
@@ -428,7 +428,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         }
 
         val body = scheduleActionBodyFor(Some(actionName), None, defaultChannel, recurrenceString, token)
-        val request = FakeRequest(controllers.routes.APIController.scheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
 
@@ -463,7 +463,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         }
 
         val body = scheduleActionBodyFor(None, Some(trigger), defaultChannel, recurrenceString, token)
-        val request = FakeRequest(controllers.routes.APIController.scheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
 
@@ -503,7 +503,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = unscheduleActionBodyFor(Some("foo"), None, None, None, token)
-        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
@@ -515,7 +515,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = unscheduleActionBodyFor(None, None, None, None, token)
-        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("One and only one of actionName and trigger must be set", None))
@@ -526,7 +526,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = unscheduleActionBodyFor(Some("foo"), Some("bar"), None, None, token)
-        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("One and only one of actionName and trigger must be set", None))
@@ -549,7 +549,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val invalidUserId = "invalid"
         when(dataService.users.find(invalidUserId)).thenReturn(Future.successful(None))
         val body = unscheduleActionBodyFor(Some("foo"), None, Some(invalidUserId), None, token)
-        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData(s"Couldn't find a user with ID `${invalidUserId}`", Some("userId")))
@@ -571,7 +571,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       when(dataService.behaviorVersions.findByName(actionName, groupVersion)).thenReturn(Future.successful(None))
       when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
       val body = unscheduleActionBodyFor(Some(actionName), None, None, Some(defaultChannel), token)
-      val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+      val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
       val result = route(app, request).get
 
       status(result) mustBe NOT_FOUND
@@ -609,7 +609,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.scheduledBehaviors.delete(scheduledBehavior)).thenReturn(Future.successful(Some(scheduledBehavior)))
 
         val body = unscheduleActionBodyFor(Some(actionName), None, None, Some(defaultChannel), token)
-        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
 
@@ -635,7 +635,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.scheduledBehaviors.delete(any[ScheduledBehavior])).thenReturn(Future.successful(None))
 
         val body = unscheduleActionBodyFor(Some(actionName), None, None, Some(defaultChannel), token)
-        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
 
@@ -666,7 +666,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.scheduledMessages.delete(scheduledMessage)).thenReturn(Future.successful(Some(scheduledMessage)))
 
         val body = unscheduleActionBodyFor(None, Some(trigger), None, Some(defaultChannel), token)
-        val request = FakeRequest(controllers.routes.APIController.unscheduleAction()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
 
@@ -685,7 +685,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val body = JsObject(Seq(
           ("token", JsString(token))
         ))
-        val request = FakeRequest(controllers.routes.APIController.generateApiToken()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.generateApiToken()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
@@ -704,7 +704,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val body = JsObject(Seq(
           ("token", JsString(token))
         ))
-        val request = FakeRequest(controllers.routes.APIController.generateApiToken()).withJsonBody(body)
+        val request = FakeRequest(controllers.api.routes.APIController.generateApiToken()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
         val resultJson = contentAsJson(result)
