@@ -79,7 +79,6 @@ describe('BehaviorEditor', () => {
     teamId: "A",
     "isAdmin": false,
     "isLinkedToGithub": false,
-    triggerTypes: [{ id: "MessageSent", displayString: "Message sent" }],
     group: groupJson,
     selectedId: "1",
     csrfToken: "2",
@@ -172,7 +171,6 @@ describe('BehaviorEditor', () => {
     "csrfToken": "1234",
     "isAdmin": false,
     "isLinkedToGithub": false,
-    triggerTypes: [{ id: "MessageSent", displayString: "Message sent" }],
     "group": newGroupJson,
     "builtinParamTypes": [{ "id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false }, {
       "id": "Number",

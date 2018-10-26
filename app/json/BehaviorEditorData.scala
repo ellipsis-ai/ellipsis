@@ -15,7 +15,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorEditorData(
                                teamAccess: UserTeamAccess,
-                               triggerTypes: Seq[TriggerTypeData],
                                group: BehaviorGroupData,
                                builtinParamTypes: Seq[BehaviorParameterTypeData],
                                maybeSelectedId: Option[String],
@@ -219,7 +218,6 @@ object BehaviorEditorData {
       }
       BehaviorEditorData(
         teamAccess,
-        TriggerType.values.map(TriggerTypeData.from),
         data,
         builtinParamTypeData,
         maybeVerifiedSelectedId,
