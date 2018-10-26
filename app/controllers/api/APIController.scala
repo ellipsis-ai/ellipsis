@@ -13,16 +13,14 @@ import javax.inject.Inject
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
 import models.behaviors.{BotResultService, SimpleTextResult}
+import play.api.Logger
 import play.api.data.Forms._
 import play.api.data.{Form, FormError}
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Request, Result}
-import play.api.{Configuration, Logger}
-import services.caching.CacheService
-import services.slack.{SlackApiError, SlackEventService}
-import services.{AWSLambdaService, DataService, DefaultServices}
-import utils.{SlackFileMap, SlackMessageSenderChannelException, SlackMessageSenderException}
+import services.slack.SlackApiError
+import services.{DataService, DefaultServices}
+import utils.{SlackMessageSenderChannelException, SlackMessageSenderException}
 
 import scala.concurrent.{ExecutionContext, Future}
 
