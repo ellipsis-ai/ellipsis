@@ -139,7 +139,7 @@ class ReactionTriggerInput extends React.Component<Props> {
                     title={this.props.trigger.text || "Pick your emoji…"}
                     emoji={this.props.trigger.text}
                     showPreview={false}
-                    perLine={12}
+                    perLine={8}
                     emojisToShowFilter={this.filterExistingEmoji}
                   />
                 </div>
