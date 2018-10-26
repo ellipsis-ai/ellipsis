@@ -43,6 +43,12 @@ class ReactionTriggerInput extends React.Component<Props> {
     autobind(this);
   }
 
+  componentWillReceiveProps(newProps: Props): void {
+    if (this.props.isShowingEmojiPicker && !newProps.isShowingEmojiPicker && !newProps.trigger.text) {
+      this.props.onDelete();
+    }
+  }
+
   changeTrigger(props: Partial<TriggerInterface>): void {
     var newTrigger = this.props.trigger.clone(props);
     this.props.onChange(newTrigger);
@@ -120,10 +126,6 @@ class ReactionTriggerInput extends React.Component<Props> {
       <div className="border border-light bg-white mrm mbm display-inline-block">
         <div className="columns columns-elastic">
           <div className="column column-expand pvm plm prn">
-            <Button className="button-block" onClick={this.toggleReactionPicker} stopPropagation={true}>
-              <span className="display-inline-block align-m mrm height-icon width-icon align-c">{this.renderSelectedEmoji()}</span>
-              <span className="display-inline-block align-m type-weak type-s">{this.renderEmojiText()}</span>
-            </Button>
             {this.props.isShowingEmojiPicker ? (
               <DropdownContainer>
                 <div className="popup popup-shadow popup-demoted">
@@ -143,6 +145,10 @@ class ReactionTriggerInput extends React.Component<Props> {
                 </div>
               </DropdownContainer>
             ) : null}
+            <Button className="button-block" onClick={this.toggleReactionPicker} stopPropagation={true}>
+              <span className="display-inline-block align-m mrm height-icon width-icon align-c">{this.renderSelectedEmoji()}</span>
+              <span className="display-inline-block align-m type-weak type-s">{this.renderEmojiText()}</span>
+            </Button>
           </div>
           <div className="column column-shrink align-m">
             <DeleteButton onClick={this.props.onDelete} />

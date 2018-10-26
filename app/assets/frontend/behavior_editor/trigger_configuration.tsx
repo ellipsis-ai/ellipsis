@@ -39,6 +39,10 @@ class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
       return !!(this.props.triggers.length > 0 && this.props.triggers[0].text);
     }
 
+    isShowingEmojiPicker(): boolean {
+      return /EmojiPicker$/.test(this.props.openDropdownName);
+    }
+
     onMessageTriggerEnterKey(index: number) {
       if (index + 1 < this.getMessageSentTriggers().length) {
         this.focusOnMessageTriggerIndex(index + 1);
@@ -136,10 +140,12 @@ class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
     renderAddButtons(renderMessageButton: boolean, renderReactionButton: boolean) {
       return (
         <div className="mtm">
-          <DropdownContainer>
-            <Button className={`button-s mrm mbm ${renderMessageButton ? "fade-in" : "display-none"}`} onClick={this.addMessageTrigger}>Add message trigger</Button>
-            <Button className={`button-s mrm mbm ${renderReactionButton ? "fade-in" : "display-none"}`} onClick={this.addReactionTrigger}>Add reaction trigger</Button>
-          </DropdownContainer>
+          <Button className={`button-s mrm mbm ${renderMessageButton ? "fade-in" : "display-none"}`} onClick={this.addMessageTrigger}>Add message trigger</Button>
+          <div className="display-inline-block">
+            <DropdownContainer>
+              <Button className={`button-s mrm mbm ${renderReactionButton ? "fade-in" : "display-none"}`} onClick={this.addReactionTrigger}>Add reaction trigger</Button>
+            </DropdownContainer>
+          </div>
         </div>
       )
     }
@@ -215,7 +221,7 @@ class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
                   })}
                   <div className="display-inline-block align-t mts mrm mbm">
                     <DropdownContainer>
-                      <Button onClick={this.addReactionTrigger} className="button-symbol">
+                      <Button onClick={this.addReactionTrigger} className="button-symbol" disabled={this.isShowingEmojiPicker()}>
                         <SVGPlus label={"Add reaction trigger"} />
                       </Button>
                     </DropdownContainer>
