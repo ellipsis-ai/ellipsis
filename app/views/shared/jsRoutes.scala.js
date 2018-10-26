@@ -3,8 +3,8 @@
 
 @JavaScriptReverseRouter("jsRoutes")(
   routes.javascript.APIAccessController.linkCustomOAuth2Service,
-  routes.javascript.APIController.postMessage,
-  routes.javascript.APIController.say,
+  api.routes.javascript.APIController.postMessage,
+  api.routes.javascript.APIController.say,
   routes.javascript.APITokenController.createToken,
   routes.javascript.APITokenController.listTokens,
   routes.javascript.APITokenController.revokeToken,

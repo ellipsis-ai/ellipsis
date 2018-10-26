@@ -135,15 +135,15 @@ POST        /webhooks/chargebee/events                @controllers.webhooks.char
 #NOCSRF
 POST        /put_item                                 @controllers.DefaultStorage.putItem
 #NOCSRF
-POST        /api/post_message                         @controllers.APIController.postMessage
+POST        /api/post_message                         @controllers.api.APIController.postMessage
 #NOCSRF
-POST        /api/run_action                           @controllers.APIController.runAction
+POST        /api/run_action                           @controllers.api.APIController.runAction
 #NOCSRF
-POST        /api/schedule_action                      @controllers.APIController.scheduleAction
+POST        /api/schedule_action                      @controllers.api.APIController.scheduleAction
 #NOCSRF
-POST        /api/unschedule_action                    @controllers.APIController.unscheduleAction
+POST        /api/unschedule_action                    @controllers.api.APIController.unscheduleAction
 #NOCSRF
-POST        /api/say                                  @controllers.APIController.say
+POST        /api/say                                  @controllers.api.APIController.say
 
 #NOCSRF
 GET         /get_action_logs/:actionName/:token       @controllers.InvocationLogController.getLogs(actionName: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None, originalEventType: Option[String] ?= None)
@@ -152,23 +152,23 @@ POST        /api/graphql                              @controllers.GraphQLContro
 
 # API v1
 #NOCSRF
-POST        /api/v1/tokens                            @controllers.APIController.generateApiToken
+POST        /api/v1/tokens                            @controllers.api.APIController.generateApiToken
 #NOCSRF
-POST        /api/v1/commands/say                      @controllers.APIController.say
+POST        /api/v1/commands/say                      @controllers.api.APIController.say
 #NOCSRF
-GET         /api/v1/users                             @controllers.APIController.findUsers(token: String, email: Option[String] ?= None)
+GET         /api/v1/users                             @controllers.api.APIController.findUsers(token: String, email: Option[String] ?= None)
 #NOCSRF
-GET         /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
+GET         /api/v1/files                             @controllers.api.APIController.fetchFile(token: String, fileId: String)
 #NOCSRF
-HEAD        /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
+HEAD        /api/v1/files                             @controllers.api.APIController.fetchFile(token: String, fileId: String)
 #NOCSRF
-POST        /api/v1/add_message_listener              @controllers.APIController.addMessageListener
+POST        /api/v1/add_message_listener              @controllers.api.APIController.addMessageListener
 #NOCSRF
-POST        /api/v1/delete_saved_answers              @controllers.APIController.deleteSavedAnswers
+POST        /api/v1/delete_saved_answers              @controllers.api.APIController.deleteSavedAnswers
 #NOCSRF
-DELETE   /api/v1/inputs/:inputName/user_saved_answer/:token  @controllers.APIController.deleteUserSavedAnswer(inputName: String, token: String)
+DELETE   /api/v1/inputs/:inputName/user_saved_answer/:token  @controllers.api.APIController.deleteUserSavedAnswer(inputName: String, token: String)
 #NOCSRF
-DELETE   /api/v1/inputs/:inputName/team_saved_answers/:token @controllers.APIController.deleteTeamSavedAnswers(inputName: String, token: String)
+DELETE   /api/v1/inputs/:inputName/team_saved_answers/:token @controllers.api.APIController.deleteTeamSavedAnswers(inputName: String, token: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)
