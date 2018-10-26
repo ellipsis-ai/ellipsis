@@ -238,12 +238,16 @@ class CacheServiceImpl @Inject() (
     }
   }
 
+  private def groupVersionDataKey(versionId: String): String = {
+    s"ImmutableBehaviorGroupVersionData-v1-${versionId}"
+  }
+
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {
-    set(data.id, Json.toJson(data))
+    set(groupVersionDataKey(data.id), Json.toJson(data))
   }
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = {
-    get[JsValue](groupVersionId).flatMap { json =>
+    get[JsValue](groupVersionDataKey(groupVersionId)).flatMap { json =>
       json.validate[ImmutableBehaviorGroupVersionData] match {
         case JsSuccess(data, _) => Some(data)
         case JsError(_) => None
