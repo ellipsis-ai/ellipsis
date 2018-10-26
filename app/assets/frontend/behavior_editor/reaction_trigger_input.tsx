@@ -33,7 +33,7 @@ interface Props {
 
 const EMOJI_SIZE = 32;
 const EMOJI_SHEET_SIZE = 64;
-const EMOJI_SET = "apple";
+const EMOJI_SET = "twitter";
 
 class ReactionTriggerInput extends React.Component<Props> {
   input: Option<FormInput>;
@@ -75,6 +75,7 @@ class ReactionTriggerInput extends React.Component<Props> {
     if (text) {
       return (
         <Emoji
+          native={true}
           emoji={{ id: this.props.trigger.text, skin: 3 }}
           size={EMOJI_SIZE}
           sheetSize={EMOJI_SHEET_SIZE}
@@ -127,6 +128,7 @@ class ReactionTriggerInput extends React.Component<Props> {
               <DropdownContainer>
                 <div className="popup popup-shadow popup-demoted">
                   <Picker
+                    native={true}
                     set={EMOJI_SET}
                     onClick={this.onClickEmoji}
                     sheetSize={EMOJI_SHEET_SIZE}
