@@ -19,4 +19,6 @@ trait APITokenService {
 
   def revoke(token: APIToken): Future[APIToken]
 
+  def maybeUserForApiToken(token: String): Future[Option[User]]
+
 }

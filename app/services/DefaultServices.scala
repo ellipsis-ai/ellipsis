@@ -4,6 +4,7 @@ import javax.inject._
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import models.behaviors.BotResultService
+import models.behaviors.events.EventHandler
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services.caching.CacheService
@@ -22,6 +23,7 @@ class DefaultServices @Inject() (
                                   slackEventServiceProvider: Provider[SlackEventService],
                                   slackFileMapProvider: Provider[SlackFileMap],
                                   slackApiServiceProvider: Provider[SlackApiService],
+                                  eventHandlerProvider: Provider[EventHandler],
                                   val actorSystem: ActorSystem
                           ) {
 
@@ -35,4 +37,5 @@ class DefaultServices @Inject() (
   def slackEventService: SlackEventService = slackEventServiceProvider.get
   def slackFileMap: SlackFileMap = slackFileMapProvider.get
   def slackApiService: SlackApiService = slackApiServiceProvider.get
+  def eventHandler: EventHandler = eventHandlerProvider.get
 }

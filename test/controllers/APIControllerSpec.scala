@@ -73,6 +73,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.invocationTokens.findNotExpired(token)).thenReturn(Future.successful(maybeInvocationToken))
     when(dataService.users.findForInvocationToken(token)).thenReturn(Future.successful(maybeUserForToken))
     when(dataService.teams.find(user.teamId)).thenReturn(Future.successful(Some(team)))
+    when(dataService.apiTokens.maybeUserForApiToken(token)).thenReturn(Future.successful(maybeUserForToken))
     val botProfile = SlackBotProfile(defaultChannel, team.id, None, defaultSlackTeamId, defaultSlackToken, OffsetDateTime.now, allowShortcutMention = true)
 
     val apiController = app.injector.instanceOf(classOf[APIController])
@@ -151,7 +152,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
-        verify(dataService.apiTokens, times(1)).find(token)
+        verify(dataService.apiTokens, times(1)).maybeUserForApiToken(token)
       }
     }
 
@@ -208,7 +209,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
-        verify(dataService.apiTokens, times(1)).find(token)
+        verify(dataService.apiTokens, times(1)).maybeUserForApiToken(token)
       }
     }
 
@@ -307,7 +308,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
-        verify(dataService.apiTokens, times(1)).find(token)
+        verify(dataService.apiTokens, times(1)).maybeUserForApiToken(token)
       }
     }
 
@@ -365,7 +366,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
-        verify(dataService.apiTokens, times(1)).find(token)
+        verify(dataService.apiTokens, times(1)).maybeUserForApiToken(token)
       }
     }
 
@@ -507,7 +508,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
-        verify(dataService.apiTokens, times(1)).find(token)
+        verify(dataService.apiTokens, times(1)).maybeUserForApiToken(token)
       }
     }
 
@@ -553,7 +554,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData(s"Couldn't find a user with ID `${invalidUserId}`", Some("userId")))
-        verify(dataService.apiTokens, times(1)).find(token)
+        verify(dataService.apiTokens, times(1)).maybeUserForApiToken(token)
       }
     }
 
@@ -689,7 +690,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("Invalid token", Some("token")))
-        verify(dataService.apiTokens, times(1)).find(token)
+        verify(dataService.apiTokens, times(1)).maybeUserForApiToken(token)
       }
     }
 
