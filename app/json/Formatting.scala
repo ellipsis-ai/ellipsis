@@ -34,6 +34,8 @@ object Formatting {
 
   lazy implicit val triggerTypeDataFormat = Json.format[TriggerTypeData]
 
+  lazy implicit val legacyBehaviorTriggerJsonFormat = Json.format[LegacyBehaviorTriggerJson]
+
   lazy implicit val behaviorTriggerReads = Json.reads[BehaviorTriggerData]
   lazy implicit val behaviorTriggerWrites = Json.writes[BehaviorTriggerData]
 

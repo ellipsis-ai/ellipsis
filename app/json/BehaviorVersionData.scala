@@ -170,7 +170,7 @@ object BehaviorVersionData {
       functionBody = "",
       responseTemplate = "",
       inputIds = Seq(),
-      triggers = Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false, triggerType = Some(MessageSent.toString))),
+      triggers = Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false, triggerType = MessageSent.toString)),
       config = BehaviorConfig(
         None,
         maybeName,
@@ -227,7 +227,7 @@ object BehaviorVersionData {
       extractFunctionBodyFrom(function),
       response,
       Json.parse(params).validate[Seq[String]].get,
-      Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
+      Json.parse(triggers).validate[Seq[LegacyBehaviorTriggerJson]].get.map(_.toBehaviorTriggerData),
       configWithDataTypeConfig,
       configWithDataTypeConfig.exportId,
       createdAt = None,
@@ -303,7 +303,7 @@ object BehaviorVersionData {
               requiresMention = ea.requiresBotMention,
               isRegex = ea.shouldTreatAsRegex,
               caseSensitive = ea.isCaseSensitive,
-              triggerType = Some(ea.triggerType.toString)
+              triggerType = ea.triggerType.toString
             )
           ),
           config,
