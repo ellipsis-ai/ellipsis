@@ -165,7 +165,6 @@ class BehaviorEditorLoader extends React.Component {
 BehaviorEditorLoader.propTypes = {
   containerId: React.PropTypes.string.isRequired,
   csrfToken: React.PropTypes.string.isRequired,
-  triggerTypes: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
   group: React.PropTypes.object.isRequired,
   selectedId: React.PropTypes.string,
   builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
