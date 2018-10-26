@@ -1,5 +1,6 @@
 package models.behaviors.triggers
 
+import json.BehaviorTriggerData
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
@@ -28,4 +29,23 @@ trait TriggerService {
                        triggerType: TriggerType
                      ): DBIO[Trigger]
 
+  def createTriggersForAction(
+                               behaviorVersion: BehaviorVersion,
+                               triggersData: Seq[BehaviorTriggerData]
+                             ): DBIO[Seq[Trigger]] = {
+    DBIO.sequence(triggersData
+      .filterNot(_.text.trim.isEmpty)
+      .distinct
+      .map { trigger =>
+        createForAction(
+          behaviorVersion,
+          trigger.text,
+          trigger.requiresMention,
+          trigger.isRegex,
+          trigger.caseSensitive,
+          TriggerType.definitelyFind(trigger.triggerType)
+        )
+      }
+    )
+  }
 }

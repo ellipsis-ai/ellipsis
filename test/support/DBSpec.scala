@@ -191,8 +191,16 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     runNow(dataService.behaviorVersions.findFor(behavior, groupVersion)).get
   }
 
+  def newSavedBehaviorVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, user: User): BehaviorVersion = {
+    runNow(dataService.behaviorVersions.createForAction(behavior, groupVersion, ApiConfigInfo(Seq(), Seq(), Seq(), Seq(), Seq()), Some(user), newBehaviorVersionDataFor(behavior)))
+  }
+
   def newSavedBehaviorGroupFor(team: Team): BehaviorGroup = {
     runNow(dataService.behaviorGroups.createFor(None, team))
+  }
+
+  def newSavedBehaviorFor(group: BehaviorGroup): Behavior = {
+    runNow(dataService.behaviors.createForAction(group, None, None, isDataType = false))
   }
 
   def newSavedOAuth2Api: OAuth2Api = {

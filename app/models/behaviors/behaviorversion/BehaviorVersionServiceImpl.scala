@@ -292,20 +292,7 @@ class BehaviorVersionServiceImpl @Inject() (
       }
       ).map(_.flatten)
       _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
-      _ <- DBIO.sequence(
-        data.triggers.
-          filterNot(_.text.trim.isEmpty)
-          map { trigger =>
-          dataService.triggers.createForAction(
-            updated,
-            trigger.text,
-            trigger.requiresMention,
-            trigger.isRegex,
-            trigger.caseSensitive,
-            TriggerType.definitelyFind(trigger.triggerType)
-          )
-        }
-      )
+      _ <- dataService.triggers.createTriggersForAction(updated, data.triggers)
       _ <- data.config.dataTypeConfig.map { configData =>
         dataService.dataTypeConfigs.createForAction(updated, configData)
       }.getOrElse(DBIO.successful(None))
