@@ -4,6 +4,7 @@ import java.time.{LocalTime, OffsetDateTime}
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
+import controllers.api.APIController
 import json.Formatting._
 import json.{APIErrorData, APIResultWithErrorsData, APITokenData}
 import models.IDs
