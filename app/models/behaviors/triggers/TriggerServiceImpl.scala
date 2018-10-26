@@ -99,7 +99,7 @@ class TriggerServiceImpl @Inject()(
     }
   }
 
-  def createForAction(
+  protected def createForAction(
                        behaviorVersion: BehaviorVersion,
                        pattern: String,
                        requiresBotMention: Boolean,

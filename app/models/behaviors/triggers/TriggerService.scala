@@ -20,7 +20,7 @@ trait TriggerService {
 
   def allActiveFor(behaviorGroup: BehaviorGroup): Future[Seq[Trigger]]
 
-  def createForAction(
+  protected def createForAction(
                        behaviorVersion: BehaviorVersion,
                        pattern: String,
                        requiresBotMention: Boolean,
