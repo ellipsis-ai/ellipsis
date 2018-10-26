@@ -1,6 +1,7 @@
 package controllers.api.context
 
 import akka.actor.ActorSystem
+import controllers.api.APIResponder
 import controllers.api.exceptions.APIMethodContextBuilderException
 import services.DefaultServices
 
@@ -10,11 +11,12 @@ object ApiMethodContextBuilder {
 
   def createFor(
                  token: String,
-                 services: DefaultServices
+                 services: DefaultServices,
+                 responder: APIResponder
                )(implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[ApiMethodContext] = {
-    SlackApiMethodContext.maybeCreateFor(token, services).flatMap { maybeSlackMethodContext: Option[ApiMethodContext] =>
+    SlackApiMethodContext.maybeCreateFor(token, services, responder).flatMap { maybeSlackMethodContext: Option[ApiMethodContext] =>
       maybeSlackMethodContext.map(Future.successful).getOrElse {
-        NoMediumApiMethodContext.maybeCreateFor(token, services).map { maybeNoMediumMethodContext =>
+        NoMediumApiMethodContext.maybeCreateFor(token, services, responder).map { maybeNoMediumMethodContext =>
           maybeNoMediumMethodContext.getOrElse {
             throw new APIMethodContextBuilderException
           }

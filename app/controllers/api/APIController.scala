@@ -1,7 +1,7 @@
 package controllers.api
 
 import _root_.json.Formatting._
-import _root_.json.{APIErrorData, APIResultWithErrorsData, APITokenData, UserData}
+import _root_.json.{APIErrorData, APITokenData, UserData}
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import controllers.api.context.ApiMethodContextBuilder
@@ -14,8 +14,8 @@ import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
 import models.behaviors.{BotResultService, SimpleTextResult}
 import play.api.Logger
+import play.api.data.Form
 import play.api.data.Forms._
-import play.api.data.{Form, FormError}
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
 import services.slack.SlackApiError
@@ -35,51 +35,11 @@ class APIController @Inject() (
 
   val dataService: DataService = services.dataService
   val botResultService: BotResultService = services.botResultService
-
-  private def logAndRespondFor(status: Status, maybeErrorData: Option[APIErrorData], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    val formErrors = maybeFormErrors.map { errors =>
-      errors.map { error =>
-        APIErrorData(error.format, Some(error.key).filter(_.nonEmpty))
-      }
-    }.getOrElse(Seq())
-    val errorMessage = maybeErrorData.map { data =>
-      data.field.map { field =>
-        s"$field: ${data.message}"
-      }.getOrElse(data.message)
-    }.getOrElse("")
-    val errorResultData = APIResultWithErrorsData(formErrors ++ Seq(maybeErrorData).flatten)
-    val jsonErrorResultData = Json.toJson(errorResultData)
-    val result = status.apply(jsonErrorResultData)
-    Logger.info(
-      s"""Returning a ${result.header.status} for: $errorMessage
-         |
-         |${Json.prettyPrint(jsonErrorResultData)}
-         |
-         |Api info: ${Json.prettyPrint(details)}
-         |
-         |Request: $r with ${r.rawQueryString} ${r.body}""".stripMargin)
-    result
-  }
-
-  private def badRequest(maybeApiErrorData: Option[APIErrorData], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    logAndRespondFor(BadRequest, maybeApiErrorData, maybeFormErrors, details)
-  }
-
-  private def notFound(apiErrorData: APIErrorData, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    logAndRespondFor(NotFound, Some(apiErrorData), None, details)
-  }
-
-  private def invalidTokenRequest[T](details: T = None)(implicit r: Request[AnyContent], tjs: Writes[T]): Result = {
-    badRequest(Some(APIErrorData("Invalid token", Some("token"))), None, Json.toJson(details))
-  }
+  val responder = APIResponder(this)
 
   private val actionNameAndTriggerError = "One and only one of actionName and trigger must be set"
   private def checkActionNameAndTrigger(info: ApiMethodWithActionInfo) = {
     (info.actionName.isDefined || info.trigger.isDefined) && (info.actionName.isEmpty || info.trigger.isEmpty)
-  }
-
-  private def resultForFormErrors[T <: ApiMethodInfo](formWithErrors: Form[T])(implicit r: Request[AnyContent]): Result = {
-    badRequest(None, Some(formWithErrors.errors))
   }
 
   private val runActionForm = Form(
@@ -102,24 +62,24 @@ class APIController @Inject() (
   def runAction = Action.async { implicit request =>
     runActionForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(resultForFormErrors(formWithErrors))
+        Future.successful(responder.resultForFormErrors(formWithErrors))
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContextBuilder.createFor(info.token, services)
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
           result <- info.actionName.map { name =>
             context.runByName(name, info)
           }.getOrElse {
             info.trigger.map { trigger =>
               context.runByTrigger(trigger, info)
             }.getOrElse {
-              Future.successful(badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
+              Future.successful(responder.badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
             }
           }
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => invalidTokenRequest(info)
+          case e: InvalidTokenException => responder.invalidTokenRequest(info)
         }
       }
     )
@@ -146,24 +106,24 @@ class APIController @Inject() (
   def scheduleAction = Action.async { implicit request =>
     scheduleActionForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(resultForFormErrors(formWithErrors))
+        Future.successful(responder.resultForFormErrors(formWithErrors))
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContextBuilder.createFor(info.token, services)
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
           result <- info.actionName.map { actionName =>
             context.scheduleByName(actionName, info)
           }.getOrElse {
             info.trigger.map { trigger =>
               context.scheduleByTrigger(trigger, info)
             }.getOrElse {
-              Future.successful(badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
+              Future.successful(responder.badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
             }
           }
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => invalidTokenRequest(info)
+          case e: InvalidTokenException => responder.invalidTokenRequest(info)
         }
       }
     )
@@ -183,24 +143,24 @@ class APIController @Inject() (
   def unscheduleAction = Action.async { implicit request =>
     unscheduleActionForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(resultForFormErrors(formWithErrors))
+        Future.successful(responder.resultForFormErrors(formWithErrors))
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContextBuilder.createFor(info.token, services)
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
           result <- info.actionName.map { actionName =>
             context.unscheduleByName(actionName, info)
           }.getOrElse {
             info.trigger.map { trigger =>
               context.unscheduleByTrigger(trigger, info)
             }.getOrElse {
-              Future.successful(badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
+              Future.successful(responder.badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
             }
           }
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => invalidTokenRequest(info)
+          case e: InvalidTokenException => responder.invalidTokenRequest(info)
         }
       }
     )
@@ -226,16 +186,16 @@ class APIController @Inject() (
   def addMessageListener = Action.async { implicit request =>
     addMessageListenerForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(resultForFormErrors(formWithErrors))
+        Future.successful(responder.resultForFormErrors(formWithErrors))
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContextBuilder.createFor(info.token, services)
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
           result <- context.addMessageListener(info)
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => invalidTokenRequest(info)
+          case e: InvalidTokenException => responder.invalidTokenRequest(info)
         }
       }
     )
@@ -254,17 +214,17 @@ class APIController @Inject() (
   def postMessage = Action.async { implicit request =>
     postMessageForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(resultForFormErrors(formWithErrors))
+        Future.successful(responder.resultForFormErrors(formWithErrors))
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContextBuilder.createFor(info.token, services)
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
           result <- context.runBehaviorFor(maybeEvent, Right(info.message))
         } yield result
 
         eventualResult.recover {
-          case e: InvalidTokenException => invalidTokenRequest(info)
+          case e: InvalidTokenException => responder.invalidTokenRequest(info)
         }
       }
     )
@@ -283,11 +243,11 @@ class APIController @Inject() (
   def say = Action.async { implicit request =>
     sayForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(resultForFormErrors(formWithErrors))
+        Future.successful(responder.resultForFormErrors(formWithErrors))
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContextBuilder.createFor(info.token, services)
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
           result <- maybeEvent.map { event =>
             val botResult = SimpleTextResult(event, None, info.message, responseType = Normal, shouldInterrupt = false)
@@ -301,18 +261,18 @@ class APIController @Inject() (
         } yield result
 
         eventualResult.recover {
-          case invalidTokenException: InvalidTokenException => invalidTokenRequest(info)
+          case invalidTokenException: InvalidTokenException => responder.invalidTokenRequest(info)
           case channelException: SlackMessageSenderChannelException => {
-            badRequest(Some(APIErrorData(s"""Error: ${channelException.rawChannelReason}""", Some("channel"))), None, Json.toJson(info))
+            responder.badRequest(Some(APIErrorData(s"""Error: ${channelException.rawChannelReason}""", Some("channel"))), None, Json.toJson(info))
           }
           case slackException: SlackMessageSenderException => {
             slackException.underlying match {
               // TODO: 400 seems like maybe the wrong kind of error here
               case apiError: SlackApiError => {
-                badRequest(Some(APIErrorData(s"Slack API error: ${apiError.code}\n", None)), None, Json.toJson(info))
+                responder.badRequest(Some(APIErrorData(s"Slack API error: ${apiError.code}\n", None)), None, Json.toJson(info))
               }
               case _ => {
-                badRequest(Some(APIErrorData(s"Unknown error while attempting to send message to Slack", None)), None, Json.toJson(info))
+                responder.badRequest(Some(APIErrorData(s"Unknown error while attempting to send message to Slack", None)), None, Json.toJson(info))
               }
             }
 
@@ -334,11 +294,11 @@ class APIController @Inject() (
   def generateApiToken = Action.async { implicit request =>
     generateApiTokenForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(resultForFormErrors(formWithErrors))
+        Future.successful(responder.resultForFormErrors(formWithErrors))
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContextBuilder.createFor(info.token, services)
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
           maybeNewToken <- context.maybeInvocationToken.map { invocationToken =>
             dataService.apiTokens.createFor(invocationToken, info.expirySeconds, info.isOneTime.getOrElse(false)).map(Some(_))
           }.getOrElse(Future.successful(None))
@@ -352,7 +312,7 @@ class APIController @Inject() (
 
         eventualResult.recover {
           // TODO: look into this and similar cases and maybe do something different
-          case e: InvalidTokenException => invalidTokenRequest(info)
+          case e: InvalidTokenException => responder.invalidTokenRequest(info)
         }
       }
     )
@@ -361,12 +321,12 @@ class APIController @Inject() (
 
   def fetchFile(token: String, fileId: String) = Action.async { implicit request =>
     val eventualResult = for {
-      context <- ApiMethodContextBuilder.createFor(token, services)
+      context <- ApiMethodContextBuilder.createFor(token, services, responder)
       result <- context.fetchFileResultFor(fileId)
     } yield result
 
     eventualResult.recover {
-      case e: InvalidTokenException => invalidTokenRequest(Map("token" -> token, "fileId" -> fileId))
+      case e: InvalidTokenException => responder.invalidTokenRequest(Map("token" -> token, "fileId" -> fileId))
     }
   }
 
@@ -376,7 +336,7 @@ class APIController @Inject() (
 
   def findUsers(token: String, maybeEmail: Option[String]) = Action.async { implicit request =>
     val eventualResult = for {
-      context <- ApiMethodContextBuilder.createFor(token, services)
+      context <- ApiMethodContextBuilder.createFor(token, services, responder)
       result <- context.maybeTeam.map { team =>
         maybeEmail.map { email =>
           dataService.users.maybeUserDataForEmail(email, team).map { maybeUserData =>
@@ -386,16 +346,16 @@ class APIController @Inject() (
           }
         }.getOrElse {
           Logger.warn(s"findUsers API request with no email param")
-          Future.successful(badRequest(Some(APIErrorData("You must pass an `email` parameter to find.", None)), None))
+          Future.successful(responder.badRequest(Some(APIErrorData("You must pass an `email` parameter to find.", None)), None))
         }
       }.getOrElse {
         Logger.warn(s"findUsers API request with no valid team")
-        Future.successful(notFound(APIErrorData("Team not found", None)))
+        Future.successful(responder.notFound(APIErrorData("Team not found", None)))
       }
     } yield result
 
     eventualResult.recover {
-      case e: InvalidTokenException => invalidTokenRequest(Map("token" -> token))
+      case e: InvalidTokenException => responder.invalidTokenRequest(Map("token" -> token))
     }
   }
 
@@ -421,7 +381,7 @@ class APIController @Inject() (
     val inputName = deleteSavedAnswersInfo.inputName
     val deleteAll = deleteSavedAnswersInfo.deleteAll.getOrElse(false)
     val eventualResult = for {
-      context <- ApiMethodContextBuilder.createFor(token, services)
+      context <- ApiMethodContextBuilder.createFor(token, services, responder)
       maybeBehaviorVersion <- context.maybeOriginatingBehaviorVersion
       savedInputs <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.inputs.allForGroupVersion(behaviorVersion.groupVersion).map { inputs =>
@@ -449,7 +409,7 @@ class APIController @Inject() (
       }
     }
     eventualResult.recover {
-      case e: InvalidTokenException => invalidTokenRequest(deleteSavedAnswersInfo)
+      case e: InvalidTokenException => responder.invalidTokenRequest(deleteSavedAnswersInfo)
     }
   }
 
@@ -463,7 +423,7 @@ class APIController @Inject() (
 
   def deleteSavedAnswers = Action.async { implicit request =>
     deleteSavedAnswersForm.bindFromRequest.fold(
-      formWithErrors => Future.successful(resultForFormErrors(formWithErrors)),
+      formWithErrors => Future.successful(responder.resultForFormErrors(formWithErrors)),
       info => deleteSavedAnswersFor(info)
     )
   }

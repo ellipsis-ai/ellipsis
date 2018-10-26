@@ -1,6 +1,7 @@
 package controllers.api.context
 
 import akka.actor.ActorSystem
+import controllers.api.APIResponder
 import controllers.api.exceptions.InvalidTokenException
 import controllers.api.json._
 import controllers.api.json.Formatting._
@@ -33,6 +34,7 @@ case class SlackApiMethodContext(
                                   maybeTeam: Option[Team],
                                   isInvokedExternally: Boolean,
                                   services: DefaultServices,
+                                  responder: APIResponder,
                                   implicit val ec: ExecutionContext,
                                   implicit val actorSystem: ActorSystem
                                 ) extends ApiMethodContext {
@@ -223,11 +225,11 @@ case class SlackApiMethodContext(
               unscheduled = None
             )))
           }.getOrElse {
-            badRequest(Some(APIErrorData(s"Unable to schedule `$actionName` for `${info.recurrenceString}`", None)), None, Json.toJson(info))
+            responder.badRequest(Some(APIErrorData(s"Unable to schedule `$actionName` for `${info.recurrenceString}`", None)), None, Json.toJson(info))
           }
         }
       }).getOrElse {
-        Future.successful(notFound(APIErrorData(s"Couldn't find the action `$actionName` to schedule", Some("actionName")), Json.toJson(info)))
+        Future.successful(responder.notFound(APIErrorData(s"Couldn't find the action `$actionName` to schedule", Some("actionName")), Json.toJson(info)))
       }
     } yield result
   }
@@ -260,7 +262,7 @@ case class SlackApiMethodContext(
           unscheduled = None
         )))
       }.getOrElse {
-        badRequest(Some(APIErrorData(s"Unable to schedule `$trigger` for `${info.recurrenceString}`", None)), None, Json.toJson(info))
+        responder.badRequest(Some(APIErrorData(s"Unable to schedule `$trigger` for `${info.recurrenceString}`", None)), None, Json.toJson(info))
       }
     }
   }
@@ -280,9 +282,9 @@ case class SlackApiMethodContext(
       }.getOrElse(Future.successful(None))
       result <- maybeBehaviorVersion.map { behaviorVersion =>
         if (info.userId.isDefined && maybeUser.isEmpty) {
-          Future.successful(notFound(APIErrorData(s"Couldn't find a user with ID `${info.userId.get}`", Some("userId")), Json.toJson(info)))
+          Future.successful(responder.notFound(APIErrorData(s"Couldn't find a user with ID `${info.userId.get}`", Some("userId")), Json.toJson(info)))
         } else if (info.channel.isDefined && maybeSlackChannelId.isEmpty) {
-          Future.successful(notFound(APIErrorData(s"Couldn't find channel for `${info.channel}`", Some("channel")), Json.toJson(info)))
+          Future.successful(responder.notFound(APIErrorData(s"Couldn't find channel for `${info.channel}`", Some("channel")), Json.toJson(info)))
         } else {
           dataService.scheduledBehaviors.allForBehavior(behaviorVersion.behavior, maybeUser, maybeSlackChannelId).flatMap { scheduledBehaviors =>
             for {
@@ -308,7 +310,7 @@ case class SlackApiMethodContext(
             }
           }
         }
-      }.getOrElse(Future.successful(notFound(APIErrorData(s"Couldn't find an action with name `$actionName`", Some("actionName")), Json.toJson(info))))
+      }.getOrElse(Future.successful(responder.notFound(APIErrorData(s"Couldn't find an action with name `$actionName`", Some("actionName")), Json.toJson(info))))
     } yield result
   }
 
@@ -348,7 +350,7 @@ case class SlackApiMethodContext(
           }
         }
       }.getOrElse {
-        Future.successful(notFound(APIErrorData("Couldn't find team", None), Json.toJson(info)))
+        Future.successful(responder.notFound(APIErrorData("Couldn't find team", None), Json.toJson(info)))
       }
     } yield result
   }
@@ -376,7 +378,7 @@ case class SlackApiMethodContext(
           Ok(listener.id)
         }
       }).getOrElse {
-        Future.successful(notFound(APIErrorData(s"Couldn't add listener for action `${info.actionName}`", Some("actionName")), Json.toJson(info)))
+        Future.successful(responder.notFound(APIErrorData(s"Couldn't add listener for action `${info.actionName}`", Some("actionName")), Json.toJson(info)))
       }
     } yield result
   }
@@ -397,7 +399,8 @@ object SlackApiMethodContext {
 
   def maybeCreateFor(
                       token: String,
-                      services: DefaultServices
+                      services: DefaultServices,
+                      responder: APIResponder
                     )(implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Option[SlackApiMethodContext]] = {
     val dataService = services.dataService
     for {
@@ -443,6 +446,7 @@ object SlackApiMethodContext {
           maybeTeam,
           isInvokedExternally = maybeUserForApiToken.isDefined,
           services,
+          responder,
           ec,
           actorSystem
         )

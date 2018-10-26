@@ -1,10 +1,11 @@
 package controllers.api.context
 
 import akka.actor.ActorSystem
+import controllers.api.APIResponder
 import controllers.api.exceptions.InvalidTokenException
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{Event, EventHandler, EventType}
+import models.behaviors.events.{Event, EventType}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.testing.{TestMessageEvent, TestRunEvent}
@@ -21,6 +22,7 @@ case class NoMediumApiMethodContext(
                                      maybeScheduledMessage: Option[ScheduledMessage],
                                      isInvokedExternally: Boolean,
                                      services: DefaultServices,
+                                     responder: APIResponder,
                                      implicit val ec: ExecutionContext,
                                      implicit val actorSystem: ActorSystem
                                    ) extends ApiMethodContext {
@@ -63,7 +65,8 @@ object NoMediumApiMethodContext {
 
   def maybeCreateFor(
                       token: String,
-                      services: DefaultServices
+                      services: DefaultServices,
+                      responder: APIResponder
                     )(implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Option[NoMediumApiMethodContext]] = {
     val dataService = services.dataService
     for {
@@ -93,6 +96,7 @@ object NoMediumApiMethodContext {
           maybeScheduledMessage,
           isInvokedExternally = maybeUserForApiToken.isDefined,
           services,
+          responder,
           ec,
           actorSystem
         )

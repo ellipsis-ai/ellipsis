@@ -1,10 +1,10 @@
 package controllers.api.context
 
 import akka.actor.ActorSystem
-import controllers.api.json._
+import controllers.api.APIResponder
 import controllers.api.json.Formatting._
-import json.{APIErrorData, APIResultWithErrorsData}
-import json.Formatting._
+import controllers.api.json._
+import json.APIErrorData
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventHandler, EventType, ScheduledEvent}
@@ -13,7 +13,6 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
-import play.api.data.FormError
 import play.api.i18n.I18nSupport
 import play.api.libs.json._
 import play.api.mvc._
@@ -27,6 +26,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
   val botResultService: BotResultService = services.botResultService
   val dataService: DataService = services.dataService
   val eventHandler: EventHandler = services.eventHandler
+  val responder: APIResponder
   implicit val ec: ExecutionContext
   implicit val actorSystem: ActorSystem
   val maybeInvocationToken: Option[InvocationToken]
@@ -34,43 +34,6 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
   val maybeScheduledMessage: Option[ScheduledMessage]
   val maybeTeam: Option[Team]
   val isInvokedExternally: Boolean
-
-  def logAndRespondFor(status: Status, maybeErrorData: Option[APIErrorData], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    val formErrors = maybeFormErrors.map { errors =>
-      errors.map { error =>
-        APIErrorData(error.format, Some(error.key).filter(_.nonEmpty))
-      }
-    }.getOrElse(Seq())
-    val errorMessage = maybeErrorData.map { data =>
-      data.field.map { field =>
-        s"$field: ${data.message}"
-      }.getOrElse(data.message)
-    }.getOrElse("")
-    val errorResultData = APIResultWithErrorsData(formErrors ++ Seq(maybeErrorData).flatten)
-    val jsonErrorResultData = Json.toJson(errorResultData)
-    val result = status.apply(jsonErrorResultData)
-    Logger.info(
-      s"""Returning a ${result.header.status} for: $errorMessage
-         |
-         |${Json.prettyPrint(jsonErrorResultData)}
-         |
-         |Api info: ${Json.prettyPrint(details)}
-         |
-         |Request: $r with ${r.rawQueryString} ${r.body}""".stripMargin)
-    result
-  }
-
-  protected def badRequest(maybeApiErrorData: Option[APIErrorData], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    logAndRespondFor(BadRequest, maybeApiErrorData, maybeFormErrors, details)
-  }
-
-  protected def notFound(apiErrorData: APIErrorData, details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
-    logAndRespondFor(NotFound, Some(apiErrorData), None, details)
-  }
-
-  protected def invalidTokenRequest[T](details: T = None)(implicit r: Request[AnyContent], tjs: Writes[T]): Result = {
-    badRequest(Some(APIErrorData("Invalid token", Some("token"))), None, Json.toJson(details))
-  }
 
   def maybeOriginatingBehaviorVersion: Future[Option[BehaviorVersion]] = {
     maybeInvocationToken.map { invocationToken =>
@@ -169,7 +132,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
       } yield {
         runBehaviorFor(maybeEvent, Left(originatingBehaviorVersion))
       }).getOrElse {
-        Future.successful(notFound(APIErrorData(s"Action named `$actionName` not found", Some("actionName")), Json.toJson(info)))
+        Future.successful(responder.notFound(APIErrorData(s"Action named `$actionName` not found", Some("actionName")), Json.toJson(info)))
       }
     } yield result
   }
@@ -187,7 +150,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
   val mediumText: String
   def notSupportedResult(apiMethod: String, details: JsValue)(implicit r: Request[AnyContent]): Future[Result] = {
     val message = s"This API method ($apiMethod) is not supported for ${mediumText}"
-    Future.successful(badRequest(Some(APIErrorData(message, None)), None, details))
+    Future.successful(responder.badRequest(Some(APIErrorData(message, None)), None, details))
   }
 
   def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = notSupportedResult("fetching a file", JsNull)
