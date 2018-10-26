@@ -96,21 +96,13 @@ class APIController @Inject() (
     val message: String
   }
 
-  case class ApiMethodContext(
-                               maybeInvocationToken: Option[InvocationToken],
-                               maybeUser: Option[User],
-                               maybeBotProfile: Option[SlackBotProfile],
-                               maybeSlackProfile: Option[SlackProfile],
-                               maybeScheduledMessage: Option[ScheduledMessage],
-                               maybeTeam: Option[Team],
-                               isInvokedExternally: Boolean
-                             ) {
+  trait ApiMethodContext {
 
-    def maybeSlackChannelIdFor(channel: String): Future[Option[String]] = {
-      maybeBotProfile.map { botProfile =>
-        dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
-      }.getOrElse(Future.successful(None))
-    }
+    val maybeInvocationToken: Option[InvocationToken]
+    val maybeUser: Option[User]
+    val maybeScheduledMessage: Option[ScheduledMessage]
+    val maybeTeam: Option[Team]
+    val isInvokedExternally: Boolean
 
     def maybeOriginatingBehaviorVersion: Future[Option[BehaviorVersion]] = {
       maybeInvocationToken.map { invocationToken =>
@@ -127,41 +119,11 @@ class APIController @Inject() (
       } yield maybeBehaviorVersion
     }
 
-    def maybeSlackMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
-      maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
-        for {
-          botProfile <- maybeBotProfile
-          slackProfile <- maybeSlackProfile
-        } yield {
-          SlackMessageEvent(
-            botProfile,
-            maybeSlackChannelId.getOrElse(channel),
-            None,
-            slackProfile.loginInfo.providerKey,
-            SlackMessage.fromUnformattedText(message, botProfile),
-            None,
-            SlackTimestamp.now,
-            maybeOriginalEventType,
-            isUninterruptedConversation = false,
-            isEphemeral = false,
-            None,
-            beQuiet = false
-          )
-        }
-      }
-    }
+    def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]]
 
     def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
-      maybeSlackMessageEventFor(message, channel, maybeOriginalEventType).map { maybeSlackEvent =>
-        val maybeMessageEvent = maybeSlackEvent.orElse {
-          for {
-            user <- maybeUser
-            team <- maybeTeam
-          } yield {
-            TestMessageEvent(user, team, message, includesBotMention = true)
-          }
-        }
-        maybeMessageEvent.map { messageEvent =>
+      maybeBaseMessageEventFor(message, channel, maybeOriginalEventType).map { maybeBaseEvent =>
+        maybeBaseEvent.map { messageEvent =>
           val event: Event = maybeScheduledMessage.map { scheduledMessage =>
             ScheduledEvent(messageEvent, scheduledMessage)
           }.getOrElse(messageEvent)
@@ -170,92 +132,463 @@ class APIController @Inject() (
       }
     }
 
-    def maybeSlackRunEventFor(
-                                maybeBehaviorVersion: Option[BehaviorVersion],
-                                argumentsMap: Map[String, String],
-                                channel: String,
-                                maybeOriginalEventType: Option[EventType],
-                                maybeOriginatingBehaviorVersion: Option[BehaviorVersion]
-                        ): Future[Option[Event]] = {
+    def runEventFor(
+                      behaviorVersion: BehaviorVersion,
+                      argumentsMap: Map[String, String],
+                      channel: String,
+                      maybeOriginalEventType: Option[EventType]
+                    ): Future[Event]
+
+    def maybeRunEventForName(
+                              actionName: String,
+                              argumentsMap: Map[String, String],
+                              channel: String,
+                              maybeOriginalEventType: Option[EventType],
+                              maybeOriginatingBehaviorVersion: Option[BehaviorVersion]
+                            ): Future[Option[Event]] = {
       for {
-        maybeSlackChannelId <- maybeSlackChannelIdFor(channel)
-        maybeEvent <- Future.successful(
-          for {
-            botProfile <- maybeBotProfile
-            slackProfile <- maybeSlackProfile
-            behaviorVersion <- maybeBehaviorVersion
-          } yield RunEvent(
-            botProfile,
-            behaviorVersion,
-            argumentsMap,
-            maybeSlackChannelId.getOrElse(channel),
-            None,
-            slackProfile.loginInfo.providerKey,
-            SlackTimestamp.now,
-            maybeOriginalEventType,
-            isEphemeral = false,
-            None
-          )
-        )
+        maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
+        maybeEvent <- maybeBehaviorVersion.map { behaviorVersion =>
+          runEventFor(behaviorVersion, argumentsMap, channel, maybeOriginalEventType).map(Some(_))
+        }.getOrElse(Future.successful(None))
       } yield maybeEvent
     }
 
-    def maybeTestRunEventFor(
-                              maybeBehaviorVersion: Option[BehaviorVersion],
-                              argumentsMap: Map[String, String],
-                              maybeOriginatingBehaviorVersion: Option[BehaviorVersion]
-                            ): Option[Event] = {
+    protected def sendFor(event: Event, result: BotResult, eitherOriginatingBehaviorOrTriggerText: Either[BehaviorVersion, String]): Future[Unit] = {
+      botResultService.sendIn(result, None).map { _ =>
+        Logger.info(event.logTextFor(result, Some("in response to API run request")))
+      }
+    }
+
+    def runBehaviorFor(
+                        maybeEvent: Option[Event],
+                        eitherOriginatingBehaviorOrTriggerText: Either[BehaviorVersion, String]
+                      ) = {
       for {
-        user <- maybeUser
-        team <- maybeTeam
-        behaviorVersion <- maybeBehaviorVersion
-      } yield {
-        TestRunEvent(
-          user,
-          team,
-          behaviorVersion,
-          argumentsMap
+        result <- maybeEvent.map { event =>
+          for {
+            result <- eventHandler.handle(event, None).map { results =>
+              results.foreach { result =>
+                sendFor(event, result, eitherOriginatingBehaviorOrTriggerText)
+              }
+              Ok(Json.toJson(results.map(_.fullText)))
+            }
+          } yield result
+        }.getOrElse {
+          printEventCreationError()
+          Future.successful(InternalServerError("Request failed.\n"))
+        }
+      } yield result
+    }
+
+    def runByName(
+                   actionName: String,
+                   info: RunActionInfo
+                 )(implicit request: Request[AnyContent]): Future[Result] = {
+      for {
+        maybeOriginatingBehaviorVersion <- maybeOriginatingBehaviorVersion
+        maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
+        maybeEvent <- maybeRunEventForName(
+          actionName,
+          info.argumentsMap,
+          info.channel,
+          info.originalEventType.flatMap(EventType.find),
+          maybeOriginatingBehaviorVersion
+        )
+        result <- (for {
+          originatingBehaviorVersion <- maybeOriginatingBehaviorVersion
+          behaviorVersion <- maybeBehaviorVersion
+        } yield {
+          runBehaviorFor(maybeEvent, Left(originatingBehaviorVersion))
+        }).getOrElse {
+          Future.successful(notFound(APIErrorData(s"Action named `$actionName` not found", Some("actionName")), Json.toJson(info)))
+        }
+      } yield result
+    }
+
+    def runByTrigger(
+                      trigger: String,
+                      info: RunActionInfo
+                    )(implicit request: Request[AnyContent]): Future[Result] = {
+      for {
+        maybeEvent <- maybeMessageEventFor(trigger, info.channel, EventType.maybeFrom(info.originalEventType))
+        result <- runBehaviorFor(maybeEvent, Right(trigger))
+      } yield result
+    }
+
+    val mediumText: String
+    def notSupportedResult(apiMethod: String, details: JsValue)(implicit r: Request[AnyContent]): Future[Result] = {
+      val message = s"This API method ($apiMethod) is not supported for ${mediumText}"
+      Future.successful(badRequest(Some(APIErrorData(message, None)), None, details))
+    }
+
+    def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = notSupportedResult("fetching a file", JsNull)
+
+    def scheduleByName(
+                        actionName: String,
+                        info: ScheduleActionInfo
+                      )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("scheduling by name", Json.toJson(info))
+
+    def scheduleByTrigger(
+                           trigger: String,
+                           info: ScheduleActionInfo
+                         )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("schedule by trigger", Json.toJson(info))
+
+    def unscheduleByName(
+                          actionName: String,
+                          info: UnscheduleActionInfo
+                        )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("unscheduled by name", Json.toJson(info))
+
+    def unscheduleByTrigger(
+                            trigger: String,
+                            info: UnscheduleActionInfo
+                          )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("unschedule by trigger", Json.toJson(info))
+
+    def addMessageListener(
+                            info: AddMessageListenerInfo
+                          )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("add message listener", Json.toJson(info))
+
+    def printEventCreationError(): Unit
+
+  }
+
+  private def maybeUserForApiToken(token: String): Future[Option[User]] = {
+    for {
+      maybeToken <- dataService.apiTokens.find(token)
+      maybeValidToken <- maybeToken.map { token =>
+        if (token.isValid) {
+          dataService.apiTokens.use(token).map(_ => Some(token))
+        } else {
+          Future.successful(None)
+        }
+      }.getOrElse(Future.successful(None))
+
+      maybeUser <- maybeValidToken.map { token =>
+        dataService.users.find(token.userId)
+      }.getOrElse(Future.successful(None))
+    } yield maybeUser
+
+  }
+
+  case class SlackApiMethodContext(
+                                    maybeInvocationToken: Option[InvocationToken],
+                                    maybeUser: Option[User],
+                                    botProfile: SlackBotProfile,
+                                    slackProfile: SlackProfile,
+                                    maybeScheduledMessage: Option[ScheduledMessage],
+                                    maybeTeam: Option[Team],
+                                    isInvokedExternally: Boolean
+                                  ) extends ApiMethodContext {
+
+    val mediumText: String = "Slack"
+
+    def maybeSlackChannelIdFor(channel: String): Future[Option[String]] = {
+      dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
+    }
+
+    def messageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Event] = {
+      maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
+        SlackMessageEvent(
+          botProfile,
+          maybeSlackChannelId.getOrElse(channel),
+          None,
+          slackProfile.loginInfo.providerKey,
+          SlackMessage.fromUnformattedText(message, botProfile),
+          None,
+          SlackTimestamp.now,
+          maybeOriginalEventType,
+          isUninterruptedConversation = false,
+          isEphemeral = false,
+          None,
+          beQuiet = false
         )
       }
     }
 
-    def maybeRunEventFor(
-                          actionName: String,
-                          argumentsMap: Map[String, String],
-                          channel: String,
-                          maybeOriginalEventType: Option[EventType]
-                        ): Future[Option[Event]] = {
+    def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
+      messageEventFor(message, channel, maybeOriginalEventType).map(Some(_))
+    }
+
+    def runEventFor(
+                     behaviorVersion: BehaviorVersion,
+                     argumentsMap: Map[String, String],
+                     channel: String,
+                     maybeOriginalEventType: Option[EventType]
+                   ): Future[Event] = {
+      maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
+        RunEvent(
+          botProfile,
+          behaviorVersion,
+          argumentsMap,
+          maybeSlackChannelId.getOrElse(channel),
+          None,
+          slackProfile.loginInfo.providerKey,
+          SlackTimestamp.now,
+          maybeOriginalEventType,
+          isEphemeral = false,
+          None
+        )
+      }
+    }
+
+    override def sendFor(event: Event, result: BotResult, eitherOriginatingBehaviorOrTriggerText: Either[BehaviorVersion, String]): Future[Unit] = {
+      super.sendFor(event, result, eitherOriginatingBehaviorOrTriggerText).recover {
+        case c: SlackMessageSenderChannelException => {
+          val description = descriptionForResult(result, eitherOriginatingBehaviorOrTriggerText)
+          val messageStart = if (event.originalEventType == EventType.scheduled) {
+            s"**I was unable to complete a scheduled action in the specified channel** — $description"
+          } else {
+            s"**I was unable to complete an action in the specified channel** — $description"
+          }
+          val message =
+            s"""${messageStart}
+               |
+               |${c.formattedChannelReason}""".stripMargin
+          dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, botProfile, slackProfile.loginInfo.providerKey, message)
+        }
+      }
+    }
+
+    override def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = {
+      slackFileMap.maybeUrlFor(fileId).map { originalUrl =>
+        val maybeThumbnailUrl = slackFileMap.maybeThumbnailUrlFor(fileId)
+        val urlToUse = maybeThumbnailUrl.getOrElse(originalUrl)
+        val httpHeaders = (AUTHORIZATION, s"Bearer ${botProfile.token}")
+        ws.url(urlToUse).withHttpHeaders(httpHeaders).get.flatMap { r =>
+          if (r.status == 200) {
+            val contentType =
+              r.headers.get(CONTENT_TYPE).
+                flatMap(_.headOption).
+                getOrElse("application/octet-stream")
+
+            contentDispositionFor(r, contentType, httpHeaders, maybeThumbnailUrl.map(_ => originalUrl)).map { contentDisposition =>
+              val result = r.headers.get(CONTENT_LENGTH) match {
+                case Some(Seq(length)) =>
+                  Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
+                case _ =>
+                  Ok.chunked(r.bodyAsSource).as(contentType)
+              }
+              result.withHeaders(CONTENT_TYPE -> contentType, CONTENT_DISPOSITION -> contentDisposition)
+            }
+
+          } else {
+            Future.successful(BadGateway)
+          }
+        }
+      }.getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
+    }
+
+    override def scheduleByName(
+                        actionName: String,
+                        info: ScheduleActionInfo
+                      )(implicit request: Request[AnyContent]): Future[Result] = {
       for {
+        maybeSlackChannelId <- maybeSlackChannelIdFor(info.channel)
         maybeOriginatingBehaviorVersion <- maybeOriginatingBehaviorVersion
         maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
-        maybeSlackRunEvent <- maybeSlackRunEventFor(maybeBehaviorVersion, argumentsMap, channel, maybeOriginalEventType, maybeOriginatingBehaviorVersion)
-      } yield maybeSlackRunEvent.orElse {
-        maybeTestRunEventFor(maybeBehaviorVersion, argumentsMap, maybeOriginatingBehaviorVersion)
+        result <- (for {
+          behaviorVersion <- maybeBehaviorVersion
+        } yield {
+          for {
+            user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behaviorVersion.team.id)
+            maybeScheduled <- dataService.scheduledBehaviors.maybeCreateWithRecurrenceText(
+              behaviorVersion.behavior,
+              info.argumentsMap,
+              info.recurrenceString,
+              user,
+              behaviorVersion.team,
+              maybeSlackChannelId,
+              info.useDM
+            )
+          } yield {
+            maybeScheduled.map { scheduled =>
+              Ok(Json.toJson(ScheduleResult(
+                scheduled = Some(ScheduleActionResult(
+                  actionName = Some(actionName),
+                  trigger = None,
+                  arguments = Some(info.arguments),
+                  recurrence = scheduled.recurrence.displayString,
+                  firstRecurrence = Some(scheduled.nextSentAt),
+                  secondRecurrence = scheduled.maybeFollowingSentAt,
+                  useDM = scheduled.isForIndividualMembers,
+                  channel = scheduled.maybeChannel.getOrElse("(missing)")
+                )),
+                unscheduled = None
+              )))
+            }.getOrElse {
+              badRequest(Some(APIErrorData(s"Unable to schedule `$actionName` for `${info.recurrenceString}`", None)), None, Json.toJson(info))
+            }
+          }
+        }).getOrElse {
+          Future.successful(notFound(APIErrorData(s"Couldn't find the action `$actionName` to schedule", Some("actionName")), Json.toJson(info)))
+        }
+      } yield result
+    }
+
+    override def scheduleByTrigger(
+                           trigger: String,
+                           info: ScheduleActionInfo
+                         )(implicit request: Request[AnyContent]): Future[Result] = {
+      for {
+        maybeSlackChannelId <- maybeSlackChannelIdFor(info.channel)
+        maybeScheduled <- (for {
+          team <- maybeTeam
+          user <- maybeUser
+        } yield {
+          dataService.scheduledMessages.maybeCreateWithRecurrenceText(trigger, info.recurrenceString, user, team, maybeSlackChannelId, info.useDM)
+        }).getOrElse(Future.successful(None))
+      } yield {
+        maybeScheduled.map { scheduled =>
+          Ok(Json.toJson(ScheduleResult(
+            scheduled = Some(ScheduleActionResult(
+              actionName = None,
+              trigger = Some(trigger),
+              arguments = None,
+              recurrence = scheduled.recurrence.displayString,
+              firstRecurrence = Some(scheduled.nextSentAt),
+              secondRecurrence = scheduled.maybeFollowingSentAt,
+              useDM = scheduled.isForIndividualMembers,
+              channel = scheduled.maybeChannel.getOrElse("(missing)")
+            )),
+            unscheduled = None
+          )))
+        }.getOrElse {
+          badRequest(Some(APIErrorData(s"Unable to schedule `$trigger` for `${info.recurrenceString}`", None)), None, Json.toJson(info))
+        }
       }
+    }
+
+    override def unscheduleByName(
+                                   actionName: String,
+                                   info: UnscheduleActionInfo
+                                 )(implicit request: Request[AnyContent]): Future[Result] = {
+      for {
+        maybeSlackChannelId <- info.channel.map { channel =>
+          maybeSlackChannelIdFor(channel)
+        }.getOrElse(Future.successful(info.channel))
+        maybeOriginatingBehaviorVersion <- maybeOriginatingBehaviorVersion
+        maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
+        maybeUser <- info.userId.map { userId =>
+          dataService.users.find(userId)
+        }.getOrElse(Future.successful(None))
+        result <- maybeBehaviorVersion.map { behaviorVersion =>
+          if (info.userId.isDefined && maybeUser.isEmpty) {
+            Future.successful(notFound(APIErrorData(s"Couldn't find a user with ID `${info.userId.get}`", Some("userId")), Json.toJson(info)))
+          } else if (info.channel.isDefined && maybeSlackChannelId.isEmpty) {
+            Future.successful(notFound(APIErrorData(s"Couldn't find channel for `${info.channel}`", Some("channel")), Json.toJson(info)))
+          } else {
+            dataService.scheduledBehaviors.allForBehavior(behaviorVersion.behavior, maybeUser, maybeSlackChannelId).flatMap { scheduledBehaviors =>
+              for {
+                unscheduledList <- Future.sequence(scheduledBehaviors.map { ea =>
+                  dataService.scheduledBehaviors.delete(ea)
+                })
+              } yield {
+                Ok(Json.toJson(ScheduleResult(
+                  scheduled = None,
+                  unscheduled = Some(unscheduledList.flatten.map(scheduled =>
+                    ScheduleActionResult(
+                      actionName = Some(actionName),
+                      trigger = None,
+                      arguments = Some(scheduled.arguments.map { case (key, value) => RunActionArgumentInfo(key, value) }.toSeq),
+                      recurrence = scheduled.recurrence.displayString,
+                      firstRecurrence = None,
+                      secondRecurrence = None,
+                      useDM = scheduled.isForIndividualMembers,
+                      channel = scheduled.maybeChannel.getOrElse("(unknown)")
+                    )
+                  ))
+                )))
+              }
+            }
+          }
+        }.getOrElse(Future.successful(notFound(APIErrorData(s"Couldn't find an action with name `$actionName`", Some("actionName")), Json.toJson(info))))
+      } yield result
+    }
+
+    override def unscheduleByTrigger(
+                             trigger: String,
+                             info: UnscheduleActionInfo
+                           )(implicit request: Request[AnyContent]): Future[Result] = {
+      for {
+        maybeSlackChannelId <- info.channel.map { channel =>
+          maybeSlackChannelIdFor(channel)
+        }.getOrElse(Future.successful(info.channel))
+        maybeUser <- info.userId.map { userId =>
+          dataService.users.find(userId)
+        }.getOrElse(Future.successful(None))
+        result <- maybeTeam.map { team =>
+          dataService.scheduledMessages.allForText(trigger, team, maybeUser, maybeSlackChannelId).flatMap { scheduledMessages =>
+            for {
+              unscheduledList <- Future.sequence(scheduledMessages.map { ea =>
+                dataService.scheduledMessages.delete(ea)
+              })
+            } yield {
+              Ok(Json.toJson(ScheduleResult(
+                scheduled = None,
+                unscheduled = Some(unscheduledList.flatten.map(scheduled =>
+                  ScheduleActionResult(
+                    actionName = None,
+                    trigger = Some(trigger),
+                    arguments = None,
+                    recurrence = scheduled.recurrence.displayString,
+                    firstRecurrence = None,
+                    secondRecurrence = None,
+                    useDM = scheduled.isForIndividualMembers,
+                    channel = scheduled.maybeChannel.getOrElse("(unknown)")
+                  )
+                ))
+              )))
+            }
+          }
+        }.getOrElse {
+          Future.successful(notFound(APIErrorData("Couldn't find team", None), Json.toJson(info)))
+        }
+      } yield result
+    }
+
+    override def addMessageListener(info: AddMessageListenerInfo)(implicit request: Request[AnyContent]): Future[Result] = {
+      for {
+        maybeOriginatingBehaviorVersion <- maybeOriginatingBehaviorVersion
+        maybeBehaviorVersion <- maybeBehaviorVersionFor(info.actionName, maybeOriginatingBehaviorVersion)
+        result <- (for {
+          behaviorVersion <- maybeBehaviorVersion
+          team <- maybeTeam
+        } yield {
+          for {
+            user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behaviorVersion.team.id)
+            listener <- dataService.messageListeners.createFor(
+              behaviorVersion.behavior,
+              info.argumentsMap,
+              user,
+              team,
+              info.medium,
+              info.channel,
+              info.threadId
+            )
+          } yield {
+            Ok(listener.id)
+          }
+        }).getOrElse {
+          Future.successful(notFound(APIErrorData(s"Couldn't add listener for action `${info.actionName}`", Some("actionName")), Json.toJson(info)))
+        }
+      } yield result
+    }
+
+    def printEventCreationError(): Unit = {
+      Logger.error(
+        s"""Event creation likely failed for API context:
+           |
+           |Slack bot profile ID: ${botProfile.userId}
+           |Slack user profile ID: ${slackProfile.loginInfo.providerID}
+           |""".stripMargin
+      )
     }
 
   }
 
-  object ApiMethodContext {
+  object SlackApiMethodContext {
 
-    private def maybeUserForApiToken(token: String): Future[Option[User]] = {
-      for {
-        maybeToken <- dataService.apiTokens.find(token)
-        maybeValidToken <- maybeToken.map { token =>
-          if (token.isValid) {
-            dataService.apiTokens.use(token).map(_ => Some(token))
-          } else {
-            Future.successful(None)
-          }
-        }.getOrElse(Future.successful(None))
-
-        maybeUser <- maybeValidToken.map { token =>
-          dataService.users.find(token.userId)
-        }.getOrElse(Future.successful(None))
-      } yield maybeUser
-    }
-
-    def createFor(token: String): Future[ApiMethodContext] = {
+    def maybeCreateFor(token: String): Future[Option[SlackApiMethodContext]] = {
       for {
         maybeUserForApiToken <- maybeUserForApiToken(token)
         maybeInvocationToken <- dataService.invocationTokens.findNotExpired(token)
@@ -286,63 +619,117 @@ class APIController @Inject() (
           dataService.slackBotProfiles.allForSlackTeamId(slackTeamId).map(_.headOption)
         }.getOrElse(Future.successful(None))
       } yield {
-        ApiMethodContext(
-          maybeInvocationToken,
-          maybeUser,
-          maybeBotProfile,
-          maybeSlackProfile,
-          maybeScheduledMessage,
-          maybeTeam,
-          isInvokedExternally = maybeUserForApiToken.isDefined
+        for {
+          botProfile <- maybeBotProfile
+          slackProfile <- maybeSlackProfile
+        } yield {
+          SlackApiMethodContext(
+            maybeInvocationToken,
+            maybeUser,
+            botProfile,
+            slackProfile,
+            maybeScheduledMessage,
+            maybeTeam,
+            isInvokedExternally = maybeUserForApiToken.isDefined
+          )
+        }
+      }
+    }
+  }
+
+  case class NoMediumApiMethodContext(
+                                       maybeInvocationToken: Option[InvocationToken],
+                                       user: User,
+                                       team: Team,
+                                       maybeScheduledMessage: Option[ScheduledMessage],
+                                       isInvokedExternally: Boolean
+                                     ) extends ApiMethodContext {
+    val maybeUser: Option[User] = Some(user)
+    val maybeTeam: Option[Team] = Some(team)
+    val mediumText: String = "requests with no target medium"
+
+    def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
+      Future.successful(Some(TestMessageEvent(user, team, message, includesBotMention = true)))
+    }
+
+    def runEventFor(
+                     behaviorVersion: BehaviorVersion,
+                     argumentsMap: Map[String, String],
+                     channel: String,
+                     maybeOriginalEventType: Option[EventType]
+                   ): Future[Event] = {
+      Future.successful(
+        TestRunEvent(
+          user,
+          team,
+          behaviorVersion,
+          argumentsMap
         )
+      )
+    }
+
+    def printEventCreationError(): Unit = {
+      Logger.error(
+        s"""Event creation likely failed for API no-medium context:
+           |
+           |User ID: ${user.id}
+           |Team ID: ${team.id}
+           |""".stripMargin
+      )
+    }
+  }
+
+  object NoMediumApiMethodContext {
+
+    def maybeCreateFor(token: String): Future[Option[NoMediumApiMethodContext]] = {
+      for {
+        maybeUserForApiToken <- maybeUserForApiToken(token)
+        maybeInvocationToken <- dataService.invocationTokens.findNotExpired(token)
+        maybeUserForInvocationToken <- dataService.users.findForInvocationToken(token)
+        maybeUser <- Future.successful(maybeUserForApiToken.orElse(maybeUserForInvocationToken))
+        maybeTeam <- maybeUser.map { user =>
+          dataService.teams.find(user.teamId)
+        }.getOrElse {
+          throw new InvalidTokenException()
+        }
+        maybeScheduledMessage <- maybeInvocationToken.flatMap { token =>
+          token.maybeScheduledMessageId.map { msgId =>
+            dataService.scheduledMessages.find(msgId)
+          }
+        }.getOrElse(Future.successful(None))
+      } yield {
+        for {
+          user <- maybeUser
+          team <- maybeTeam
+        } yield {
+          NoMediumApiMethodContext(
+            maybeInvocationToken,
+            user,
+            team,
+            maybeScheduledMessage,
+            isInvokedExternally = maybeUserForApiToken.isDefined
+          )
+        }
+      }
+    }
+  }
+
+  class APIMethodContextBuilderException extends Exception
+
+  object ApiMethodContextBuilder {
+
+    def createFor(token: String): Future[ApiMethodContext] = {
+      SlackApiMethodContext.maybeCreateFor(token).flatMap { maybeSlackMethodContext: Option[ApiMethodContext] =>
+        maybeSlackMethodContext.map(Future.successful).getOrElse {
+          NoMediumApiMethodContext.maybeCreateFor(token).map { maybeNoMediumMethodContext =>
+            maybeNoMediumMethodContext.getOrElse {
+              throw new APIMethodContextBuilderException
+            }
+          }
+        }
       }
     }
 
-  }
-
-  private def runBehaviorFor(
-                              maybeEvent: Option[Event],
-                              context: ApiMethodContext,
-                              eitherOriginatingBehaviorOrTriggerText: Either[BehaviorVersion, String]
-                            ) = {
-    for {
-      result <- maybeEvent.map { event =>
-        for {
-          result <- eventHandler.handle(event, None).map { results =>
-            results.foreach { result =>
-              botResultService.sendIn(result, None).map { _ =>
-                Logger.info(event.logTextFor(result, Some("in response to API run request")))
-              }.recover {
-                case c: SlackMessageSenderChannelException => {
-                  (for {
-                    botProfile <- context.maybeBotProfile
-                    slackUserProfile <- context.maybeSlackProfile
-                  } yield {
-                    val description = descriptionForResult(result, eitherOriginatingBehaviorOrTriggerText)
-                    val messageStart = if (maybeEvent.map(_.originalEventType).contains(EventType.scheduled)) {
-                      s"**I was unable to complete a scheduled action in the specified channel** — $description"
-                    } else {
-                      s"**I was unable to complete an action in the specified channel** — $description"
-                    }
-                    val message =
-                      s"""${messageStart}
-                         |
-                         |${c.formattedChannelReason}""".stripMargin
-                    dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, botProfile, slackUserProfile.loginInfo.providerKey, message)
-                  }).getOrElse {
-                    throw c
-                  }
-                }
-              }
-            }
-            Ok(Json.toJson(results.map(_.fullText)))
-          }
-        } yield result
-      }.getOrElse {
-        printApiContextError(context)
-        Future.successful(InternalServerError("Request failed.\n"))
-      }
-    } yield result
   }
 
   private def descriptionForResult(result: BotResult, eitherOriginatingBehaviorOrTriggerText: Either[BehaviorVersion, String]): String = {
@@ -428,42 +815,6 @@ class APIController @Inject() (
     )(RunActionInfo.apply)(RunActionInfo.unapply) verifying(actionNameAndTriggerError, checkActionNameAndTrigger _)
   )
 
-  private def runByName(
-                         actionName: String,
-                         info: RunActionInfo,
-                         context: ApiMethodContext
-                       )(implicit request: Request[AnyContent]): Future[Result] = {
-    for {
-      maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
-      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
-      maybeEvent <- context.maybeRunEventFor(
-        actionName,
-        info.argumentsMap,
-        info.channel,
-        info.originalEventType.flatMap(EventType.find)
-      )
-      result <- (for {
-        originatingBehaviorVersion <- maybeOriginatingBehaviorVersion
-        behaviorVersion <- maybeBehaviorVersion
-      } yield {
-        runBehaviorFor(maybeEvent, context, Left(originatingBehaviorVersion))
-      }).getOrElse {
-        Future.successful(notFound(APIErrorData(s"Action named `$actionName` not found", Some("actionName")), Json.toJson(info)))
-      }
-    } yield result
-  }
-
-  private def runByTrigger(
-                         trigger: String,
-                         info: RunActionInfo,
-                         context: ApiMethodContext
-                       )(implicit request: Request[AnyContent]): Future[Result] = {
-    for {
-      maybeEvent <- context.maybeMessageEventFor(trigger, info.channel, EventType.maybeFrom(info.originalEventType))
-      result <- runBehaviorFor(maybeEvent, context, Right(trigger))
-    } yield result
-  }
-
   def runAction = Action.async { implicit request =>
     runActionForm.bindFromRequest.fold(
       formWithErrors => {
@@ -471,12 +822,12 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info.token)
+          context <- ApiMethodContextBuilder.createFor(info.token)
           result <- info.actionName.map { name =>
-            runByName(name, info, context)
+            context.runByName(name, info)
           }.getOrElse {
             info.trigger.map { trigger =>
-              runByTrigger(trigger, info, context)
+              context.runByTrigger(trigger, info)
             }.getOrElse {
               Future.successful(badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
             }
@@ -539,89 +890,6 @@ class APIController @Inject() (
     )(ScheduleActionInfo.apply)(ScheduleActionInfo.unapply) verifying(actionNameAndTriggerError, checkActionNameAndTrigger _)
   )
 
-  private def scheduleByName(
-                             actionName: String,
-                             info: ScheduleActionInfo,
-                             context: ApiMethodContext
-                           )(implicit request: Request[AnyContent]): Future[Result] = {
-    for {
-      maybeSlackChannelId <- context.maybeSlackChannelIdFor(info.channel)
-      maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
-      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
-      result <- (for {
-        slackProfile <- context.maybeSlackProfile
-        behaviorVersion <- maybeBehaviorVersion
-      } yield {
-        for {
-          user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behaviorVersion.team.id)
-          maybeScheduled <- dataService.scheduledBehaviors.maybeCreateWithRecurrenceText(
-            behaviorVersion.behavior,
-            info.argumentsMap,
-            info.recurrenceString,
-            user,
-            behaviorVersion.team,
-            maybeSlackChannelId,
-            info.useDM
-          )
-        } yield {
-          maybeScheduled.map { scheduled =>
-            Ok(Json.toJson(ScheduleResult(
-              scheduled = Some(ScheduleActionResult(
-                actionName = Some(actionName),
-                trigger = None,
-                arguments = Some(info.arguments),
-                recurrence = scheduled.recurrence.displayString,
-                firstRecurrence = Some(scheduled.nextSentAt),
-                secondRecurrence = scheduled.maybeFollowingSentAt,
-                useDM = scheduled.isForIndividualMembers,
-                channel = scheduled.maybeChannel.getOrElse("(missing)")
-              )),
-              unscheduled = None
-            )))
-          }.getOrElse {
-            badRequest(Some(APIErrorData(s"Unable to schedule `$actionName` for `${info.recurrenceString}`", None)), None, Json.toJson(info))
-          }
-        }
-      }).getOrElse {
-        Future.successful(notFound(APIErrorData(s"Couldn't find the action `$actionName` to schedule", Some("actionName")), Json.toJson(info)))
-      }
-    } yield result
-  }
-
-  private def scheduleByTrigger(
-                                trigger: String,
-                                info: ScheduleActionInfo,
-                                context: ApiMethodContext
-                              )(implicit request: Request[AnyContent]): Future[Result] = {
-    for {
-      maybeSlackChannelId <- context.maybeSlackChannelIdFor(info.channel)
-      maybeScheduled <- (for {
-        team <- context.maybeTeam
-        user <- context.maybeUser
-      } yield {
-        dataService.scheduledMessages.maybeCreateWithRecurrenceText(trigger, info.recurrenceString, user, team, maybeSlackChannelId, info.useDM)
-      }).getOrElse(Future.successful(None))
-    } yield {
-      maybeScheduled.map { scheduled =>
-        Ok(Json.toJson(ScheduleResult(
-          scheduled = Some(ScheduleActionResult(
-            actionName = None,
-            trigger = Some(trigger),
-            arguments = None,
-            recurrence = scheduled.recurrence.displayString,
-            firstRecurrence = Some(scheduled.nextSentAt),
-            secondRecurrence = scheduled.maybeFollowingSentAt,
-            useDM = scheduled.isForIndividualMembers,
-            channel = scheduled.maybeChannel.getOrElse("(missing)")
-          )),
-          unscheduled = None
-        )))
-      }.getOrElse {
-        badRequest(Some(APIErrorData(s"Unable to schedule `$trigger` for `${info.recurrenceString}`", None)), None, Json.toJson(info))
-      }
-    }
-  }
-
   def scheduleAction = Action.async { implicit request =>
     scheduleActionForm.bindFromRequest.fold(
       formWithErrors => {
@@ -629,12 +897,12 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info.token)
+          context <- ApiMethodContextBuilder.createFor(info.token)
           result <- info.actionName.map { actionName =>
-            scheduleByName(actionName, info, context)
+            context.scheduleByName(actionName, info)
           }.getOrElse {
             info.trigger.map { trigger =>
-              scheduleByTrigger(trigger, info, context)
+              context.scheduleByTrigger(trigger, info)
             }.getOrElse {
               Future.successful(badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
             }
@@ -669,96 +937,6 @@ class APIController @Inject() (
     )(UnscheduleActionInfo.apply)(UnscheduleActionInfo.unapply) verifying(actionNameAndTriggerError, checkActionNameAndTrigger _)
   )
 
-  private def unscheduleByName(
-                                actionName: String,
-                                info: UnscheduleActionInfo,
-                                context: ApiMethodContext
-                              )(implicit request: Request[AnyContent]): Future[Result] = {
-    for {
-      maybeSlackChannelId <- info.channel.map { channel =>
-        context.maybeSlackChannelIdFor(channel)
-      }.getOrElse(Future.successful(info.channel))
-      maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
-      maybeBehaviorVersion <- context.maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
-      maybeUser <- info.userId.map { userId =>
-        dataService.users.find(userId)
-      }.getOrElse(Future.successful(None))
-      result <- maybeBehaviorVersion.map { behaviorVersion =>
-        if (info.userId.isDefined && maybeUser.isEmpty) {
-          Future.successful(notFound(APIErrorData(s"Couldn't find a user with ID `${info.userId.get}`", Some("userId")), Json.toJson(info)))
-        } else if (info.channel.isDefined && maybeSlackChannelId.isEmpty) {
-          Future.successful(notFound(APIErrorData(s"Couldn't find channel for `${info.channel}`", Some("channel")), Json.toJson(info)))
-        } else {
-          dataService.scheduledBehaviors.allForBehavior(behaviorVersion.behavior, maybeUser, maybeSlackChannelId).flatMap { scheduledBehaviors =>
-            for {
-              unscheduledList <- Future.sequence(scheduledBehaviors.map { ea =>
-                dataService.scheduledBehaviors.delete(ea)
-              })
-            } yield {
-              Ok(Json.toJson(ScheduleResult(
-                scheduled = None,
-                unscheduled = Some(unscheduledList.flatten.map(scheduled =>
-                  ScheduleActionResult(
-                    actionName = Some(actionName),
-                    trigger = None,
-                    arguments = Some(scheduled.arguments.map { case (key, value) => RunActionArgumentInfo(key, value) }.toSeq),
-                    recurrence = scheduled.recurrence.displayString,
-                    firstRecurrence = None,
-                    secondRecurrence = None,
-                    useDM = scheduled.isForIndividualMembers,
-                    channel = scheduled.maybeChannel.getOrElse("(unknown)")
-                  )
-                ))
-              )))
-            }
-          }
-        }
-      }.getOrElse(Future.successful(notFound(APIErrorData(s"Couldn't find an action with name `$actionName`", Some("actionName")), Json.toJson(info))))
-    } yield result
-  }
-
-  private def unscheduleByTrigger(
-                                   trigger: String,
-                                   info: UnscheduleActionInfo,
-                                   context: ApiMethodContext
-                                  )(implicit request: Request[AnyContent]): Future[Result] = {
-    for {
-      maybeSlackChannelId <- info.channel.map { channel =>
-        context.maybeSlackChannelIdFor(channel)
-      }.getOrElse(Future.successful(info.channel))
-      maybeUser <- info.userId.map { userId =>
-        dataService.users.find(userId)
-      }.getOrElse(Future.successful(None))
-      result <- context.maybeTeam.map { team =>
-        dataService.scheduledMessages.allForText(trigger, team, maybeUser, maybeSlackChannelId).flatMap { scheduledMessages =>
-          for {
-            unscheduledList <- Future.sequence(scheduledMessages.map { ea =>
-              dataService.scheduledMessages.delete(ea)
-            })
-          } yield {
-            Ok(Json.toJson(ScheduleResult(
-              scheduled = None,
-              unscheduled = Some(unscheduledList.flatten.map(scheduled =>
-                ScheduleActionResult(
-                  actionName = None,
-                  trigger = Some(trigger),
-                  arguments = None,
-                  recurrence = scheduled.recurrence.displayString,
-                  firstRecurrence = None,
-                  secondRecurrence = None,
-                  useDM = scheduled.isForIndividualMembers,
-                  channel = scheduled.maybeChannel.getOrElse("(unknown)")
-                )
-              ))
-            )))
-          }
-        }
-      }.getOrElse {
-        Future.successful(notFound(APIErrorData("Couldn't find team", None), Json.toJson(info)))
-      }
-    } yield result
-  }
-
   def unscheduleAction = Action.async { implicit request =>
     unscheduleActionForm.bindFromRequest.fold(
       formWithErrors => {
@@ -766,12 +944,12 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info.token)
+          context <- ApiMethodContextBuilder.createFor(info.token)
           result <- info.actionName.map { actionName =>
-            unscheduleByName(actionName, info, context)
+            context.unscheduleByName(actionName, info)
           }.getOrElse {
             info.trigger.map { trigger =>
-              unscheduleByTrigger(trigger, info, context)
+              context.unscheduleByTrigger(trigger, info)
             }.getOrElse {
               Future.successful(badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
             }
@@ -827,31 +1005,8 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info.token)
-          maybeOriginatingBehaviorVersion <- context.maybeOriginatingBehaviorVersion
-          maybeBehaviorVersion <- context.maybeBehaviorVersionFor(info.actionName, maybeOriginatingBehaviorVersion)
-          result <- (for {
-            slackProfile <- context.maybeSlackProfile
-            behaviorVersion <- maybeBehaviorVersion
-            team <- context.maybeTeam
-          } yield {
-            for {
-              user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behaviorVersion.team.id)
-              listener <- dataService.messageListeners.createFor(
-                behaviorVersion.behavior,
-                info.argumentsMap,
-                user,
-                team,
-                info.medium,
-                info.channel,
-                info.threadId
-              )
-            } yield {
-              Ok(listener.id)
-            }
-          }).getOrElse {
-            Future.successful(notFound(APIErrorData(s"Couldn't add listener for action `${info.actionName}`", Some("actionName")), Json.toJson(info)))
-          }
+          context <- ApiMethodContextBuilder.createFor(info.token)
+          result <- context.addMessageListener(info)
         } yield result
 
         eventualResult.recover {
@@ -888,9 +1043,9 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info.token)
+          context <- ApiMethodContextBuilder.createFor(info.token)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
-          result <- runBehaviorFor(maybeEvent, context, Right(info.message))
+          result <- context.runBehaviorFor(maybeEvent, Right(info.message))
         } yield result
 
         eventualResult.recover {
@@ -928,7 +1083,7 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info.token)
+          context <- ApiMethodContextBuilder.createFor(info.token)
           maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType))
           result <- maybeEvent.map { event =>
             val botResult = SimpleTextResult(event, None, info.message, responseType = Normal, shouldInterrupt = false)
@@ -936,7 +1091,7 @@ class APIController @Inject() (
               Ok(Json.toJson(Seq(botResult.fullText)))
             }
           }.getOrElse {
-            printApiContextError(context)
+            context.printEventCreationError()
             Future.successful(InternalServerError("Request failed.\n"))
           }
         } yield result
@@ -987,7 +1142,7 @@ class APIController @Inject() (
       },
       info => {
         val eventualResult = for {
-          context <- ApiMethodContext.createFor(info.token)
+          context <- ApiMethodContextBuilder.createFor(info.token)
           maybeNewToken <- context.maybeInvocationToken.map { invocationToken =>
             dataService.apiTokens.createFor(invocationToken, info.expirySeconds, info.isOneTime.getOrElse(false)).map(Some(_))
           }.getOrElse(Future.successful(None))
@@ -1032,51 +1187,13 @@ class APIController @Inject() (
 
   def fetchFile(token: String, fileId: String) = Action.async { implicit request =>
     val eventualResult = for {
-      context <- ApiMethodContext.createFor(token)
-      result <- (for {
-        botProfile <- context.maybeBotProfile
-        originalUrl <- slackFileMap.maybeUrlFor(fileId)
-      } yield {
-        val maybeThumbnailUrl = slackFileMap.maybeThumbnailUrlFor(fileId)
-        val urlToUse = maybeThumbnailUrl.getOrElse(originalUrl)
-        val httpHeaders = (AUTHORIZATION, s"Bearer ${botProfile.token}")
-        ws.url(urlToUse).withHttpHeaders(httpHeaders).get.flatMap { r =>
-          if (r.status == 200) {
-            val contentType =
-              r.headers.get(CONTENT_TYPE).
-                flatMap(_.headOption).
-                getOrElse("application/octet-stream")
-
-            contentDispositionFor(r, contentType, httpHeaders, maybeThumbnailUrl.map(_ => originalUrl)).map { contentDisposition =>
-              val result = r.headers.get(CONTENT_LENGTH) match {
-                case Some(Seq(length)) =>
-                  Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
-                case _ =>
-                  Ok.chunked(r.bodyAsSource).as(contentType)
-              }
-              result.withHeaders(CONTENT_TYPE -> contentType, CONTENT_DISPOSITION -> contentDisposition)
-            }
-
-          } else {
-            Future.successful(BadGateway)
-          }
-        }
-      }).getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
+      context <- ApiMethodContextBuilder.createFor(token)
+      result <- context.fetchFileResultFor(fileId)
     } yield result
 
     eventualResult.recover {
       case e: InvalidTokenException => invalidTokenRequest(Map("token" -> token, "fileId" -> fileId))
     }
-  }
-
-  private def printApiContextError(context: ApiMethodContext): Unit = {
-    Logger.error(
-      s"""Event creation likely failed for API context:
-         |
-         |Slack bot profile ID: ${context.maybeBotProfile.map(_.userId).getOrElse("not found")}
-         |Slack user profile ID: ${context.maybeSlackProfile.map(_.loginInfo.providerID).getOrElse("not found")}
-         |""".stripMargin
-    )
   }
 
   case class FindUsersResult(users: Seq[UserData])
@@ -1085,7 +1202,7 @@ class APIController @Inject() (
 
   def findUsers(token: String, maybeEmail: Option[String]) = Action.async { implicit request =>
     val eventualResult = for {
-      context <- ApiMethodContext.createFor(token)
+      context <- ApiMethodContextBuilder.createFor(token)
       result <- context.maybeTeam.map { team =>
         maybeEmail.map { email =>
           dataService.users.maybeUserDataForEmail(email, team).map { maybeUserData =>
@@ -1130,7 +1247,7 @@ class APIController @Inject() (
     val inputName = deleteSavedAnswersInfo.inputName
     val deleteAll = deleteSavedAnswersInfo.deleteAll.getOrElse(false)
     val eventualResult = for {
-      context <- ApiMethodContext.createFor(token)
+      context <- ApiMethodContextBuilder.createFor(token)
       maybeBehaviorVersion <- context.maybeOriginatingBehaviorVersion
       savedInputs <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.inputs.allForGroupVersion(behaviorVersion.groupVersion).map { inputs =>
