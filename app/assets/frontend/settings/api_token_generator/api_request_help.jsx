@@ -34,7 +34,7 @@ const APIRequestHelp = React.createClass({
     },
 
     getApiUrl(methodName) {
-      return jsRoutes.controllers.APIController[methodName]().absoluteURL(true);
+      return jsRoutes.controllers.api.APIController[methodName]().absoluteURL(true);
     },
 
     render: function() {

@@ -1,12 +1,13 @@
-package controllers
+package controllers.api
 
 import java.time.OffsetDateTime
 
-import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
-import json.{APIErrorData, APIResultWithErrorsData, APITokenData, UserData}
+import controllers.{EllipsisController, RemoteAssets}
+import javax.inject.Inject
 import json.Formatting._
+import json.{APIErrorData, APIResultWithErrorsData, APITokenData, UserData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -17,8 +18,8 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.testing.{TestMessageEvent, TestRunEvent}
 import models.behaviors.{BotResult, BotResultService, SimpleTextResult}
 import models.team.Team
-import play.api.data.{Form, FormError}
 import play.api.data.Forms._
+import play.api.data.{Form, FormError}
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSResponse}
