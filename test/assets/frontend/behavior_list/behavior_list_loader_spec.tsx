@@ -9,13 +9,13 @@ import {ComponentClass} from "react";
 
 jest.setMock('../../../../app/assets/frontend/lib/data_request', { DataRequest: () => ({
   jsonGet: jest.fn(() => {
-    return new Promise((resolve, reject) => {
-      global.process.nextTick(() => resolve([]) || reject({ error: "oops" }));
+    return new Promise((resolve) => {
+      global.process.nextTick(() => resolve([]));
     });
   }),
   jsonPost: jest.fn(() => {
-    return new Promise((resolve, reject) => {
-      global.process.nextTick(() => resolve([]) || reject({ error: "oops" }));
+    return new Promise((resolve) => {
+      global.process.nextTick(() => resolve([]));
     });
   })
 })});
