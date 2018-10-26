@@ -217,36 +217,36 @@ class APIController @Inject() (
     }
 
     val mediumText: String
-    def notSupportedResult(details: JsValue)(implicit r: Request[AnyContent]): Future[Result] = {
-      val message = s"This API method is not supported for ${mediumText}"
+    def notSupportedResult(apiMethod: String, details: JsValue)(implicit r: Request[AnyContent]): Future[Result] = {
+      val message = s"This API method ($apiMethod) is not supported for ${mediumText}"
       Future.successful(badRequest(Some(APIErrorData(message, None)), None, details))
     }
 
-    def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = notSupportedResult(JsNull)
+    def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = notSupportedResult("fetching a file", JsNull)
 
     def scheduleByName(
                         actionName: String,
                         info: ScheduleActionInfo
-                      )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult(Json.toJson(info))
+                      )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("scheduling by name", Json.toJson(info))
 
     def scheduleByTrigger(
                            trigger: String,
                            info: ScheduleActionInfo
-                         )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult(Json.toJson(info))
+                         )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("schedule by trigger", Json.toJson(info))
 
     def unscheduleByName(
                           actionName: String,
                           info: UnscheduleActionInfo
-                        )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult(Json.toJson(info))
+                        )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("unscheduled by name", Json.toJson(info))
 
     def unscheduleByTrigger(
                             trigger: String,
                             info: UnscheduleActionInfo
-                          )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult(Json.toJson(info))
+                          )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("unschedule by trigger", Json.toJson(info))
 
     def addMessageListener(
                             info: AddMessageListenerInfo
-                          )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult(Json.toJson(info))
+                          )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("add message listener", Json.toJson(info))
 
     def printEventCreationError(): Unit
 
