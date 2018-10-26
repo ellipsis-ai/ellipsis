@@ -125,7 +125,7 @@ class ReactionTriggerInput extends React.Component<Props> {
     return (
       <div className="border border-light bg-white mrm mbm display-inline-block">
         <div className="columns columns-elastic">
-          <div className="column column-expand pvm plm prn">
+          <div className="column column-expand pvs plm prn">
             {this.props.isShowingEmojiPicker ? (
               <DropdownContainer>
                 <div className="popup popup-shadow popup-demoted">
@@ -145,7 +145,7 @@ class ReactionTriggerInput extends React.Component<Props> {
                 </div>
               </DropdownContainer>
             ) : null}
-            <Button className="button-block" onClick={this.toggleReactionPicker} stopPropagation={true}>
+            <Button className="button-dropdown-trigger button-dropdown-trigger-borderless pvn" onClick={this.toggleReactionPicker} stopPropagation={true}>
               <span className="display-inline-block align-m mrm height-icon width-icon align-c">{this.renderSelectedEmoji()}</span>
               <span className="display-inline-block align-m type-weak type-s">{this.renderEmojiText()}</span>
             </Button>
