@@ -15,17 +15,17 @@ class TriggerServiceSpec extends DBSpec {
         val behavior = newSavedBehaviorFor(group)
         val behaviorVersion = newSavedBehaviorVersionFor(behavior, groupVersion, user)
         val triggersData = Seq(
-          BehaviorTriggerData("foo", requiresMention = true, isRegex = false, caseSensitive = false, Some(MessageSent.toString)),
-          BehaviorTriggerData("foo", requiresMention = false, isRegex = true, caseSensitive = false, Some(MessageSent.toString)),
-          BehaviorTriggerData("bar", requiresMention = true, isRegex = false, caseSensitive = false, Some(MessageSent.toString)),
-          BehaviorTriggerData("foo", requiresMention = true, isRegex = false, caseSensitive = false, Some(MessageSent.toString)),
-          BehaviorTriggerData("", requiresMention = false, isRegex = false, caseSensitive = false, Some(MessageSent.toString)),
-          BehaviorTriggerData("bar", requiresMention = false, isRegex = false, caseSensitive = false, Some(MessageSent.toString)),
-          BehaviorTriggerData("foo", requiresMention = true, isRegex = false, caseSensitive = false, Some(ReactionAdded.toString)),
-          BehaviorTriggerData("tada", requiresMention = true, isRegex = false, caseSensitive = false, Some(ReactionAdded.toString)),
-          BehaviorTriggerData("banana", requiresMention = true, isRegex = false, caseSensitive = false, Some(ReactionAdded.toString)),
-          BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false, Some(ReactionAdded.toString)),
-          BehaviorTriggerData("tada", requiresMention = true, isRegex = false, caseSensitive = false, Some(ReactionAdded.toString))
+          BehaviorTriggerData("foo", requiresMention = true, isRegex = false, caseSensitive = false, MessageSent.toString),
+          BehaviorTriggerData("foo", requiresMention = false, isRegex = true, caseSensitive = false, MessageSent.toString),
+          BehaviorTriggerData("bar", requiresMention = true, isRegex = false, caseSensitive = false, MessageSent.toString),
+          BehaviorTriggerData("foo", requiresMention = true, isRegex = false, caseSensitive = false, MessageSent.toString),
+          BehaviorTriggerData("", requiresMention = false, isRegex = false, caseSensitive = false, MessageSent.toString),
+          BehaviorTriggerData("bar", requiresMention = false, isRegex = false, caseSensitive = false, MessageSent.toString),
+          BehaviorTriggerData("foo", requiresMention = true, isRegex = false, caseSensitive = false, ReactionAdded.toString),
+          BehaviorTriggerData("tada", requiresMention = true, isRegex = false, caseSensitive = false, ReactionAdded.toString),
+          BehaviorTriggerData("banana", requiresMention = true, isRegex = false, caseSensitive = false, ReactionAdded.toString),
+          BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false, ReactionAdded.toString),
+          BehaviorTriggerData("tada", requiresMention = true, isRegex = false, caseSensitive = false, ReactionAdded.toString)
         )
         val triggers = runNow(dataService.triggers.createTriggersForAction(behaviorVersion, triggersData))
         triggers.length mustEqual(7)

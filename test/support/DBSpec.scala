@@ -119,7 +119,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def newTriggerData: BehaviorTriggerData = {
-    BehaviorTriggerData("foo", false, false, false, Some(MessageSent.toString))
+    BehaviorTriggerData("foo", false, false, false, MessageSent.toString)
   }
 
   def newGroupVersionDataFor(group: BehaviorGroup, user: User): BehaviorGroupData = {
