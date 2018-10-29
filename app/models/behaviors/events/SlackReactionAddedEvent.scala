@@ -37,7 +37,7 @@ case class SlackReactionAddedEvent(
   val maybeThreadId: Option[String] = None
   val maybeOriginalEventType: Option[EventType] = None
 
-  override val isResponseExpected: Boolean = true
+  override val isResponseExpected: Boolean = false
   val includesBotMention: Boolean = true
 
   override val maybeReactionAdded: Option[String] = Some(reaction)
