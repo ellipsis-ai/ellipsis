@@ -133,11 +133,11 @@ class Trigger implements Diffable, TriggerInterface {
     }
 
     isMessageSentTrigger(): boolean {
-      return this.triggerType === "MessageSent";
+      return this.triggerType === TriggerType.MessageSent;
     }
 
     isReactionAddedTrigger(): boolean {
-      return this.triggerType === "ReactionAdded";
+      return this.triggerType === TriggerType.ReactionAdded;
     }
 
     clone(props: Partial<TriggerInterface>): Trigger {
