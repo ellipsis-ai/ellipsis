@@ -32,8 +32,6 @@ object Formatting {
   lazy implicit val libraryVersionReads = Json.reads[LibraryVersionData]
   lazy implicit val libraryVersionWrites = Json.writes[LibraryVersionData]
 
-  lazy implicit val triggerTypeDataFormat = Json.format[TriggerTypeData]
-
   lazy implicit val legacyBehaviorTriggerJsonFormat = Json.format[LegacyBehaviorTriggerJson]
 
   lazy implicit val behaviorTriggerReads = Json.reads[BehaviorTriggerData]

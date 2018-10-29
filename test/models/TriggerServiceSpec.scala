@@ -1,7 +1,7 @@
 package models
 
 import json.BehaviorTriggerData
-import models.behaviors.triggers.{MessageSent, ReactionAdded, TemplateTrigger, TriggerType}
+import models.behaviors.triggers.{MessageSent, ReactionAdded}
 import support.DBSpec
 
 class TriggerServiceSpec extends DBSpec {
