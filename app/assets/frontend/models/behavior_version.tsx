@@ -380,7 +380,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
           ResponseTemplate.fromString(props.responseTemplate || '') :
           new ResponseTemplate(props.responseTemplate && props.responseTemplate.text),
         config: BehaviorConfig.fromJson(props.config),
-        triggers: Trigger.triggersFromJson(props.triggers || [])
+        triggers: Trigger.triggersFromJson(props.triggers)
       });
       return BehaviorVersion.fromProps(materializedProps);
     }
