@@ -47,7 +47,7 @@ class UserServiceSpec extends DBSpec with MockitoSugar {
         val adminSlackTeamId = LinkedAccount.ELLIPSIS_SLACK_TEAM_ID
         val linkedAccount = newSavedLinkedAccountFor(user)
 
-        val botProfile = runNow(dataService.slackBotProfiles.ensure(IDs.next, None, adminSlackTeamId, IDs.next, IDs.next))
+        val botProfile = runNow(dataService.slackBotProfiles.ensure(IDs.next, adminSlackTeamId, IDs.next, IDs.next))
         val client = mock[SlackApiClient]
         when(slackEventService.clientFor(botProfile)).thenReturn(client)
         val slackUserData = SlackUserData(accountId = linkedAccount.loginInfo.providerKey, accountEnterpriseId = None, accountTeamIds = SlackUserTeamIds(adminSlackTeamId), accountName = "", isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, tz = None, deleted = false, profile = None)
