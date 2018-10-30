@@ -4,7 +4,6 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import javax.inject.Inject
 import json.Formatting._
-import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.{Normal, Threaded}
