@@ -164,8 +164,9 @@ class SlackController @Inject() (
     )
   }
 
-  trait MessageRequestInfo extends SlackUserEventRequestInfo {
+  trait MessageRequestInfo extends EventRequestInfo {
     val channel: String
+    val userId: String
     val message: String
     val maybeThreadTs: Option[String]
     val ts: String
@@ -180,10 +181,6 @@ class SlackController @Inject() (
   trait ItemInfo {
     val itemType: String
     val channel: String
-  }
-
-  trait SlackUserEventRequestInfo extends EventRequestInfo {
-    val userId: String
   }
 
   case class MessageItemInfo(
