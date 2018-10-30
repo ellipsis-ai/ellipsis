@@ -164,8 +164,9 @@ class SlackController @Inject() (
     )
   }
 
-  trait MessageRequestInfo extends SlackUserEventRequestInfo {
+  trait MessageRequestInfo extends EventRequestInfo {
     val channel: String
+    val userId: String
     val message: String
     val maybeThreadTs: Option[String]
     val ts: String
@@ -180,10 +181,6 @@ class SlackController @Inject() (
   trait ItemInfo {
     val itemType: String
     val channel: String
-  }
-
-  trait SlackUserEventRequestInfo extends EventRequestInfo {
-    val userId: String
   }
 
   case class MessageItemInfo(
@@ -206,7 +203,7 @@ class SlackController @Inject() (
                                      teamId: String,
                                      maybeAuthedTeamIds: Option[Seq[String]],
                                      event: ReactionAddedEventInfo
-                                   ) extends SlackUserEventRequestInfo {
+                                   ) extends EventRequestInfo {
     val userId: String = event.userId
     val channel: String = event.item.channel
     val ts: String = event.eventTs
@@ -545,7 +542,9 @@ class SlackController @Inject() (
                          options: Option[Seq[ActionSelectOptionInfo]],
                          selected_options: Option[Seq[ActionSelectOptionInfo]]
                        )
-  case class TeamInfo(id: String, enterprise_id: Option[String], domain: String)
+  case class TeamInfo(id: String, enterprise_id: Option[String], domain: String) {
+    val isEnterpriseGrid: Boolean = enterprise_id.isDefined
+  }
   case class ChannelInfo(id: String, name: String) {
     val isDirectMessage: Boolean = id.startsWith("D")
   }
@@ -1292,7 +1291,7 @@ class SlackController @Inject() (
         }.getOrElse(Future.successful(None))
       } yield {
         val isSameTeam = maybeAttemptingSlackTeamIds.exists(_.contains(botProfile.slackTeamId))
-        val isIncorrectTeam = !botProfile.isForEnterpriseGrid && !isSameTeam && !isAdmin
+        val isIncorrectTeam = !info.team.isEnterpriseGrid && !isSameTeam && !isAdmin
         buildFor(value, info, isIncorrectTeam, botProfile)
       }
     }
