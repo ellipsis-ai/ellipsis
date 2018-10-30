@@ -1,6 +1,8 @@
 package json
 
+import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackUserTeamIds
+import models.accounts.slack.botprofile.SlackBotProfile
 
 case class SlackUserData(
                           accountId: String,
@@ -25,4 +27,11 @@ case class SlackUserData(
   }
 
   def firstTeamId: String = accountTeamIds.head
+
+  def canTriggerBot(botProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Boolean = {
+    val isSameEnterpriseGrid = maybeEnterpriseId.isDefined && accountEnterpriseId == maybeEnterpriseId
+    val userIsOnTeam = accountTeamIds.contains(botProfile.slackTeamId)
+    val userIsAdmin = accountTeamIds.contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
+    !isBot && (isSameEnterpriseGrid || userIsOnTeam || userIsAdmin)
+  }
 }

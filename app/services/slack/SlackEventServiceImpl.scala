@@ -153,11 +153,7 @@ class SlackEventServiceImpl @Inject()(
         maybeUserData <- maybeSlackUserDataFor(slackUserId, clientFor(botProfile), _ => None)
       } yield {
         maybeUserData.exists { userData =>
-          val userIsBot = userData.isBot
-          val isEnterpriseGrid = maybeEnterpriseId.isDefined
-          val userIsOnTeam = userData.accountTeamIds.contains(botProfile.slackTeamId)
-          val userIsAdmin = userData.accountTeamIds.contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
-          val userIsValid = !userIsBot && (isEnterpriseGrid || userIsOnTeam || userIsAdmin)
+          val userIsValid = userData.canTriggerBot(botProfile, maybeEnterpriseId)
           cacheService.cacheSlackUserIsValidForBotTeam(slackUserId, botProfile, maybeEnterpriseId, userIsValid)
           userIsValid
         }
