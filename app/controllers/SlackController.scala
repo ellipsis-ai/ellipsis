@@ -14,7 +14,7 @@ import models.behaviors.events._
 import models.behaviors.{ActionChoice, SimpleTextResult}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
-import play.api.Logger
+import play.api.{Environment, Logger, Mode}
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.http.{HeaderNames, MimeTypes}
@@ -34,6 +34,7 @@ class SlackController @Inject() (
                                   val slackEventService: SlackEventService,
                                   val services: DefaultServices,
                                   val assetsProvider: Provider[RemoteAssets],
+                                  val environment: Environment,
                                   implicit val ec: ExecutionContext
                                 ) extends EllipsisController {
 
@@ -121,7 +122,12 @@ class SlackController @Inject() (
 
     def slackTeamIdsForBots: Seq[String] = {
       if (maybeEnterpriseId.isDefined) {
-        Seq(teamId)
+        (for {
+          authedTeamIds <- maybeAuthedTeamIds
+          authedTeamId <- authedTeamIds.find(_ == teamId).orElse(authedTeamIds.headOption)
+        } yield {
+          Seq(authedTeamId)
+        }).getOrElse(Seq(teamId))
       } else {
         maybeAuthedTeamIds.getOrElse(Seq(teamId))
       }
@@ -457,6 +463,9 @@ class SlackController @Inject() (
   }
 
   def event = Action { implicit request =>
+    if (environment.mode == Mode.Dev) {
+      Logger.info(s"Slack event received:\n${Json.prettyPrint(request.body.asJson.get)}")
+    }
     (maybeChallengeResult orElse maybeEventResult).getOrElse {
       Ok("I don't know what to do with this request but I'm not concerned")
     }
