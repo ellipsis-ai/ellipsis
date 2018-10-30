@@ -119,6 +119,16 @@ class SlackController @Inject() (
     val teamId: String
     val maybeAuthedTeamIds: Option[Seq[String]]
     val event: EventInfo
+
+    def slackTeamIdsForBots: Seq[String] = {
+      if (maybeEnterpriseId.isDefined) {
+        Seq(teamId)
+      } else {
+        maybeAuthedTeamIds.getOrElse(Seq(teamId))
+      }
+    }
+
+    def isEnterpriseGrid: Boolean = maybeEnterpriseId.nonEmpty
   }
 
   case class ValidEventRequestInfo(
@@ -160,16 +170,6 @@ class SlackController @Inject() (
     val message: String
     val maybeThreadTs: Option[String]
     val ts: String
-
-    def slackTeamIdForUser: String
-    def slackTeamIdsForBots: Seq[String] = {
-      if (maybeEnterpriseId.isDefined) {
-        Seq(teamId)
-      } else {
-        maybeAuthedTeamIds.getOrElse(Seq(teamId))
-      }
-    }
-
   }
 
   case class FileInfo(
@@ -177,6 +177,17 @@ class SlackController @Inject() (
                      downloadUrl: String,
                      maybeThumbnailUrl: Option[String]
                      )
+
+  trait ItemInfo {
+    val itemType: String
+    val channel: String
+  }
+
+  case class MessageItemInfo(
+                            itemType: String,
+                            channel: String,
+                            ts: String
+                            ) extends ItemInfo
 
   case class MessageSentEventInfo(
                                    eventType: String,
@@ -200,8 +211,6 @@ class SlackController @Inject() (
     val channel: String = event.channel
     val ts: String = event.ts
     val maybeThreadTs: Option[String] = event.maybeThreadTs
-
-    def slackTeamIdForUser: String = event.maybeSourceTeamId.getOrElse(teamId)
   }
   private val messageSentRequestForm = Form(
     mapping(
@@ -259,8 +268,6 @@ class SlackController @Inject() (
     val channel: String = event.channel
     val ts: String = event.ts
     val maybeThreadTs: Option[String] = event.maybeThreadTs
-
-    def slackTeamIdForUser: String = event.message.maybeSourceTeamId.getOrElse(teamId)
   }
 
   private val messageChangedRequestForm = Form(
@@ -292,12 +299,11 @@ class SlackController @Inject() (
     })
   )
 
-  private def processEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
-    SlackMessage.fromFormattedText(info.message, botProfile, slackEventService).flatMap { slackMessage =>
-      val isEnterpriseGrid = info.maybeEnterpriseId.nonEmpty
-      val isAdminUser = info.slackTeamIdForUser == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID
-      val userTeamMatchesBotTeam = info.slackTeamIdForUser == botProfile.slackTeamId
-      if (!isEnterpriseGrid && !isAdminUser && !userTeamMatchesBotTeam) {
+  private def processMessageEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
+    for {
+      slackMessage <- SlackMessage.fromFormattedText(info.message, botProfile, slackEventService)
+      isUserValidForBot <- slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId)
+      result <- if (!isUserValidForBot) {
         if (info.channel.startsWith("D") || botProfile.includesBotMention(slackMessage)) {
           dataService.teams.find(botProfile.teamId).flatMap { maybeTeam =>
             val teamText = maybeTeam.map { team =>
@@ -313,26 +319,24 @@ class SlackController @Inject() (
           case e: MessageSentEventInfo => e.maybeFilesInfo.flatMap(_.headOption.map(i => SlackFile(i.downloadUrl, i.maybeThumbnailUrl)))
           case _ => None
         }
-        for {
-          _ <- slackEventService.onEvent(
-            SlackMessageEvent(
-              botProfile,
-              info.channel,
-              info.maybeThreadTs,
-              info.userId,
-              slackMessage,
-              maybeFile,
-              info.ts,
-              None,
-              isUninterruptedConversation = false,
-              isEphemeral = false,
-              None,
-              beQuiet = false
-            )
+        slackEventService.onEvent(
+          SlackMessageEvent(
+            botProfile,
+            info.channel,
+            info.maybeThreadTs,
+            info.userId,
+            slackMessage,
+            maybeFile,
+            info.ts,
+            None,
+            isUninterruptedConversation = false,
+            isEphemeral = false,
+            None,
+            beQuiet = false
           )
-        } yield {}
+        )
       }
-    }
+    } yield result
   }
 
   private def messageEventResult(info: MessageRequestInfo)(implicit request: Request[AnyContent]): Result = {
@@ -344,7 +348,7 @@ class SlackController @Inject() (
         profiles <- Future.sequence(info.slackTeamIdsForBots.map(dataService.slackBotProfiles.allForSlackTeamId)).map(_.flatten)
         _ <- Future.sequence(
           profiles.map { profile =>
-            processEventsFor(info, profile)
+            processMessageEventsFor(info, profile)
           }
         )
       } yield {}
@@ -452,7 +456,9 @@ class SlackController @Inject() (
                          options: Option[Seq[ActionSelectOptionInfo]],
                          selected_options: Option[Seq[ActionSelectOptionInfo]]
                        )
-  case class TeamInfo(id: String, enterprise_id: Option[String], domain: String)
+  case class TeamInfo(id: String, enterprise_id: Option[String], domain: String) {
+    val isEnterpriseGrid: Boolean = enterprise_id.isDefined
+  }
   case class ChannelInfo(id: String, name: String) {
     val isDirectMessage: Boolean = id.startsWith("D")
   }
@@ -1195,7 +1201,7 @@ class SlackController @Inject() (
         }.getOrElse(Future.successful(None))
       } yield {
         val isSameTeam = maybeAttemptingSlackTeamIds.exists(_.contains(botProfile.slackTeamId))
-        val isIncorrectTeam = !botProfile.isForEnterpriseGrid && !isSameTeam && !isAdmin
+        val isIncorrectTeam = !info.team.isEnterpriseGrid && !isSameTeam && !isAdmin
         buildFor(value, info, isIncorrectTeam, botProfile)
       }
     }

@@ -61,4 +61,8 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
     Future.successful(None)
   }
 
+  def isUserValidForBot(slackUserId: String, botProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Future[Boolean] = {
+    Future.successful(true)
+  }
+
 }

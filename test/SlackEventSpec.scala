@@ -49,7 +49,7 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
   val members = Seq(slackUserId, otherSlackUserId)
 
   val ellipsisTeamId = IDs.next
-  val slackBotProfile = SlackBotProfile("U55555555", ellipsisTeamId, None, slackTeamId, IDs.next, OffsetDateTime.now, allowShortcutMention = true)
+  val slackBotProfile = SlackBotProfile("U55555555", ellipsisTeamId, slackTeamId, IDs.next, OffsetDateTime.now, allowShortcutMention = true)
 
   "detailsFor" should {
     "preserve the legacy format of the Slack user and channel details" in new TestContext {

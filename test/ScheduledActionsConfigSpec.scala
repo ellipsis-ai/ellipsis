@@ -64,7 +64,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
 
   def setup(user: User, team: Team, services: DefaultServices, blowup: Boolean = false, userSlackTeamId: String = slackTeamId)
            (implicit actorSystem: ActorSystem, ec: ExecutionContext): Unit = {
-    val slackBotProfile = SlackBotProfile(slackBotUserId, team.id, None, slackTeamId, "ABCD", OffsetDateTime.now, allowShortcutMention = true)
+    val slackBotProfile = SlackBotProfile(slackBotUserId, team.id, slackTeamId, "ABCD", OffsetDateTime.now, allowShortcutMention = true)
     val slackUserProfile = SlackProfile(SlackUserTeamIds(userSlackTeamId), LoginInfo(Conversation.SLACK_CONTEXT, slackUserId), None)
     when(services.dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(Some(slackUserProfile)))
     when(services.dataService.slackBotProfiles.allFor(team)).thenReturn(Future.successful(Seq(slackBotProfile)))

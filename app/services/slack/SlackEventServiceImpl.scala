@@ -3,6 +3,7 @@ package services.slack
 import akka.actor.ActorSystem
 import javax.inject._
 import json.{SlackUserData, SlackUserProfileData}
+import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
@@ -79,7 +80,7 @@ class SlackEventServiceImpl @Inject()(
     val otherTeams = maybeTeams.filter(_ != firstTeam).getOrElse(Seq.empty)
     SlackUserData(
       user.id,
-      client.profile.maybeSlackEnterpriseId,
+      user.enterprise_user.flatMap(_.enterprise_id),
       SlackUserTeamIds(firstTeam, otherTeams),
       user.name,
       isPrimaryOwner = user.is_primary_owner.getOrElse(false),
@@ -142,6 +143,20 @@ class SlackEventServiceImpl @Inject()(
         maybeInfo <- client.getUserInfoByEmail(key.email)
       } yield {
         maybeInfo.map(info => slackUserDataFromSlackUser(info, client))
+      }
+    }
+  }
+
+  def isUserValidForBot(slackUserId: String, botProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Future[Boolean] = {
+    cacheService.getSlackUserIsValidForBotTeam(slackUserId, botProfile, maybeEnterpriseId).map(Future.successful).getOrElse {
+      for {
+        maybeUserData <- maybeSlackUserDataFor(slackUserId, clientFor(botProfile), _ => None)
+      } yield {
+        maybeUserData.exists { userData =>
+          val userIsValid = userData.canTriggerBot(botProfile, maybeEnterpriseId)
+          cacheService.cacheSlackUserIsValidForBotTeam(slackUserId, botProfile, maybeEnterpriseId, userIsValid)
+          userIsValid
+        }
       }
     }
   }
