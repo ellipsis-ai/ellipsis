@@ -91,7 +91,7 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
       slackTeamName <- maybeSlackTeamName
     } yield {
       maybeEnterpriseNameFor(authInfo).flatMap { maybeEnterpriseName =>
-        dataService.slackBotProfiles.ensure(userId, slackProfile.maybeEnterpriseId, slackProfile.firstTeamId, maybeEnterpriseName.getOrElse(slackTeamName), token)
+        dataService.slackBotProfiles.ensure(userId, slackProfile.firstTeamId, maybeEnterpriseName.getOrElse(slackTeamName), token)
       }
     }
 

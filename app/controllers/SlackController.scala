@@ -456,7 +456,9 @@ class SlackController @Inject() (
                          options: Option[Seq[ActionSelectOptionInfo]],
                          selected_options: Option[Seq[ActionSelectOptionInfo]]
                        )
-  case class TeamInfo(id: String, enterprise_id: Option[String], domain: String)
+  case class TeamInfo(id: String, enterprise_id: Option[String], domain: String) {
+    val isEnterpriseGrid: Boolean = enterprise_id.isDefined
+  }
   case class ChannelInfo(id: String, name: String) {
     val isDirectMessage: Boolean = id.startsWith("D")
   }
@@ -1199,7 +1201,7 @@ class SlackController @Inject() (
         }.getOrElse(Future.successful(None))
       } yield {
         val isSameTeam = maybeAttemptingSlackTeamIds.exists(_.contains(botProfile.slackTeamId))
-        val isIncorrectTeam = !botProfile.isForEnterpriseGrid && !isSameTeam && !isAdmin
+        val isIncorrectTeam = !info.team.isEnterpriseGrid && !isSameTeam && !isAdmin
         buildFor(value, info, isIncorrectTeam, botProfile)
       }
     }

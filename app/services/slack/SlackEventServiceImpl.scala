@@ -80,7 +80,7 @@ class SlackEventServiceImpl @Inject()(
     val otherTeams = maybeTeams.filter(_ != firstTeam).getOrElse(Seq.empty)
     SlackUserData(
       user.id,
-      client.profile.maybeSlackEnterpriseId,
+      user.enterprise_user.flatMap(_.enterprise_id),
       SlackUserTeamIds(firstTeam, otherTeams),
       user.name,
       isPrimaryOwner = user.is_primary_owner.getOrElse(false),
