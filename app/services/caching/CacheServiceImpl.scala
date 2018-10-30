@@ -238,12 +238,16 @@ class CacheServiceImpl @Inject() (
     }
   }
 
+  private def groupVersionDataKey(versionId: String): String = {
+    s"ImmutableBehaviorGroupVersionData-v1-${versionId}"
+  }
+
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {
-    set(data.id, Json.toJson(data))
+    set(groupVersionDataKey(data.id), Json.toJson(data))
   }
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = {
-    get[JsValue](groupVersionId).flatMap { json =>
+    get[JsValue](groupVersionDataKey(groupVersionId)).flatMap { json =>
       json.validate[ImmutableBehaviorGroupVersionData] match {
         case JsSuccess(data, _) => Some(data)
         case JsError(_) => None
@@ -295,6 +299,23 @@ class CacheServiceImpl @Inject() (
         case JsError(_) => None
       }
     }
+  }
+
+  private def cacheKeyForSlackUserIsOnBotTeam(slackUserId: String, profile: SlackBotProfile, maybeEnterpriseId: Option[String]): String = {
+    s"slackUserId-${slackUserId}-${maybeEnterpriseId.map(enterpriseId => s"fromEnterpriseGridId-${enterpriseId}-")}isOnSlackTeamId-${profile.slackTeamId}"
+  }
+
+  def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit = {
+    val duration = if (maybeEnterpriseId.isDefined) {
+      10.seconds // On enterprise grid Slack, a user's team(s) can change at any time
+    } else {
+      Duration.Inf
+    }
+    set(cacheKeyForSlackUserIsOnBotTeam(slackUserId, slackBotProfile, maybeEnterpriseId), userIsOnTeam, duration)
+  }
+
+  def getSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Option[Boolean] = {
+    get[Boolean](cacheKeyForSlackUserIsOnBotTeam(slackUserId, slackBotProfile, maybeEnterpriseId))
   }
 
 }
