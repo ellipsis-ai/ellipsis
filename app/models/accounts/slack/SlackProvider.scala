@@ -35,7 +35,8 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
   )
 
   protected def buildProfile(authInfo: A): Future[SlackProfile] = {
-    if (authInfo.params.exists(_.get("scope").exists(_.split(",").contains("identity.basic")))) {
+    val scopes = authInfo.params.flatMap(_.get("scope").map(_.split(",")))
+    if (scopes.size == 1 && scopes.contains("identity.basic")) {
       httpLayer.url(urls("identity").format(authInfo.accessToken)).get().flatMap { response =>
         profileParser.parseForSignIn(response.json)
       }

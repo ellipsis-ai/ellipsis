@@ -79,4 +79,22 @@ class APITokenServiceImpl @Inject() (
     val updated = token.copy(isRevoked = true)
     dataService.run(findQueryFor(token.id).update(updated).map(_ => updated))
   }
+
+  def maybeUserForApiToken(token: String): Future[Option[User]] = {
+    for {
+      maybeToken <- dataService.apiTokens.find(token)
+      maybeValidToken <- maybeToken.map { token =>
+        if (token.isValid) {
+          dataService.apiTokens.use(token).map(_ => Some(token))
+        } else {
+          Future.successful(None)
+        }
+      }.getOrElse(Future.successful(None))
+
+      maybeUser <- maybeValidToken.map { token =>
+        dataService.users.find(token.userId)
+      }.getOrElse(Future.successful(None))
+    } yield maybeUser
+
+  }
 }
