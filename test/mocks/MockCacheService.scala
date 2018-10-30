@@ -81,7 +81,7 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getMessageUserDataList(conversationId: String): Option[Seq[MessageUserData]] = None
 
-  def cacheSlackUserIsOnBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit = {}
+  def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit = {}
 
-  def getSlackUserIsOnBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Option[Boolean] = None
+  def getSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Option[Boolean] = None
 }

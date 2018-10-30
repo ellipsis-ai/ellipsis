@@ -305,7 +305,7 @@ class CacheServiceImpl @Inject() (
     s"slackUserId-${slackUserId}-${maybeEnterpriseId.map(enterpriseId => s"fromEnterpriseGridId-${enterpriseId}-")}isOnSlackTeamId-${profile.slackTeamId}"
   }
 
-  def cacheSlackUserIsOnBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit = {
+  def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit = {
     val duration = if (maybeEnterpriseId.isDefined) {
       10.seconds // On enterprise grid Slack, a user's team(s) can change at any time
     } else {
@@ -314,7 +314,7 @@ class CacheServiceImpl @Inject() (
     set(cacheKeyForSlackUserIsOnBotTeam(slackUserId, slackBotProfile, maybeEnterpriseId), userIsOnTeam, duration)
   }
 
-  def getSlackUserIsOnBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Option[Boolean] = {
+  def getSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Option[Boolean] = {
     get[Boolean](cacheKeyForSlackUserIsOnBotTeam(slackUserId, slackBotProfile, maybeEnterpriseId))
   }
 

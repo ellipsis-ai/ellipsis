@@ -23,7 +23,7 @@ import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.utils.UriEncoding
 import services._
-import services.slack.{SlackApiClient, SlackApiError, SlackEventService}
+import services.slack.SlackEventService
 import utils.SlashCommandInfo
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -344,31 +344,10 @@ class SlackController @Inject() (
     })
   )
 
-  private def isUserValidForBot(info: SlackUserEventRequestInfo, botProfile: SlackBotProfile): Future[Boolean] = {
-    if (info.isEnterpriseGrid) {
-      Future.successful(true)
-    } else {
-      cacheService.getSlackUserIsOnBotTeam(info.userId, botProfile, info.maybeEnterpriseId).map(Future.successful).getOrElse {
-        for {
-          maybeUserData <- slackEventService.maybeSlackUserDataFor(info.userId, slackEventService.clientFor(botProfile), (_: SlackApiError) => None)
-        } yield {
-          maybeUserData.exists { userData =>
-            val userIsOnTeam = userData.accountTeamIds.contains(botProfile.slackTeamId)
-            val userIsAdmin = userData.accountTeamIds.contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID)
-            if (!userIsAdmin || botProfile.slackTeamId == LinkedAccount.ELLIPSIS_SLACK_TEAM_ID) {
-              cacheService.cacheSlackUserIsOnBotTeam(info.userId, botProfile, info.maybeEnterpriseId, userIsOnTeam)
-            }
-            userIsOnTeam || userIsAdmin
-          }
-        }
-      }
-    }
-  }
-
   private def processReactionEventsFor(info: ReactionAddedRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
       maybeSlackMessage <- SlackMessage.maybeFromMessageTs(info.event.item.ts, info.event.item.channel, botProfile, services)
-      isUserValidForBot <- isUserValidForBot(info, botProfile)
+      isUserValidForBot <- slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId)
       result <- if (!isUserValidForBot) {
         Future.successful({})
       } else {
@@ -387,7 +366,7 @@ class SlackController @Inject() (
   private def processMessageEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
       slackMessage <- SlackMessage.fromFormattedText(info.message, botProfile, slackEventService)
-      isUserValidForBot <- isUserValidForBot(info, botProfile)
+      isUserValidForBot <- slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId)
       result <- if (!isUserValidForBot) {
         if (info.channel.startsWith("D") || botProfile.includesBotMention(slackMessage)) {
           dataService.teams.find(botProfile.teamId).flatMap { maybeTeam =>
