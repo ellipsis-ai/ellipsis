@@ -85,6 +85,7 @@ declare namespace ellipsis {
     usersMentioned: UserData[]
     permalink?: string
     details: ContextMessageDetails
+    reactionAdded?: string
   }
 
   export interface ContextMessageDetails {

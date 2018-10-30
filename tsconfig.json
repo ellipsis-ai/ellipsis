@@ -11,7 +11,8 @@
     "jsx": "react",
     "allowJs": false,
     "outDir": "target/web/typescript",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "resolveJsonModule": true
   },
   "include": [
     "app/assets/frontend/**/*",

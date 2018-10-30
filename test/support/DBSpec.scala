@@ -23,6 +23,7 @@ import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.input.Input
 import models.behaviors.savedanswer.SavedAnswer
+import models.behaviors.triggers.MessageSent
 import models.team.Team
 import modules.ActorModule
 import org.scalatest.mock.MockitoSugar
@@ -118,7 +119,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def newTriggerData: BehaviorTriggerData = {
-    BehaviorTriggerData("foo", false, false, false)
+    BehaviorTriggerData("foo", false, false, false, MessageSent.toString)
   }
 
   def newGroupVersionDataFor(group: BehaviorGroup, user: User): BehaviorGroupData = {
@@ -190,8 +191,16 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     runNow(dataService.behaviorVersions.findFor(behavior, groupVersion)).get
   }
 
+  def newSavedBehaviorVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, user: User): BehaviorVersion = {
+    runNow(dataService.behaviorVersions.createForAction(behavior, groupVersion, ApiConfigInfo(Seq(), Seq(), Seq(), Seq(), Seq()), Some(user), newBehaviorVersionDataFor(behavior)))
+  }
+
   def newSavedBehaviorGroupFor(team: Team): BehaviorGroup = {
     runNow(dataService.behaviorGroups.createFor(None, team))
+  }
+
+  def newSavedBehaviorFor(group: BehaviorGroup): Behavior = {
+    runNow(dataService.behaviors.createForAction(group, None, None, isDataType = false))
   }
 
   def newSavedOAuth2Api: OAuth2Api = {

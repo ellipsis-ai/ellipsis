@@ -21,6 +21,7 @@ import DataTypeSourceHelp from './data_type_source_help';
 import DefaultStorageAdder from './default_storage_adder';
 import DefaultStorageBrowser from './default_storage_browser';
 import DevModeChannelsHelp from './dev_mode_channels_help';
+import DropdownContainer from '../shared_ui/dropdown_container';
 import DynamicLabelButton from '../form/dynamic_label_button';
 import EnvVariableAdder from '../settings/environment_variables/adder';
 import EnvVariableSetter from '../settings/environment_variables/setter';
@@ -49,7 +50,6 @@ import SharedAnswerInputSelector from './shared_answer_input_selector';
 import {SimpleTokenApiRef} from '../models/simple_token';
 import Sticky from '../shared_ui/sticky';
 import SVGHamburger from '../svg/hamburger';
-import Trigger from '../models/trigger';
 import TriggerConfiguration from './trigger_configuration';
 import TriggerHelp from './trigger_help';
 import UniqueBy from '../lib/unique_by';
@@ -715,8 +715,7 @@ const BehaviorEditor = React.createClass({
     this.addInput(newInput, callback);
   },
 
-  addTrigger: function(callback) {
-    const newTrigger = new Trigger();
+  addTrigger: function(newTrigger, callback) {
     this.setEditableProp('triggers', this.getBehaviorTriggers().concat(newTrigger), callback);
   },
 
@@ -885,8 +884,8 @@ const BehaviorEditor = React.createClass({
     });
   },
 
-  onDocumentClick: function() {
-    if (this.getActiveDropdown()) {
+  onDocumentClick: function(event) {
+    if (this.getActiveDropdown() && !DropdownContainer.eventIsFromDropdown(event)) {
       this.hideActiveDropdown();
     }
   },

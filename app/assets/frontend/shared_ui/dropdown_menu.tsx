@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Event, {AnyKeyboardEvent} from '../lib/event';
 import autobind from "../lib/autobind";
+import DropdownContainer from "./dropdown_container";
 
 export interface DropdownMenuProps {
   children: React.ReactNode,
@@ -109,7 +110,7 @@ class DropdownMenu extends React.Component<DropdownMenuProps> {
         >
           {this.props.label}
         </button>
-        <div className="popup-dropdown-container position-relative">
+        <DropdownContainer>
           <ul className={
             "type-s popup popup-dropdown-menu " +
             (this.props.menuClassName || "") +
@@ -128,7 +129,7 @@ class DropdownMenu extends React.Component<DropdownMenuProps> {
               }
             })}
           </ul>
-        </div>
+        </DropdownContainer>
       </div>
     );
   }

@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import controllers.RemoteAssets
 import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.behaviorparameter.BehaviorParameterType
+import models.behaviors.triggers.TriggerType
 import models.team.Team
 import play.api.libs.ws.WSClient
 import services.DataService

@@ -77,6 +77,15 @@ a.button:hover {
 @dropdown-trigger-right-padding: 28px;
 @dropdown-trigger-small-right-padding: 24px;
 
+button.pvn,
+button.pvn:focus,
+button.pvn:active,
+button.button-dropdown-trigger-borderless.pvn:focus,
+button.button-dropdown-trigger-borderless.button-dropdown-trigger-menu-open.pvn {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
 button.button-dropdown-trigger,
 .form-select-element {
   position: relative;
@@ -122,6 +131,10 @@ button.button-dropdown-trigger.button-s,
   &::before {
     top: @border-width;
   }
+}
+
+button.button-dropdown-trigger.button-dropdown-trigger-borderless {
+  padding-right: @dropdown-trigger-right-padding !important;
 }
 
 button.button-dropdown-trigger.button-s.button-dropdown-trigger-borderless {

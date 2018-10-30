@@ -6,7 +6,7 @@ import Editable, {EditableInterface, EditableJson} from './editable';
 import Input from './input';
 import ParamType from './param_type';
 import ResponseTemplate, {ResponseTemplateJson} from './response_template';
-import Trigger, {TriggerJson} from './trigger';
+import Trigger, {TriggerJson, TriggerType} from './trigger';
 import DataTypeField from "./data_type_field";
 import {Timestamp} from "../lib/formatter";
 import {NODE_JS_VERSION} from "../lib/constants";
@@ -393,7 +393,7 @@ const name = ellipsis.userInfo.fullName || "friend";
 ellipsis.success(\`Hello, \${name}.\`);
 `);
       const template = ResponseTemplate.fromString("{successResult}");
-      const triggers = [new Trigger(`run ${optionalName || "action"}`, false, true)];
+      const triggers = [new Trigger(TriggerType.MessageSent, `run ${optionalName || "action"}`, false, true)];
       const props: DefaultActionProps = {
         triggers: triggers,
         functionBody: functionBody,

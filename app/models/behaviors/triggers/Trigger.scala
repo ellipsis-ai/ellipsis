@@ -56,12 +56,7 @@ trait Trigger extends FuzzyMatchPattern {
   }
 
   def isActivatedBy(event: Event): Boolean = {
-    event match {
-      case e: MessageEvent => matches(e.relevantMessageText, e.includesBotMention)
-      case e: SlashCommandEvent => matches(e.messageText, includesBotMention = true)
-      case _ => false
-    }
-
+    triggerType.matches(this, event)
   }
 
 }

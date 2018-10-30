@@ -32,6 +32,7 @@ declare var jsRoutes: {
       testResults: (groupId: string) => JsRoute,
       pushToGithub: () => JsRoute,
       queryDefaultStorage: () => JsRoute,
+      regexValidationErrorsFor: (text: string) => JsRoute,
       save: () => JsRoute,
       saveDefaultStorageItem: () => JsRoute,
       testInvocation: () => JsRoute,

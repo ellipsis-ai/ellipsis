@@ -3,11 +3,10 @@ package services.slack
 import akka.actor.ActorSystem
 import javax.inject._
 import json.{SlackUserData, SlackUserProfileData}
-import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
-import models.behaviors.events.{EventHandler, SlackMessageEvent}
+import models.behaviors.events.{Event, EventHandler}
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import services.DataService
@@ -28,7 +27,7 @@ class SlackEventServiceImpl @Inject()(
 
   implicit val ec: ExecutionContext = actorSystem.dispatcher
 
-  def onEvent(event: SlackMessageEvent): Future[Unit] = {
+  def onEvent(event: Event): Future[Unit] = {
     if (!event.isBotMessage) {
       for {
         maybeConversation <- event.maybeOngoingConversation(dataService)

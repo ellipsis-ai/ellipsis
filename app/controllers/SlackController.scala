@@ -4,7 +4,6 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import javax.inject.Inject
 import json.Formatting._
-import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.{Normal, Threaded}
@@ -189,6 +188,48 @@ class SlackController @Inject() (
                             ts: String
                             ) extends ItemInfo
 
+  case class ReactionAddedEventInfo(
+                                   eventType: String,
+                                   userId: String,
+                                   reaction: String,
+                                   itemUserId: Option[String],
+                                   item: MessageItemInfo,
+                                   eventTs: String
+                                   ) extends EventInfo
+
+  case class ReactionAddedRequestInfo(
+                                     maybeEnterpriseId: Option[String],
+                                     teamId: String,
+                                     maybeAuthedTeamIds: Option[Seq[String]],
+                                     event: ReactionAddedEventInfo
+                                   ) extends EventRequestInfo {
+    val userId: String = event.userId
+    val channel: String = event.item.channel
+    val ts: String = event.eventTs
+  }
+  private val reactionAddedRequestForm = Form(
+    mapping(
+      "enterprise_id" -> optional(nonEmptyText),
+      "team_id" -> nonEmptyText,
+      "authed_teams" -> optional(seq(nonEmptyText)),
+      "event" -> mapping(
+        "type" -> nonEmptyText,
+        "user" -> nonEmptyText,
+        "reaction" -> nonEmptyText,
+        "item_user" -> optional(nonEmptyText),
+        "item" -> mapping(
+          "type" -> nonEmptyText,
+          "channel" -> nonEmptyText,
+          "ts" -> nonEmptyText
+        )(MessageItemInfo.apply)(MessageItemInfo.unapply),
+        "event_ts" -> nonEmptyText
+        )(ReactionAddedEventInfo.apply)(ReactionAddedEventInfo.unapply)
+      )(ReactionAddedRequestInfo.apply)(ReactionAddedRequestInfo.unapply) verifying("Not a valid message event", fields => fields match {
+      case info => info.event.eventType == "reaction_added"
+    })
+  )
+
+
   case class MessageSentEventInfo(
                                    eventType: String,
                                    ts: String,
@@ -299,6 +340,25 @@ class SlackController @Inject() (
     })
   )
 
+  private def processReactionEventsFor(info: ReactionAddedRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
+    for {
+      maybeSlackMessage <- SlackMessage.maybeFromMessageTs(info.event.item.ts, info.event.item.channel, botProfile, services)
+      isUserValidForBot <- slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId)
+      result <- if (!isUserValidForBot) {
+        Future.successful({})
+      } else {
+        val event = SlackReactionAddedEvent(
+          botProfile,
+          info.channel,
+          info.userId,
+          info.event.reaction,
+          maybeSlackMessage
+        )
+        slackEventService.onEvent(event)
+      }
+    } yield result
+  }
+
   private def processMessageEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
       slackMessage <- SlackMessage.fromFormattedText(info.message, botProfile, slackEventService)
@@ -339,6 +399,27 @@ class SlackController @Inject() (
     } yield result
   }
 
+  private def reactionAddedEventResult(info: ReactionAddedRequestInfo)(implicit request: Request[AnyContent]): Result = {
+    val isRetry = request.headers.get("X-Slack-Retry-Num").isDefined
+    if (isRetry) {
+      Ok("We are ignoring retries for now")
+    } else {
+      for {
+        profiles <- Future.sequence(info.slackTeamIdsForBots.map { teamId =>
+          dataService.slackBotProfiles.allForSlackTeamId(teamId)
+        }).map(_.flatten)
+        _ <- Future.sequence(
+          profiles.map { profile =>
+            processReactionEventsFor(info, profile)
+          }
+        )
+      } yield {}
+
+      // respond immediately
+      Ok(":+1:")
+    }
+  }
+
   private def messageEventResult(info: MessageRequestInfo)(implicit request: Request[AnyContent]): Result = {
     val isRetry = request.headers.get("X-Slack-Retry-Num").isDefined
     if (isRetry) {
@@ -358,6 +439,10 @@ class SlackController @Inject() (
     }
   }
 
+  private def maybeReactionResult(implicit request: Request[AnyContent]): Option[Result] = {
+    maybeResultFor(reactionAddedRequestForm, reactionAddedEventResult)
+  }
+
   private def maybeMessageResult(implicit request: Request[AnyContent]): Option[Result] = {
     maybeResultFor(messageSentRequestForm, messageEventResult) orElse
       maybeResultFor(messageChangedRequestForm, messageEventResult)
@@ -365,7 +450,7 @@ class SlackController @Inject() (
 
   private def maybeEventResult(implicit request: Request[AnyContent]): Option[Result] = {
     if (isValidEventRequest) {
-      maybeMessageResult
+      maybeMessageResult.orElse(maybeReactionResult)
     } else {
       None
     }
@@ -737,6 +822,10 @@ class SlackController @Inject() (
     info.slackTeamIdsForBots.headOption.map { slackTeamId =>
       sendEphemeralMessage(message, slackTeamId, info.channel, info.userId)
     }.getOrElse(Future.successful({}))
+  }
+
+  private def sendEphemeralMessage(message: String, info: ReactionAddedRequestInfo): Future[Unit] = {
+    sendEphemeralMessage(message, info.teamId, info.channel, info.userId)
   }
 
   private def updateActionsMessageFor(

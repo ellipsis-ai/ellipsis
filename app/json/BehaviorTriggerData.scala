@@ -1,14 +1,29 @@
 package json
 
-import models.behaviors.triggers.Trigger
+import models.behaviors.triggers.{MessageSent, Trigger}
 import utils.FuzzyMatchPattern
+
+// The existing structure of this class should be maintained and
+// new fields should be optional for future compatibility
+case class LegacyBehaviorTriggerJson(
+                                      text: String,
+                                      requiresMention: Boolean,
+                                      isRegex: Boolean,
+                                      caseSensitive: Boolean,
+                                      triggerType: Option[String]
+                                    ) {
+  def toBehaviorTriggerData: BehaviorTriggerData = {
+    BehaviorTriggerData(text, requiresMention, isRegex, caseSensitive, triggerType.getOrElse(MessageSent.toString))
+  }
+}
 
 case class BehaviorTriggerData(
                                 text: String,
                                 requiresMention: Boolean,
                                 isRegex: Boolean,
-                                caseSensitive: Boolean
-                                ) extends Ordered[BehaviorTriggerData] with FuzzyMatchPattern {
+                                caseSensitive: Boolean,
+                                triggerType: String
+                              ) extends Ordered[BehaviorTriggerData] with FuzzyMatchPattern {
 
   val maybeText: Option[String] = Some(text)
 

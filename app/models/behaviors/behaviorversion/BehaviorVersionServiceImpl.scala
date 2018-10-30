@@ -14,6 +14,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
+import models.behaviors.triggers.TriggerType
 import models.team.Team
 import play.api.Configuration
 import services._
@@ -291,19 +292,7 @@ class BehaviorVersionServiceImpl @Inject() (
       }
       ).map(_.flatten)
       _ <- dataService.behaviorParameters.ensureForAction(updated, inputs)
-      _ <- DBIO.sequence(
-        data.triggers.
-          filterNot(_.text.trim.isEmpty)
-          map { trigger =>
-          dataService.triggers.createForAction(
-            updated,
-            trigger.text,
-            trigger.requiresMention,
-            trigger.isRegex,
-            trigger.caseSensitive
-          )
-        }
-      )
+      _ <- dataService.triggers.createTriggersForAction(updated, data.triggers)
       _ <- data.config.dataTypeConfig.map { configData =>
         dataService.dataTypeConfigs.createForAction(updated, configData)
       }.getOrElse(DBIO.successful(None))

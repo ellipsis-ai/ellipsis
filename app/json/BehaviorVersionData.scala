@@ -10,6 +10,7 @@ import models.behaviors.behaviorversion.{Normal, Private}
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.datatypefield.DataTypeFieldForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
+import models.behaviors.triggers.MessageSent
 import models.team.Team
 import play.api.libs.json._
 import services.DataService
@@ -169,7 +170,7 @@ object BehaviorVersionData {
       functionBody = "",
       responseTemplate = "",
       inputIds = Seq(),
-      triggers = Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
+      triggers = Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false, triggerType = MessageSent.toString)),
       config = BehaviorConfig(
         None,
         maybeName,
@@ -226,7 +227,7 @@ object BehaviorVersionData {
       extractFunctionBodyFrom(function),
       response,
       Json.parse(params).validate[Seq[String]].get,
-      Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
+      Json.parse(triggers).validate[Seq[LegacyBehaviorTriggerJson]].get.map(_.toBehaviorTriggerData),
       configWithDataTypeConfig,
       configWithDataTypeConfig.exportId,
       createdAt = None,
@@ -297,7 +298,13 @@ object BehaviorVersionData {
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
           params.map(_.input.inputId),
           triggers.map(ea =>
-            BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
+            BehaviorTriggerData(
+              ea.pattern,
+              requiresMention = ea.requiresBotMention,
+              isRegex = ea.shouldTreatAsRegex,
+              caseSensitive = ea.isCaseSensitive,
+              triggerType = ea.triggerType.toString
+            )
           ),
           config,
           behavior.maybeExportId,

@@ -6,6 +6,7 @@ import TimeZoneSetter from '../../../../app/assets/frontend/time_zone/team_time_
 import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
 import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavior_version";
 import {ComponentClass} from "react";
+import {TriggerType} from "../../../../app/assets/frontend/models/trigger";
 
 jest.setMock('../../../../app/assets/frontend/lib/data_request', { DataRequest: () => ({
   jsonGet: jest.fn(() => {
@@ -41,12 +42,14 @@ describe('BehaviorListApp', () => {
       "text": "B",
       "requiresMention": false,
       "isRegex": true,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }, {
       "text": "C",
       "requiresMention": false,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
       isDataType: false,
@@ -66,7 +69,8 @@ describe('BehaviorListApp', () => {
       "text": "A",
       "requiresMention": true,
       "isRegex": true,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
       isDataType: false,
