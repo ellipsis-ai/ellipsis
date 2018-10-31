@@ -5,7 +5,7 @@ import controllers.api.APIResponder
 import controllers.api.exceptions.InvalidTokenException
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{Event, EventType}
+import models.behaviors.events.{Event, EventType, ScheduledMessageTestEvent, TestEventContext}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.testing.{TestMessageEvent, TestRunEvent}
@@ -30,8 +30,19 @@ case class NoMediumApiMethodContext(
   val maybeTeam: Option[Team] = Some(team)
   val mediumText: String = "requests with no target medium"
 
-  def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
-    Future.successful(Some(TestMessageEvent(user, team, message, includesBotMention = true)))
+  def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[TestMessageEvent]] = {
+    Future.successful(Some(TestMessageEvent(TestEventContext(user, team), message, includesBotMention = true)))
+  }
+
+  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
+    maybeBaseMessageEventFor(message, channel, maybeOriginalEventType).map { maybeBaseEvent =>
+      maybeBaseEvent.map { messageEvent =>
+        val event: Event = maybeScheduledMessage.map { scheduledMessage =>
+          ScheduledMessageTestEvent(messageEvent, scheduledMessage)
+        }.getOrElse(messageEvent)
+        event
+      }
+    }
   }
 
   def runEventFor(
@@ -39,11 +50,10 @@ case class NoMediumApiMethodContext(
                    argumentsMap: Map[String, String],
                    channel: String,
                    maybeOriginalEventType: Option[EventType]
-                 ): Future[Event] = {
+                 ): Future[TestRunEvent] = {
     Future.successful(
       TestRunEvent(
-        user,
-        team,
+        TestEventContext(user, team),
         behaviorVersion,
         argumentsMap
       )

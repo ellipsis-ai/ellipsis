@@ -5,7 +5,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{SlackMessage, SlackMessageEvent}
+import models.behaviors.events.{SlackEventContext, SlackMessage, SlackMessageEvent}
 import models.behaviors.{DeveloperContext, NoResponseResult, SuccessResult}
 import models.team.Team
 import org.mockito.Mockito._
@@ -36,10 +36,12 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
 
   def newEventFor(profile: SlackBotProfile, maybeThreadId: Option[String] = defaultThreadId): SlackMessageEvent = {
     SlackMessageEvent(
-      profile,
-      defaultChannel,
-      maybeThreadId,
-      defaultSlackUserId,
+      SlackEventContext(
+        profile,
+        defaultChannel,
+        maybeThreadId,
+        defaultSlackUserId
+      ),
       SlackMessage.blank,
       None,
       SlackTimestamp.now,
@@ -149,7 +151,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
         mockPostChatMessage(interruptionPrompt, event, client, resultTs, None)
 
         conversationToBeInterrupted.maybeThreadId.isEmpty mustBe true
-        val ongoing = runNow(dataService.conversations.allOngoingFor(event.userIdForContext, event.context, Some(event.channel), event.maybeThreadId, team.id))
+        val ongoing = runNow(dataService.conversations.allOngoingFor(event.eventContext, None))
         ongoing must have length(1)
         ongoing.head mustBe conversationToBeInterrupted
 

@@ -1,5 +1,6 @@
 import json.BehaviorVersionData
 import models.behaviors.conversations.{InvokeBehaviorConversation, ParamCollectionState}
+import models.behaviors.events.TestEventContext
 import models.behaviors.testing.TestMessageEvent
 import support.DBSpec
 
@@ -11,7 +12,7 @@ class ParamCollectionStateSpec extends DBSpec {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
-        val event = TestMessageEvent(user, team, "foo", includesBotMention = false)
+        val event = TestMessageEvent(TestEventContext(user, team), "foo", includesBotMention = false)
         val group = newSavedBehaviorGroupFor(team)
 
         val inputData = newInputDataFor(isSavedForTeam = Some(true))
@@ -42,7 +43,7 @@ class ParamCollectionStateSpec extends DBSpec {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
-        val event = TestMessageEvent(user, team, "foo", includesBotMention = false)
+        val event = TestMessageEvent(TestEventContext(user, team), "foo", includesBotMention = false)
         val group = newSavedBehaviorGroupFor(team)
 
         val inputData = newInputDataFor(isSavedForUser = Some(true))
@@ -73,7 +74,7 @@ class ParamCollectionStateSpec extends DBSpec {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
-        val event = TestMessageEvent(user, team, "foo", includesBotMention = false)
+        val event = TestMessageEvent(TestEventContext(user, team), "foo", includesBotMention = false)
         val group = newSavedBehaviorGroupFor(team)
 
         val inputData = newInputDataFor()

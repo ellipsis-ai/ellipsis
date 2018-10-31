@@ -7,7 +7,7 @@ import controllers.api.json._
 import json.APIErrorData
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{Event, EventHandler, EventType, ScheduledEvent}
+import models.behaviors.events._
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, BotResultService}
@@ -50,18 +50,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
     } yield maybeBehaviorVersion
   }
 
-  def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]]
-
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
-    maybeBaseMessageEventFor(message, channel, maybeOriginalEventType).map { maybeBaseEvent =>
-      maybeBaseEvent.map { messageEvent =>
-        val event: Event = maybeScheduledMessage.map { scheduledMessage =>
-          ScheduledEvent(messageEvent, scheduledMessage)
-        }.getOrElse(messageEvent)
-        event
-      }
-    }
-  }
+  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]]
 
   def runEventFor(
                    behaviorVersion: BehaviorVersion,

@@ -6,7 +6,8 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.{BotResultService, DeveloperContext}
+import models.behaviors.events.EventContext
+import models.behaviors.{BotResult, BotResultService, DeveloperContext}
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services._
@@ -98,7 +99,7 @@ class ConversationServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): DBIO[Seq[Conversation]] = {
+  private def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): DBIO[Seq[Conversation]] = {
     allOngoingQueryFor(userIdForContext, context, teamId).result.map { r =>
       r.map(tuple2Conversation)
     }.map { activeConvos =>
@@ -113,6 +114,27 @@ class ConversationServiceImpl @Inject() (
 
   def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): Future[Seq[Conversation]] = {
     dataService.run(allOngoingForAction(userIdForContext, context, maybeChannel, maybeThreadId, teamId))
+  }
+
+  def allOngoingForAction(
+                           eventContext: EventContext,
+                           maybeBotResult: Option[BotResult]
+                         )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Seq[Conversation]] = {
+    eventContext.maybeUserIdForContext.map { userIdForContext =>
+      for {
+        maybeChannel <- maybeBotResult.map { botResult =>
+          eventContext.maybeChannelForSendAction(botResult.responseType, botResult.maybeConversation, services)
+        }.getOrElse(DBIO.successful(eventContext.maybeChannel))
+        convos <- allOngoingForAction(userIdForContext, eventContext.name, maybeChannel, eventContext.maybeThreadId, eventContext.teamId)
+      } yield convos
+    }.getOrElse(DBIO.successful(Seq()))
+  }
+
+  def allOngoingFor(
+                     eventContext: EventContext,
+                     maybeBotResult: Option[BotResult]
+                   )(implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[Conversation]] = {
+    dataService.run(allOngoingForAction(eventContext, maybeBotResult))
   }
 
   def allOngoingBehaviorGroupVersionIds: Future[Seq[String]] = {
@@ -207,8 +229,7 @@ class ConversationServiceImpl @Inject() (
           files = Seq(),
           choices = Seq(),
           DeveloperContext.default,
-          services,
-          configuration
+          services
         ))
       }.getOrElse(DBIO.successful(None))
       _ <- maybeEvent.map { event =>

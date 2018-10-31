@@ -11,7 +11,6 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.triggers.Trigger
 import models.team.Team
-import play.api.Configuration
 import play.api.libs.json.JsObject
 import services.{AWSLambdaService, DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -20,13 +19,17 @@ import utils.UploadFileSpec
 import scala.concurrent.{ExecutionContext, Future}
 
 trait Event {
-  val name: String
+  type EC <: EventContext
+  val eventContext: EC
+  val name: String = eventContext.name
   val userIdForContext: String
-  val teamIdForContext: String
-  val botUserIdForContext: String
-  val teamId: String
-  val maybeChannel: Option[String]
-  val maybeThreadId: Option[String]
+  val maybeTeamIdForContext: Option[String] = eventContext.maybeTeamIdForContext
+  def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
+    eventContext.maybeBotInfo(services)
+  }
+  val teamId: String = eventContext.teamId
+  val maybeChannel: Option[String] = eventContext.maybeChannel
+  lazy val maybeThreadId: Option[String] = eventContext.maybeThreadId
   val messageText: String
   val relevantMessageText: String = messageText
   val relevantMessageTextWithFormatting: String = messageText
@@ -37,8 +40,8 @@ trait Event {
   val context = name
   val isResponseExpected: Boolean
   val includesBotMention: Boolean
-  val messageRecipientPrefix: String
-  val isPublicChannel: Boolean
+  val messageRecipientPrefix: String = eventContext.messageRecipientPrefix(isUninterruptedConversation)
+  val isPublicChannel: Boolean = eventContext.isPublicChannel
   val isUninterruptedConversation: Boolean = false
   val isEphemeral: Boolean = false
   val maybeResponseUrl: Option[String] = None
@@ -93,7 +96,9 @@ trait Event {
     }.getOrElse(Seq.empty)
   }
 
-  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+    eventContext.detailsFor(services)
+  }
 
   def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(None)
@@ -148,8 +153,6 @@ trait Event {
     ).result
   }
 
-  def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
-
   def shouldAutoForcePrivate(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
       isEphemeral && params.exists(_.paramType.mayRequireTypedAnswer)
@@ -159,7 +162,7 @@ trait Event {
     for {
       forcePrivate <- shouldAutoForcePrivate(behaviorVersion, services.dataService).map(_ || behaviorVersion.forcePrivateResponse)
       maybeChannelToUse <- if (forcePrivate) {
-        eventualMaybeDMChannel(services).map { maybeDMChannel =>
+        eventContext.eventualMaybeDMChannel(services).map { maybeDMChannel =>
           maybeDMChannel
         }
       } else {
@@ -167,14 +170,6 @@ trait Event {
       }
     } yield maybeChannelToUse
   }
-
-  def maybeChannelForSendAction(
-                                 responseType: BehaviorResponseType,
-                                 maybeConversation: Option[Conversation],
-                                 services: DefaultServices
-                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]]
-
-  def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]]
 
   def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)
                            (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = eventualResults
@@ -188,11 +183,14 @@ trait Event {
                    files: Seq[UploadFileSpec],
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
-                   services: DefaultServices,
-                   configuration: Configuration
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
+                   services: DefaultServices
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    eventContext.sendMessage(this, text, responseType, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, choices, developerContext, services)
+  }
 
-  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String]
+  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    eventContext.botName(services)
+  }
 
   def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("")
 

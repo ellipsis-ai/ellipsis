@@ -149,10 +149,6 @@ sealed trait BotResult {
     }
   }
 
-  def maybeChannelForSendAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
-    event.maybeChannelForSendAction(responseType, maybeConversation, services)
-  }
-
   val interruptionPrompt = {
     val action = if (maybeConversation.isDefined) { "ask" } else { "tell" }
     s"You haven't answered my question yet, but I have something new to $action you."
@@ -164,8 +160,7 @@ sealed trait BotResult {
     } else {
       val dataService = services.dataService
       for {
-        maybeChannelForSend <- maybeChannelForSendAction(maybeConversation, services)
-        ongoing <- dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId, event.teamId)
+        ongoing <- dataService.conversations.allOngoingForAction(event.eventContext, Some(this))
         ongoingWithRoots <- DBIO.sequence(ongoing.map { ea =>
           dataService.parentConversations.rootForAction(ea).map { root =>
             (ea, root)

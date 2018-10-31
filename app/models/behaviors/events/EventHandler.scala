@@ -125,7 +125,7 @@ class EventHandler @Inject() (
           dataService.conversations.maybeWithThreadId(threadId, e.userIdForContext, e.context).map { maybeConvo =>
             maybeConvo.flatMap { convo =>
               if (convo.isDone) {
-                val channelText = if (e.isDirectMessage) {
+                val channelText = if (e.eventContext.isDirectMessage) {
                   "the DM channel"
                 } else {
                   event.maybeChannel.map { channel =>

@@ -14,37 +14,28 @@ import utils.{SlackMessageSender, UploadFileSpec}
 import scala.concurrent.{ExecutionContext, Future}
 
 case class SlackReactionAddedEvent(
-                                    profile: SlackBotProfile,
-                                    channel: String,
-                                    user: String,
+                                    eventContext: SlackEventContext,
                                     reaction: String,
                                     maybeMessage: Option[SlackMessage]
-                                  ) extends Event with SlackEvent {
+                                  ) extends Event {
+
+  override type EC = SlackEventContext
 
   val eventType: EventType = EventType.chat
 
   override val isEphemeral: Boolean = false
 
-  val teamId: String = profile.teamId
-  val userIdForContext: String = user
-
-  lazy val maybeChannel = Some(channel)
-  lazy val name: String = Conversation.SLACK_CONTEXT
+  val userIdForContext: String = eventContext.user
 
   lazy val messageText: String = maybeMessage.map(_.originalText).getOrElse("")
   lazy val invocationLogText: String = relevantMessageText
 
-  val maybeThreadId: Option[String] = None
   val maybeOriginalEventType: Option[EventType] = None
 
   override val isResponseExpected: Boolean = false
   val includesBotMention: Boolean = true
 
   override val maybeReactionAdded: Option[String] = Some(reaction)
-
-  def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    Future.successful(Seq())
-  }
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
@@ -80,47 +71,5 @@ case class SlackReactionAddedEvent(
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
-
-  def sendMessage(
-                   unformattedText: String,
-                   responseType: BehaviorResponseType,
-                   maybeShouldUnfurl: Option[Boolean],
-                   maybeConversation: Option[Conversation],
-                   attachmentGroups: Seq[MessageAttachmentGroup],
-                   files: Seq[UploadFileSpec],
-                   choices: Seq[ActionChoice],
-                   developerContext: DeveloperContext,
-                   services: DefaultServices,
-                   configuration: Configuration
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-
-    for {
-      maybeDMChannel <- eventualMaybeDMChannel(services)
-      botName <- botName(services)
-      maybeTs <- SlackMessageSender(
-        services.slackApiService.clientFor(profile),
-        user,
-        profile.slackTeamId,
-        unformattedText,
-        responseType,
-        developerContext,
-        channel,
-        maybeDMChannel,
-        maybeThreadId,
-        maybeShouldUnfurl,
-        maybeConversation,
-        attachmentGroups,
-        files,
-        choices,
-        configuration,
-        botName,
-        messageUserDataList(maybeConversation, services),
-        services,
-        isEphemeral,
-        maybeResponseUrl,
-        beQuiet = false
-      ).send
-    } yield maybeTs
-  }
 
 }

@@ -1,51 +1,41 @@
 package models.behaviors.events
 
-import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
-import models.behaviors.behaviorversion.BehaviorResponseType
-import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.team.Team
-import play.api.Configuration
-import services.{DataService, DefaultServices}
-import utils.{SlackMessageSender, UploadFileSpec}
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class SlashCommandEvent(
-                              profile: SlackBotProfile,
-                              channel: String,
-                              user: String,
+                              eventContext: SlackEventContext,
                               message: SlackMessage,
                               responseUrl: String
-                            ) extends Event with SlackEvent {
+                            ) extends Event {
+
+  override type EC = SlackEventContext
+
+  val profile: SlackBotProfile = eventContext.profile
+  val channel: String = eventContext.channel
+  val user: String = eventContext.user
 
   val eventType: EventType = EventType.chat
 
   override val isEphemeral: Boolean = true
   override val maybeResponseUrl: Option[String] = Some(responseUrl)
 
-  val teamId: String = profile.teamId
   val userIdForContext: String = user
-
-  lazy val maybeChannel = Some(channel)
-  lazy val name: String = Conversation.SLACK_CONTEXT
 
   lazy val messageText: String = message.originalText
   lazy val invocationLogText: String = relevantMessageText
 
-  val maybeThreadId: Option[String] = None
   val maybeOriginalEventType: Option[EventType] = None
 
   override val isResponseExpected: Boolean = true
   val includesBotMention: Boolean = true
 
   override val beQuiet: Boolean = true
-
-  def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    Future.successful(Seq())
-  }
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
@@ -79,47 +69,5 @@ case class SlashCommandEvent(
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
-
-  def sendMessage(
-                   unformattedText: String,
-                   responseType: BehaviorResponseType,
-                   maybeShouldUnfurl: Option[Boolean],
-                   maybeConversation: Option[Conversation],
-                   attachmentGroups: Seq[MessageAttachmentGroup],
-                   files: Seq[UploadFileSpec],
-                   choices: Seq[ActionChoice],
-                   developerContext: DeveloperContext,
-                   services: DefaultServices,
-                   configuration: Configuration
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-
-    for {
-      maybeDMChannel <- eventualMaybeDMChannel(services)
-      botName <- botName(services)
-      maybeTs <- SlackMessageSender(
-        services.slackApiService.clientFor(profile),
-        user,
-        profile.slackTeamId,
-        unformattedText,
-        responseType,
-        developerContext,
-        channel,
-        maybeDMChannel,
-        maybeThreadId,
-        maybeShouldUnfurl,
-        maybeConversation,
-        attachmentGroups,
-        files,
-        choices,
-        configuration,
-        botName,
-        messageUserDataList(maybeConversation, services),
-        services,
-        isEphemeral,
-        maybeResponseUrl,
-        beQuiet
-      ).send
-    } yield maybeTs
-  }
 
 }

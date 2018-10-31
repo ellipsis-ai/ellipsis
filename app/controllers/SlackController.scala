@@ -354,9 +354,12 @@ class SlackController @Inject() (
         Future.successful({})
       } else {
         val event = SlackReactionAddedEvent(
-          botProfile,
-          info.channel,
-          info.userId,
+          SlackEventContext(
+            botProfile,
+            info.channel,
+            maybeThreadId = None,
+            info.userId
+          ),
           info.event.reaction,
           maybeSlackMessage
         )
@@ -387,10 +390,12 @@ class SlackController @Inject() (
         }
         slackEventService.onEvent(
           SlackMessageEvent(
-            botProfile,
-            info.channel,
-            info.maybeThreadTs,
-            info.userId,
+            SlackEventContext(
+              botProfile,
+              info.channel,
+              info.maybeThreadTs,
+              info.userId
+            ),
             slackMessage,
             maybeFile,
             info.ts,
@@ -486,19 +491,16 @@ class SlackController @Inject() (
     for {
       slackMessage <- SlackMessage.fromFormattedText(info.text, botProfile, slackEventService)
       event <- Future.successful(SlashCommandEvent(
-        botProfile,
-        info.channelId,
-        info.userId,
+        SlackEventContext(
+          botProfile,
+          info.channelId,
+          maybeThreadId = None,
+          info.userId
+        ),
         slackMessage,
         info.responseUrl
       ))
-      maybeConversation <- dataService.conversations.allOngoingFor(
-        info.userId,
-        Conversation.SLACK_CONTEXT,
-        Some(info.channelId),
-        None,
-        botProfile.teamId
-      ).map(_.headOption)
+      maybeConversation <- dataService.conversations.allOngoingFor(event.eventContext, None).map(_.headOption)
       results <- eventHandler.handle(event, maybeConversation)
       _ <- Future.sequence(
         results.map(result => botResultService.sendIn(result, None).map { _ =>
@@ -888,10 +890,12 @@ class SlackController @Inject() (
         slackMessage <- maybeSlackMessage
       } yield {
         slackEventService.onEvent(SlackMessageEvent(
-          profile,
-          info.channel.id,
-          info.maybeOriginalMessageThreadId,
-          info.user.id,
+          SlackEventContext(
+            profile,
+            info.channel.id,
+            info.maybeOriginalMessageThreadId,
+            info.user.id
+          ),
           slackMessage,
           None,
           info.message_ts,

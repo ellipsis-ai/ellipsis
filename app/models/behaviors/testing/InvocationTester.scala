@@ -3,6 +3,7 @@ package models.behaviors.testing
 import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.TestEventContext
 import services._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,7 +20,7 @@ case class InvocationTester(
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
       event <- Future.successful {
-        TestMessageEvent(user, behaviorVersion.team, "", includesBotMention = true)
+        TestMessageEvent(TestEventContext(user, behaviorVersion.team), "", includesBotMention = true)
       }
       paramValueMaybes <- Future.successful {
         params.map { param =>

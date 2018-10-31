@@ -8,7 +8,7 @@ import javax.inject.{Inject, Provider}
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.registration.RegistrationService
 import models.accounts.user.User
-import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
+import models.behaviors.events.{EventType, SlackEventContext, SlackMessage, SlackMessageEvent}
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
@@ -169,10 +169,12 @@ class SlackBotProfileServiceImpl @Inject() (
         // TODO: Create a new class for placeholder events
         // https://github.com/ellipsis-ai/ellipsis/issues/1719
         SlackMessageEvent(
-          botProfile,
-          channelId,
-          None,
-          maybeUserId.getOrElse(botProfile.userId),
+          SlackEventContext(
+            botProfile,
+            channelId,
+            None,
+            maybeUserId.getOrElse(botProfile.userId)
+          ),
           SlackMessage.blank,
           None,
           SlackTimestamp.now,
@@ -257,10 +259,12 @@ class SlackBotProfileServiceImpl @Inject() (
   ): Future[Option[String]] = {
     val delayMilliseconds = 1000
     val event = SlackMessageEvent(
-      botProfile,
-      channelId,
-      maybeThreadTs,
-      userId,
+      SlackEventContext(
+        botProfile,
+        channelId,
+        maybeThreadTs,
+        userId
+      ),
       SlackMessage.blank,
       None,
       maybeThreadTs.getOrElse(originalMessageTs),

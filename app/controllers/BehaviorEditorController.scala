@@ -9,6 +9,7 @@ import javax.inject.Inject
 import json.Formatting._
 import json._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.events.TestEventContext
 import models.behaviors.testing.{InvocationTester, TestMessageEvent, TriggerTester}
 import models.behaviors.triggers.Trigger
 import models.silhouette.EllipsisEnv
@@ -327,7 +328,7 @@ class BehaviorEditorController @Inject() (
             dataService.behaviors.maybeCurrentVersionFor(behavior)
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-            val event = TestMessageEvent(user, behaviorVersion.team, info.message, includesBotMention = true)
+            val event = TestMessageEvent(TestEventContext(user, behaviorVersion.team), info.message, includesBotMention = true)
             TriggerTester(services).test(event, behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 

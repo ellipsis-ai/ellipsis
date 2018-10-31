@@ -3,7 +3,7 @@ import java.time.OffsetDateTime
 import json.SlackUserData
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.events.{SlackMessage, SlackMessageEvent}
+import models.behaviors.events.{SlackEventContext, SlackMessage, SlackMessageEvent}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -24,10 +24,12 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
     val profile = SlackBotProfile(botUserId, botTeamId, slackTeamId, botToken, OffsetDateTime.now, allowShortcutMention = true)
     when(services.dataService.slackBotProfiles.maybeNameFor(profile)).thenReturn(Future.successful(maybeBotName))
     SlackMessageEvent(
-      profile,
-      channel,
-      None,
-      IDs.next,
+      SlackEventContext(
+        profile,
+        channel,
+        None,
+        IDs.next
+      ),
       SlackMessage("oh hai", "oh hai", "oh hai", Set.empty[SlackUserData]),
       None,
       OffsetDateTime.now.toString,
@@ -43,8 +45,8 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
     "return the bot display name" in new TestContext {
       running(app) {
         val event = newEvent("C1234", services)
-        val name = await(event.botName(services)(actorSystem, ec))
-        name mustBe botName
+        val maybeInfo = await(event.maybeBotInfo(services)(actorSystem, ec))
+        maybeInfo.map(_.name) must contain(botName)
       }
     }
   }

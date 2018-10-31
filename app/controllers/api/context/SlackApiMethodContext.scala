@@ -48,13 +48,15 @@ case class SlackApiMethodContext(
     dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
   }
 
-  def messageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Event] = {
+  def messageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[SlackMessageEvent] = {
     maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
       SlackMessageEvent(
-        botProfile,
-        maybeSlackChannelId.getOrElse(channel),
-        None,
-        slackProfile.loginInfo.providerKey,
+        SlackEventContext(
+          botProfile,
+          maybeSlackChannelId.getOrElse(channel),
+          None,
+          slackProfile.loginInfo.providerKey
+        ),
         SlackMessage.fromUnformattedText(message, botProfile),
         None,
         SlackTimestamp.now,
@@ -67,8 +69,19 @@ case class SlackApiMethodContext(
     }
   }
 
-  def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
+  def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]] = {
     messageEventFor(message, channel, maybeOriginalEventType).map(Some(_))
+  }
+
+  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
+    maybeBaseMessageEventFor(message, channel, maybeOriginalEventType).map { maybeBaseEvent =>
+      maybeBaseEvent.map { messageEvent =>
+        val event: Event = maybeScheduledMessage.map { scheduledMessage =>
+          ScheduledMessageSlackEvent(messageEvent, scheduledMessage)
+        }.getOrElse(messageEvent)
+        event
+      }
+    }
   }
 
   def runEventFor(
@@ -76,16 +89,17 @@ case class SlackApiMethodContext(
                    argumentsMap: Map[String, String],
                    channel: String,
                    maybeOriginalEventType: Option[EventType]
-                 ): Future[Event] = {
+                 ): Future[SlackRunEvent] = {
     maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
-      RunEvent(
-        botProfile,
+      SlackRunEvent(
+        SlackEventContext(
+          botProfile,
+          maybeSlackChannelId.getOrElse(channel),
+          None,
+          slackProfile.loginInfo.providerKey
+        ),
         behaviorVersion,
         argumentsMap,
-        maybeSlackChannelId.getOrElse(channel),
-        None,
-        slackProfile.loginInfo.providerKey,
-        SlackTimestamp.now,
         maybeOriginalEventType,
         isEphemeral = false,
         None

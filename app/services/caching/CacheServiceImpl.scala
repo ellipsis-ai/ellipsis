@@ -119,12 +119,14 @@ class CacheServiceImpl @Inject() (
   def getEvent(key: String): Option[SlackMessageEvent] = {
     get[JsValue](key).flatMap { eventJson =>
       eventJson.validate[SlackMessageEventData] match {
-        case JsSuccess(event, jsPath) => {
+        case JsSuccess(event, _) => {
           Some(SlackMessageEvent(
-            event.profile,
-            event.channel,
-            event.maybeThreadId,
-            event.user,
+            SlackEventContext(
+              event.profile,
+              event.channel,
+              event.maybeThreadId,
+              event.user
+            ),
             event.message,
             event.maybeFile,
             event.ts,
@@ -135,7 +137,7 @@ class CacheServiceImpl @Inject() (
             event.beQuiet
           ))
         }
-        case JsError(err) => None
+        case JsError(_) => None
       }
     }
   }

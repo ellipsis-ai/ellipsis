@@ -10,7 +10,7 @@ import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
-import models.behaviors.events.{Event, EventType, SlackEvent, SlackMessageEvent}
+import models.behaviors.events.{Event, EventType, SlackMessageEvent}
 import models.behaviors.triggers.Trigger
 import services.caching.CacheService
 import services.{DataService, DefaultServices}
@@ -178,10 +178,7 @@ object InvokeBehaviorConversation {
                  dataService: DataService,
                  cacheService: CacheService
                  )(implicit ec: ExecutionContext): Future[InvokeBehaviorConversation] = {
-    val maybeTeamIdForContext = event match {
-      case e: SlackEvent => Some(e.teamIdForContext)
-      case _ => None
-    }
+    val maybeTeamIdForContext = event.maybeTeamIdForContext
     val action = for {
       maybeParent <- maybeParent.map { parent =>
         dataService.parentConversations.createAction(parent).map(Some(_))

@@ -24,47 +24,14 @@ trait TestEvent extends Event {
   val maybeOriginalEventType: Option[EventType] = None
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
 
-  val teamId = team.id
-
-  val messageBuffer: ArrayBuffer[String] = new ArrayBuffer()
   lazy val userIdForContext = user.id
-  lazy val teamIdForContext = team.id
 
-  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    Future.successful(s"${team.name} TestBot")
-  }
   val botUserIdForContext: String = "TEST_BOT_ID"
   def messageUserDataList: Set[MessageUserData] = Set.empty
 
-  lazy val name = "test"
-  lazy val maybeChannel = Some("C123456")
-  lazy val maybeThreadId = None
-  def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
-  def maybeChannelForSendAction(
-                                 responseType: BehaviorResponseType,
-                                 maybeConversation: Option[Conversation],
-                                 services: DefaultServices
-                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = DBIO.successful(None)
   val isResponseExpected = true
-  val messageRecipientPrefix: String = ""
-  lazy val isPublicChannel = false
 
   def isDirectMessage(channel: String): Boolean = false
-
-  def sendMessage(
-                   text: String,
-                   responseType: BehaviorResponseType,
-                   maybeShouldUnfurl: Option[Boolean],
-                   maybeConversation: Option[Conversation],
-                   attachmentGroups: Seq[MessageAttachmentGroup],
-                   files: Seq[UploadFileSpec],
-                   choices: Seq[ActionChoice],
-                   developerContext: DeveloperContext,
-                   services: DefaultServices,
-                   configuration: Configuration
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    Future.successful(messageBuffer += text).map(_ => None)
-  }
 
   override def userInfoAction(
                                maybeConversation: Option[Conversation],
@@ -77,7 +44,4 @@ trait TestEvent extends Event {
     DBIO.successful(user)
   }
 
-  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
-    Future.successful(JsObject(Seq()))
-  }
 }

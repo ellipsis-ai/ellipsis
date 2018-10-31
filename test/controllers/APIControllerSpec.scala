@@ -87,10 +87,12 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       any[Option[String]], any[Option[Boolean]])).thenReturn(Future.successful(SlackTimestamp.now))
 
     val event = SlackMessageEvent(
-      botProfile,
-      defaultChannel,
-      None,
-      defaultSlackUserId,
+      SlackEventContext(
+        botProfile,
+        defaultChannel,
+        None,
+        defaultSlackUserId
+      ),
       SlackMessage.fromUnformattedText("foo", botProfile),
       None,
       SlackTimestamp.now,
@@ -108,7 +110,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(dataService.slackBotProfiles.channelsFor(any[SlackBotProfile])).thenReturn(mockSlackChannels)
     when(mockSlackChannels.maybeIdFor(defaultChannel)).thenReturn(Future.successful(Some(defaultChannel)))
 
-    when(dataService.conversations.allOngoingFor(defaultSlackUserId, event.context, event.maybeChannel, event.maybeThreadId, team.id)).thenReturn(Future.successful(Seq()))
+    when(dataService.conversations.allOngoingFor(event.eventContext, None)).thenReturn(Future.successful(Seq()))
     when(eventHandler.handle(any[Event], org.mockito.Matchers.eq(None))).thenReturn(Future.successful(Seq(SimpleTextResult(event, None, "result", responseType = Normal))))
 
     when(botResultService.sendIn(any[BotResult], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(Some(SlackTimestamp.now)))

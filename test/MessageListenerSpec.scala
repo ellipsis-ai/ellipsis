@@ -1,6 +1,8 @@
 import json.BehaviorVersionData
-import models.behaviors.testing.TestMessageEvent
+import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.events.{SlackEventContext, SlackMessage, SlackMessageEvent}
 import support.DBSpec
+import utils.SlackTimestamp
 
 class MessageListenerSpec extends DBSpec {
 
@@ -10,7 +12,25 @@ class MessageListenerSpec extends DBSpec {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
-        val event = TestMessageEvent(user, team, "foo", includesBotMention = false)
+        val botProfile = mock[SlackBotProfile]
+        val channel = "C123456"
+        val slackUserId = "U123456"
+        val event = SlackMessageEvent(
+          SlackEventContext(
+            botProfile,
+            channel,
+            None,
+            slackUserId
+          ),
+          SlackMessage.fromUnformattedText("foo", botProfile),
+          None,
+          SlackTimestamp.now,
+          None,
+          false,
+          false,
+          None,
+          false
+        )
         val group = newSavedBehaviorGroupFor(team)
 
         val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None, dataService)
@@ -22,7 +42,6 @@ class MessageListenerSpec extends DBSpec {
 
         val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
 
-        val channel = event.maybeChannel.get
         runNow(dataService.messageListeners.createFor(behaviorVersion.behavior, Map(), user, team, event.context, channel, None))
 
         val responses = runNow(event.allBehaviorResponsesFor(Some(team), None, services))
