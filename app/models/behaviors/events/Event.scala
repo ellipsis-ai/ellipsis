@@ -171,16 +171,6 @@ trait Event {
     } yield maybeChannelToUse
   }
 
-  def maybeChannelForSendAction(
-                                 responseType: BehaviorResponseType,
-                                 maybeConversation: Option[Conversation],
-                                 services: DefaultServices
-                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
-    eventContext.maybeChannelForSendAction(responseType, maybeConversation, services)
-  }
-
-  def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = eventContext.allOngoingConversations(dataService)
-
   def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)
                            (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = eventualResults
 

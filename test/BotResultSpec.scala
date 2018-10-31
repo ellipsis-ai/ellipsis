@@ -151,7 +151,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
         mockPostChatMessage(interruptionPrompt, event, client, resultTs, None)
 
         conversationToBeInterrupted.maybeThreadId.isEmpty mustBe true
-        val ongoing = runNow(dataService.conversations.allOngoingFor(event.userIdForContext, event.context, Some(event.channel), event.maybeThreadId, team.id))
+        val ongoing = runNow(dataService.conversations.allOngoingFor(event.eventContext, None))
         ongoing must have length(1)
         ongoing.head mustBe conversationToBeInterrupted
 

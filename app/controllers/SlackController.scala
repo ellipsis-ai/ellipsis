@@ -500,13 +500,7 @@ class SlackController @Inject() (
         slackMessage,
         info.responseUrl
       ))
-      maybeConversation <- dataService.conversations.allOngoingFor(
-        info.userId,
-        Conversation.SLACK_CONTEXT,
-        Some(info.channelId),
-        None,
-        botProfile.teamId
-      ).map(_.headOption)
+      maybeConversation <- dataService.conversations.allOngoingFor(event.eventContext, None).map(_.headOption)
       results <- eventHandler.handle(event, maybeConversation)
       _ <- Future.sequence(
         results.map(result => botResultService.sendIn(result, None).map { _ =>

@@ -42,10 +42,9 @@ sealed trait EventContext {
 
   def maybeThreadId: Option[String]
   def maybeTeamIdForContext: Option[String]
+  def maybeUserIdForContext: Option[String]
   def maybeBotUserIdForContext: Option[String]
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]]
-
-  def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]]
 
   def sendMessage(
                    event: Event,
@@ -79,6 +78,7 @@ case class SlackEventContext(
   lazy val name: String = Conversation.SLACK_CONTEXT
   val maybeChannel: Option[String] = Some(channel)
   val maybeTeamIdForContext: Option[String] = Some(profile.slackTeamId)
+  def maybeUserIdForContext: Option[String] = Some(user)
   def maybeBotUserIdForContext: Option[String] = Some(profile.userId)
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
@@ -186,10 +186,6 @@ case class SlackEventContext(
     }
   }
 
-  def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    dataService.conversations.allOngoingFor(user, name, maybeChannel, maybeThreadId, profile.slackTeamId)
-  }
-
   def sendMessage(
                    event: Event,
                    unformattedText: String,
@@ -255,6 +251,7 @@ case class TestEventContext(
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     Future.successful(None)
   }
+  def maybeUserIdForContext: Option[String] = None
   def maybeBotUserIdForContext: Option[String] = None
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
 
@@ -275,8 +272,6 @@ case class TestEventContext(
   }
 
   val messageBuffer: ArrayBuffer[String] = new ArrayBuffer()
-
-  def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = Future.successful(Seq())
 
   def sendMessage(
                    event: Event,

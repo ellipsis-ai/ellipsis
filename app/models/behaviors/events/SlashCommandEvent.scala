@@ -42,10 +42,6 @@ case class SlashCommandEvent(
 
   override val beQuiet: Boolean = true
 
-  override def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    Future.successful(Seq())
-  }
-
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],

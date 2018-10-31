@@ -37,10 +37,6 @@ case class SlackReactionAddedEvent(
 
   override val maybeReactionAdded: Option[String] = Some(reaction)
 
-  override def allOngoingConversations(dataService: DataService): Future[Seq[Conversation]] = {
-    Future.successful(Seq())
-  }
-
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],
