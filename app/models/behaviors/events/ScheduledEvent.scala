@@ -70,7 +70,7 @@ case class ScheduledBehaviorSlackEvent(underlying: SlackRunEvent, scheduled: Sch
   override type S = ScheduledBehavior
   override type EC = SlackEventContext
 
-  val eventContext: SlackEventContext = underlying.eventContext
+  lazy val eventContext: SlackEventContext = underlying.eventContext
 }
 
 case class ScheduledMessageSlackEvent(underlying: SlackMessageEvent, scheduled: ScheduledMessage) extends ScheduledEvent {
@@ -79,7 +79,7 @@ case class ScheduledMessageSlackEvent(underlying: SlackMessageEvent, scheduled: 
   override type S = ScheduledMessage
   override type EC = SlackEventContext
 
-  val eventContext: SlackEventContext = underlying.eventContext
+  lazy val eventContext: SlackEventContext = underlying.eventContext
 }
 
 case class ScheduledMessageTestEvent(underlying: TestMessageEvent, scheduled: ScheduledMessage) extends ScheduledEvent {
@@ -88,6 +88,6 @@ case class ScheduledMessageTestEvent(underlying: TestMessageEvent, scheduled: Sc
   override type S = ScheduledMessage
   override type EC = TestEventContext
 
-  val eventContext: TestEventContext = underlying.eventContext
+  lazy val eventContext: TestEventContext = underlying.eventContext
 }
 
