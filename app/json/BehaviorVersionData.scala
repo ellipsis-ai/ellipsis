@@ -196,27 +196,8 @@ object BehaviorVersionData {
                    configString: String,
                    dataService: DataService
                    ): BehaviorVersionData = {
-    var json = Json.parse(configString)
-    if ((json \ "responseTypeId").isEmpty) {
-      json match {
-        case obj: JsObject => {
-          val isPrivate = (json \ "forcePrivateResponse").getOrElse(JsFalse) == JsTrue
-          val responseType = if (isPrivate) {
-            Private
-          } else {
-            Normal
-          }
-          json = obj ++ Json.obj("responseTypeId" -> JsString(responseType.id))
-        }
-        case _ =>
-      }
-    }
-    val config = json.validate[BehaviorConfig].get
-    val configWithDataTypeConfig = if (!config.isDataType || config.dataTypeConfig.isDefined) {
-      config
-    } else {
-      config.copy(dataTypeConfig = Some(DataTypeConfigData(Seq(), usesCode = Some(true))))
-    }
+    val behaviorConfig = Json.parse(configString).validate[LegacyBehaviorConfigJson].get.toBehaviorConfig
+    val triggerData = Json.parse(triggers).validate[Seq[LegacyBehaviorTriggerJson]].get.map(_.toBehaviorTriggerData)
     BehaviorVersionData.buildFor(
       None,
       teamId,
@@ -227,9 +208,9 @@ object BehaviorVersionData {
       extractFunctionBodyFrom(function),
       response,
       Json.parse(params).validate[Seq[String]].get,
-      Json.parse(triggers).validate[Seq[LegacyBehaviorTriggerJson]].get.map(_.toBehaviorTriggerData),
-      configWithDataTypeConfig,
-      configWithDataTypeConfig.exportId,
+      triggerData,
+      behaviorConfig,
+      behaviorConfig.exportId,
       createdAt = None,
       dataService
     )

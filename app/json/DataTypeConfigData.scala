@@ -56,4 +56,8 @@ object DataTypeConfigData {
       DataTypeConfigData(fieldData, config.maybeUsesCode)
     }
   }
+
+  def withDefaultSettings: DataTypeConfigData = {
+    DataTypeConfigData(Seq.empty[DataTypeFieldData], usesCode = Some(true))
+  }
 }
