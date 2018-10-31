@@ -1,15 +1,10 @@
 package models.behaviors.events
 
-import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
-import models.behaviors.behaviorversion.BehaviorResponseType
-import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.{ActionChoice, BehaviorResponse, DeveloperContext}
 import models.team.Team
-import play.api.Configuration
-import services.{DataService, DefaultServices}
-import utils.{SlackMessageSender, UploadFileSpec}
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
