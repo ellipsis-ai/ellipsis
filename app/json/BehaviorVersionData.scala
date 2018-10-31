@@ -6,7 +6,6 @@ import json.Formatting._
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorversion.{Normal, Private}
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.datatypefield.DataTypeFieldForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
@@ -136,10 +135,8 @@ object BehaviorVersionData {
                 triggers: Seq[BehaviorTriggerData],
                 config: BehaviorConfig,
                 exportId: Option[String],
-                createdAt: Option[OffsetDateTime],
-                dataService: DataService
+                createdAt: Option[OffsetDateTime]
               ): BehaviorVersionData = {
-
     BehaviorVersionData(
       id,
       teamId,
@@ -181,8 +178,7 @@ object BehaviorVersionData {
         maybeDataTypeConfig
       ),
       exportId = None,
-      createdAt = None,
-      dataService = dataService
+      createdAt = None
     )
   }
 
@@ -193,26 +189,24 @@ object BehaviorVersionData {
                    response: String,
                    params: String,
                    triggers: String,
-                   configString: String,
-                   dataService: DataService
+                   configString: String
                    ): BehaviorVersionData = {
     val behaviorConfig = Json.parse(configString).validate[LegacyBehaviorConfigJson].get.toBehaviorConfig
     val triggerData = Json.parse(triggers).validate[Seq[LegacyBehaviorTriggerJson]].get.map(_.toBehaviorTriggerData)
     BehaviorVersionData.buildFor(
-      None,
-      teamId,
-      None,
-      None,
+      id = None,
+      teamId = teamId,
+      behaviorId = None,
+      groupId = None,
       isNew = false,
-      maybeDescription,
-      extractFunctionBodyFrom(function),
-      response,
-      Json.parse(params).validate[Seq[String]].get,
-      triggerData,
-      behaviorConfig,
-      behaviorConfig.exportId,
-      createdAt = None,
-      dataService
+      description = maybeDescription,
+      functionBody = extractFunctionBodyFrom(function),
+      responseTemplate = response,
+      inputIds = Json.parse(params).validate[Seq[String]].get,
+      triggers = triggerData,
+      config = behaviorConfig,
+      exportId = behaviorConfig.exportId,
+      createdAt = None
     )
   }
 
@@ -289,8 +283,7 @@ object BehaviorVersionData {
           ),
           config,
           behavior.maybeExportId,
-          Some(behaviorVersion.createdAt),
-          dataService
+          Some(behaviorVersion.createdAt)
         )
       }
     }
