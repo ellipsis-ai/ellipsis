@@ -69,8 +69,7 @@ case class GithubBehaviorGroupDataBuilder(
       response,
       params,
       triggers,
-      config,
-      dataService
+      config
     )
   }
 

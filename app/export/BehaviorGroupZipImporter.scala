@@ -118,8 +118,7 @@ case class BehaviorGroupZipImporter(
         strings.getOrElse("response.md", ""),
         strings.getOrElse("params.json", ""),
         strings.getOrElse("triggers.json", ""),
-        strings.getOrElse("config.json", ""),
-        dataService
+        strings.getOrElse("config.json", "")
       )
     }.toSeq
 

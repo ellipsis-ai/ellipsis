@@ -57,6 +57,8 @@ object Formatting {
 
   lazy implicit val behaviorResponseTypeDataFormat = Json.format[BehaviorResponseTypeData]
 
+  lazy implicit val legacyBehaviorConfigJson = Json.format[LegacyBehaviorConfigJson]
+
   lazy implicit val behaviorConfigReads = Json.reads[BehaviorConfig]
   lazy implicit val behaviorConfigWrites = Json.writes[BehaviorConfig]
 
