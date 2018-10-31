@@ -14,12 +14,12 @@ import models.behaviors.events._
 import models.behaviors.{ActionChoice, SimpleTextResult}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
-import play.api.{Environment, Logger, Mode}
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
+import play.api.{Environment, Logger, Mode}
 import play.utils.UriEncoding
 import services._
 import services.slack.SlackEventService
@@ -603,7 +603,15 @@ class SlackController @Inject() (
                                    response_url: String
                                  ) extends RequestInfo {
 
-    val maybeOriginalMessageThreadId: Option[String] = original_message.flatMap(_.thread_ts)
+    val maybeOriginalMessageThreadId: Option[String] = {
+      val maybeThreadId = original_message.flatMap(_.thread_ts)
+      val maybeOriginalMessageId = original_message.map(_.ts)
+      if (maybeThreadId != maybeOriginalMessageId) {
+        maybeThreadId
+      } else {
+        None
+      }
+    }
     val isEphemeral: Boolean = original_message.isEmpty
 
     def slackTeamIdForUser: String = user.team_id.getOrElse(team.id)

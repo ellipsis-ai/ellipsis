@@ -1,8 +1,8 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import json.SlackUserData
 import json.Formatting._
+import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
@@ -11,7 +11,7 @@ import models.behaviors.{ActionChoice, BotInfo, DeveloperContext}
 import models.team.Team
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
-import services.{DataService, DefaultServices}
+import services.DefaultServices
 import services.slack.SlackApiError
 import slick.dbio.DBIO
 import utils.{SlackChannels, SlackMessageSender, UploadFileSpec}
@@ -22,6 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 sealed trait EventContext {
 
   val isPublicChannel: Boolean
+  val isDirectMessage: Boolean
   val maybeChannel: Option[String]
   val name: String
   val teamId: String
@@ -244,6 +245,7 @@ case class TestEventContext(
 
   val name = "test"
   val isPublicChannel: Boolean = false
+  val isDirectMessage: Boolean = false
   val maybeChannel: Option[String] = None
   val teamId: String = team.id
   val maybeTeamIdForContext: Option[String] = None

@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
-import models.behaviors.behaviorversion.{BehaviorVersion, Threaded}
+import models.behaviors.behaviorversion.{BehaviorVersion, Private, Threaded}
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
@@ -139,6 +139,32 @@ case class BehaviorResponse(
     dataService.run(resultForFilledOutAction)
   }
 
+  private def maybeThreadIdToUse(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    event.maybeThreadId.map { tid =>
+      if (behaviorVersion.responseType == Private && !event.eventContext.isDirectMessage) {
+        Future.successful(None)
+      } else {
+        Future.successful(Some(tid))
+      }
+    }.getOrElse {
+      if (behaviorVersion.responseType == Threaded) {
+        event.sendMessage(
+          "Let's continue this in a thread :speech_balloon:",
+          behaviorVersion.responseType,
+          maybeShouldUnfurl = None,
+          None,
+          attachmentGroups = Seq(),
+          files = Seq(),
+          choices = Seq(),
+          DeveloperContext.default,
+          services
+        )
+      } else {
+        Future.successful(None)
+      }
+    }
+  }
+
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     dataService.behaviorVersions.maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeNotReadyResult =>
       maybeNotReadyResult.map(Future.successful).getOrElse {
@@ -148,23 +174,7 @@ case class BehaviorResponse(
           } else {
             for {
               maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services)
-              maybeThreadId <- event.maybeThreadId.map(tid => Future.successful(Some(tid))).getOrElse {
-                if (behaviorVersion.responseType == Threaded) {
-                  event.sendMessage(
-                    "Let's continue this in a thread :speech_balloon:",
-                    behaviorVersion.responseType,
-                    maybeShouldUnfurl = None,
-                    None,
-                    attachmentGroups = Seq(),
-                    files = Seq(),
-                    choices = Seq(),
-                    DeveloperContext.default,
-                    services
-                  )
-                } else {
-                  Future.successful(None)
-                }
-              }
+              maybeThreadId <- maybeThreadIdToUse
               convo <- InvokeBehaviorConversation.createFor(
                 behaviorVersion,
                 event,
