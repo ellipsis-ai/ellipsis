@@ -45,12 +45,12 @@ case class SlackMessageEvent(
       Future.successful("")
     } else {
       for {
-        maybeInfo <- maybeBotInfo(services)
+        botName <- botName(services)
       } yield {
-        if (maybeInfo.map(_.name).contains(SlackMessageEvent.fallbackBotPrefix)) {
-          name
+        if (botName == SlackMessageEvent.fallbackBotPrefix) {
+          botName
         } else {
-          s"@$name "
+          s"@$botName "
         }
       }
     }
