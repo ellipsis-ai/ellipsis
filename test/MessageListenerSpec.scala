@@ -1,4 +1,5 @@
 import json.BehaviorVersionData
+import models.behaviors.events.TestEventContext
 import models.behaviors.testing.TestMessageEvent
 import support.DBSpec
 
@@ -10,7 +11,7 @@ class MessageListenerSpec extends DBSpec {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
-        val event = TestMessageEvent(user, team, "foo", includesBotMention = false)
+        val event = TestMessageEvent(TestEventContext(user, team), "foo", includesBotMention = false)
         val group = newSavedBehaviorGroupFor(team)
 
         val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None, dataService)

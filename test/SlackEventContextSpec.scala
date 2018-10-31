@@ -4,10 +4,10 @@ import json.{SlackUserData, SlackUserProfileData}
 import models.IDs
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.events.SlackEvent
+import models.behaviors.events.SlackEventContext
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.JsObject
 import play.api.test.Helpers._
@@ -16,20 +16,11 @@ import support.{SlackContext, TestContext}
 
 import scala.concurrent.Future
 
-class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
+class SlackEventContextSpec extends PlaySpec with MockitoSugar with SlackContext {
 
   val slackTeamId = "T12345678"
   val channel = "C123456"
   val channelName = "The Channel"
-
-  case class TestSlackEvent(
-                             user: String,
-                             channel: String,
-                             profile: SlackBotProfile
-                           ) extends SlackEvent {
-
-    val isUninterruptedConversation: Boolean = false
-  }
 
   val slackUserId = "U12345678"
   val otherSlackUserId = "U87654321"
@@ -61,8 +52,8 @@ class SlackEventSpec extends PlaySpec with MockitoSugar with SlackContext {
           Future.successful(Some(slackUserData))
         )
 
-        val event = TestSlackEvent(slackUserData.accountId, channel, slackBotProfile)
-        val d: JsObject = await(event.detailsFor(services)(actorSystem, ec))
+        val eventContext = SlackEventContext(slackBotProfile, channel, None, slackUserData.accountId)
+        val d: JsObject = await(eventContext.detailsFor(services)(actorSystem, ec))
         (d \ "name").as[String] mustBe displayName
         (d \ "isPrimaryOwner").as[Boolean] mustBe slackUserData.isPrimaryOwner
         (d \ "isOwner").as[Boolean] mustBe slackUserData.isOwner
