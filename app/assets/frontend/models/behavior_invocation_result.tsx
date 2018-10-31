@@ -10,7 +10,7 @@ interface BehaviorInvocationResultOutput {
   files: Array<BehaviorInvocationResultFile>
 }
 
-interface BehaviorInvocationTestReportOutput {
+export interface BehaviorInvocationTestReportOutput {
   missingInputNames: Array<string>,
   missingSimpleTokens: Array<string>,
   result?: Option<BehaviorInvocationResultOutput>
