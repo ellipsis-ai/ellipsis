@@ -30,15 +30,17 @@ case class ScheduledMessage(
     Future.successful(s"`$text`")
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[ScheduledEvent]] = {
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[ScheduledMessageSlackEvent]] = {
     Future.successful(
       Some(
-        ScheduledEvent(
+        ScheduledMessageSlackEvent(
           SlackMessageEvent(
-            profile,
-            channel,
-            None,
-            slackUserId,
+            SlackEventContext(
+              profile,
+              channel,
+              None,
+              slackUserId
+            ),
             SlackMessage.fromUnformattedText(text, profile),
             None,
             SlackTimestamp.now,

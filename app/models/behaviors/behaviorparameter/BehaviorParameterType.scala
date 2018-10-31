@@ -628,8 +628,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       result.files,
       Seq(),
       result.developerContext,
-      context.services,
-      context.services.configuration
+      context.services
     ).map(_ => {})
   }
 

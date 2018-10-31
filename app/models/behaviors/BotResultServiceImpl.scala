@@ -1,9 +1,10 @@
 package models.behaviors
 
 import akka.actor.ActorSystem
+import com.google.common.util.concurrent.Futures.FutureCombiner
 import javax.inject.Inject
 import models.behaviors.behaviorversion.{BehaviorVersion, Threaded}
-import models.behaviors.events.{Event, EventHandler, RunEvent}
+import models.behaviors.events.{Event, EventHandler, SlackEventContext, SlackRunEvent}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
 import services.slack.SlackEventService
@@ -50,7 +51,9 @@ class BotResultServiceImpl @Inject() (
       maybeBehaviorVersion <- botResult.maybeBehaviorVersion.map { originatingBehaviorVersion =>
         dataService.behaviorVersions.findByNameAction(nextAction.actionName, originatingBehaviorVersion.groupVersion)
       }.getOrElse(DBIO.successful(None))
-      maybeBotProfile <- dataService.slackBotProfiles.allForSlackTeamIdAction(botResult.event.teamIdForContext).map(_.headOption)
+      maybeBotProfile <- botResult.event.maybeTeamIdForContext.map { teamIdForContext =>
+        dataService.slackBotProfiles.allForSlackTeamIdAction(teamIdForContext).map(_.headOption)
+      }.getOrElse(DBIO.successful(None))
       user <- botResult.event.ensureUserAction(dataService)
       maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
       maybeThreadId <- DBIO.successful(if (botResult.responseType == Threaded) {
@@ -64,14 +67,15 @@ class BotResultServiceImpl @Inject() (
           linkedAccount <- maybeSlackLinkedAccount
           behaviorVersion <- maybeBehaviorVersion
           channel <- maybeSlackChannelId
-        } yield RunEvent(
-          botProfile,
+        } yield SlackRunEvent(
+          SlackEventContext(
+            botProfile,
+            channel,
+            maybeThreadId,
+            linkedAccount.loginInfo.providerKey
+          ),
           behaviorVersion,
           nextAction.argumentsMap,
-          channel,
-          maybeThreadId,
-          linkedAccount.loginInfo.providerKey,
-          maybeMessageTs.getOrElse(SlackTimestamp.now),
           Some(botResult.event.eventType),
           botResult.event.isEphemeral,
           botResult.event.maybeResponseUrl
@@ -121,8 +125,7 @@ class BotResultServiceImpl @Inject() (
           files,
           maybeChoices.getOrElse(Seq()),
           botResult.developerContext,
-          services,
-          configuration
+          services
         )
       )
       _ <- botResult.maybeNextAction.map { nextAction =>

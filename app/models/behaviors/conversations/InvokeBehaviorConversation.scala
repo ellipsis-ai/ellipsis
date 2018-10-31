@@ -178,10 +178,7 @@ object InvokeBehaviorConversation {
                  dataService: DataService,
                  cacheService: CacheService
                  )(implicit ec: ExecutionContext): Future[InvokeBehaviorConversation] = {
-    val maybeTeamIdForContext = event match {
-      case e: SlackEvent => Some(e.teamIdForContext)
-      case _ => None
-    }
+    val maybeTeamIdForContext = event.maybeTeamIdForContext
     val action = for {
       maybeParent <- maybeParent.map { parent =>
         dataService.parentConversations.createAction(parent).map(Some(_))

@@ -43,8 +43,8 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
     "return the bot display name" in new TestContext {
       running(app) {
         val event = newEvent("C1234", services)
-        val name = await(event.botName(services)(actorSystem, ec))
-        name mustBe botName
+        val maybeInfo = await(event.maybeBotInfo(services)(actorSystem, ec))
+        maybeInfo.map(_.name) must contain(botName)
       }
     }
   }

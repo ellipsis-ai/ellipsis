@@ -207,8 +207,7 @@ class ConversationServiceImpl @Inject() (
           files = Seq(),
           choices = Seq(),
           DeveloperContext.default,
-          services,
-          configuration
+          services
         ))
       }.getOrElse(DBIO.successful(None))
       _ <- maybeEvent.map { event =>

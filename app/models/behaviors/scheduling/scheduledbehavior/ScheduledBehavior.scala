@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.{EventType, RunEvent, ScheduledEvent}
+import models.behaviors.events.{EventType, ScheduledBehaviorSlackEvent, SlackEventContext, SlackRunEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -50,18 +50,19 @@ case class ScheduledBehavior(
     }
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[ScheduledEvent]] = {
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[ScheduledBehaviorSlackEvent]] = {
     services.dataService.behaviors.maybeCurrentVersionFor(behavior).map { maybeBehaviorVersion =>
       maybeBehaviorVersion.map { behaviorVersion =>
-        ScheduledEvent(
-          RunEvent(
-            profile,
+        ScheduledBehaviorSlackEvent(
+          SlackRunEvent(
+            SlackEventContext(
+              profile,
+              channel,
+              None,
+              slackUserId
+            ),
             behaviorVersion,
             arguments,
-            channel,
-            None,
-            slackUserId,
-            SlackTimestamp.now,
             Some(EventType.scheduled),
             isEphemeral = false,
             None

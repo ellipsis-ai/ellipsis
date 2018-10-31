@@ -159,8 +159,7 @@ case class BehaviorResponse(
                     files = Seq(),
                     choices = Seq(),
                     DeveloperContext.default,
-                    services,
-                    services.configuration
+                    services
                   )
                 } else {
                   Future.successful(None)

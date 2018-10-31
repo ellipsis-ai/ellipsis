@@ -1,73 +1,59 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import models.behaviors.{ActionChoice, DeveloperContext}
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.scheduling.Scheduled
+import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
+import models.behaviors.testing.TestMessageEvent
+import models.behaviors.{ActionChoice, DeveloperContext}
 import models.team.Team
-import play.api.Configuration
 import play.api.libs.json.JsObject
-import services.{DataService, DefaultServices}
-import slick.dbio.DBIO
+import services.DefaultServices
 import utils.UploadFileSpec
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event {
+sealed trait ScheduledEvent extends Event {
+
+  type UE <: Event
+  type S <: Scheduled
+
+  val underlying: UE
+  val scheduled: S
 
   val eventType: EventType = EventType.scheduled
   val maybeOriginalEventType: Option[EventType] = None
   def withOriginalEventType(originalEventType: EventType, isUninterruptedConversation: Boolean): Event = this
 
-  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = underlying.botName(services)
-  val botUserIdForContext: String = underlying.botUserIdForContext
-
-  def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    underlying.eventualMaybeDMChannel(services)
-  }
-
-  def maybeChannelForSendAction(
-                                 responseType: BehaviorResponseType,
-                                 maybeConversation: Option[Conversation],
-                                 services: DefaultServices
-                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
-    underlying.maybeChannelForSendAction(responseType, maybeConversation, services)
-  }
-
-  def sendMessage(
-                   text: String,
-                   responseType: BehaviorResponseType,
-                   maybeShouldUnfurl: Option[Boolean],
-                   maybeConversation: Option[Conversation],
-                   attachmentGroups: Seq[MessageAttachmentGroup],
-                   files: Seq[UploadFileSpec],
-                   choices: Seq[ActionChoice],
-                   developerContext: DeveloperContext,
-                   services: DefaultServices,
-                   configuration: Configuration
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    underlying.sendMessage(text, responseType, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, choices, developerContext, services, configuration)
+  override def sendMessage(
+                            text: String,
+                            responseType: BehaviorResponseType,
+                            maybeShouldUnfurl: Option[Boolean],
+                            maybeConversation: Option[Conversation],
+                            attachmentGroups: Seq[MessageAttachmentGroup],
+                            files: Seq[UploadFileSpec],
+                            choices: Seq[ActionChoice],
+                            developerContext: DeveloperContext,
+                            services: DefaultServices
+                          )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    underlying.sendMessage(text, responseType, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, choices, developerContext, services)
   }
 
   override def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     underlying.detailsFor(services)
   }
 
-  lazy val maybeChannel: Option[String] = underlying.maybeChannel
-  lazy val maybeThreadId: Option[String] = underlying.maybeThreadId
-  lazy val teamId: String = underlying.teamId
-  lazy val name: String = underlying.name
+  override val teamId: String = underlying.teamId
+  override val name: String = underlying.name
   lazy val includesBotMention: Boolean = underlying.includesBotMention
   lazy val messageText: String = underlying.messageText
   lazy val invocationLogText: String = underlying.invocationLogText
   lazy val isResponseExpected: Boolean = underlying.isResponseExpected
   lazy val userIdForContext: String = underlying.userIdForContext
-  lazy val teamIdForContext: String = underlying.teamIdForContext
-  lazy val messageRecipientPrefix: String = underlying.messageRecipientPrefix
   override val maybeScheduled: Option[Scheduled] = Some(scheduled)
-  lazy val isPublicChannel: Boolean = underlying.isPublicChannel
   def messageUserDataList: Set[MessageUserData] = underlying.messageUserDataList
 
   def allBehaviorResponsesFor(
@@ -76,6 +62,32 @@ case class ScheduledEvent(underlying: Event, scheduled: Scheduled) extends Event
                                services: DefaultServices
                              )(implicit ec: ExecutionContext) = underlying.allBehaviorResponsesFor(maybeTeam, maybeLimitToBehavior, services)
 
-  def allOngoingConversations(dataService: DataService) = underlying.allOngoingConversations(dataService)
-
 }
+
+case class ScheduledBehaviorSlackEvent(underlying: SlackRunEvent, scheduled: ScheduledBehavior) extends ScheduledEvent {
+
+  override type UE = SlackRunEvent
+  override type S = ScheduledBehavior
+  override type EC = SlackEventContext
+
+  val eventContext: SlackEventContext = underlying.eventContext
+}
+
+case class ScheduledMessageSlackEvent(underlying: SlackMessageEvent, scheduled: ScheduledMessage) extends ScheduledEvent {
+
+  override type UE = SlackMessageEvent
+  override type S = ScheduledMessage
+  override type EC = SlackEventContext
+
+  val eventContext: SlackEventContext = underlying.eventContext
+}
+
+case class ScheduledMessageTestEvent(underlying: TestMessageEvent, scheduled: ScheduledMessage) extends ScheduledEvent {
+
+  override type UE = TestMessageEvent
+  override type S = ScheduledMessage
+  override type EC = TestEventContext
+
+  val eventContext: TestEventContext = underlying.eventContext
+}
+

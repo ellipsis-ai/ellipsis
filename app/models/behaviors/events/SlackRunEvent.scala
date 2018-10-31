@@ -1,27 +1,36 @@
-package models.behaviors.testing
+package models.behaviors.events
 
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.TestEventContext
 import models.team.Team
 import services.{AWSLambdaConstants, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class TestRunEvent(
-                         eventContext: TestEventContext,
-                         behaviorVersion: BehaviorVersion,
-                         arguments: Map[String, String]
-                       ) extends TestEvent {
+case class SlackRunEvent(
+                           eventContext: SlackEventContext,
+                           behaviorVersion: BehaviorVersion,
+                           arguments: Map[String, String],
+                           maybeOriginalEventType: Option[EventType],
+                           override val isEphemeral: Boolean,
+                           override val maybeResponseUrl: Option[String]
+                  ) extends Event {
 
-  override type EC = TestEventContext
+  override type EC = SlackEventContext
 
+  val eventType: EventType = EventType.api
+  def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {
+    this.copy(maybeOriginalEventType = Some(originalEventType))
+  }
+
+  val userIdForContext: String = eventContext.user
   val messageText: String = ""
   val includesBotMention: Boolean = false
-  val invocationLogText: String = s"Running behavior for test: ${behaviorVersion.id}"
-  val team = eventContext.team
-  val user = eventContext.user
+  def messageUserDataList: Set[MessageUserData] = Set.empty
+
+  val isResponseExpected: Boolean = false
+  val invocationLogText: String = s"Running behavior ${behaviorVersion.id}"
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],

@@ -5,11 +5,14 @@ import models.behaviors.events._
 import models.team.Team
 
 case class TestMessageEvent(
-                      user: User,
-                      team: Team,
-                      messageText: String,
-                      includesBotMention: Boolean
-                    ) extends TestEvent with MessageEvent {
+                            eventContext: TestEventContext,
+                            messageText: String,
+                            includesBotMention: Boolean
+                          ) extends TestEvent with MessageEvent {
 
+  override type EC = TestEventContext
+
+  val user: User = eventContext.user
+  val team: Team = eventContext.team
 
 }

@@ -10,7 +10,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.BotResult
-import models.behaviors.events.{EventHandler, ScheduledEvent}
+import models.behaviors.events.{EventHandler, ScheduledBehaviorSlackEvent, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.{Configuration, Logger}
@@ -238,7 +238,6 @@ trait Scheduled {
                   services: DefaultServices
                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val dataService = services.dataService
-    val configuration = services.configuration
     val botResultService = services.botResultService
     for {
       displayText <- displayText(dataService)

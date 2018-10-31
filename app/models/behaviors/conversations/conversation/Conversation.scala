@@ -57,10 +57,12 @@ trait Conversation {
       // TODO: Create a new class for placeholder events
       // https://github.com/ellipsis-ai/ellipsis/issues/1719
       } yield SlackMessageEvent(
-        botProfile,
-        channel,
-        None,
-        userIdForContext,
+        SlackEventContext(
+          botProfile,
+          channel,
+          None,
+          userIdForContext
+        ),
         SlackMessage.blank,
         None,
         SlackTimestamp.now,
