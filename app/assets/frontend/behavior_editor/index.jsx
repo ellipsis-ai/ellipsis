@@ -1955,6 +1955,8 @@ const BehaviorEditor = React.createClass({
 
   renderFooter: function() {
     const footerClassName = this.mobileBehaviorSwitcherIsVisible() ? "mobile-position-behind-scrim" : "";
+    const behaviorGroupId = this.getBehaviorGroup().id;
+    const selectedBehaviorId = this.getSelectedId();
     return this.props.onRenderFooter((
       <div>
           <ModalScrim isActive={this.mobileBehaviorSwitcherIsVisible()} />
@@ -2142,17 +2144,19 @@ const BehaviorEditor = React.createClass({
             />
           </Collapsible>
 
-          <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.layoutDidUpdate}>
-            <DataTypeTester
-              ref={(el) => this.props.onRenderPanel("dataTypeTester", el)}
-              groupId={this.getBehaviorGroup().id}
-              behaviorId={this.getSelectedId()}
-              isSearch={this.isSearchDataTypeBehavior()}
-              csrfToken={this.props.csrfToken}
-              onDone={this.props.onClearActivePanel}
-              appsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
-            />
-          </Collapsible>
+          {behaviorGroupId && selectedBehaviorId ? (
+            <Collapsible revealWhen={this.props.activePanelName === 'dataTypeTester'} onChange={this.layoutDidUpdate}>
+              <DataTypeTester
+                ref={(el) => this.props.onRenderPanel("dataTypeTester", el)}
+                groupId={behaviorGroupId}
+                behaviorId={selectedBehaviorId}
+                isSearch={this.isSearchDataTypeBehavior()}
+                csrfToken={this.props.csrfToken}
+                onDone={this.props.onClearActivePanel}
+                appsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
+              />
+            </Collapsible>
+          ) : null}
 
           {this.getOtherSavedInputsInGroup().length > 0 ? (
             <Collapsible ref={(el) => this.props.onRenderPanel("sharedAnswerInputSelector", el)} revealWhen={this.props.activePanelName === 'sharedAnswerInputSelector'} onChange={this.layoutDidUpdate}>

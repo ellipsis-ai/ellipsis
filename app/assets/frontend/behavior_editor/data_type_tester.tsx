@@ -1,108 +1,135 @@
-import React from 'react';
+import * as React from 'react';
 import {testInvocation} from './behavior_test';
-import Input from '../form/input';
+import FormInput from '../form/input';
 import Collapsible from '../shared_ui/collapsible';
 import {RequiredOAuthApplication} from '../models/oauth';
 import TesterAuthRequired from './tester_auth_required';
 import InvocationResults from './behavior_tester_invocation_results';
-import InvocationTestResult from '../models/behavior_invocation_result';
+import InvocationTestResult, {BehaviorInvocationTestReportOutput} from '../models/behavior_invocation_result';
 import BehaviorTesterInvocationResultFile from './behavior_tester_invocation_result_file';
+import autobind from "../lib/autobind";
 
-var MAX_RESULTS_TO_SHOW = 10;
+const MAX_RESULTS_TO_SHOW = 10;
 
-const DataTypeTester = React.createClass({
-    propTypes: {
-      groupId: React.PropTypes.string.isRequired,
-      behaviorId: React.PropTypes.string.isRequired,
-      isSearch: React.PropTypes.bool,
-      csrfToken: React.PropTypes.string.isRequired,
-      onDone: React.PropTypes.func.isRequired,
-      appsRequiringAuth: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuthApplication)).isRequired
-    },
+interface Props {
+  groupId: string,
+  behaviorId: string,
+  isSearch?: Option<boolean>,
+  csrfToken: string,
+  onDone: () => void,
+  appsRequiringAuth: Array<RequiredOAuthApplication>
+}
 
-    getInitialState: function() {
-      return {
+interface State {
+  searchQuery: string,
+  results: Array<InvocationTestResult>,
+  isTesting: boolean,
+  hasTested: boolean
+}
+
+interface DataTypeChoice {
+  label: string
+  id: string
+  [k: string]: unknown
+}
+
+class DataTypeTester extends React.Component<Props, State> {
+    searchQueryInput: Option<FormInput>;
+
+    constructor(props) {
+      super(props);
+      autobind(this);
+      this.state = {
         searchQuery: '',
         results: [],
         isTesting: false,
         hasTested: false
       };
-    },
+    }
 
-    getResults: function() {
+    getResults(): Array<InvocationTestResult> {
       return this.state.results;
-    },
+    }
 
-    getParsedResponse: function(result) {
+    isStringArray(obj: unknown): obj is Array<string> {
+      return Array.isArray(obj) && obj.every(ea => typeof ea === "string");
+    }
+
+    isValidDataTypeOption(obj: any): obj is DataTypeChoice {
+      return obj && typeof obj.label === "string" && typeof obj.id === "string";
+    }
+
+    isValidDataTypeArray(obj: unknown): obj is Array<DataTypeChoice> {
+      return Array.isArray(obj) && obj.every(this.isValidDataTypeOption);
+    }
+
+    getParsedResponse(result: InvocationTestResult): Option<Array<DataTypeChoice>> {
       try {
         const parsed = JSON.parse(result.responseText);
-        if (parsed.every(ea => typeof ea === "string")) {
-          return parsed.map(ea => {
+        if (this.isStringArray(parsed)) {
+          return parsed.map((ea) => {
             return { label: ea, id: ea };
           });
-        } else {
+        } else if (this.isValidDataTypeArray(parsed)) {
           return parsed;
+        } else {
+          return null;
         }
       } catch(e) {
         return null;
       }
-    },
+    }
 
-    isValidResult: function(result) {
-      var parsedResponse = this.getParsedResponse(result);
-      return Array.isArray(parsedResponse) && parsedResponse.every((ea) => {
-        return typeof ea === "object" && Object.keys(ea).includes('id') && Object.keys(ea).includes('label');
-      });
-    },
-
-    focus: function() {
-      if (this.refs.searchQuery) {
-        this.refs.searchQuery.focus();
+    focus() {
+      if (this.searchQueryInput) {
+        this.searchQueryInput.focus();
       }
-    },
+    }
 
-    onChangeSearchQuery: function(value) {
+    onChangeSearchQuery(value: string): void {
       this.setState({
         searchQuery: value
       });
-    },
+    }
 
-    onClick: function() {
+    onClick() {
       this.updateResult();
-    },
+    }
 
-    onEnterKey: function() {
-      this.refs.searchQuery.blur();
+    onEnterKey() {
+      if (this.searchQueryInput) {
+        this.searchQueryInput.blur();
+      }
       if (!this.state.isTesting) {
         this.updateResult();
       }
-    },
+    }
 
-    onDone: function() {
+    onDone() {
       this.props.onDone();
-    },
+    }
 
-    updateResult: function() {
+    updateResult() {
       this.setState({
         hasTested: true,
         isTesting: true
       }, this.fetchResult);
-    },
+    }
 
-    params: function() {
+    params(): { searchQuery?: string } {
       if (this.state.searchQuery) {
         return { searchQuery: this.state.searchQuery };
       } else {
         return {};
       }
-    },
+    }
 
-    fetchResult: function() {
+    fetchResult() {
       testInvocation({
         behaviorId: this.props.behaviorId,
         csrfToken: this.props.csrfToken,
         paramValues: this.params(),
-        onSuccess: (json) => {
+        onSuccess: (json: BehaviorInvocationTestReportOutput) => {
           var newResults = this.state.results.concat(InvocationTestResult.fromReportJSON(json));
           this.setState({
             results: newResults,
@@ -110,15 +137,15 @@ const DataTypeTester = React.createClass({
           });
         },
         onError: () => {
+          // TODO: Some error handling would be nice
           this.setState({
-            errorOccurred: true,
             isTesting: false
           });
         }
       });
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <Collapsible revealWhen={this.state.hasTested}>
@@ -142,9 +169,9 @@ const DataTypeTester = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderContent: function() {
+    renderContent() {
       if (this.props.behaviorId && this.props.appsRequiringAuth.length > 0) {
         return (
           <TesterAuthRequired
@@ -156,15 +183,15 @@ const DataTypeTester = React.createClass({
       } else {
         return this.renderTester();
       }
-    },
+    }
 
-    renderSearchQuery: function() {
+    renderSearchQuery() {
       if (this.props.isSearch) {
         return (
-          <Input
+          <FormInput
             className="width-20 mrs mbs"
             placeholder="Search query"
-            ref="searchQuery"
+            ref={(el) => this.searchQueryInput = el}
             value={this.state.searchQuery}
             onChange={this.onChangeSearchQuery}
             onEnterKey={this.onEnterKey}
@@ -173,16 +200,17 @@ const DataTypeTester = React.createClass({
       } else {
         return null;
       }
-    },
+    }
 
-    renderResultStatus: function() {
-      var result = this.getResults()[this.getResults().length - 1];
+    renderResultStatus() {
+      const result = this.getResults()[this.getResults().length - 1];
+      const parsedResult = result ? this.getParsedResponse(result) : null;
       if (this.state.isTesting) {
         return (
           <span className="type-weak pulse">Testing</span>
         );
-      } else if (this.isValidResult(result)) {
-        var numMatches = this.getParsedResponse(result).length;
+      } else if (parsedResult) {
+        const numMatches = parsedResult.length;
         return (
           <span className="type-green">Last response valid {numMatches === 1 ? '(1 item)' : `(${numMatches} items)`} ✓</span>
         );
@@ -198,12 +226,12 @@ const DataTypeTester = React.createClass({
           <span className="type-weak">Last response missing</span>
         );
       }
-    },
+    }
 
-    renderResult: function(result) {
-      var isValidResult = this.isValidResult(result);
-      if (isValidResult) {
-        return this.renderValidResultTableWith(result);
+    renderResult(result: InvocationTestResult) {
+      const parsedResponse = this.getParsedResponse(result);
+      if (parsedResponse) {
+        return this.renderValidResultTableWith(result, parsedResponse);
       } else {
         return (
           <div className="display-overflow-scroll border border-pink bg-white pas">
@@ -215,33 +243,29 @@ const DataTypeTester = React.createClass({
           </div>
         );
       }
-    },
+    }
 
-    renderFiles(result) {
-      const files = result.files;
-      if (files && files.length > 0) {
-        return (
-          <div>
-            {files.map((file, index) => (
-              <BehaviorTesterInvocationResultFile key={`file${index}`}
-                                                  filename={file.filename}
-                                                  filetype={file.filetype}
-                                                  content={file.content}
-              />
-            ))}
-          </div>
-        );
-      }
-    },
+    renderFiles(result: InvocationTestResult) {
+      return (
+        <div>
+          {result.files.map((file, index) => (
+            <BehaviorTesterInvocationResultFile key={`file${index}`}
+                                                filename={file.filename}
+                                                filetype={file.filetype}
+                                                content={file.content}
+            />
+          ))}
+        </div>
+      );
+    }
 
-    renderValidResultTableWith: function(result) {
-      const response = this.getParsedResponse(result);
-      var hasOtherData = response.some((item) => {
+    renderValidResultTableWith(result: InvocationTestResult, response: Array<DataTypeChoice>) {
+      const hasOtherData = response.some((item) => {
         return Object.keys(item).filter((key) => {
           return key !== 'id' && key !== 'label';
         }).length > 0;
       });
-      var overflowResults = response.length - MAX_RESULTS_TO_SHOW;
+      const overflowResults = response.length - MAX_RESULTS_TO_SHOW;
       if (response.length > 0) {
         return (
           <div className="border pas border-green bg-white">
@@ -288,18 +312,21 @@ const DataTypeTester = React.createClass({
           </div>
         );
       }
-    },
+    }
 
-    renderOtherDataForItem: function(item) {
-      var copy = Object.assign({}, item);
+    renderOtherDataForItem(item: DataTypeChoice) {
+      const copy = Object.assign({}, item);
       delete copy.id;
       delete copy.label;
+      const asString = JSON.stringify(copy, null, 1);
       return (
-        <div className="box-code-example display-limit-width display-ellipsis type-monospace">{JSON.stringify(copy, null, 1)}</div>
+        <div className="box-code-example display-limit-width display-ellipsis type-monospace"
+          title={asString}
+        >{asString}</div>
       );
-    },
+    }
 
-    renderIntro: function() {
+    renderIntro() {
       if (this.props.isSearch) {
         return (
           <p>
@@ -313,9 +340,9 @@ const DataTypeTester = React.createClass({
           </p>
         );
       }
-    },
+    }
 
-    renderTester: function() {
+    renderTester() {
       return (
         <div>
           <div className="mbxl">
@@ -325,7 +352,7 @@ const DataTypeTester = React.createClass({
                 {this.renderSearchQuery()}
                 <button className="button-primary mbs" type="button"
                   onClick={this.onClick}
-                  disabled={this.state.isTesting || (this.props.isSearch && !this.state.searchQuery)}
+                  disabled={this.state.isTesting || Boolean(this.props.isSearch && !this.state.searchQuery)}
                 >Test</button>
               </div>
               <div className="column column-shrink align-b">
@@ -337,6 +364,6 @@ const DataTypeTester = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default DataTypeTester;
