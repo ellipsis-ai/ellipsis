@@ -25,6 +25,7 @@ sealed trait EventContext {
   val isDirectMessage: Boolean
   val maybeChannel: Option[String]
   val name: String
+  val userId: String
   val teamId: String
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
@@ -66,7 +67,7 @@ case class SlackEventContext(
                               profile: SlackBotProfile,
                               channel: String,
                               maybeThreadId: Option[String],
-                              user: String
+                              userId: String
                             ) extends EventContext {
 
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
@@ -79,18 +80,18 @@ case class SlackEventContext(
   lazy val name: String = Conversation.SLACK_CONTEXT
   val maybeChannel: Option[String] = Some(channel)
   val maybeTeamIdForContext: Option[String] = Some(profile.slackTeamId)
-  def maybeUserIdForContext: Option[String] = Some(user)
+  def maybeUserIdForContext: Option[String] = Some(userId)
   def maybeBotUserIdForContext: Option[String] = Some(profile.userId)
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    if (profile.userId == user) {
+    if (profile.userId == userId) {
       Future.successful(None)
     } else {
-      services.slackApiService.clientFor(profile).openConversationFor(user).map(Some(_)).recover {
+      services.slackApiService.clientFor(profile).openConversationFor(userId).map(Some(_)).recover {
         case e: SlackApiError => {
           if (e.code != "cannot_dm_bot") {
             val msg =
-              s"""Couldn't open DM channel to user with ID ${user} on Slack team ${profile.slackTeamId} due to Slack API error: ${e.code}
+              s"""Couldn't open DM channel to user with ID ${userId} on Slack team ${profile.slackTeamId} due to Slack API error: ${e.code}
                  |Original event channel: $channel
                """.stripMargin
             Logger.error(msg, e)
@@ -137,7 +138,7 @@ case class SlackEventContext(
     if (isDirectMessage || isUninterruptedConversation) {
       ""
     } else {
-      s"<@$user>: "
+      s"<@$userId>: "
     }
   }
 
@@ -164,10 +165,10 @@ case class SlackEventContext(
     val client = services.slackApiService.clientFor(profile)
     val slackChannels = SlackChannels(client)
     for {
-      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, client, (e) => {
+      maybeUser <- services.slackEventService.maybeSlackUserDataFor(userId, client, (e) => {
         Logger.error(
           s"""Slack API reported user not found while generating details about the user to send to an action:
-             |Slack user ID: ${user}
+             |Slack user ID: ${userId}
              |Ellipsis bot Slack team ID: ${profile.slackTeamId}
              |Ellipsis team ID: ${profile.teamId}
            """.stripMargin, e)
@@ -205,7 +206,7 @@ case class SlackEventContext(
       botName <- botName(services)
       maybeTs <- SlackMessageSender(
         services.slackApiService.clientFor(profile),
-        user,
+        userId,
         profile.slackTeamId,
         unformattedText,
         responseType,
@@ -256,6 +257,7 @@ case class TestEventContext(
   val isPublicChannel: Boolean = false
   val isDirectMessage: Boolean = false
   val maybeChannel: Option[String] = None
+  val userId: String = user.id
   val teamId: String = team.id
   val maybeTeamIdForContext: Option[String] = None
   val maybeThreadId: Option[String] = None

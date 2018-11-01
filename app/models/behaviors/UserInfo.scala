@@ -56,7 +56,7 @@ object MessageInfo {
         event.eventContext.name,
         event.maybeChannel,
         event.maybeThreadId,
-        event.userIdForContext,
+        event.eventContext.userId,
         details,
         event.messageUserDataList(maybeConversation, services),
         maybePermalink,

@@ -24,8 +24,6 @@ trait TestEvent extends Event {
   val maybeOriginalEventType: Option[EventType] = None
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
 
-  lazy val userIdForContext = user.id
-
   val botUserIdForContext: String = "TEST_BOT_ID"
   def messageUserDataList: Set[MessageUserData] = Set.empty
 

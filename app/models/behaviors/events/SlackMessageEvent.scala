@@ -26,7 +26,7 @@ case class SlackMessageEvent(
 
   val profile: SlackBotProfile = eventContext.profile
   val channel: String = eventContext.channel
-  val user: String = eventContext.user
+  val user: String = eventContext.userId
 
   val eventType: EventType = EventType.chat
 
@@ -73,7 +73,6 @@ case class SlackMessageEvent(
   }
 
   override val isResponseExpected: Boolean = includesBotMention
-  val userIdForContext: String = user
 
   override def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, maybeThreadId, teamId).flatMap { maybeConvo =>

@@ -43,8 +43,8 @@ case class BehaviorParameterContext(
     )
   }
 
-  def dataTypeChoiceCallbackId: String = dataTypeChoiceCallbackIdFor(event.userIdForContext, maybeConversation.map(_.id))
+  def dataTypeChoiceCallbackId: String = dataTypeChoiceCallbackIdFor(event.eventContext.userId, maybeConversation.map(_.id))
 
-  def yesNoCallbackId: String = yesNoCallbackIdFor(event.userIdForContext, maybeConversation.map(_.id))
+  def yesNoCallbackId: String = yesNoCallbackIdFor(event.eventContext.userId, maybeConversation.map(_.id))
 
 }

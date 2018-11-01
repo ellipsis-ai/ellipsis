@@ -84,7 +84,7 @@ class EventHandler @Inject() (
             }
             val key = updatedConvo.pendingEventKey
             services.cacheService.cacheEvent(key, event, 5.minutes)
-            val callbackId = continueConversationCallbackIdFor(event.userIdForContext, Some(updatedConvo.id))
+            val callbackId = continueConversationCallbackIdFor(event.eventContext.userId, Some(updatedConvo.id))
             val actionList = Seq(
               SlackMessageActionButton(callbackId, "Yes, this is my answer", YES),
               SlackMessageActionButton(callbackId, "No, it’s not an answer", NO)
@@ -122,7 +122,7 @@ class EventHandler @Inject() (
     event match {
       case e: SlackMessageEvent => {
         e.maybeThreadId.map { threadId =>
-          dataService.conversations.maybeWithThreadId(threadId, e.userIdForContext, e.eventContext.name).map { maybeConvo =>
+          dataService.conversations.maybeWithThreadId(threadId, e.eventContext.userId, e.eventContext.name).map { maybeConvo =>
             maybeConvo.flatMap { convo =>
               if (convo.isDone) {
                 val channelText = if (e.eventContext.isDirectMessage) {

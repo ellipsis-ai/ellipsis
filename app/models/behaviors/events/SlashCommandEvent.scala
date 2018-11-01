@@ -18,14 +18,12 @@ case class SlashCommandEvent(
 
   val profile: SlackBotProfile = eventContext.profile
   val channel: String = eventContext.channel
-  val user: String = eventContext.user
+  val user: String = eventContext.userId
 
   val eventType: EventType = EventType.chat
 
   override val isEphemeral: Boolean = true
   override val maybeResponseUrl: Option[String] = Some(responseUrl)
-
-  val userIdForContext: String = user
 
   lazy val messageText: String = message.originalText
   lazy val invocationLogText: String = relevantMessageText
