@@ -570,6 +570,59 @@ class BehaviorEditorController @Inject() (
     )
   }
 
+  case class NewFromGithubInfo(
+                                teamId: String,
+                                owner: String,
+                                repo: String,
+                                branch: Option[String]
+                              )
+
+  private val newFromGithubForm = Form(
+    mapping(
+      "teamId" -> nonEmptyText,
+      "owner" -> nonEmptyText,
+      "repo" -> nonEmptyText,
+      "branch" -> optional(nonEmptyText)
+    )(NewFromGithubInfo.apply)(NewFromGithubInfo.unapply)
+  )
+
+  def newFromGithub = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    newFromGithubForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGithubLinkedAccount <- dataService.linkedAccounts.maybeForGithubFor(user)
+          maybeGithubProfile <- maybeGithubLinkedAccount.map { linked =>
+            dataService.githubProfiles.find(linked.loginInfo)
+          }.getOrElse(Future.successful(None))
+          teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
+          oauth1Applications <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.oauth1Applications.allUsableFor(team)
+          }.getOrElse(Future.successful(Seq()))
+          oauth2Applications <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.oauth2Applications.allUsableFor(team)
+          }.getOrElse(Future.successful(Seq()))
+        } yield {
+          teamAccess.maybeTargetTeam.map { team =>
+            maybeGithubProfile.map { profile =>
+              val fetcher = GithubSingleBehaviorGroupFetcher(team, info.owner, info.repo, profile.token, info.branch, None, githubService, services, ec)
+              try {
+                val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth1Applications ++ oauth2Applications)
+                Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
+              } catch {
+                case e: GithubResultFromDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
+                case e: GithubFetchDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, None, None))
+              }
+            }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
+          }.getOrElse(NotFound(s"Team ID ${info.teamId} not found"))
+        }
+      }
+    )
+  }
+
   case class PushToGithubInfo(
                                behaviorGroupId: String,
                                owner: String,
