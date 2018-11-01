@@ -48,7 +48,7 @@ case class SlackApiMethodContext(
     dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
   }
 
-  def messageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[SlackMessageEvent] = {
+  def messageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[SlackMessageEvent] = {
     maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
       SlackMessageEvent(
         SlackEventContext(
@@ -59,7 +59,7 @@ case class SlackApiMethodContext(
         ),
         SlackMessage.fromUnformattedText(message, botProfile),
         None,
-        SlackTimestamp.now,
+        maybeMessageTs.getOrElse(SlackTimestamp.now),
         maybeOriginalEventType,
         isUninterruptedConversation = false,
         isEphemeral = false,
@@ -69,19 +69,16 @@ case class SlackApiMethodContext(
     }
   }
 
-  def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]] = {
-    messageEventFor(message, channel, maybeOriginalEventType).map(Some(_))
+  def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[SlackMessageEvent]] = {
+    messageEventFor(message, channel, maybeOriginalEventType, maybeMessageTs).map(Some(_))
   }
 
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeOriginalMessageId: Option[String]): Future[Option[Event]] = {
-    maybeBaseMessageEventFor(message, channel, maybeOriginalEventType).map { maybeBaseEvent =>
+  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[Event]] = {
+    maybeBaseMessageEventFor(message, channel, maybeOriginalEventType, maybeMessageTs).map { maybeBaseEvent =>
       maybeBaseEvent.map { messageEvent =>
-        val adjustedMessageEvent = maybeOriginalMessageId.map { originalMessageId =>
-          messageEvent.copy(ts = originalMessageId)
-        }.getOrElse(messageEvent)
         val event: Event = maybeScheduledMessage.map { scheduledMessage =>
-          ScheduledMessageSlackEvent(adjustedMessageEvent, scheduledMessage)
-        }.getOrElse(adjustedMessageEvent)
+          ScheduledMessageSlackEvent(messageEvent, scheduledMessage)
+        }.getOrElse(messageEvent)
         event
       }
     }
