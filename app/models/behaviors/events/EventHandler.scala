@@ -122,7 +122,7 @@ class EventHandler @Inject() (
     event match {
       case e: SlackMessageEvent => {
         e.maybeThreadId.map { threadId =>
-          dataService.conversations.maybeWithThreadId(threadId, e.eventContext.userId, e.context).map { maybeConvo =>
+          dataService.conversations.maybeWithThreadId(threadId, e.eventContext.userId, e.eventContext.name).map { maybeConvo =>
             maybeConvo.flatMap { convo =>
               if (convo.isDone) {
                 val channelText = if (e.eventContext.isDirectMessage) {

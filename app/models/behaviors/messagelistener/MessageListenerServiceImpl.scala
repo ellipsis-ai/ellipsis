@@ -94,7 +94,7 @@ class MessageListenerServiceImpl @Inject() (
       team <- maybeTeam
       channel <- maybeChannel
     } yield {
-      allForQuery(team.id, event.context, channel, event.maybeThreadId).result.map { r =>
+      allForQuery(team.id, event.eventContext.name, channel, event.maybeThreadId).result.map { r =>
         r.map(tuple2Listener)
       }
     }).getOrElse(DBIO.successful(Seq()))

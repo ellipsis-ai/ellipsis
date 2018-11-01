@@ -47,7 +47,6 @@ sealed trait ScheduledEvent extends Event {
   }
 
   override val teamId: String = underlying.teamId
-  override val name: String = underlying.name
   lazy val includesBotMention: Boolean = underlying.includesBotMention
   lazy val messageText: String = underlying.messageText
   lazy val invocationLogText: String = underlying.invocationLogText

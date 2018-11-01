@@ -117,7 +117,7 @@ class InvocationLogEntryServiceImpl @Inject() (
           ea.parameter.name -> ea.preparedValue
         }.toMap),
         result.fullText,
-        event.name,
+        event.eventContext.name,
         maybeUserIdForContext,
         user.id,
         runtimeInMilliseconds,

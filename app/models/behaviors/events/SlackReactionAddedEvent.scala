@@ -42,7 +42,7 @@ case class SlackReactionAddedEvent(
                              )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
-      possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(this, maybeTeam, maybeChannel, context, maybeLimitToBehavior)
+      possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(this, maybeTeam, maybeChannel, eventContext.name, maybeLimitToBehavior)
       activatedTriggers <- activatedTriggersIn(possibleActivatedTriggers, dataService)
       responses <- Future.sequence(activatedTriggers.map { trigger =>
         for {

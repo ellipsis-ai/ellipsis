@@ -53,7 +53,7 @@ object MessageInfo {
     } yield {
       MessageInfo(
         event.messageText,
-        event.name,
+        event.eventContext.name,
         event.maybeChannel,
         event.maybeThreadId,
         event.eventContext.userId,
