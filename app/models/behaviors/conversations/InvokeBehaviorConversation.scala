@@ -191,7 +191,7 @@ object InvokeBehaviorConversation {
         event.name,
         maybeChannel,
         maybeParent.flatMap(_.parent.maybeThreadId).orElse(maybeThreadId),
-        event.userIdForContext,
+        event.eventContext.userId,
         maybeTeamIdForContext,
         OffsetDateTime.now,
         None,

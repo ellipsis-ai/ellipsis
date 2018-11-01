@@ -25,8 +25,6 @@ case class SlackReactionAddedEvent(
 
   override val isEphemeral: Boolean = false
 
-  val userIdForContext: String = eventContext.user
-
   lazy val messageText: String = maybeMessage.map(_.originalText).getOrElse("")
   lazy val invocationLogText: String = relevantMessageText
 

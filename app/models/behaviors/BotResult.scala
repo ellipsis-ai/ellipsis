@@ -527,7 +527,7 @@ case class AdminSkillErrorNotificationResult(
     s" running action `$action` in skill `$skill` $skillLink"
   }.getOrElse("")
   lazy val text: String = {
-    val userId = originalResult.event.userIdForContext
+    val userId = originalResult.event.eventContext.userId
     s"""Error$description
        |
        |Team: $teamLink

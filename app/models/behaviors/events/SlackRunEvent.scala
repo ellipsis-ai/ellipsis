@@ -27,7 +27,6 @@ case class SlackRunEvent(
     this.copy(maybeOriginalEventType = Some(originalEventType))
   }
 
-  val userIdForContext: String = eventContext.user
   val messageText: String = ""
   val includesBotMention: Boolean = false
   def messageUserDataList: Set[MessageUserData] = Set.empty

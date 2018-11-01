@@ -52,7 +52,6 @@ sealed trait ScheduledEvent extends Event {
   lazy val messageText: String = underlying.messageText
   lazy val invocationLogText: String = underlying.invocationLogText
   lazy val isResponseExpected: Boolean = underlying.isResponseExpected
-  lazy val userIdForContext: String = underlying.userIdForContext
   override val maybeScheduled: Option[Scheduled] = Some(scheduled)
   def messageUserDataList: Set[MessageUserData] = underlying.messageUserDataList
 

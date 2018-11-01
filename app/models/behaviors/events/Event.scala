@@ -22,7 +22,6 @@ trait Event {
   type EC <: EventContext
   val eventContext: EC
   val name: String = eventContext.name
-  val userIdForContext: String
   val maybeTeamIdForContext: Option[String] = eventContext.maybeTeamIdForContext
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     eventContext.maybeBotInfo(services)
@@ -61,7 +60,7 @@ trait Event {
     val channelText = maybeChannel.map { channel =>
       s" in channel [${channel}]"
     }.getOrElse("")
-    val userText = s" for context user ID [${result.event.userIdForContext}]"
+    val userText = s" for context user ID [${result.event.eventContext.userId}]"
     val convoText = result.maybeConversation.map { convo =>
       s" in conversation [${convo.id}]"
     }.getOrElse("")
@@ -70,7 +69,7 @@ trait Event {
     s"$logIntro\n${result.filesAsLogText}"
   }
 
-  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+  def loginInfo: LoginInfo = LoginInfo(name, eventContext.userId)
 
   def ensureUserAction(dataService: DataService): DBIO[User] = {
     dataService.users.ensureUserForAction(loginInfo, teamId)
