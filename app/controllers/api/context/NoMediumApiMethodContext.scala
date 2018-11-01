@@ -34,7 +34,7 @@ case class NoMediumApiMethodContext(
     Future.successful(Some(TestMessageEvent(TestEventContext(user, team), message, includesBotMention = true)))
   }
 
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
+  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeOriginalMessageId: Option[String]): Future[Option[Event]] = {
     maybeBaseMessageEventFor(message, channel, maybeOriginalEventType).map { maybeBaseEvent =>
       maybeBaseEvent.map { messageEvent =>
         val event: Event = maybeScheduledMessage.map { scheduledMessage =>
@@ -49,7 +49,8 @@ case class NoMediumApiMethodContext(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
                    channel: String,
-                   maybeOriginalEventType: Option[EventType]
+                   maybeOriginalEventType: Option[EventType],
+                   maybeTriggeringMessageId: Option[String]
                  ): Future[TestRunEvent] = {
     Future.successful(
       TestRunEvent(

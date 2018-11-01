@@ -7,14 +7,14 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.{ActionChoice, BotInfo, DeveloperContext}
+import models.behaviors.{ActionChoice, BotInfo, BotResult, DeveloperContext}
 import models.team.Team
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import services.DefaultServices
 import services.slack.SlackApiError
 import slick.dbio.DBIO
-import utils.{SlackChannels, SlackMessageSender, UploadFileSpec}
+import utils.{SlackChannels, SlackMessageReactionHandler, SlackMessageSender, UploadFileSpec}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
@@ -132,6 +132,7 @@ case class SlackEventContext(
   val isPublicChannel: Boolean = {
     !isDirectMessage && !isPrivateChannel
   }
+
   def messageRecipientPrefix(isUninterruptedConversation: Boolean): String = {
     if (isDirectMessage || isUninterruptedConversation) {
       ""
@@ -234,6 +235,14 @@ case class SlackEventContext(
                         )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val client = services.slackApiService.clientFor(profile)
     client.permalinkFor(channel, messageTs)
+  }
+
+  def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
+                     (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
+    maybeMessageTs.map { messageTs =>
+      SlackMessageReactionHandler.handle(services.slackApiService.clientFor(profile), eventualResults, channel, messageTs)
+    }
+    eventualResults
   }
 
 }

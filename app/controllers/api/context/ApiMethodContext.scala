@@ -50,13 +50,14 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
     } yield maybeBehaviorVersion
   }
 
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]]
+  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeOriginalMessageId: Option[String]): Future[Option[Event]]
 
   def runEventFor(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
                    channel: String,
-                   maybeOriginalEventType: Option[EventType]
+                   maybeOriginalEventType: Option[EventType],
+                   maybeTriggeringMessageId: Option[String]
                  ): Future[Event]
 
   def maybeRunEventForName(
@@ -64,12 +65,13 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                             argumentsMap: Map[String, String],
                             channel: String,
                             maybeOriginalEventType: Option[EventType],
-                            maybeOriginatingBehaviorVersion: Option[BehaviorVersion]
+                            maybeOriginatingBehaviorVersion: Option[BehaviorVersion],
+                            maybeOriginalMessageId: Option[String]
                           ): Future[Option[Event]] = {
     for {
       maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
       maybeEvent <- maybeBehaviorVersion.map { behaviorVersion =>
-        runEventFor(behaviorVersion, argumentsMap, channel, maybeOriginalEventType).map(Some(_))
+        runEventFor(behaviorVersion, argumentsMap, channel, maybeOriginalEventType, maybeOriginalMessageId).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield maybeEvent
   }
@@ -113,7 +115,8 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
         info.argumentsMap,
         info.channel,
         info.originalEventType.flatMap(EventType.find),
-        maybeOriginatingBehaviorVersion
+        maybeOriginatingBehaviorVersion,
+        info.originalMessageId
       )
       result <- (for {
         originatingBehaviorVersion <- maybeOriginatingBehaviorVersion
@@ -131,7 +134,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                     info: RunActionInfo
                   )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
-      maybeEvent <- maybeMessageEventFor(trigger, info.channel, EventType.maybeFrom(info.originalEventType))
+      maybeEvent <- maybeMessageEventFor(trigger, info.channel, EventType.maybeFrom(info.originalEventType), info.originalMessageId)
       result <- runBehaviorFor(maybeEvent, Right(trigger))
     } yield result
   }
