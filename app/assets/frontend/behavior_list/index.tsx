@@ -25,6 +25,7 @@ import FixedHeader from "../shared_ui/fixed_header";
 import {CSSProperties} from "react";
 import {maybeDiffFor} from "../models/diffs";
 import {ToggleGroup, ToggleGroupItem} from '../form/toggle_group';
+import ImportFromGithubPanel from "./import_from_github_panel";
 
 const ANIMATION_DURATION = 0.25;
 
@@ -143,10 +144,18 @@ class BehaviorList extends React.Component<Props, State> {
     return this.state.activeSearchText;
   }
 
+  toggleGithubImport(): void {
+    this.toggleActivePanel("importFromGithub", true);
+  }
+
   renderNavActions() {
     return (
       <div className="mtl">
-        {this.renderTeachButton()}
+        <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
+          className="button button-s button-shrink mrs">
+          Create new skill…
+        </a>
+        <Button className="button-s button-shrink" onClick={this.toggleGithubImport}>Import skill from GitHub…</Button>
       </div>
     );
   }
@@ -696,15 +705,6 @@ class BehaviorList extends React.Component<Props, State> {
     );
   }
 
-  renderTeachButton() {
-    return (
-      <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
-        className="button button-s button-shrink">
-        Create new skill…
-      </a>
-    );
-  }
-
   renderPublishedIntro() {
     if (this.getLocalBehaviorGroups().length === 0) {
       return (
@@ -963,6 +963,12 @@ class BehaviorList extends React.Component<Props, State> {
 
         {this.props.onRenderFooter((
           <div>
+            <Collapsible
+              revealWhen={this.getActivePanelName() === 'importFromGithub'}
+              animationDuration={this.getAnimationDuration()}
+            >
+              <ImportFromGithubPanel />
+            </Collapsible>
             <Collapsible
               revealWhen={this.getActivePanelName() === 'moreInfo'}
               animationDuration={this.getAnimationDuration()}
