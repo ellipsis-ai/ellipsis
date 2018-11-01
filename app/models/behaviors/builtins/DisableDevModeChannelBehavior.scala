@@ -21,7 +21,7 @@ case class DisableDevModeChannelBehavior(
       for {
         maybeTeam <- dataService.teams.find(event.teamId)
         maybeDVC <- maybeTeam.map { team =>
-          dataService.devModeChannels.find(event.context, channel, team)
+          dataService.devModeChannels.find(event.eventContext.name, channel, team)
         }.getOrElse(Future.successful(None))
         result <- maybeDVC.map { dvc =>
           dataService.devModeChannels.delete(dvc).map { _ =>

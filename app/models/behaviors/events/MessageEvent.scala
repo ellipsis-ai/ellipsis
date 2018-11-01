@@ -20,7 +20,7 @@ trait MessageEvent extends Event {
                             )(implicit ec: ExecutionContext): Future[Seq[BehaviorResponse]] = {
     val dataService = services.dataService
     for {
-      listeners <- dataService.messageListeners.allFor(this, maybeTeam, maybeChannel, context)
+      listeners <- dataService.messageListeners.allFor(this, maybeTeam, maybeChannel, eventContext.name)
       listenerResponses <- Future.sequence(listeners.map { ea =>
         for {
           maybeGroupVersion <- dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(ea.behavior.group, ea.medium, ea.channel)
@@ -43,7 +43,7 @@ trait MessageEvent extends Event {
           }.getOrElse(Future.successful(None))
         } yield maybeResponse
       }).map(_.flatten)
-      possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(this, maybeTeam, maybeChannel, context, maybeLimitToBehavior)
+      possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(this, maybeTeam, maybeChannel, eventContext.name, maybeLimitToBehavior)
       activatedTriggers <- activatedTriggersIn(possibleActivatedTriggers, dataService)
       triggerResponses <- Future.sequence(activatedTriggers.map { trigger =>
         for {

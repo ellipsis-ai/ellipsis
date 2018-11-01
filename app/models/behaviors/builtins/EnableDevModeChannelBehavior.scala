@@ -21,13 +21,13 @@ case class EnableDevModeChannelBehavior(
       for {
         maybeTeam <- dataService.teams.find(event.teamId)
         maybeExisting <- maybeTeam.map { team =>
-          dataService.devModeChannels.find(event.context, channel, team)
+          dataService.devModeChannels.find(event.eventContext.name, channel, team)
         }.getOrElse(Future.successful(None))
         result <- maybeTeam.map { team =>
           maybeExisting.map { _ =>
             Future.successful(SimpleTextResult(event, None, s"This channel was already in dev mode, so I left it there", responseType = Normal))
           }.getOrElse {
-            dataService.devModeChannels.ensureFor(event.context, channel, team).map { _ =>
+            dataService.devModeChannels.ensureFor(event.eventContext.name, channel, team).map { _ =>
               SimpleTextResult(event, None, s"OK, this channel is now in dev mode", responseType = Normal)
             }
           }

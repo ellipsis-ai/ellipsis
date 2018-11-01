@@ -21,7 +21,6 @@ import scala.concurrent.{ExecutionContext, Future}
 trait Event {
   type EC <: EventContext
   val eventContext: EC
-  val name: String = eventContext.name
   val userIdForContext: String
   val maybeTeamIdForContext: Option[String] = eventContext.maybeTeamIdForContext
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
@@ -37,7 +36,6 @@ trait Event {
   val maybeScheduled: Option[Scheduled] = None
   val eventType: EventType
   val maybeOriginalEventType: Option[EventType]
-  val context = name
   val isResponseExpected: Boolean
   val includesBotMention: Boolean
   val messageRecipientPrefix: String = eventContext.messageRecipientPrefix(isUninterruptedConversation)
@@ -70,7 +68,7 @@ trait Event {
     s"$logIntro\n${result.filesAsLogText}"
   }
 
-  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+  def loginInfo: LoginInfo = LoginInfo(eventContext.name, userIdForContext)
 
   def ensureUserAction(dataService: DataService): DBIO[User] = {
     dataService.users.ensureUserForAction(loginInfo, teamId)
