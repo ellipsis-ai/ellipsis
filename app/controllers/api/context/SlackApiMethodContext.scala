@@ -73,12 +73,15 @@ case class SlackApiMethodContext(
     messageEventFor(message, channel, maybeOriginalEventType).map(Some(_))
   }
 
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[Event]] = {
+  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeOriginalMessageId: Option[String]): Future[Option[Event]] = {
     maybeBaseMessageEventFor(message, channel, maybeOriginalEventType).map { maybeBaseEvent =>
       maybeBaseEvent.map { messageEvent =>
-        val event: Event = maybeScheduledMessage.map { scheduledMessage =>
-          ScheduledMessageSlackEvent(messageEvent, scheduledMessage)
+        val adjustedMessageEvent = maybeOriginalMessageId.map { originalMessageId =>
+          messageEvent.copy(ts = originalMessageId)
         }.getOrElse(messageEvent)
+        val event: Event = maybeScheduledMessage.map { scheduledMessage =>
+          ScheduledMessageSlackEvent(adjustedMessageEvent, scheduledMessage)
+        }.getOrElse(adjustedMessageEvent)
         event
       }
     }
