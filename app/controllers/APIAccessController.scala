@@ -50,7 +50,7 @@ class APIAccessController @Inject() (
     cacheService.getEvent(invocationId).map { event =>
       eventHandler.handle(event, None).map { results =>
         results.map(ea => botResultService.sendIn(ea, None))
-        Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.name}."))
+        Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.eventContext.name}."))
       }
     }
   }

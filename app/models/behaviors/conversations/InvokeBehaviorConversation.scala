@@ -188,7 +188,7 @@ object InvokeBehaviorConversation {
         behaviorVersion,
         maybeActivatedTrigger,
         event.maybeMessageText,
-        event.name,
+        event.eventContext.name,
         maybeChannel,
         maybeParent.flatMap(_.parent.maybeThreadId).orElse(maybeThreadId),
         event.userIdForContext,

@@ -246,7 +246,7 @@ case class DisplayHelpBehavior(
         groups <- maybeBehaviorGroups
       } yield {
         Future.sequence(groups.map { group =>
-          dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(group, event.context, channel).flatMap { maybeGroupVersion =>
+          dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(group, event.eventContext.name, channel).flatMap { maybeGroupVersion =>
             maybeGroupVersion.map { groupVersion =>
               BehaviorGroupData.buildFor(groupVersion, user, None, dataService, cacheService).map(Some(_))
             }.getOrElse(Future.successful(None))

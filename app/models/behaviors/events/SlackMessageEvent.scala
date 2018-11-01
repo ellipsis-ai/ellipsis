@@ -76,13 +76,13 @@ case class SlackMessageEvent(
   val userIdForContext: String = user
 
   override def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, context, maybeChannel, maybeThreadId, teamId).flatMap { maybeConvo =>
+    dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, maybeThreadId, teamId).flatMap { maybeConvo =>
       maybeConvo.map(c => Future.successful(Some(c))).getOrElse(maybeConversationRootedHere(dataService))
     }
   }
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, context, maybeChannel, Some(ts), teamId)
+    dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, Some(ts), teamId)
   }
 
   override def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)
