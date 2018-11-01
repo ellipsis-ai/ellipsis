@@ -27,8 +27,7 @@ sealed trait EventContext {
   val name: String
   val teamId: String
 
-  def eventualMaybeDMChannel(services: DefaultServices)
-                            (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
+  def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
   def maybeChannelForSendAction(
                                  responseType: BehaviorResponseType,
@@ -43,15 +42,10 @@ sealed trait EventContext {
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 
   def maybeThreadId: Option[String]
-
   def maybeTeamIdForContext: Option[String]
-
   def maybeUserIdForContext: Option[String]
-
   def maybeBotUserIdForContext: Option[String]
-
-  def maybeBotInfo(services: DefaultServices)
-                  (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]]
+  def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]]
 
   def sendMessage(
                    event: Event,
@@ -75,8 +69,7 @@ case class SlackEventContext(
                               user: String
                             ) extends EventContext {
 
-  def maybeBotInfo(services: DefaultServices)
-                  (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
+  def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     botName(services).map { botName =>
       Some(BotInfo(botName, profile.userId))
     }
@@ -86,13 +79,10 @@ case class SlackEventContext(
   lazy val name: String = Conversation.SLACK_CONTEXT
   val maybeChannel: Option[String] = Some(channel)
   val maybeTeamIdForContext: Option[String] = Some(profile.slackTeamId)
-
   def maybeUserIdForContext: Option[String] = Some(user)
-
   def maybeBotUserIdForContext: Option[String] = Some(profile.userId)
 
-  def eventualMaybeDMChannel(services: DefaultServices)
-                            (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+  def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     if (profile.userId == user) {
       Future.successful(None)
     } else {
@@ -100,9 +90,7 @@ case class SlackEventContext(
         case e: SlackApiError => {
           if (e.code != "cannot_dm_bot") {
             val msg =
-              s"""Couldn't open DM channel to user with ID ${user} on Slack team ${
-                profile.slackTeamId
-              } due to Slack API error: ${e.code}
+              s"""Couldn't open DM channel to user with ID ${user} on Slack team ${profile.slackTeamId} due to Slack API error: ${e.code}
                  |Original event channel: $channel
                """.stripMargin
             Logger.error(msg, e)
@@ -172,31 +160,26 @@ case class SlackEventContext(
     )
   }
 
-  def detailsFor(services: DefaultServices)
-                (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     val client = services.slackApiService.clientFor(profile)
     val slackChannels = SlackChannels(client)
     for {
-      maybeUser <- services.slackEventService.maybeSlackUserDataFor(
-        user, client, (e) => {
-          Logger.error(
-            s"""Slack API reported user not found while generating details about the user to send to an action:
-               |Slack user ID: ${user}
-               |Ellipsis bot Slack team ID: ${profile.slackTeamId}
-               |Ellipsis team ID: ${profile.teamId}
-           """.stripMargin, e
-          )
-          None
-        }
-      )
+      maybeUser <- services.slackEventService.maybeSlackUserDataFor(user, client, (e) => {
+        Logger.error(
+          s"""Slack API reported user not found while generating details about the user to send to an action:
+             |Slack user ID: ${user}
+             |Ellipsis bot Slack team ID: ${profile.slackTeamId}
+             |Ellipsis team ID: ${profile.teamId}
+           """.stripMargin, e)
+        None
+      })
       maybeChannelInfo <- slackChannels.getInfoFor(channel)
       members <- slackChannels.getMembersFor(channel)
     } yield {
       val channelDetails = JsObject(Seq(
         "channelMembers" -> Json.toJson(members),
         "channelName" -> Json.toJson(maybeChannelInfo.map(_.computedName))
-      )
-      )
+      ))
       maybeUser.map { user =>
         profileDataFor(user) ++ channelDetails
       }.getOrElse {
@@ -247,9 +230,9 @@ case class SlackEventContext(
   }
 
   def maybePermalinkFor(
-                         messageTs: String,
-                         services: DefaultServices
-                       )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                          messageTs: String,
+                          services: DefaultServices
+                        )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val client = services.slackApiService.clientFor(profile)
     client.permalinkFor(channel, messageTs)
   }
@@ -276,25 +259,18 @@ case class TestEventContext(
   val teamId: String = team.id
   val maybeTeamIdForContext: Option[String] = None
   val maybeThreadId: Option[String] = None
-
-  def maybeBotInfo(services: DefaultServices)
-                  (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
+  def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     Future.successful(None)
   }
-
   def maybeUserIdForContext: Option[String] = None
-
   def maybeBotUserIdForContext: Option[String] = None
-
-  def eventualMaybeDMChannel(services: DefaultServices)
-                            (implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
+  def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
 
   def maybeChannelForSendAction(
                                  responseType: BehaviorResponseType,
                                  maybeConversation: Option[Conversation],
                                  services: DefaultServices
-                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = DBIO
-    .successful(None)
+                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = DBIO.successful(None)
 
   def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     Future.successful(s"${team.name} TestBot")
@@ -302,8 +278,7 @@ case class TestEventContext(
 
   def messageRecipientPrefix(isUninterruptedConversation: Boolean): String = ""
 
-  def detailsFor(services: DefaultServices)
-                (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     Future.successful(JsObject(Seq()))
   }
 
