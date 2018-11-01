@@ -49,7 +49,8 @@ case class NoMediumApiMethodContext(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
                    channel: String,
-                   maybeOriginalEventType: Option[EventType]
+                   maybeOriginalEventType: Option[EventType],
+                   maybeTriggeringMessageId: Option[String]
                  ): Future[TestRunEvent] = {
     Future.successful(
       TestRunEvent(

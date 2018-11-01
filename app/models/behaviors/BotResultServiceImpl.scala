@@ -78,7 +78,8 @@ class BotResultServiceImpl @Inject() (
           nextAction.argumentsMap,
           Some(botResult.event.eventType),
           botResult.event.isEphemeral,
-          botResult.event.maybeResponseUrl
+          botResult.event.maybeResponseUrl,
+          maybeMessageTs
         )
       )
       _ <- if (maybeBehaviorVersion.isDefined) {

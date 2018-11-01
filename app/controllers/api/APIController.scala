@@ -55,7 +55,8 @@ class APIController @Inject() (
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
       "token" -> nonEmptyText,
-      "originalEventType" -> optional(nonEmptyText)
+      "originalEventType" -> optional(nonEmptyText),
+      "originalMessageId" -> optional(nonEmptyText)
     )(RunActionInfo.apply)(RunActionInfo.unapply) verifying(actionNameAndTriggerError, checkActionNameAndTrigger _)
   )
 

@@ -1,10 +1,12 @@
 package models.behaviors.events
 
-import models.behaviors.BehaviorResponse
+import akka.actor.ActorSystem
+import models.behaviors.{BehaviorResponse, BotResult}
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 import services.{AWSLambdaConstants, DefaultServices}
+import utils.SlackMessageReactionHandler
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -14,8 +16,9 @@ case class SlackRunEvent(
                            arguments: Map[String, String],
                            maybeOriginalEventType: Option[EventType],
                            override val isEphemeral: Boolean,
-                           override val maybeResponseUrl: Option[String]
-                  ) extends Event {
+                           override val maybeResponseUrl: Option[String],
+                           maybeTriggeringMessageTs: Option[String]
+                        ) extends Event {
 
   override type EC = SlackEventContext
 
@@ -55,6 +58,11 @@ case class SlackRunEvent(
         userExpectsResponse = true
       )
     } yield Seq(response)
+  }
+
+  override def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)
+                                    (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
+    eventContext.reactionHandler(eventualResults, maybeTriggeringMessageTs, services)
   }
 
 }

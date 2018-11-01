@@ -7,5 +7,6 @@ case class RunActionInfo(
                           responseContext: String,
                           channel: String,
                           token: String,
-                          originalEventType: Option[String]
+                          originalEventType: Option[String],
+                          originalMessageId: Option[String]
                         ) extends ApiMethodWithActionAndArgumentsInfo

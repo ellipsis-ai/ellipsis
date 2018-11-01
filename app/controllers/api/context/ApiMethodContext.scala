@@ -56,7 +56,8 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
                    channel: String,
-                   maybeOriginalEventType: Option[EventType]
+                   maybeOriginalEventType: Option[EventType],
+                   maybeTriggeringMessageId: Option[String]
                  ): Future[Event]
 
   def maybeRunEventForName(
@@ -64,12 +65,13 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                             argumentsMap: Map[String, String],
                             channel: String,
                             maybeOriginalEventType: Option[EventType],
-                            maybeOriginatingBehaviorVersion: Option[BehaviorVersion]
+                            maybeOriginatingBehaviorVersion: Option[BehaviorVersion],
+                            maybeOriginalMessageId: Option[String]
                           ): Future[Option[Event]] = {
     for {
       maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
       maybeEvent <- maybeBehaviorVersion.map { behaviorVersion =>
-        runEventFor(behaviorVersion, argumentsMap, channel, maybeOriginalEventType).map(Some(_))
+        runEventFor(behaviorVersion, argumentsMap, channel, maybeOriginalEventType, maybeOriginalMessageId).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield maybeEvent
   }
@@ -113,7 +115,8 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
         info.argumentsMap,
         info.channel,
         info.originalEventType.flatMap(EventType.find),
-        maybeOriginatingBehaviorVersion
+        maybeOriginatingBehaviorVersion,
+        info.originalMessageId
       )
       result <- (for {
         originatingBehaviorVersion <- maybeOriginatingBehaviorVersion

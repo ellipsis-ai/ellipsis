@@ -88,7 +88,8 @@ case class SlackApiMethodContext(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
                    channel: String,
-                   maybeOriginalEventType: Option[EventType]
+                   maybeOriginalEventType: Option[EventType],
+                   maybeTriggeringMessageId: Option[String]
                  ): Future[SlackRunEvent] = {
     maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
       SlackRunEvent(
@@ -102,7 +103,8 @@ case class SlackApiMethodContext(
         argumentsMap,
         maybeOriginalEventType,
         isEphemeral = false,
-        None
+        None,
+        maybeTriggeringMessageId
       )
     }
   }
