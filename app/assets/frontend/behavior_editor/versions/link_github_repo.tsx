@@ -11,6 +11,7 @@ type Props = {
   onLinkGithubRepo: (owner: string, repo: string, branch: Option<string>, callback: () => void) => void,
   isLinking?: boolean
   linkButtonLabels?: Array<DynamicLabelButtonLabel>
+  error?: Option<string>
 };
 
 type State = {
@@ -50,16 +51,6 @@ class LinkGithubRepo extends React.Component<Props, State> {
   isLinkModified(): boolean {
     const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
     return !this.props.linked || this.props.linked.getOwner() !== match.owner || this.props.linked.getRepo() !== match.repo;
-  }
-
-  getOwner(): string {
-    const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
-    return match.owner || "";
-  }
-
-  getRepo(): string {
-    const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
-    return match.repo || "";
   }
 
   getRepoUrl(): string {
@@ -163,18 +154,21 @@ class LinkGithubRepo extends React.Component<Props, State> {
         </div>
         <div className="mtl">
           <DynamicLabelButton
-            className="button-primary"
+            className="button-primary mrs"
             onClick={this.onLinkClick}
             disabledWhen={!validRepo || !this.isLinkModified() || this.props.isLinking}
             labels={this.getLinkButtonLabels()}
           />
           <Button
-            className="mls"
+            className="mrs"
             onClick={this.onCancelClick}
             disabled={this.props.isLinking}
           >
             Cancel
           </Button>
+          {this.props.error ? (
+            <span className="type-pink type-bold type-italic align-button">— {this.props.error}</span>
+          ) : null}
         </div>
       </div>
     );

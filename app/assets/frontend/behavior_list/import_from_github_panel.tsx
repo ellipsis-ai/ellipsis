@@ -6,6 +6,7 @@ import {DataRequest, ResponseError} from "../lib/data_request";
 import BehaviorGroup, {BehaviorGroupJson} from "../models/behavior_group";
 import Collapsible from "../shared_ui/collapsible";
 import {DynamicLabelButtonLabel} from "../form/dynamic_label_button";
+import {GithubFetchError} from "../models/github/github_fetch_error";
 
 interface Props {
   isActive: boolean
@@ -25,7 +26,8 @@ interface State {
 }
 
 interface ImportResponse {
-  data: BehaviorGroupJson
+  data?: BehaviorGroupJson
+  errors?: GithubFetchError
 }
 
 class ImportFromGithubPanel extends React.Component<Props, State> {
@@ -78,7 +80,7 @@ class ImportFromGithubPanel extends React.Component<Props, State> {
         repo: repo.getRepo(),
         branch: repo.currentBranch
       }, this.props.csrfToken).then((response: ImportResponse) => {
-        if (response && response.data) {
+        if (response.data) {
           const group = BehaviorGroup.fromJson(response.data);
           this.setState({
             newGroup: group,
@@ -86,9 +88,18 @@ class ImportFromGithubPanel extends React.Component<Props, State> {
           }, () => {
             this.props.onBehaviorGroupImport(group);
           });
+        } else if (response.errors) {
+          this.setState({
+            linkedRepo: null,
+            isImportingFromGithub: false,
+            error: response.errors.message
+          });
+        } else {
+          throw new ResponseError(200, "Unexpected response received", null)
         }
       }).catch((err: ResponseError) => {
         this.setState({
+          linkedRepo: null,
           isImportingFromGithub: false,
           error: err.body || err.statusText
         });
@@ -153,11 +164,8 @@ class ImportFromGithubPanel extends React.Component<Props, State> {
                 onLinkGithubRepo={this.onLinkGithubRepo}
                 isLinking={this.isBusy()}
                 linkButtonLabels={this.getLinkButtonLabels()}
+                error={this.state.error}
               />
-
-              <Collapsible revealWhen={Boolean(this.state.error)}>
-                <div className="type-pink type-bold type-italic">Error: {this.state.error}</div>
-              </Collapsible>
             </div>
           </div>
         </div>
