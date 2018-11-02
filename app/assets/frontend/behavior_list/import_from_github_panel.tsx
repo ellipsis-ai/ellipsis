@@ -2,22 +2,25 @@ import * as React from 'react';
 import autobind from '../lib/autobind';
 import LinkGithubRepo from "../behavior_editor/versions/link_github_repo";
 import LinkedGithubRepo from "../models/linked_github_repo";
-import {DataRequest} from "../lib/data_request";
+import {DataRequest, ResponseError} from "../lib/data_request";
 import BehaviorGroup, {BehaviorGroupJson} from "../models/behavior_group";
 import Collapsible from "../shared_ui/collapsible";
+import {DynamicLabelButtonLabel} from "../form/dynamic_label_button";
 
 interface Props {
+  isActive: boolean
   teamId: string
   csrfToken: string
   onDone: () => void
+  onBehaviorGroupImport: (newGroup: BehaviorGroup) => void
+  onIsImportingToTeam: (group: BehaviorGroup) => boolean
 }
 
 interface State {
   linkedRepo: Option<LinkedGithubRepo>
-  newGroupJson: Option<BehaviorGroupJson>
+  newGroup: Option<BehaviorGroup>
   savedGroup: Option<BehaviorGroup>
-  isImporting: boolean
-  isSaving: boolean
+  isImportingFromGithub: boolean
   error: Option<string>
 }
 
@@ -25,31 +28,48 @@ interface ImportResponse {
   data: BehaviorGroupJson
 }
 
-type SaveResponse = BehaviorGroupJson
-
 class ImportFromGithubPanel extends React.Component<Props, State> {
+  githubRepoInput: Option<LinkGithubRepo>;
+
   constructor(props: Props) {
     super(props);
     autobind(this);
-    this.state = {
+    this.state = this.getDefaultState();
+  }
+
+  getDefaultState(): State {
+    return {
       linkedRepo: null,
-      newGroupJson: null,
+      newGroup: null,
       savedGroup: null,
-      isImporting: false,
-      isSaving: false,
+      isImportingFromGithub: false,
       error: null
+    };
+  }
+
+  componentWillReceiveProps(newProps: Props) {
+    if (this.props.isActive && !newProps.isActive) {
+      this.setState(this.getDefaultState);
+    }
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (!prevProps.isActive && this.props.isActive && this.githubRepoInput) {
+      this.githubRepoInput.focus();
     }
   }
 
   onLinkGithubRepo(owner: string, repo: string, branch: Option<string>, callback: () => void): void {
     const defaultBranch = this.state.linkedRepo ? this.state.linkedRepo.currentBranch : "master";
     this.setState({
+      error: null,
+      newGroup: null,
       linkedRepo: new LinkedGithubRepo(owner, repo, branch || defaultBranch),
-      isImporting: true
-    }, this.doImport);
+      isImportingFromGithub: true
+    }, this.doImportFromGithub);
   }
 
-  doImport() {
+  doImportFromGithub() {
     const repo = this.state.linkedRepo;
     if (repo) {
       DataRequest.jsonPost(jsRoutes.controllers.BehaviorEditorController.newFromGithub().url, {
@@ -59,79 +79,87 @@ class ImportFromGithubPanel extends React.Component<Props, State> {
         branch: repo.currentBranch
       }, this.props.csrfToken).then((response: ImportResponse) => {
         if (response && response.data) {
+          const group = BehaviorGroup.fromJson(response.data);
           this.setState({
-            newGroupJson: response.data,
-            isImporting: false,
-            isSaving: true
-          }, this.doSave);
+            newGroup: group,
+            isImportingFromGithub: false
+          }, () => {
+            this.props.onBehaviorGroupImport(group);
+          });
         }
-      })
-    }
-  }
-
-  doSave() {
-    const group = this.state.newGroupJson;
-    if (group) {
-      DataRequest.jsonPost(jsRoutes.controllers.BehaviorEditorController.save().url, {
-        dataJson: group,
-        isReinstall: true
-      }, this.props.csrfToken).then((response: SaveResponse) => {
+      }).catch((err: ResponseError) => {
         this.setState({
-          savedGroup: BehaviorGroup.fromJson(response),
-          isSaving: false
-        })
-      })
+          isImportingFromGithub: false,
+          error: err.body || err.statusText
+        });
+      });
     }
   }
 
-  isReadyToLink(): boolean {
-    return !this.state.savedGroup && !this.state.isImporting && !this.state.isSaving;
+  isBusy(): boolean {
+    return Boolean(this.isImporting() || this.state.newGroup);
+  }
+
+  isImporting(): boolean {
+    return this.state.isImportingFromGithub;
+  }
+
+  isInstalling(): boolean {
+    return Boolean(this.state.newGroup && this.props.onIsImportingToTeam(this.state.newGroup));
+  }
+
+  getLinkButtonLabels(): Array<DynamicLabelButtonLabel> {
+    return [{
+      text: "Import",
+      displayWhen: !this.isBusy()
+    }, {
+      text: "Importing…",
+      displayWhen: this.isBusy()
+    }]
   }
 
   render() {
-    const importedGroup = this.state.newGroupJson;
-    const savedGroup = this.state.savedGroup;
-    const hasSavedGroup = Boolean(savedGroup);
+    const source = this.state.linkedRepo ? this.state.linkedRepo.getOwnerAndRepo() : "GitHub";
     return (
       <div className="box-action">
-        <div className="container phn">
-          <h4>Import from GitHub</h4>
+        <div className="container container-wide">
+          <div className="columns">
+            <div className="column column-page-sidebar">
+              <h4 className="mtn">Import from GitHub</h4>
 
-          <Collapsible revealWhen={this.isReadyToLink()}>
-            <LinkGithubRepo
-              linked={this.state.linkedRepo}
-              onDoneClick={this.props.onDone}
-              onLinkGithubRepo={this.onLinkGithubRepo}
-            />
-          </Collapsible>
-
-          <Collapsible revealWhen={this.state.isImporting}>
-            <div className="pulse">
-              Importing from {this.state.linkedRepo ? this.state.linkedRepo.getOwnerAndRepo() : "GitHub"}…
-            </div>
-          </Collapsible>
-
-          <Collapsible revealWhen={this.state.isSaving}>
-            <div className="pulse">
-              <span>Saving new skill </span>
-              <b>{importedGroup && importedGroup.name || "(untitled)"}…</b>
-            </div>
-          </Collapsible>
-
-          <Collapsible revealWhen={hasSavedGroup}>
-            {savedGroup && savedGroup.id ? (
-              <div>
-                <div>New skill saved: {savedGroup.getName()}</div>
-
-                <div className="mtm">
-                  <a
-                    className="button button-primary"
-                    href={jsRoutes.controllers.BehaviorEditorController.edit(savedGroup.id).url}
-                  >Edit skill</a>
-                </div>
+              <div className="type-s">
+                <Collapsible revealWhen={this.isBusy()}>
+                  <div className={this.isImporting() ? "pulse" : "type-green"}>
+                    {this.isImporting() ? `Importing from ${source}` : `Imported skill from ${source}`}
+                  </div>
+                  {this.state.newGroup && this.isInstalling() ? (
+                    <div className="pulse">
+                      <span>Installing </span>
+                      {this.state.newGroup.icon ? (
+                        <span>{this.state.newGroup.icon} </span>
+                      ) : null}
+                      <b>{this.state.newGroup.getName()}</b>
+                    </div>
+                  ) : null}
+                </Collapsible>
               </div>
-            ) : null}
-          </Collapsible>
+            </div>
+
+            <div className="column column-page-main">
+              <LinkGithubRepo
+                ref={(el) => this.githubRepoInput = el}
+                linked={this.state.linkedRepo}
+                onDoneClick={this.props.onDone}
+                onLinkGithubRepo={this.onLinkGithubRepo}
+                isLinking={this.isBusy()}
+                linkButtonLabels={this.getLinkButtonLabels()}
+              />
+
+              <Collapsible revealWhen={Boolean(this.state.error)}>
+                <div className="type-pink type-bold type-italic">Error: {this.state.error}</div>
+              </Collapsible>
+            </div>
+          </div>
         </div>
       </div>
     );

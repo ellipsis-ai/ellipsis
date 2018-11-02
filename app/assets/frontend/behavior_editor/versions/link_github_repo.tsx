@@ -3,11 +3,14 @@ import Button from '../../form/button';
 import LinkedGithubRepo from '../../models/linked_github_repo';
 import FormInput from '../../form/input';
 import autobind from '../../lib/autobind';
+import DynamicLabelButton, {DynamicLabelButtonLabel} from "../../form/dynamic_label_button";
 
 type Props = {
   linked: Option<LinkedGithubRepo>,
   onDoneClick: () => void,
-  onLinkGithubRepo: (owner: string, repo: string, branch: Option<string>, callback: () => void) => void
+  onLinkGithubRepo: (owner: string, repo: string, branch: Option<string>, callback: () => void) => void,
+  isLinking?: boolean
+  linkButtonLabels?: Array<DynamicLabelButtonLabel>
 };
 
 type State = {
@@ -128,6 +131,13 @@ class LinkGithubRepo extends React.Component<Props, State> {
     }
   }
 
+  getLinkButtonLabels(): Array<DynamicLabelButtonLabel> {
+    return this.props.linkButtonLabels || [{
+      text: "Link",
+      displayWhen: true
+    }]
+  }
+
   render() {
     const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
     const validRepo = match && match.repo && match.owner;
@@ -147,20 +157,21 @@ class LinkGithubRepo extends React.Component<Props, State> {
               onChange={this.onRepoUrlChange}
               placeholder={"e.g. https://github.com/your_company/your_repo"}
               value={this.getRepoUrl()}
+              disabled={this.props.isLinking}
             />
           </div>
         </div>
         <div className="mtl">
-          <Button
+          <DynamicLabelButton
             className="button-primary"
             onClick={this.onLinkClick}
-            disabled={!validRepo || !this.isLinkModified()}
-          >
-            Link
-          </Button>
+            disabledWhen={!validRepo || !this.isLinkModified() || this.props.isLinking}
+            labels={this.getLinkButtonLabels()}
+          />
           <Button
             className="mls"
             onClick={this.onCancelClick}
+            disabled={this.props.isLinking}
           >
             Cancel
           </Button>

@@ -28,9 +28,11 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
   }
 
   getHeading(group: BehaviorGroup) {
-    var groupName = group.getName();
     return (
-      <span>You have installed a new skill: <b>{groupName}</b></span>
+      <span>New skill installed: {group.icon ? (
+        <span className="mrxs">{group.icon}</span>
+      ) : null}
+      <b>{group.getName()}</b></span>
     );
   }
 

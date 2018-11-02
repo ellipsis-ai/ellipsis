@@ -969,9 +969,12 @@ class BehaviorList extends React.Component<Props, State> {
               animationDuration={this.getAnimationDuration()}
             >
               <ImportFromGithubPanel
+                isActive={this.getActivePanelName() === 'importFromGithub'}
                 teamId={this.props.teamId}
                 csrfToken={this.props.csrfToken}
                 onDone={this.props.onClearActivePanel}
+                onBehaviorGroupImport={this.onBehaviorGroupImport}
+                onIsImportingToTeam={this.isImporting}
               />
             </Collapsible>
             <Collapsible
