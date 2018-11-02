@@ -126,7 +126,7 @@ trait Conversation {
       maybeEvent.map { event =>
         respondAction(event, isReminding=true, services).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
-          val callbackId = stopConversationCallbackIdFor(event.eventContext.userId, Some(id))
+          val callbackId = stopConversationCallbackIdFor(event.eventContext.userIdForContext, Some(id))
           val actionList = Seq(SlackMessageActionButton(callbackId, "Stop asking", id))
           val question = result.text
           val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, Some(question), None, None)

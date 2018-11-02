@@ -18,7 +18,6 @@ case class SlashCommandEvent(
 
   val profile: SlackBotProfile = eventContext.profile
   val channel: String = eventContext.channel
-  val user: String = eventContext.userId
 
   val eventType: EventType = EventType.chat
 

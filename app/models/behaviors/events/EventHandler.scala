@@ -28,7 +28,7 @@ class EventHandler @Inject() (
 
   def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
-      maybeTeam <- dataService.teams.find(event.teamId)
+      maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
       results <- {
         val eventualResults = Future.sequence(responses.map(_.result))
@@ -84,7 +84,7 @@ class EventHandler @Inject() (
             }
             val key = updatedConvo.pendingEventKey
             services.cacheService.cacheEvent(key, event, 5.minutes)
-            val callbackId = continueConversationCallbackIdFor(event.eventContext.userId, Some(updatedConvo.id))
+            val callbackId = continueConversationCallbackIdFor(event.eventContext.userIdForContext, Some(updatedConvo.id))
             val actionList = Seq(
               SlackMessageActionButton(callbackId, "Yes, this is my answer", YES),
               SlackMessageActionButton(callbackId, "No, it’s not an answer", NO)
@@ -122,7 +122,7 @@ class EventHandler @Inject() (
     event match {
       case e: SlackMessageEvent => {
         e.maybeThreadId.map { threadId =>
-          dataService.conversations.maybeWithThreadId(threadId, e.eventContext.userId, e.eventContext.name).map { maybeConvo =>
+          dataService.conversations.maybeWithThreadId(threadId, e.eventContext.userIdForContext, e.eventContext.name).map { maybeConvo =>
             maybeConvo.flatMap { convo =>
               if (convo.isDone) {
                 val channelText = if (e.eventContext.isDirectMessage) {
@@ -160,7 +160,7 @@ class EventHandler @Inject() (
     }.getOrElse {
       event.maybeChannel.foreach { channel =>
         if (event.maybeThreadId.isEmpty) {
-          cacheService.clearLastConversationId(event.teamId, channel)
+          cacheService.clearLastConversationId(event.ellipsisTeamId, channel)
         }
       }
       BuiltinBehavior.maybeFrom(event, services).map { builtin =>

@@ -56,7 +56,7 @@ object MessageInfo {
         event.eventContext.name,
         event.maybeChannel,
         event.maybeThreadId,
-        event.eventContext.userId,
+        event.eventContext.userIdForContext,
         details,
         event.messageUserDataList(maybeConversation, services),
         maybePermalink,
@@ -122,7 +122,6 @@ object UserInfo {
   def buildForAction(
                       event: Event,
                       maybeConversation: Option[Conversation],
-                      teamId: String,
                       services: DefaultServices
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
     for {

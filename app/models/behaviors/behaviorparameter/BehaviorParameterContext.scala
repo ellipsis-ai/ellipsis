@@ -11,7 +11,7 @@ import services.caching.CacheService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 case class BehaviorParameterContext(
                                      event: Event,
@@ -43,8 +43,8 @@ case class BehaviorParameterContext(
     )
   }
 
-  def dataTypeChoiceCallbackId: String = dataTypeChoiceCallbackIdFor(event.eventContext.userId, maybeConversation.map(_.id))
+  def dataTypeChoiceCallbackId: String = dataTypeChoiceCallbackIdFor(event.eventContext.userIdForContext, maybeConversation.map(_.id))
 
-  def yesNoCallbackId: String = yesNoCallbackIdFor(event.eventContext.userId, maybeConversation.map(_.id))
+  def yesNoCallbackId: String = yesNoCallbackIdFor(event.eventContext.userIdForContext, maybeConversation.map(_.id))
 
 }

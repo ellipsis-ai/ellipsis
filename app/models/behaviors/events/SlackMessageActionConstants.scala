@@ -18,9 +18,9 @@ object SlackMessageActionConstants {
   val YES = "yes"
   val NO = "no"
 
-  def callbackIdFor(kind: String, slackUserId: String, maybeConversationId: Option[String]): String = {
+  def callbackIdFor(kind: String, userIdForContext: String, maybeConversationId: Option[String]): String = {
     val conversationId = maybeConversationId.getOrElse("")
-    s"$kind/$slackUserId/$conversationId"
+    s"$kind/$userIdForContext/$conversationId"
   }
   def callbackIdRegexFor(kind: String): Regex = {
     raw"""^$kind\/([^\/]+)\/([^\/]+)$$""".r
@@ -33,20 +33,20 @@ object SlackMessageActionConstants {
     callbackIdRegexFor(kind).findFirstMatchIn(callbackId).flatMap(_.subgroups.tail.headOption)
   }
 
-  def dataTypeChoiceCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
-    callbackIdFor(DATA_TYPE_CHOICE, slackUserId, maybeConversationId)
+  def dataTypeChoiceCallbackIdFor(userIdForContext: String, maybeConversationId: Option[String]): String = {
+    callbackIdFor(DATA_TYPE_CHOICE, userIdForContext, maybeConversationId)
   }
 
-  def yesNoCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
-    callbackIdFor(YES_NO_CHOICE, slackUserId, maybeConversationId)
+  def yesNoCallbackIdFor(userIdForContext: String, maybeConversationId: Option[String]): String = {
+    callbackIdFor(YES_NO_CHOICE, userIdForContext, maybeConversationId)
   }
 
-  def continueConversationCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
-    callbackIdFor(CONFIRM_CONTINUE_CONVERSATION, slackUserId, maybeConversationId)
+  def continueConversationCallbackIdFor(userIdForContext: String, maybeConversationId: Option[String]): String = {
+    callbackIdFor(CONFIRM_CONTINUE_CONVERSATION, userIdForContext, maybeConversationId)
   }
 
-  def stopConversationCallbackIdFor(slackUserId: String, maybeConversationId: Option[String]): String = {
-    callbackIdFor(STOP_CONVERSATION, slackUserId, maybeConversationId)
+  def stopConversationCallbackIdFor(userIdForContext: String, maybeConversationId: Option[String]): String = {
+    callbackIdFor(STOP_CONVERSATION, userIdForContext, maybeConversationId)
   }
 
 }

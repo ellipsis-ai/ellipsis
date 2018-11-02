@@ -26,7 +26,6 @@ case class SlackMessageEvent(
 
   val profile: SlackBotProfile = eventContext.profile
   val channel: String = eventContext.channel
-  val user: String = eventContext.userId
 
   val eventType: EventType = EventType.chat
 
@@ -37,8 +36,6 @@ case class SlackMessageEvent(
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {
     this.copy(maybeOriginalEventType = Some(originalEventType), isUninterruptedConversation = isUninterrupted)
   }
-
-  override val isBotMessage: Boolean = profile.userId == user
 
   override def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     if (eventContext.isDirectMessage) {
@@ -75,13 +72,13 @@ case class SlackMessageEvent(
   override val isResponseExpected: Boolean = includesBotMention
 
   override def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, maybeThreadId, teamId).flatMap { maybeConvo =>
+    dataService.conversations.findOngoingFor(eventContext.userIdForContext, eventContext.name, maybeChannel, maybeThreadId, ellipsisTeamId).flatMap { maybeConvo =>
       maybeConvo.map(c => Future.successful(Some(c))).getOrElse(maybeConversationRootedHere(dataService))
     }
   }
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, Some(ts), teamId)
+    dataService.conversations.findOngoingFor(eventContext.userIdForContext, eventContext.name, maybeChannel, Some(ts), ellipsisTeamId)
   }
 
   override def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)

@@ -126,7 +126,7 @@ case class BehaviorResponse(
           parametersWithValues,
           result,
           event,
-          Some(event.eventContext.userId),
+          Some(event.eventContext.userIdForContext),
           user,
           runtimeInMilliseconds
         )

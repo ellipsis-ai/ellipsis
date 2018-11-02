@@ -19,7 +19,7 @@ case class DisableDevModeChannelBehavior(
     val problemResponse = SimpleTextResult(event, None, "There was a problem trying to disable dev mode", responseType = Normal)
     event.maybeChannel.map { channel =>
       for {
-        maybeTeam <- dataService.teams.find(event.teamId)
+        maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
         maybeDVC <- maybeTeam.map { team =>
           dataService.devModeChannels.find(event.eventContext.name, channel, team)
         }.getOrElse(Future.successful(None))

@@ -54,7 +54,7 @@ class UserServiceImpl @Inject() (
 
   def findFromEvent(event: Event, team: Team): Future[Option[User]] = {
     event match {
-      case slackEvent: SlackMessageEvent => dataService.linkedAccounts.find(LoginInfo(slackEvent.eventContext.name, slackEvent.user), team.id).map { maybeLinked =>
+      case slackEvent: SlackMessageEvent => dataService.linkedAccounts.find(slackEvent.eventContext.loginInfo, team.id).map { maybeLinked =>
         maybeLinked.map(_.user)
       }
       case _ => Future.successful(None)

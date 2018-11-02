@@ -51,9 +51,7 @@ class BotResultServiceImpl @Inject() (
       maybeBehaviorVersion <- botResult.maybeBehaviorVersion.map { originatingBehaviorVersion =>
         dataService.behaviorVersions.findByNameAction(nextAction.actionName, originatingBehaviorVersion.groupVersion)
       }.getOrElse(DBIO.successful(None))
-      maybeBotProfile <- botResult.event.maybeTeamIdForContext.map { teamIdForContext =>
-        dataService.slackBotProfiles.allForSlackTeamIdAction(teamIdForContext).map(_.headOption)
-      }.getOrElse(DBIO.successful(None))
+      maybeBotProfile <- dataService.slackBotProfiles.allForSlackTeamIdAction(botResult.event.eventContext.teamIdForContext).map(_.headOption)
       user <- botResult.event.ensureUserAction(dataService)
       maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
       maybeThreadId <- DBIO.successful(if (botResult.responseType == Threaded) {

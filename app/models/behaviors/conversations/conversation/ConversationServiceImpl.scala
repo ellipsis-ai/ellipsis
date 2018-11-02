@@ -120,14 +120,12 @@ class ConversationServiceImpl @Inject() (
                            eventContext: EventContext,
                            maybeBotResult: Option[BotResult]
                          )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Seq[Conversation]] = {
-    eventContext.maybeUserIdForContext.map { userIdForContext =>
-      for {
-        maybeChannel <- maybeBotResult.map { botResult =>
-          eventContext.maybeChannelForSendAction(botResult.responseType, botResult.maybeConversation, services)
-        }.getOrElse(DBIO.successful(eventContext.maybeChannel))
-        convos <- allOngoingForAction(userIdForContext, eventContext.name, maybeChannel, eventContext.maybeThreadId, eventContext.teamId)
-      } yield convos
-    }.getOrElse(DBIO.successful(Seq()))
+    for {
+      maybeChannel <- maybeBotResult.map { botResult =>
+        eventContext.maybeChannelForSendAction(botResult.responseType, botResult.maybeConversation, services)
+      }.getOrElse(DBIO.successful(eventContext.maybeChannel))
+      convos <- allOngoingForAction(eventContext.userIdForContext, eventContext.name, maybeChannel, eventContext.maybeThreadId, eventContext.ellipsisTeamId)
+    } yield convos
   }
 
   def allOngoingFor(

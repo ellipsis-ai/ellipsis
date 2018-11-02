@@ -18,7 +18,7 @@ case class UnscheduleBehavior(
     val configuration = services.configuration
     val dataService = services.dataService
     for {
-      maybeTeam <- dataService.teams.find(event.teamId)
+      maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
       response <- (for {
         team <- maybeTeam
         channel <- event.maybeChannel
@@ -56,7 +56,7 @@ case class UnscheduleBehavior(
 
   private def viewAllLink: String = {
     services.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(None, None, Some(event.teamId))
+      val path = controllers.routes.ScheduledActionsController.index(None, None, Some(event.ellipsisTeamId))
       s"[View all scheduled items]($baseUrl$path)"
     }.getOrElse("")
   }

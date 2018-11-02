@@ -73,13 +73,13 @@ trait CacheService {
 
   def eventHasLastConversationId(event: Event, conversationId: String): Boolean = {
     event.maybeChannel.exists { channel =>
-      getLastConversationId(event.teamId, channel).contains(conversationId)
+      getLastConversationId(event.ellipsisTeamId, channel).contains(conversationId)
     }
   }
 
   def updateLastConversationIdFor(event: Event, conversationId: String): Unit = {
     event.maybeChannel.foreach { channel =>
-      cacheLastConversationId(event.teamId, channel, conversationId)
+      cacheLastConversationId(event.ellipsisTeamId, channel, conversationId)
     }
   }
 
