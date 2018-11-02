@@ -86,7 +86,7 @@ case class SlackEventContext(
   val ellipsisTeamId: String = profile.teamId
   lazy val name: String = Conversation.SLACK_CONTEXT
   val maybeChannel: Option[String] = Some(channel)
-  override val teamIdForContext: String = profile.slackTeamId
+  val teamIdForContext: String = profile.slackTeamId
   val botUserId: String = profile.userId
   val isBotMessage: Boolean = botUserId == userIdForContext
 
