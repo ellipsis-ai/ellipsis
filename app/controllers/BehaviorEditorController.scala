@@ -8,6 +8,7 @@ import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import javax.inject.Inject
 import json.Formatting._
 import json._
+import models.IDs
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.TestEventContext
 import models.behaviors.testing.{InvocationTester, TestMessageEvent, TriggerTester}
@@ -599,18 +600,12 @@ class BehaviorEditorController @Inject() (
             dataService.githubProfiles.find(linked.loginInfo)
           }.getOrElse(Future.successful(None))
           teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
-          oauth1Applications <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.oauth1Applications.allUsableFor(team)
-          }.getOrElse(Future.successful(Seq()))
-          oauth2Applications <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.oauth2Applications.allUsableFor(team)
-          }.getOrElse(Future.successful(Seq()))
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             maybeGithubProfile.map { profile =>
               val fetcher = GithubSingleBehaviorGroupFetcher(team, info.owner, info.repo, profile.token, info.branch, None, githubService, services, ec)
               try {
-                val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth1Applications ++ oauth2Applications)
+                val groupData = fetcher.result.copy(id = Some(IDs.next))
                 Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
               } catch {
                 case e: GithubResultFromDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))

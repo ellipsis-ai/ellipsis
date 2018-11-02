@@ -50,6 +50,7 @@ type Props = {
   teamId: string,
   slackTeamId: string,
   botName: string,
+  csrfToken: string
   notification: any
 } & PageRequiredProps;
 
@@ -967,7 +968,11 @@ class BehaviorList extends React.Component<Props, State> {
               revealWhen={this.getActivePanelName() === 'importFromGithub'}
               animationDuration={this.getAnimationDuration()}
             >
-              <ImportFromGithubPanel />
+              <ImportFromGithubPanel
+                teamId={this.props.teamId}
+                csrfToken={this.props.csrfToken}
+                onDone={this.props.onClearActivePanel}
+              />
             </Collapsible>
             <Collapsible
               revealWhen={this.getActivePanelName() === 'moreInfo'}

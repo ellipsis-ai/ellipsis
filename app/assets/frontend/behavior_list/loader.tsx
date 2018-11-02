@@ -324,6 +324,7 @@ class BehaviorListLoader extends React.Component<BehaviorListLoaderProps, State>
           teamId={this.props.teamId}
           slackTeamId={this.props.slackTeamId}
           botName={this.props.botName}
+          csrfToken={this.props.csrfToken}
           notification={this.renderTimeZoneSetNotification()}
           {...pageProps}
         />
