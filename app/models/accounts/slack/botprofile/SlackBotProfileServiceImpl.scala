@@ -203,18 +203,19 @@ class SlackBotProfileServiceImpl @Inject() (
 
   def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]] = {
     val teamId = botProfile.teamId
+    val botDebugInfo = s"Slack user ID ${botProfile.userId} on Slack team ID ${botProfile.slackTeamId} for Ellipsis team ID ${botProfile.teamId}"
     slackEventService.maybeSlackUserDataFor(botProfile).map { maybeSlackUserData =>
       maybeSlackUserData.map { slackUserData =>
         val name = slackUserData.getDisplayName
         cacheService.cacheBotName(name, teamId)
         name
       }.orElse {
-        Logger.error("No bot user data returned from Slack API; using fallback cache")
+        Logger.error(s"No bot user data returned from Slack API for ${botDebugInfo}; using fallback cache")
         cacheService.getBotName(teamId)
       }
     }.recover {
       case e: InvalidResponseException => {
-        Logger.warn("Couldn’t retrieve bot user data from Slack API because of an invalid/error response; using fallback cache", e)
+        Logger.warn(s"Couldn’t retrieve bot user data from Slack API for ${botDebugInfo} because of an invalid/error response; using fallback cache", e)
         cacheService.getBotName(teamId)
       }
     }
