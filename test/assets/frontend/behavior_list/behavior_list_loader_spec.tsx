@@ -28,6 +28,7 @@ describe('BehaviorListApp', () => {
   jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get', absoluteURL: absoluteUrl });
   jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get', absoluteURL: absoluteUrl });
   jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.GithubConfigController.index = () => ({ url: '/githubConfig', method: 'get', absoluteURL: absoluteUrl });
 
   const normalResponseType= "Normal";
   const normalResponseTypeJson = { id: normalResponseType, displayString: "Display normally" };

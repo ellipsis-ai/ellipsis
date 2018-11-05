@@ -29,7 +29,7 @@ import ImportFromGithubPanel from "./import_from_github_panel";
 
 const ANIMATION_DURATION = 0.25;
 
-type Props = {
+export interface BehaviorListProps {
   onLoadPublishedBehaviorGroups: () => void,
   onBehaviorGroupImport: (b: BehaviorGroup) => void,
   onBehaviorGroupUpdate: (orig: BehaviorGroup, upd: BehaviorGroup, callback?: (newGroup: BehaviorGroup) => void) => void,
@@ -53,7 +53,9 @@ type Props = {
   csrfToken: string
   notification: any,
   isLinkedToGithub: boolean
-} & PageRequiredProps;
+}
+
+type Props = BehaviorListProps & PageRequiredProps
 
 interface PublishedBehaviorGroupDiffers {
   [behaviorGroupId: string]: boolean
@@ -103,7 +105,7 @@ class BehaviorList extends React.Component<Props, State> {
     this.mainHeader = document.getElementById('main-header');
   }
 
-  componentWillReceiveProps(nextProps: Props) {
+  componentWillReceiveProps(nextProps: BehaviorListProps) {
     const newestImported = nextProps.recentlyInstalled.filter((next) => {
       return !BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, next.exportId);
     });
