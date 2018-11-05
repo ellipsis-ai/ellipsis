@@ -6,11 +6,13 @@ const DOCS_URLS = Object.freeze({
   TRIGGERS: "https://docs.ellipsis.ai/developers/reference/02_actions/01_triggers/"
 });
 const MOBILE_MAX_WIDTH = 768;
+const EXAMPLE_GITHUB_SKILL_URL = "https://github.com/ellipsis-ai/empathetic_bot";
 
 export {
   NODE_JS_VERSION,
   NODE_JS_DOCS_URL,
   GRAPHQL_DOCS_URL,
   DOCS_URLS,
-  MOBILE_MAX_WIDTH
+  MOBILE_MAX_WIDTH,
+  EXAMPLE_GITHUB_SKILL_URL
 };

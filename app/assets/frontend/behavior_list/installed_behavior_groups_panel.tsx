@@ -29,10 +29,13 @@ class InstalledBehaviorGroupsPanel extends React.Component<Props> {
 
   getHeading(group: BehaviorGroup) {
     return (
-      <span>New skill installed: {group.icon ? (
-        <span className="mrxs">{group.icon}</span>
-      ) : null}
-      <b>{group.getName()}</b></span>
+      <span>
+        <span className="mrxs">New skill installed:</span>
+        {group.icon ? (
+          <span className="mrxs">{group.icon}</span>
+        ) : null}
+        <b>{group.getName()}</b>
+      </span>
     );
   }
 

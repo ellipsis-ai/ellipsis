@@ -51,7 +51,8 @@ type Props = {
   slackTeamId: string,
   botName: string,
   csrfToken: string
-  notification: any
+  notification: any,
+  isLinkedToGithub: boolean
 } & PageRequiredProps;
 
 interface PublishedBehaviorGroupDiffers {
@@ -156,7 +157,14 @@ class BehaviorList extends React.Component<Props, State> {
           className="button button-s button-shrink mrs">
           Create new skill…
         </a>
-        <Button className="button-s button-shrink" onClick={this.toggleGithubImport}>Import skill from GitHub…</Button>
+        {this.props.isLinkedToGithub ? (
+          <Button className="button-s button-shrink" onClick={this.toggleGithubImport}>Import from GitHub…</Button>
+        ) : (
+          <a href={jsRoutes.controllers.GithubConfigController.index(this.props.teamId).url}
+            className="button button-s button-shrink">
+            Set up GitHub link…
+          </a>
+        )}
       </div>
     );
   }

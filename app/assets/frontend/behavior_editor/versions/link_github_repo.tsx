@@ -4,6 +4,7 @@ import LinkedGithubRepo from '../../models/linked_github_repo';
 import FormInput from '../../form/input';
 import autobind from '../../lib/autobind';
 import DynamicLabelButton, {DynamicLabelButtonLabel} from "../../form/dynamic_label_button";
+import {EXAMPLE_GITHUB_SKILL_URL} from "../../lib/constants";
 
 type Props = {
   linked: Option<LinkedGithubRepo>,
@@ -104,16 +105,11 @@ class LinkGithubRepo extends React.Component<Props, State> {
     if (match.owner && match.repo) {
       return (
         <p>
-          <span className="mrxs">Link to the </span>
+          <span className="mrxs">Use the </span>
           <span className="border type-monospace type-s mrxs phxs">{match.repo}</span>
           <span className="mrxs"> repo owned by </span>
           <span className="border type-monospace type-s mrxs phxs">{match.owner}</span>
         </p>
-      );
-    } else if (this.state.invalidUrl) {
-      return (
-        <p><span
-          className="type-pink type-bold type-italic">Invalid repository — copy and paste a valid GitHub URL</span></p>
       );
     } else {
       return (
@@ -127,6 +123,24 @@ class LinkGithubRepo extends React.Component<Props, State> {
       text: "Link",
       displayWhen: true
     }]
+  }
+
+  renderError() {
+    if (this.state.invalidUrl) {
+      return (
+        <span className="align-button">
+          <span className="type-pink type-bold type-italic">— Invalid URL: </span>
+          <span className="type-s">use a valid GitHub URL, e.g. </span>
+          <span className="box-code-example display-nowrap">{EXAMPLE_GITHUB_SKILL_URL}</span>
+        </span>
+      );
+    } else if (this.props.error) {
+      return (
+        <span className="type-pink type-bold type-italic align-button">— {this.props.error}</span>
+      );
+    } else {
+      return null;
+    }
   }
 
   render() {
@@ -146,7 +160,7 @@ class LinkGithubRepo extends React.Component<Props, State> {
               className="form-input-borderless type-monospace"
               ref={(el) => this.repoUrlInput = el}
               onChange={this.onRepoUrlChange}
-              placeholder={"e.g. https://github.com/your_company/your_repo"}
+              placeholder={`e.g. ${EXAMPLE_GITHUB_SKILL_URL}`}
               value={this.getRepoUrl()}
               disabled={this.props.isLinking}
             />
@@ -166,9 +180,7 @@ class LinkGithubRepo extends React.Component<Props, State> {
           >
             Cancel
           </Button>
-          {this.props.error ? (
-            <span className="type-pink type-bold type-italic align-button">— {this.props.error}</span>
-          ) : null}
+          {this.renderError()}
         </div>
       </div>
     );
