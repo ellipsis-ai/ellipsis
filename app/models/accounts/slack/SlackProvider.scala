@@ -34,11 +34,15 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
     "identity" -> IDENTITY_API
   )
 
+  protected def scopesFromAuth(authInfo: A): Array[String] = {
+    authInfo.params.flatMap(_.get("scope").map(_.split(","))).getOrElse(Array.empty)
+  }
+
   protected def buildProfile(authInfo: A): Future[SlackProfile] = {
-    val scopes = authInfo.params.flatMap(_.get("scope").map(_.split(","))).getOrElse(Array.empty)
+    val scopes = scopesFromAuth(authInfo)
     if (scopes.isEmpty) {
       throw new UnexpectedResponseException(s"No scopes found in Slack auth response while attempting to build a SlackProfile. ${dumpParamsFromAuthInfo(authInfo)}")
-    } else if (scopes.size == 1 && scopes.contains("identity.basic")) {
+    } else if (scopes.length == 1 && scopes.contains("identity.basic")) {
       httpLayer.url(urls("identity").format(authInfo.accessToken)).get().flatMap { response =>
         profileParser.parseForSignIn(response.json, authInfo)
       }
