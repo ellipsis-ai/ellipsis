@@ -35,14 +35,16 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
   )
 
   protected def buildProfile(authInfo: A): Future[SlackProfile] = {
-    val scopes = authInfo.params.flatMap(_.get("scope").map(_.split(",")))
-    if (scopes.size == 1 && scopes.contains("identity.basic")) {
+    val scopes = authInfo.params.flatMap(_.get("scope").map(_.split(","))).getOrElse(Array.empty)
+    if (scopes.isEmpty) {
+      throw new UnexpectedResponseException(s"No scopes found in Slack auth response while attempting to build a SlackProfile. ${dumpParamsFromAuthInfo(authInfo)}")
+    } else if (scopes.size == 1 && scopes.contains("identity.basic")) {
       httpLayer.url(urls("identity").format(authInfo.accessToken)).get().flatMap { response =>
-        profileParser.parseForSignIn(response.json)
+        profileParser.parseForSignIn(response.json, authInfo)
       }
     } else {
       httpLayer.url(urls("auth_test").format(authInfo.accessToken)).get().flatMap { response =>
-        profileParser.parseForInstall(response.json)
+        profileParser.parseForInstall(response.json, authInfo)
       }
     }
   }
@@ -117,4 +119,8 @@ object SlackProvider {
   val IDENTITY_API = "https://slack.com/api/users.identity?token=%s"
 
   val SpecifiedProfileError = "[Silhouette][%s] Error retrieving profile information. Error message: %s"
+
+  def dumpParamsFromAuthInfo(authInfo: OAuth2Info): String = {
+    authInfo.params.map(_.mkString("Received these auth params:\n", "\n", "\n")).getOrElse("No auth params present.")
+  }
 }
