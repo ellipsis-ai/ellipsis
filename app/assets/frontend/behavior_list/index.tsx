@@ -569,7 +569,7 @@ class BehaviorList extends React.Component<Props, State> {
       BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, exportId));
   }
 
-  toggleInfoPanel(group: BehaviorGroup): void {
+  toggleInfoPanel(group?: BehaviorGroup): void {
     var previousSelectedGroup = this.state.selectedBehaviorGroup;
     var panelOpen = this.getActivePanelName() === 'moreInfo';
 

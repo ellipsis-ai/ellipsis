@@ -237,7 +237,7 @@ describe('BehaviorList', () => {
   });
 
   describe('toggleInfoPanel', () => {
-    let list;
+    let list: BehaviorList;
 
     beforeEach(() => {
       jest.clearAllTimers();
@@ -280,12 +280,13 @@ describe('BehaviorList', () => {
       list.setState({
         selectedBehaviorGroup: group1
       });
-      list.setState = jest.fn((newState, callback) => {
+      const setStateMock = jest.fn((newState, callback) => {
         callback();
       });
+      list.setState = setStateMock;
       list.toggleInfoPanel(group2);
       expect(setTimeout).not.toBeCalled();
-      expect(list.setState.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
+      expect(setStateMock.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
       expect(list.toggleActivePanel).toBeCalledWith('moreInfo');
     });
 
@@ -294,14 +295,15 @@ describe('BehaviorList', () => {
       list.setState({
         selectedBehaviorGroup: group1
       });
-      list.setState = jest.fn((newState, callback) => {
+      const setStateMock = jest.fn((newState, callback) => {
         callback();
       });
+      list.setState = setStateMock;
       list.toggleInfoPanel(group2);
       expect(list.clearActivePanel).toBeCalled();
       expect(setTimeout).toBeCalled();
       jest.runOnlyPendingTimers();
-      expect(list.setState.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
+      expect(setStateMock.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
       expect(list.toggleActivePanel).toBeCalledWith('moreInfo');
     });
   });
