@@ -42,6 +42,7 @@ POST        /save_default_storage_item                @controllers.BehaviorEdito
 POST        /query_default_storage                    @controllers.BehaviorEditorController.queryDefaultStorage
 POST        /delete_default_storage_items             @controllers.BehaviorEditorController.deleteDefaultStorageItems
 GET         /node_module_versions/:groupId            @controllers.BehaviorEditorController.nodeModuleVersionsFor(groupId: String)
+POST        /new_from_github                          @controllers.BehaviorEditorController.newFromGithub
 POST        /update_from_github                       @controllers.BehaviorEditorController.updateFromGithub
 POST        /push_to_github                           @controllers.BehaviorEditorController.pushToGithub
 POST        /linked_github_repos                      @controllers.BehaviorEditorController.linkToGithubRepo

@@ -25,6 +25,7 @@ declare var jsRoutes: {
       deleteDefaultStorageItems: () => JsRoute,
       deploy: () => JsRoute,
       edit: (groupId: string, selectedId?: string, showVersions?: boolean) => JsRoute,
+      newFromGithub: () => JsRoute,
       newGroup: (teamId: string) => JsRoute,
       newUnsavedBehavior: (isDataType: boolean, isTest: boolean, teamId: string, behaviorIdToClone: string, newName: Option<string>) => JsRoute,
       newUnsavedLibrary: (teamId: string, libraryIdToClone: string) => JsRoute,

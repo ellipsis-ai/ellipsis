@@ -8,6 +8,7 @@ import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import javax.inject.Inject
 import json.Formatting._
 import json._
+import models.IDs
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.TestEventContext
 import models.behaviors.testing.{InvocationTester, TestMessageEvent, TriggerTester}
@@ -565,6 +566,53 @@ class BehaviorEditorController @Inject() (
               }
             }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
           }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))
+        }
+      }
+    )
+  }
+
+  case class NewFromGithubInfo(
+                                teamId: String,
+                                owner: String,
+                                repo: String,
+                                branch: Option[String]
+                              )
+
+  private val newFromGithubForm = Form(
+    mapping(
+      "teamId" -> nonEmptyText,
+      "owner" -> nonEmptyText,
+      "repo" -> nonEmptyText,
+      "branch" -> optional(nonEmptyText)
+    )(NewFromGithubInfo.apply)(NewFromGithubInfo.unapply)
+  )
+
+  def newFromGithub = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    newFromGithubForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeGithubLinkedAccount <- dataService.linkedAccounts.maybeForGithubFor(user)
+          maybeGithubProfile <- maybeGithubLinkedAccount.map { linked =>
+            dataService.githubProfiles.find(linked.loginInfo)
+          }.getOrElse(Future.successful(None))
+          teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
+        } yield {
+          teamAccess.maybeTargetTeam.map { team =>
+            maybeGithubProfile.map { profile =>
+              val fetcher = GithubSingleBehaviorGroupFetcher(team, info.owner, info.repo, profile.token, info.branch, None, githubService, services, ec)
+              try {
+                val groupData = fetcher.result.copy(id = Some(IDs.next))
+                Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
+              } catch {
+                case e: GithubResultFromDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
+                case e: GithubFetchDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, None, None))
+              }
+            }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
+          }.getOrElse(NotFound(s"Team ID ${info.teamId} not found"))
         }
       }
     )

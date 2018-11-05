@@ -60,6 +60,7 @@ class ApplicationController @Inject() (
               BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
             }).map(_.flatten.sorted)
           }.getOrElse(Future.successful(Seq()))
+          isLinkedToGithub <- dataService.linkedAccounts.maybeForGithubFor(user).map(_.nonEmpty)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             val viewConfigData = viewConfig(Some(teamAccess))
@@ -71,7 +72,8 @@ class ApplicationController @Inject() (
               slackTeamId = maybeSlackTeamId,
               teamTimeZone = team.maybeTimeZone.map(_.toString),
               branchName = maybeBranch,
-              botName = viewConfigData.botName
+              botName = viewConfigData.botName,
+              isLinkedToGithub = isLinkedToGithub
             )
             Ok(views.js.shared.webpackLoader(
               viewConfigData,

@@ -1,16 +1,18 @@
 import * as React from 'react';
 import Button from '../../form/button';
-import BehaviorGroup from '../../models/behavior_group';
 import LinkedGithubRepo from '../../models/linked_github_repo';
 import FormInput from '../../form/input';
 import autobind from '../../lib/autobind';
+import DynamicLabelButton, {DynamicLabelButtonLabel} from "../../form/dynamic_label_button";
+import {EXAMPLE_GITHUB_SKILL_URL} from "../../lib/constants";
 
 type Props = {
-  group: BehaviorGroup,
   linked: Option<LinkedGithubRepo>,
   onDoneClick: () => void,
   onLinkGithubRepo: (owner: string, repo: string, branch: Option<string>, callback: () => void) => void,
-  csrfToken: string
+  isLinking?: boolean
+  linkButtonLabels?: Array<DynamicLabelButtonLabel>
+  error?: Option<string>
 };
 
 type State = {
@@ -50,16 +52,6 @@ class LinkGithubRepo extends React.Component<Props, State> {
   isLinkModified(): boolean {
     const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
     return !this.props.linked || this.props.linked.getOwner() !== match.owner || this.props.linked.getRepo() !== match.repo;
-  }
-
-  getOwner(): string {
-    const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
-    return match.owner || "";
-  }
-
-  getRepo(): string {
-    const match = this.matchOwnerAndRepoFromUrl(this.getRepoUrl());
-    return match.repo || "";
   }
 
   getRepoUrl(): string {
@@ -113,21 +105,41 @@ class LinkGithubRepo extends React.Component<Props, State> {
     if (match.owner && match.repo) {
       return (
         <p>
-          <span className="mrxs">Link to the </span>
+          <span className="mrxs">Use the </span>
           <span className="border type-monospace type-s mrxs phxs">{match.repo}</span>
           <span className="mrxs"> repo owned by </span>
           <span className="border type-monospace type-s mrxs phxs">{match.owner}</span>
         </p>
       );
-    } else if (this.state.invalidUrl) {
-      return (
-        <p><span
-          className="type-pink type-bold type-italic">Invalid repository — copy and paste a valid GitHub URL</span></p>
-      );
     } else {
       return (
         <p>Copy and paste an existing GitHub repository URL.</p>
       );
+    }
+  }
+
+  getLinkButtonLabels(): Array<DynamicLabelButtonLabel> {
+    return this.props.linkButtonLabels || [{
+      text: "Link",
+      displayWhen: true
+    }]
+  }
+
+  renderError() {
+    if (this.state.invalidUrl) {
+      return (
+        <span className="align-button">
+          <span className="type-pink type-bold type-italic">— Invalid URL: </span>
+          <span className="type-s">use a valid GitHub URL, e.g. </span>
+          <span className="box-code-example display-nowrap">{EXAMPLE_GITHUB_SKILL_URL}</span>
+        </span>
+      );
+    } else if (this.props.error) {
+      return (
+        <span className="type-pink type-bold type-italic align-button">— {this.props.error}</span>
+      );
+    } else {
+      return null;
     }
   }
 
@@ -148,25 +160,27 @@ class LinkGithubRepo extends React.Component<Props, State> {
               className="form-input-borderless type-monospace"
               ref={(el) => this.repoUrlInput = el}
               onChange={this.onRepoUrlChange}
-              placeholder={"e.g. https://github.com/your_company/your_repo"}
+              placeholder={`e.g. ${EXAMPLE_GITHUB_SKILL_URL}`}
               value={this.getRepoUrl()}
+              disabled={this.props.isLinking}
             />
           </div>
         </div>
         <div className="mtl">
-          <Button
-            className="button-primary"
+          <DynamicLabelButton
+            className="button-primary mrs"
             onClick={this.onLinkClick}
-            disabled={!validRepo || !this.isLinkModified()}
-          >
-            Link
-          </Button>
+            disabledWhen={!validRepo || !this.isLinkModified() || this.props.isLinking}
+            labels={this.getLinkButtonLabels()}
+          />
           <Button
-            className="mls"
+            className="mrs"
             onClick={this.onCancelClick}
+            disabled={this.props.isLinking}
           >
             Cancel
           </Button>
+          {this.renderError()}
         </div>
       </div>
     );
