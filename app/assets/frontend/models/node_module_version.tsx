@@ -16,6 +16,10 @@ class NodeModuleVersion implements NodeModuleVersionInterface {
     });
   }
 
+  getUrl(): string {
+    return `https://www.npmjs.com/package/${this.from}/v/${this.version}`;
+  }
+
   clone(props: Partial<NodeModuleVersionInterface>): NodeModuleVersion {
     return NodeModuleVersion.fromProps(Object.assign({}, this, props));
   }
