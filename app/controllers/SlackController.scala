@@ -820,13 +820,13 @@ class SlackController @Inject() (
 
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
 
-  private def sendEphemeralMessage(message: String, slackTeamId: String, slackChannelId: String, slackUserId: String): Future[Unit] = {
+  private def sendEphemeralMessage(message: String, slackTeamId: String, slackChannelId: String, maybeThreadTs: Option[String], slackUserId: String): Future[Unit] = {
     for {
       maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(slackTeamId).map(_.headOption)
       _ <- (for {
         profile <- maybeProfile
       } yield {
-        services.slackApiService.clientFor(profile).postEphemeralMessage(message, slackChannelId, slackUserId)
+        services.slackApiService.clientFor(profile).postEphemeralMessage(message, slackChannelId, maybeThreadTs, slackUserId)
       }).getOrElse {
         Future.successful({})
       }
@@ -834,17 +834,17 @@ class SlackController @Inject() (
   }
 
   private def sendEphemeralMessage(message: String, info: ActionsTriggeredInfo): Future[Unit] = {
-    sendEphemeralMessage(message, info.slackTeamIdForBot, info.channel.id, info.user.id)
+    sendEphemeralMessage(message, info.slackTeamIdForBot, info.channel.id, info.maybeOriginalMessageThreadId, info.user.id)
   }
 
   private def sendEphemeralMessage(message: String, info: MessageRequestInfo): Future[Unit] = {
     info.slackTeamIdsForBots.headOption.map { slackTeamId =>
-      sendEphemeralMessage(message, slackTeamId, info.channel, info.userId)
+      sendEphemeralMessage(message, slackTeamId, info.channel, info.maybeThreadTs, info.userId)
     }.getOrElse(Future.successful({}))
   }
 
   private def sendEphemeralMessage(message: String, info: ReactionAddedRequestInfo): Future[Unit] = {
-    sendEphemeralMessage(message, info.teamId, info.channel, info.userId)
+    sendEphemeralMessage(message, info.teamId, info.channel, None, info.userId)
   }
 
   private def updateActionsMessageFor(
