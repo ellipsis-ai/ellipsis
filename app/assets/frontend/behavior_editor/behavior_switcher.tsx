@@ -16,6 +16,7 @@ import TestsStatus from "./tests_status";
 import {ReactNode} from "react";
 import SVGCheckmark from '../svg/checkmark';
 import SVGWarning from '../svg/warning';
+import NodeModuleList from "./node_module_list";
 
 export type BehaviorSelectCallback = (optionalGroupId: Option<string>, editableId?: Option<string>, optionalCallback?: Option<() => void>) => void;
 
@@ -75,26 +76,7 @@ class BehaviorSwitcher extends React.Component<Props> {
               <h6>Required NPM modules</h6>
             </div>
             <div className="type-s">
-              {this.props.nodeModuleVersions.map((version, index) => (
-                <div
-                  key={`nodeModuleVersion${index}`}
-                  className={`pbxs`}
-                >
-                  <div className="phxl mobile-phl type-monospace display-ellipsis" title={
-                    `${version.from} v${version.version}`
-                  }>
-                    <span>{version.from}</span>
-                    {this.props.updatingNodeModules ? (
-                      <span className="pulse type-disabled">@...</span>
-                    ) : (
-                      <span>
-                        <span className="type-disabled">@</span>
-                        <span className="type-weak">{version.version}</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+              <NodeModuleList nodeModuleVersions={this.props.nodeModuleVersions} updatingNodeModules={this.props.updatingNodeModules} />
             </div>
             <div className="container container-wide mvm">
               <DynamicLabelButton
