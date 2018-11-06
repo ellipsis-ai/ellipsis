@@ -843,10 +843,6 @@ class SlackController @Inject() (
     }.getOrElse(Future.successful({}))
   }
 
-  private def sendEphemeralMessage(message: String, info: ReactionAddedRequestInfo): Future[Unit] = {
-    sendEphemeralMessage(message, info.teamId, info.channel, None, info.userId)
-  }
-
   private def updateActionsMessageFor(
                                        info: ActionsTriggeredInfo,
                                        maybeResultText: Option[String],
