@@ -421,7 +421,11 @@ class SlackController @Inject() (
         }).map(_.flatten)
         _ <- Future.sequence(
           profiles.map { profile =>
-            processReactionEventsFor(info, profile)
+            if (profile.userId != info.userId) {
+              processReactionEventsFor(info, profile)
+            } else {
+              Future.successful({})
+            }
           }
         )
       } yield {}
