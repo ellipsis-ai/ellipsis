@@ -3,7 +3,7 @@ package models.behaviors
 import akka.actor.ActorSystem
 import com.google.common.util.concurrent.Futures.FutureCombiner
 import javax.inject.Inject
-import models.behaviors.behaviorversion.{BehaviorVersion, Threaded}
+import models.behaviors.behaviorversion.{BehaviorVersion, Normal, Private, Threaded}
 import models.behaviors.events.{Event, EventHandler, SlackEventContext, SlackRunEvent}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
@@ -43,6 +43,13 @@ class BotResultServiceImpl @Inject() (
     } yield result
   }
 
+  private def maybeThreadIdForNextActionFrom(botResult: BotResult, maybeMessageTs: Option[String]): Option[String] = {
+    botResult.responseType match {
+      case Threaded => botResult.event.maybeThreadId.orElse(maybeMessageTs)
+      case _ => botResult.event.maybeThreadId
+    }
+  }
+
   private def runNextAction(nextAction: NextAction, botResult: BotResult, maybeMessageTs: Option[String])(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
       maybeSlackChannelId <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
@@ -56,11 +63,6 @@ class BotResultServiceImpl @Inject() (
       }.getOrElse(DBIO.successful(None))
       user <- botResult.event.ensureUserAction(dataService)
       maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
-      maybeThreadId <- DBIO.successful(if (botResult.responseType == Threaded) {
-        botResult.maybeConversation.flatMap(_.maybeThreadId).orElse(maybeMessageTs)
-      } else {
-        None
-      })
       maybeEvent <- DBIO.successful(
         for {
           botProfile <- maybeBotProfile
@@ -71,7 +73,7 @@ class BotResultServiceImpl @Inject() (
           SlackEventContext(
             botProfile,
             channel,
-            maybeThreadId,
+            maybeThreadIdForNextActionFrom(botResult, maybeMessageTs),
             linkedAccount.loginInfo.providerKey
           ),
           behaviorVersion,
