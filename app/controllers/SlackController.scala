@@ -347,25 +347,28 @@ class SlackController @Inject() (
   )
 
   private def processReactionEventsFor(info: ReactionAddedRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
-    for {
-      maybeSlackMessage <- SlackMessage.maybeFromMessageTs(info.event.item.ts, info.event.item.channel, botProfile, services)
-      isUserValidForBot <- slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId)
-      result <- if (!isUserValidForBot) {
-        Future.successful({})
+    slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId).flatMap { isUserValidForBot =>
+      if (isUserValidForBot) {
+        for {
+          maybeSlackMessage <- SlackMessage.maybeFromMessageTs(info.event.item.ts, info.event.item.channel, botProfile, services)
+          result <- {
+            val event = SlackReactionAddedEvent(
+              SlackEventContext(
+                botProfile,
+                info.channel,
+                maybeThreadId = None,
+                info.userId
+              ),
+              info.event.reaction,
+              maybeSlackMessage
+            )
+            slackEventService.onEvent(event)
+          }
+        } yield result
       } else {
-        val event = SlackReactionAddedEvent(
-          SlackEventContext(
-            botProfile,
-            info.channel,
-            maybeThreadId = None,
-            info.userId
-          ),
-          info.event.reaction,
-          maybeSlackMessage
-        )
-        slackEventService.onEvent(event)
+        Future.successful({})
       }
-    } yield result
+    }
   }
 
   private def processMessageEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
@@ -421,11 +424,7 @@ class SlackController @Inject() (
         }).map(_.flatten)
         _ <- Future.sequence(
           profiles.map { profile =>
-            if (profile.userId != info.userId) {
-              processReactionEventsFor(info, profile)
-            } else {
-              Future.successful({})
-            }
+            processReactionEventsFor(info, profile)
           }
         )
       } yield {}
