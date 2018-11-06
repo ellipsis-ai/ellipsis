@@ -304,10 +304,19 @@ case class SlackApiClient(
     }
   }
 
-  def postEphemeralMessage(text: String, channelId: String, userId: String, asUser: Option[Boolean] = None,
-                           parse: Option[String] = None, linkNames: Option[String] = None, attachments: Option[Seq[Attachment]] = None): Future[String] = {
+  def postEphemeralMessage(
+                            text: String,
+                            channelId: String,
+                            maybeThreadTs: Option[String],
+                            userId: String,
+                            asUser: Option[Boolean] = None,
+                            parse: Option[String] = None,
+                            linkNames: Option[String] = None,
+                            attachments: Option[Seq[Attachment]] = None
+                          ): Future[String] = {
     val params = Map(
       "channel" -> channelId,
+      "thread_ts" -> maybeThreadTs,
       "text" -> text,
       "user" -> userId,
       "as_user" -> asUser,

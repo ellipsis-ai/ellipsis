@@ -138,11 +138,13 @@ case class SlackMessageSender(
   private def postEphemeralMessage(
                                     text: String,
                                     maybeAttachments: Option[Seq[Attachment]] = None,
-                                    channel: String
+                                    channel: String,
+                                    maybeThreadTs: Option[String]
                                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     client.postEphemeralMessage(
       text,
       channel,
+      maybeThreadTs,
       user,
       asUser = Some(false), // allows it to work in channels where bot is not a member
       parse = None,
@@ -183,7 +185,7 @@ case class SlackMessageSender(
       client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral)
     }.getOrElse {
       if (isEphemeral) {
-        postEphemeralMessage(text, maybeAttachments, channel)
+        postEphemeralMessage(text, maybeAttachments, channel, maybeThreadTs)
       } else {
         client.postChatMessage(
           channel,
@@ -229,7 +231,7 @@ case class SlackMessageSender(
     if (formattedText.nonEmpty) {
       maybePreambleText.map { preambleMessage =>
         if (beQuiet) {
-          postEphemeralMessage(preambleMessage, None, originatingChannel)
+          postEphemeralMessage(preambleMessage, None, originatingChannel, maybeThreadId)
         } else {
           postChatMessage(preambleMessage, None, Some(originatingChannel))
         }
