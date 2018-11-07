@@ -43,27 +43,6 @@ class BotResultServiceImpl @Inject() (
     } yield result
   }
 
-  private def maybeThreadIdForNextActionFrom(
-                                              originatingBotResult: BotResult,
-                                              originatingResponseChannel: String,
-                                              maybeOriginalMessageTs: Option[String]
-                                            ): Option[String] = {
-    val responseType = originatingBotResult.responseType
-    val maybeOriginatingEventChannel = originatingBotResult.event.maybeChannel
-    val maybeThreadToUse = maybeOriginatingEventChannel.map { originalEventChannel =>
-      responseType.maybeThreadTsToUseFor(
-        originatingResponseChannel,
-        originalEventChannel,
-        originatingBotResult.maybeConversation,
-        originatingBotResult.event.maybeThreadId
-      )
-    }.getOrElse(originatingBotResult.event.maybeThreadId)
-    responseType match {
-      case Threaded => maybeThreadToUse.orElse(maybeOriginalMessageTs)
-      case _ => maybeThreadToUse
-    }
-  }
-
   private def runNextAction(nextAction: NextAction, botResult: BotResult, maybeMessageTs: Option[String])(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
       maybeOriginatingResponseChannel <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
@@ -83,20 +62,23 @@ class BotResultServiceImpl @Inject() (
           linkedAccount <- maybeSlackLinkedAccount
           behaviorVersion <- maybeBehaviorVersion
           channel <- maybeOriginatingResponseChannel
-        } yield SlackRunEvent(
-          SlackEventContext(
+        } yield {
+          val eventContext = SlackEventContext(
             botProfile,
             channel,
-            maybeThreadIdForNextActionFrom(botResult, channel, maybeMessageTs),
+            botResult.responseType.maybeThreadTsToUseForNextAction(botResult, channel, maybeMessageTs),
             linkedAccount.loginInfo.providerKey
-          ),
-          behaviorVersion,
-          nextAction.argumentsMap,
-          Some(botResult.event.eventType),
-          botResult.event.isEphemeral,
-          botResult.event.maybeResponseUrl,
-          maybeMessageTs
-        )
+          )
+          SlackRunEvent(
+            eventContext,
+            behaviorVersion,
+            nextAction.argumentsMap,
+            Some(botResult.event.eventType),
+            botResult.event.isEphemeral,
+            botResult.event.maybeResponseUrl,
+            maybeMessageTs
+          )
+        }
       )
       _ <- if (maybeBehaviorVersion.isDefined) {
         runBehaviorFor(maybeEvent, botResult.maybeBehaviorVersion)
