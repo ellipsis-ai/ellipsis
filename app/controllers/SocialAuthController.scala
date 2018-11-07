@@ -19,6 +19,7 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import models._
 import models.accounts.github.GithubProvider
 import models.accounts.linkedaccount.LinkedAccount
+import models.accounts.ms_teams.MSTeamsProvider
 import models.accounts.slack.SlackProvider
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
@@ -37,6 +38,7 @@ class SocialAuthController @Inject() (
                                        val models: Models,
                                        val assetsProvider: Provider[RemoteAssets],
                                        slackProvider: SlackProvider,
+                                       msTeamsProvider: MSTeamsProvider,
                                        githubProvider: GithubProvider,
                                        dataService: DataService,
                                        botResultService: BotResultService,
@@ -313,6 +315,76 @@ class SocialAuthController @Inject() (
           authenticatedResult <- authenticatorResultForUserAndResult(user, result)
         } yield authenticatedResult
       } yield result
+    }
+  }
+
+  def authenticateMSTeams(
+                          maybeRedirect: Option[String],
+                          maybeTeamId: Option[String],
+                          maybeChannelId: Option[String]
+                        ) = silhouette.UserAwareAction.async { implicit request =>
+    val provider = msTeamsProvider.withSettings { settings =>
+      val url = routes.SocialAuthController.authenticateMSTeams(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
+      var authorizationParams = settings.authorizationParams
+      maybeTeamId.foreach { teamId =>
+        authorizationParams = authorizationParams + ("team" -> teamId)
+      }
+      configuration.getOptional[String]("silhouette.ms_teams.scope").foreach { signInScope =>
+        authorizationParams = authorizationParams + ("scope" -> signInScope)
+      }
+      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams)
+    }
+    val authenticateResult = provider.authenticate() recover {
+      case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
+        Left(Redirect(routes.MSTeamsController.signIn(maybeRedirect)))
+      }
+      case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
+        Left(Redirect(routes.ApplicationController.index()))
+      }
+    }
+    authenticateResult.flatMap {
+      case Left(result) => Future.successful(result)
+      case Right(authInfo) => {
+        for {
+          profile <- msTeamsProvider.retrieveProfile(authInfo)
+          botProfiles <- Future.sequence(profile.teamIds.toSeq.map(teamId => {
+            dataService.slackBotProfiles.allForSlackTeamId(teamId)
+          })).map(_.flatten)
+          result <- if (botProfiles.isEmpty) {
+            Future.successful(Redirect(routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId)))
+          } else {
+            val teamId = botProfiles.head.teamId
+            if (maybeTeamId.exists(t => t != teamId)) {
+              Future.successful {
+                val redir = s"/oauth/authorize?client_id=${provider.settings.clientID}&redirect_url=${provider.settings.redirectURL}&scope=${provider.settings.authorizationParams("scope")}"
+                val url = s"https://slack.com/signin?redir=${URLEncoder.encode(redir, "UTF-8")}"
+                Redirect(url)
+              }
+            } else {
+              for {
+                loginInfo <- Future.successful(profile.loginInfo)
+                _ <- authInfoRepository.save(loginInfo, authInfo)
+                maybeExistingLinkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, teamId)
+                linkedAccount <- maybeExistingLinkedAccount.map(Future.successful).getOrElse {
+                  val eventualUser = request.identity.map(Future.successful).getOrElse {
+                    dataService.users.createFor(teamId)
+                  }
+                  eventualUser.flatMap { user =>
+                    dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, OffsetDateTime.now))
+                  }
+                }
+                user <- Future.successful(linkedAccount.user)
+                result <- Future.successful {
+                  maybeRedirect.map { redirect =>
+                    Redirect(validatedRedirectUri(redirect))
+                  }.getOrElse(Redirect(routes.ApplicationController.index()))
+                }
+                authenticatedResult <- authenticatorResultForUserAndResult(user, result)
+              } yield authenticatedResult
+            }
+          }
+        } yield result
+      }
     }
   }
 
