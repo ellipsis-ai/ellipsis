@@ -18,7 +18,6 @@ class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
   val threadTs = "999888777666"
   val conversationThreadTs = "111222333444"
   val dmChannel = "D1234567"
-  val conversation = mock[Conversation]
 
   def botResultFor(event: Event, maybeConversation: Option[Conversation]): BotResult = {
     val behaviorVersion = mock[BehaviorVersion]
@@ -28,32 +27,46 @@ class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
 
   "channelToUseFor" should {
     "Prioritize the originating channel if a thread is present and not private-with-DM" in {
+      val conversation = mock[Conversation]
+
       Normal.channelToUseFor(originatingChannel, Some(conversation), Some(threadTs), Some(dmChannel)) mustBe originatingChannel
       Threaded.channelToUseFor(originatingChannel, Some(conversation), Some(threadTs), Some(dmChannel)) mustBe originatingChannel
-      Private.channelToUseFor(originatingChannel, Some(conversation), Some(threadTs), None) mustBe originatingChannel
     }
 
     "Prioritize the conversation channel if no thread is present" in {
+      val conversation = mock[Conversation]
       when(conversation.maybeChannel).thenReturn(Some(conversationChannel))
+
       Normal.channelToUseFor(originatingChannel, Some(conversation), None, Some(dmChannel)) mustBe conversationChannel
       Threaded.channelToUseFor(originatingChannel, Some(conversation), None, Some(dmChannel)) mustBe conversationChannel
-      Private.channelToUseFor(originatingChannel, Some(conversation), None, None) mustBe conversationChannel
     }
 
     "Return the originating channel if no thread or conversation channel is present" in {
-      when(conversation.maybeChannel).thenReturn(None)
-      Normal.channelToUseFor(originatingChannel, Some(conversation), None, Some(dmChannel)) mustBe originatingChannel
+      val conversationWithoutChannel = mock[Conversation]
+      when(conversationWithoutChannel.maybeChannel).thenReturn(None)
+
+      Normal.channelToUseFor(originatingChannel, Some(conversationWithoutChannel), None, Some(dmChannel)) mustBe originatingChannel
+      Threaded.channelToUseFor(originatingChannel, Some(conversationWithoutChannel), None, Some(dmChannel)) mustBe originatingChannel
+
       Normal.channelToUseFor(originatingChannel, None, None, Some(dmChannel)) mustBe originatingChannel
-      Threaded.channelToUseFor(originatingChannel, Some(conversation), None, Some(dmChannel)) mustBe originatingChannel
       Threaded.channelToUseFor(originatingChannel, None, None, Some(dmChannel)) mustBe originatingChannel
-      Private.channelToUseFor(originatingChannel, Some(conversation), None, None) mustBe originatingChannel
-      Private.channelToUseFor(originatingChannel, None, None, None) mustBe originatingChannel
     }
 
-    "Use the DM channel if present for Private response type" in {
-      Private.channelToUseFor(originatingChannel, Some(conversation), Some(threadTs), Some(dmChannel)) mustBe dmChannel
+    "Use the DM channel if present for Private response type, otherwise fallback" in {
+      val conversationWithChannel = mock[Conversation]
+      when(conversationWithChannel.maybeChannel).thenReturn(Some(conversationChannel))
+
+      val conversationWithoutChannel = mock[Conversation]
+      when(conversationWithoutChannel.maybeChannel).thenReturn(None)
+
+      Private.channelToUseFor(originatingChannel, Some(conversationWithChannel), Some(threadTs), Some(dmChannel)) mustBe dmChannel
       Private.channelToUseFor(originatingChannel, None, Some(threadTs), Some(dmChannel)) mustBe dmChannel
-      Private.channelToUseFor(originatingChannel, Some(conversation), None, Some(dmChannel)) mustBe dmChannel
+      Private.channelToUseFor(originatingChannel, Some(conversationWithChannel), None, Some(dmChannel)) mustBe dmChannel
+
+      Private.channelToUseFor(originatingChannel, Some(conversationWithChannel), Some(threadTs), None) mustBe originatingChannel
+      Private.channelToUseFor(originatingChannel, Some(conversationWithChannel), None, None) mustBe conversationChannel
+      Private.channelToUseFor(originatingChannel, Some(conversationWithoutChannel), None, None) mustBe originatingChannel
+      Private.channelToUseFor(originatingChannel, None, None, None) mustBe originatingChannel
     }
   }
 
@@ -65,17 +78,21 @@ class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
     }
 
     "prioritize the conversation thread if present when not Private in another channel" in {
-      when(conversation.maybeThreadId).thenReturn(Some(conversationThreadTs))
-      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversation), Some(threadTs)) mustBe Some(conversationThreadTs)
-      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversation), Some(threadTs)) mustBe Some(conversationThreadTs)
-      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversation), Some(threadTs)) mustBe Some(conversationThreadTs)
+      val conversationWithThread = mock[Conversation]
+      when(conversationWithThread.maybeThreadId).thenReturn(Some(conversationThreadTs))
+
+      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithThread), Some(threadTs)) mustBe Some(conversationThreadTs)
+      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithThread), Some(threadTs)) mustBe Some(conversationThreadTs)
+      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithThread), Some(threadTs)) mustBe Some(conversationThreadTs)
     }
 
     "use the original thread if no conversation thread and not Private in another channel" in {
-      when(conversation.maybeThreadId).thenReturn(None)
-      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversation), Some(threadTs)) mustBe Some(threadTs)
-      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversation), Some(threadTs)) mustBe Some(threadTs)
-      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversation), Some(threadTs)) mustBe Some(threadTs)
+      val conversationWithoutThread = mock[Conversation]
+      when(conversationWithoutThread.maybeThreadId).thenReturn(None)
+
+      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithoutThread), Some(threadTs)) mustBe Some(threadTs)
+      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithoutThread), Some(threadTs)) mustBe Some(threadTs)
+      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithoutThread), Some(threadTs)) mustBe Some(threadTs)
 
       Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, Some(threadTs)) mustBe Some(threadTs)
       Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, Some(threadTs)) mustBe Some(threadTs)
@@ -83,6 +100,7 @@ class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
     }
 
     "return None if a Private response happens in another channel" in {
+      val conversation = mock[Conversation]
       Private.maybeThreadTsToUseFor(dmChannelToUse, originatingChannel, Some(conversation), Some(threadTs)) mustBe None
       Private.maybeThreadTsToUseFor(dmChannelToUse, originatingChannel, None, Some(threadTs)) mustBe None
       Private.maybeThreadTsToUseFor(dmChannelToUse, originatingChannel, Some(conversation), None) mustBe None
@@ -94,8 +112,11 @@ class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
       val event = mock[Event]
       when(event.maybeChannel).thenReturn(Some(originatingChannel))
       when(event.maybeThreadId).thenReturn(None)
-      when(conversation.maybeThreadId).thenReturn(None)
-      Threaded.maybeThreadTsToUseForNextAction(botResultFor(event, Some(conversation)), originatingChannel, Some(originalMessageTs)) mustBe Some(originalMessageTs)
+
+      val conversationWithoutThread = mock[Conversation]
+      when(conversationWithoutThread.maybeThreadId).thenReturn(None)
+
+      Threaded.maybeThreadTsToUseForNextAction(botResultFor(event, Some(conversationWithoutThread)), originatingChannel, Some(originalMessageTs)) mustBe Some(originalMessageTs)
       Threaded.maybeThreadTsToUseForNextAction(botResultFor(event, None), originatingChannel, Some(originalMessageTs)) mustBe Some(originalMessageTs)
     }
 
@@ -103,9 +124,11 @@ class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
       val event = mock[Event]
       when(event.maybeChannel).thenReturn(Some(originatingChannel))
       when(event.maybeThreadId).thenReturn(Some(threadTs))
-      when(conversation.maybeThreadId).thenReturn(Some(conversationThreadTs))
 
-      Threaded.maybeThreadTsToUseForNextAction(botResultFor(event, Some(conversation)), originatingChannel, Some(originalMessageTs)) mustBe Some(conversationThreadTs)
+      val conversationWithThread = mock[Conversation]
+      when(conversationWithThread.maybeThreadId).thenReturn(Some(conversationThreadTs))
+
+      Threaded.maybeThreadTsToUseForNextAction(botResultFor(event, Some(conversationWithThread)), originatingChannel, Some(originalMessageTs)) mustBe Some(conversationThreadTs)
       Threaded.maybeThreadTsToUseForNextAction(botResultFor(event, None), originatingChannel, Some(originalMessageTs)) mustBe Some(threadTs)
     }
 
@@ -118,17 +141,18 @@ class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
       when(eventWithoutThread.maybeChannel).thenReturn(Some(originatingChannel))
       when(eventWithoutThread.maybeThreadId).thenReturn(None)
 
-      when(conversation.maybeThreadId).thenReturn(Some(conversationThreadTs))
+      val conversationWithThread = mock[Conversation]
+      when(conversationWithThread.maybeThreadId).thenReturn(Some(conversationThreadTs))
 
-      Normal.maybeThreadTsToUseForNextAction(botResultFor(eventWithoutThread, Some(conversation)), originatingChannel, Some(originalMessageTs)) mustBe Some(conversationThreadTs)
+      Normal.maybeThreadTsToUseForNextAction(botResultFor(eventWithoutThread, Some(conversationWithThread)), originatingChannel, Some(originalMessageTs)) mustBe Some(conversationThreadTs)
       Normal.maybeThreadTsToUseForNextAction(botResultFor(eventWithThread, None), originatingChannel, Some(originalMessageTs)) mustBe Some(threadTs)
       Normal.maybeThreadTsToUseForNextAction(botResultFor(eventWithoutThread, None), originatingChannel, Some(originalMessageTs)) mustBe None
 
-      Private.maybeThreadTsToUseForNextAction(botResultFor(eventWithoutThread, Some(conversation)), originatingChannel, Some(originalMessageTs)) mustBe Some(conversationThreadTs)
+      Private.maybeThreadTsToUseForNextAction(botResultFor(eventWithoutThread, Some(conversationWithThread)), originatingChannel, Some(originalMessageTs)) mustBe Some(conversationThreadTs)
       Private.maybeThreadTsToUseForNextAction(botResultFor(eventWithThread, None), originatingChannel, Some(originalMessageTs)) mustBe Some(threadTs)
       Private.maybeThreadTsToUseForNextAction(botResultFor(eventWithoutThread, None), originatingChannel, Some(originalMessageTs)) mustBe None
 
-      Private.maybeThreadTsToUseForNextAction(botResultFor(eventWithThread, Some(conversation)), dmChannelToUse, Some(originalMessageTs)) mustBe None
+      Private.maybeThreadTsToUseForNextAction(botResultFor(eventWithThread, Some(conversationWithThread)), dmChannelToUse, Some(originalMessageTs)) mustBe None
     }
   }
 }
