@@ -2,7 +2,6 @@ package models.behaviors.behaviorversion
 
 import models.behaviors.BotResult
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.Event
 import utils.Enum
 
 object BehaviorResponseType extends Enum[BehaviorResponseType] {

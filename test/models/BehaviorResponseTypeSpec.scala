@@ -1,13 +1,12 @@
 package models
 
-import models.behaviors.{BotResult, DeveloperContext, SuccessResult}
 import models.behaviors.behaviorversion.{BehaviorVersion, Normal, Private, Threaded}
-import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
+import models.behaviors.{BotResult, DeveloperContext, SuccessResult}
 import org.mockito.Mockito._
-import org.scalatestplus.play.PlaySpec
 import org.scalatest.mock.MockitoSugar
+import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsObject, JsString}
 
 class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {

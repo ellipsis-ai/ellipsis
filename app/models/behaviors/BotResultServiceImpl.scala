@@ -1,16 +1,14 @@
 package models.behaviors
 
 import akka.actor.ActorSystem
-import com.google.common.util.concurrent.Futures.FutureCombiner
 import javax.inject.Inject
-import models.behaviors.behaviorversion.{BehaviorVersion, Normal, Private, Threaded}
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventHandler, SlackEventContext, SlackRunEvent}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
 import services.slack.SlackEventService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.SlackTimestamp
 
 import scala.concurrent.{ExecutionContext, Future}
 
