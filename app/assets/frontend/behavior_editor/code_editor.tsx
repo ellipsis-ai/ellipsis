@@ -1,10 +1,7 @@
 import * as React from 'react';
 import autobind from "../lib/autobind";
 import MonacoEditor from "react-monaco-editor";
-import * as monacoEditor from "monaco-editor";
-import {editor, IDisposable} from "monaco-editor";
-import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
-import ICursorPositionChangedEvent = editor.ICursorPositionChangedEvent;
+import {IDisposable, languages, editor} from "monaco-editor/esm/vs/editor/editor.api";
 import {lib_es5_dts, lib_es2015_dts} from "monaco-editor/esm/vs/language/typescript/lib/lib";
 import {NODE_JS_V6_D_TS} from "../code_editor/definitions/nodejs";
 import 'monaco-editor/esm/vs/basic-languages/javascript/javascript';
@@ -13,15 +10,15 @@ import 'monaco-editor/esm/vs/basic-languages/markdown/markdown';
 import 'monaco-editor/esm/vs/language/typescript/tsMode';
 
 /* Monaco loads as a global instance, so we only want to set defaults once on page load: */
-const defaults = monacoEditor.languages.typescript.javascriptDefaults;
+const defaults = languages.typescript.javascriptDefaults;
 defaults.setCompilerOptions({
-  target: monacoEditor.languages.typescript.ScriptTarget.ES2015,
-  module: monacoEditor.languages.typescript.ModuleKind.ES2015,
+  target: languages.typescript.ScriptTarget.ES2015,
+  module: languages.typescript.ModuleKind.ES2015,
   lib: ["es5", "es2015"],
   allowNonTsExtensions: true,
   allowJs: true,
   checkJs: true,
-  moduleResolution: monacoEditor.languages.typescript.ModuleResolutionKind.NodeJs,
+  moduleResolution: languages.typescript.ModuleResolutionKind.NodeJs,
   noImplicitAny: false,
   strictFunctionTypes: true,
   strictNullChecks: true
@@ -48,7 +45,7 @@ interface Props {
   value: string
   definitions: string
   language: "javascript" | "typescript" | "markdown"
-  monacoOptions?: monacoEditor.editor.IEditorConstructionOptions
+  monacoOptions?: editor.IEditorConstructionOptions
 }
 
 const MIN_EDITOR_LINES = 12;
@@ -61,7 +58,7 @@ class CodeEditor extends React.Component<Props> {
     autobind(this);
   }
 
-  editor: Option<IStandaloneCodeEditor>;
+  editor: Option<editor.IStandaloneCodeEditor>;
   container: Option<HTMLDivElement>;
   currentDefinitions: Option<IDisposable>;
 
@@ -98,7 +95,7 @@ class CodeEditor extends React.Component<Props> {
     this.currentDefinitions = defaults.addExtraLib(newDefinitions, `ellipsis-${Date.now()}`);
   }
 
-  editorDidMount(editor: IStandaloneCodeEditor): void {
+  editorDidMount(editor: editor.IStandaloneCodeEditor): void {
     this.editor = editor;
     editor.onDidChangeCursorPosition(this.onEditorPositionChange);
     const tabSize = this.tabSizeForLanguage();
@@ -109,7 +106,7 @@ class CodeEditor extends React.Component<Props> {
     }
   }
 
-  onEditorPositionChange(event: ICursorPositionChangedEvent): void {
+  onEditorPositionChange(event: editor.ICursorPositionChangedEvent): void {
     if (this.container && this.editor) {
       const scrolledPosition = this.editor.getScrolledVisiblePosition(event.position);
       const rect = this.container.getBoundingClientRect();
@@ -129,7 +126,7 @@ class CodeEditor extends React.Component<Props> {
     return `${height}px`;
   }
 
-  getMonacoOptions(): monacoEditor.editor.IEditorConstructionOptions {
+  getMonacoOptions(): editor.IEditorConstructionOptions {
     return Object.assign({
       automaticLayout: true,
       fontSize: EDITOR_FONT_SIZE,
