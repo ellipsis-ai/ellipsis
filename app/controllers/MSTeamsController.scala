@@ -32,31 +32,6 @@ class MSTeamsController @Inject() (
   val botResultService = services.botResultService
   implicit val actorSystem = services.actorSystem
 
-//  {
-//    "type" : "message",
-//    "id" : "2107519c57b848e1a0f475eb9a3bafe0|0000001",
-//    "timestamp" : "2018-11-06T19:02:00.8303001Z",
-//    "serviceUrl" : "https://webchat.botframework.com/",
-//    "channelId" : "webchat",
-//    "from" : {
-//      "id" : "CmJNRcv6XjM",
-//      "name" : "You"
-//    },
-//    "conversation" : {
-//      "id" : "2107519c57b848e1a0f475eb9a3bafe0"
-//    },
-//    "recipient" : {
-//      "id" : "EllipsisAndrewDev@29pdMRjysi8",
-//      "name" : "EllipsisAndrewDev"
-//    },
-//    "textFormat" : "plain",
-//    "locale" : "en",
-//    "text" : "hi",
-//    "channelData" : {
-//      "clientActivityId" : "1541530451777.19835681506493863.4"
-//    }
-//  }
-
   case class MessageParticipantInfo(id: String, name: String)
 
   case class ConversationInfo(id: String)
@@ -165,6 +140,19 @@ class MSTeamsController @Inject() (
     Ok("Got it!")
   }
 
+  private def encode(segment: String): String = UriEncoding.encodePathSegment(segment, "utf-8")
+
+  def add = silhouette.UserAwareAction { implicit request =>
+    val maybeResult = for {
+      scopes <- configuration.getOptional[String]("silhouette.ms_teams.scope")
+      clientId <- configuration.getOptional[String]("silhouette.ms_teams.clientID")
+    } yield {
+      val redirectUrl = routes.SocialAuthController.installForMSTeams().absoluteURL(secure=true)
+      Ok(views.html.slack.addToSlack(viewConfig(None), encode(scopes), encode(clientId), encode(redirectUrl)))
+    }
+    maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
+  }
+
   def signIn(maybeRedirectUrl: Option[String]) = silhouette.UserAwareAction.async { implicit request =>
     val eventualMaybeTeamAccess = request.identity.map { user =>
       dataService.users.teamAccessFor(user, None).map(Some(_))
@@ -175,7 +163,7 @@ class MSTeamsController @Inject() (
         clientId <- configuration.getOptional[String]("silhouette.ms_teams.clientID")
       } yield {
         val redirectUrl = routes.SocialAuthController.authenticateMSTeams(maybeRedirectUrl).absoluteURL(secure=true)
-        Ok(views.html.slack.signInWithSlack(viewConfig(maybeTeamAccess), scopes, clientId, UriEncoding.encodePathSegment(redirectUrl, "utf-8")))
+        Ok(views.html.slack.signInWithSlack(viewConfig(maybeTeamAccess), encode(scopes), encode(clientId), encode(redirectUrl)))
       }
       maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
     }

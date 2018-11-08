@@ -21,6 +21,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
 import play.api.libs.ws.WSClient
+import services.slack.MSTeamsApiService
 import utils.CustomSecuredErrorHandler
 
 import scala.concurrent.ExecutionContext
@@ -102,9 +103,11 @@ trait AbstractSilhouetteModule extends ScalaModule {
   def provideMSTeamsProvider(
                             httpLayer: HTTPLayer,
                             stateHandler: SocialStateHandler,
-                            configuration: Configuration): MSTeamsProvider = {
+                            configuration: Configuration,
+                            apiService: MSTeamsApiService
+                            ): MSTeamsProvider = {
 
-    new MSTeamsProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.ms_teams"))
+    new MSTeamsProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.ms_teams"), apiService)
   }
 
   @Provides

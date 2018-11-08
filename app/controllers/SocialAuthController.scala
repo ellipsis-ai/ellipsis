@@ -17,6 +17,7 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import models._
+import models.accounts.BotProfile
 import models.accounts.github.GithubProvider
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.ms_teams.MSTeamsProvider
@@ -27,6 +28,7 @@ import models.behaviors.behaviorversion.Normal
 import models.behaviors.{BotResultService, SimpleTextResult}
 import models.silhouette.EllipsisEnv
 import play.api.mvc.{RequestHeader, Result}
+import play.utils.UriEncoding
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -84,9 +86,9 @@ class SocialAuthController @Inject() (
     }
   }
 
-  private def announceNewTeam(slackBotProfile: SlackBotProfile, user: User)(implicit request: RequestHeader): Future[Unit] = {
+  private def announceNewTeam(botProfile: BotProfile, user: User)(implicit request: RequestHeader): Future[Unit] = {
     for {
-      team <- dataService.teams.find(slackBotProfile.teamId).map(_.get) /* Blow up if there's no team */
+      team <- dataService.teams.find(botProfile.teamId).map(_.get) /* Blow up if there's no team */
       userData <- dataService.users.userDataFor(user, team)
       maybeEvent <- dataService.slackBotProfiles.eventualMaybeEvent(
         LinkedAccount.ELLIPSIS_SLACK_TEAM_ID,
@@ -112,7 +114,7 @@ class SocialAuthController @Inject() (
            |_Team:_
            |**[${team.name}](${routes.ApplicationController.index(Some(team.id)).absoluteURL(true)})**
            |Ellipsis ID: ${team.id}
-           |Slack ID: ${slackBotProfile.slackTeamId}
+           |Context (${botProfile.context}) team ID: ${botProfile.teamIdForContext}
            |
            |_User:_
            |**${userData.fullName.getOrElse("(Name unknown)")}**
@@ -318,6 +320,63 @@ class SocialAuthController @Inject() (
     }
   }
 
+  private def encode(segment: String): String = UriEncoding.encodePathSegment(segment, "utf-8")
+
+
+  def installForMSTeams(
+                       maybeRedirect: Option[String],
+                       maybeTeamId: Option[String],
+                       maybeChannelId: Option[String]
+                     ) = silhouette.UserAwareAction.async { implicit request =>
+    val provider = msTeamsProvider.withSettings { settings =>
+      val url = routes.SocialAuthController.installForMSTeams(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
+      val authorizationParams = maybeTeamId.map { teamId =>
+        settings.authorizationParams + ("team" -> teamId)
+      }.getOrElse(settings.authorizationParams)
+      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams, scope = settings.scope.map(encode))
+    }
+    val authenticateResult = provider.authenticate() recover {
+      case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
+        Left(Redirect(routes.SlackController.add()))
+      }
+      case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
+        Left(Redirect(routes.ApplicationController.index()))
+      }
+    }
+    authenticateResult.flatMap {
+      case Left(result) => Future.successful(result)
+      case Right(authInfo) => {
+        for {
+          profile <- msTeamsProvider.retrieveProfile(authInfo)
+          botProfile <- msTeamsProvider.maybeBotProfileFor(profile, authInfo, dataService).map { maybeBotProfile =>
+            maybeBotProfile.get // Blow up if we can't get a bot profile
+          }
+          _ <- authInfoRepository.save(profile.loginInfo, authInfo)
+          linkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
+            maybeExisting.map(Future.successful).getOrElse {
+              val eventualUser = request.identity.map(Future.successful).getOrElse {
+                dataService.users.createFor(botProfile.teamId)
+              }
+              eventualUser.flatMap { user =>
+                dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, OffsetDateTime.now))
+              }
+            }
+          }
+          user <- Future.successful(linkedAccount.user)
+          _ <- announceNewTeam(botProfile, user)
+          result <- Future.successful {
+            maybeRedirect.map { redirect =>
+              Redirect(validatedRedirectUri(redirect))
+            }.getOrElse(Redirect(routes.ApplicationController.index()))
+          }
+          authenticatedResult <- authenticatorResultForUserAndResult(user, result)
+        } yield {
+          authenticatedResult
+        }
+      }
+    }
+  }
+
   def authenticateMSTeams(
                           maybeRedirect: Option[String],
                           maybeTeamId: Option[String],
@@ -347,9 +406,7 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- msTeamsProvider.retrieveProfile(authInfo)
-          botProfiles <- Future.sequence(profile.teamIds.toSeq.map(teamId => {
-            dataService.slackBotProfiles.allForSlackTeamId(teamId)
-          })).map(_.flatten)
+          botProfiles <- dataService.slackBotProfiles.allForSlackTeamId(profile.teamId)
           result <- if (botProfiles.isEmpty) {
             Future.successful(Redirect(routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId)))
           } else {

@@ -164,6 +164,7 @@ object Conversation {
   val DONE_STATE: String = "done"
 
   val SLACK_CONTEXT = "slack"
+  val MS_TEAMS_CONTEXT = "ms teams"
   val API_CONTEXT = "api"
 
   val LEARN_BEHAVIOR = "learn_behavior"

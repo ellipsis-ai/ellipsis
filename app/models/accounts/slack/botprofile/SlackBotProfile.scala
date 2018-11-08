@@ -2,6 +2,8 @@ package models.accounts.slack.botprofile
 
 import java.time.OffsetDateTime
 
+import models.accounts.BotProfile
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{MessageEvent, SlackMessage, SlackMessageEvent}
 
 case class SlackBotProfile(
@@ -11,7 +13,10 @@ case class SlackBotProfile(
                             token: String,
                             createdAt: OffsetDateTime,
                             allowShortcutMention: Boolean
-                          ) {
+                          ) extends BotProfile {
+
+  val teamIdForContext: String = slackTeamId
+  val context: String = Conversation.SLACK_CONTEXT
 
   def includesBotMention(message: SlackMessage): Boolean = {
     SlackMessageEvent.mentionRegexFor(userId).findFirstMatchIn(message.originalText).nonEmpty ||

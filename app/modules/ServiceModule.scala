@@ -8,6 +8,7 @@ import models.accounts.linkedoauth1token.{LinkedOAuth1TokenService, LinkedOAuth1
 import models.accounts.linkedoauth2token.{LinkedOAuth2TokenService, LinkedOAuth2TokenServiceImpl}
 import models.accounts.linkedsimpletoken.{LinkedSimpleTokenService, LinkedSimpleTokenServiceImpl}
 import models.accounts.logintoken.{LoginTokenService, LoginTokenServiceImpl}
+import models.accounts.ms_teams.botprofile.{MSTeamsBotProfileService, MSTeamsBotProfileServiceImpl}
 import models.accounts.oauth1api.{OAuth1ApiService, OAuth1ApiServiceImpl}
 import models.accounts.oauth1application.{OAuth1ApplicationService, OAuth1ApplicationServiceImpl}
 import models.accounts.oauth1token.{OAuth1TokenService, OAuth1TokenServiceImpl}
@@ -67,7 +68,7 @@ import net.codingwell.scalaguice.ScalaModule
 import services._
 import services.billing.{BillingService, BillingServiceImpl}
 import services.caching.{CacheService, CacheServiceImpl}
-import services.slack.{SlackApiService, SlackEventService, SlackEventServiceImpl}
+import services.slack.{MSTeamsApiService, SlackApiService, SlackEventService, SlackEventServiceImpl}
 import services.stats.{StatsService, StatsServiceImpl}
 import utils.SlackFileMap
 
@@ -94,6 +95,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[SimpleTokenApiService].to[SimpleTokenApiServiceImpl]
     bind[GithubProfileService].to[GithubProfileServiceImpl]
     bind[SlackBotProfileService].to[SlackBotProfileServiceImpl]
+    bind[MSTeamsBotProfileService].to[MSTeamsBotProfileServiceImpl]
     bind[OAuth1TokenService].to[OAuth1TokenServiceImpl]
     bind[OAuth2TokenService].to[OAuth2TokenServiceImpl]
     bind[BehaviorGroupService].to[BehaviorGroupServiceImpl]
@@ -155,6 +157,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[GithubService].asEagerSingleton()
     bind[SlackFileMap].asEagerSingleton()
     bind[SlackApiService].asEagerSingleton()
+    bind[MSTeamsApiService].asEagerSingleton()
   }
 
 }

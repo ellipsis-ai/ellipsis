@@ -1,36 +1,41 @@
 package models.accounts.ms_teams
 
+import java.time.OffsetDateTime
+
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException
 import com.mohiva.play.silhouette.impl.providers.OAuth2Provider._
 import com.mohiva.play.silhouette.impl.providers._
-import models.accounts.slack.botprofile.SlackBotProfile
-import models.accounts.slack.profile.{SlackProfile, SlackProfileBuilder, SlackProfileParser}
-import play.api.libs.json.{JsValue, Json}
+import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
+import models.accounts.ms_teams.profile.{MSTeamsProfile, MSTeamsProfileBuilder, MSTeamsProfileParser}
+import play.api.http.{HeaderNames, MimeTypes}
+import play.api.libs.json._
 import play.api.libs.ws.WSResponse
 import services.DataService
+import services.slack.MSTeamsApiService
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-class MSTeamsProvider(protected val httpLayer: HTTPLayer,
-                    protected val stateHandler: SocialStateHandler,
-                    val settings: OAuth2Settings) extends OAuth2Provider with SlackProfileBuilder {
-  import SlackProvider._
+class MSTeamsProvider(
+                       protected val httpLayer: HTTPLayer,
+                       protected val stateHandler: SocialStateHandler,
+                       val settings: OAuth2Settings,
+                       apiService: MSTeamsApiService
+                     ) extends OAuth2Provider with MSTeamsProfileBuilder {
+  import MSTeamsProvider._
 
   override type Self = MSTeamsProvider
   override type Content = JsValue
 
-  def id = SlackProvider.ID
+  def id = MSTeamsProvider.ID
 
-  override val profileParser = new SlackProfileParser
+  override val profileParser = new MSTeamsProfileParser
 
-  override def withSettings(f: (Settings) => Settings) = new MSTeamsProvider(httpLayer, stateHandler, f(settings))
+  override def withSettings(f: (Settings) => Settings) = new MSTeamsProvider(httpLayer, stateHandler, f(settings), apiService)
 
   protected def urls: Map[String, String] = Map(
-    "user" -> USER_API,
-    "team" -> TEAM_API,
-    "auth_test" -> AUTH_TEST_API,
+    "org" -> ORGANIZATION_API,
     "identity" -> IDENTITY_API
   )
 
@@ -38,79 +43,75 @@ class MSTeamsProvider(protected val httpLayer: HTTPLayer,
     authInfo.params.flatMap(_.get("scope").map(_.split(","))).getOrElse(Array.empty)
   }
 
-  protected def buildProfile(authInfo: A): Future[SlackProfile] = {
-    val scopes = scopesFromAuth(authInfo)
-    if (scopes.isEmpty) {
-      throw new UnexpectedResponseException(s"No scopes found in Slack auth response while attempting to build a SlackProfile. ${dumpParamsFromAuthInfo(authInfo)}")
-    } else if (scopes.length == 1 && scopes.contains("identity.basic")) {
-      httpLayer.url(urls("identity").format(authInfo.accessToken)).get().flatMap { response =>
-        profileParser.parseForSignIn(response.json, authInfo)
+  protected def buildProfile(authInfo: A): Future[MSTeamsProfile] = {
+    for {
+      identityJson <- urlWithToken(urls("identity"), authInfo).get.map(_.json)
+      orgJson <- orgJsonFor(authInfo)
+      result <- {
+        val combinedJson = identityJson.as[JsObject] ++ Json.obj("org" -> orgJson)
+        profileParser.parse(combinedJson, authInfo)
       }
-    } else {
-      httpLayer.url(urls("auth_test").format(authInfo.accessToken)).get().flatMap { response =>
-        profileParser.parseForInstall(response.json, authInfo)
-      }
-    }
+    } yield result
   }
 
   override protected def buildInfo(response: WSResponse): Try[OAuth2Info] = {
-    val json = response.json
-    val maybeTeamName = (json \ "team_name").asOpt[String].map(("team_name", _))
-    val maybeScope = (json \ "scope").asOpt[String].map(("scope", _))
-    val maybeTeamId = (json \ "team_id").asOpt[String].map(("team_id", _))
-    val maybeBot = (json \ "bot").asOpt[JsValue].map { jsValue =>
-      val string = Json.stringify(jsValue)
-      ("bot", string)
-    }
-    val maybeIncomingWebhook = (json \ "incoming_webhook").asOpt[JsValue].map { jsValue =>
-      val string = Json.stringify(jsValue)
-      ("incoming_webhook", string)
-    }
-
-    val params = Seq(maybeTeamId, maybeScope, maybeTeamName, maybeBot, maybeIncomingWebhook).flatten.toMap
-    response.json.validate[OAuth2Info].asEither.fold(
+    val jsonTransformer = (__ \ 'expires_in).json.update(
+      __.read[String].map{ o => JsNumber(Integer.parseInt(o)) }
+    )
+    val json = response.json.transform(jsonTransformer).get
+    json.validate[OAuth2Info].asEither.fold(
       error => Failure(new UnexpectedResponseException(InvalidInfoFormat.format(id, error))),
-      info => Success(info.copy(params=Some(params)))
+      info => Success(info)
     )
   }
 
-  def maybeEnterpriseNameFor(authInfo: OAuth2Info): Future[Option[String]] = {
-    httpLayer.url(urls("team").format(authInfo.accessToken)).get().map { response =>
-      (response.json \ "team" \ "enterprise_name").asOpt[String]
+  private def urlWithToken(url: String, authInfo: OAuth2Info) = {
+    httpLayer.url(url).
+      withHttpHeaders(
+        HeaderNames.AUTHORIZATION -> s"Bearer ${authInfo.accessToken}",
+        HeaderNames.ACCEPT -> MimeTypes.JSON
+      )
+  }
+
+  def orgJsonFor(authInfo: OAuth2Info): Future[JsValue] = {
+    urlWithToken(urls("org"), authInfo).get().map(_.json)
+  }
+
+  def maybeOrganizationNameFor(authInfo: OAuth2Info): Future[Option[String]] = {
+    orgJsonFor(authInfo).map { json =>
+      (json \ "displayName").asOpt[String]
     }
   }
 
-  def maybeBotProfileFor(slackProfile: SlackProfile, authInfo: OAuth2Info, dataService: DataService): Future[Option[SlackBotProfile]] = {
+  def maybeBotProfileFor(msTeamsProfile: MSTeamsProfile, authInfo: OAuth2Info, dataService: DataService): Future[Option[MSTeamsBotProfile]] = {
     val maybeBotJson = authInfo.params.flatMap { params =>
       params.
         find { case (k, v) => k == "bot" }.
         map { case(k, v) => Json.parse(v) }
     }
-    val maybeSlackTeamName = authInfo.params.flatMap { params =>
-      params.
-        find { case(k, v) => k == "team_name" }.
-        map { case(k, v) => v }
-    }
-    val maybeFuture = for {
-      botJson <- maybeBotJson
-      userId <- (botJson \ "bot_user_id").asOpt[String]
-      token <- (botJson \ "bot_access_token").asOpt[String]
-      slackTeamName <- maybeSlackTeamName
-    } yield {
-      maybeEnterpriseNameFor(authInfo).flatMap { maybeEnterpriseName =>
-        dataService.slackBotProfiles.ensure(userId, slackProfile.firstTeamId, maybeEnterpriseName.getOrElse(slackTeamName), token)
-      }
-    }
-
-    maybeFuture.map { future =>
-      future.map(Some(_))
-    }.getOrElse(Future.successful(None))
+    for {
+      maybeOrgName <- maybeOrganizationNameFor(authInfo)
+      maybeBotProfile <- (for {
+        botJson <- maybeBotJson
+        userId <- (botJson \ "bot_user_id").asOpt[String]
+        orgName <- maybeOrgName
+      } yield {
+        dataService.msTeamsBotProfiles.ensure(
+          userId,
+          msTeamsProfile.teamId,
+          orgName,
+          authInfo.accessToken,
+          OffsetDateTime.now.plusSeconds(authInfo.expiresIn.map(_.toLong).getOrElse(0L)),
+          authInfo.refreshToken.get
+        ).map(Some(_))
+      }).getOrElse(Future.successful(None))
+    } yield maybeBotProfile
   }
 
 }
 
 
-object SlackProvider {
+object MSTeamsProvider {
   /*
   Example post:
 
@@ -118,9 +119,9 @@ object SlackProvider {
    */
   val ID = "slack"
   val USER_API = "https://slack.com/api/users.info?token=%s&user=%s"
-  val TEAM_API = "https://slack.com/api/team.info?token=%s"
+  val ORGANIZATION_API = "https://graph.microsoft.com/v1.0/organization"
   val AUTH_TEST_API = "https://slack.com/api/auth.test?token=%s"
-  val IDENTITY_API = "https://slack.com/api/users.identity?token=%s"
+  val IDENTITY_API = "https://graph.microsoft.com/v1.0/me"
 
   val SpecifiedProfileError = "[Silhouette][%s] Error retrieving profile information. Error message: %s"
 
