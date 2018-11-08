@@ -5,33 +5,23 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
 import javax.inject.{Inject, Provider}
-import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.registration.RegistrationService
-import models.accounts.user.User
-import models.behaviors.events.{EventType, SlackEventContext, SlackMessage, SlackMessageEvent}
-import models.behaviors.{BotResult, BotResultService}
-import models.team.Team
-import play.api.Logger
+import models.behaviors.BotResultService
 import play.api.libs.ws.WSClient
-import services.caching.CacheService
-import services.slack._
 import services.DataService
+import services.caching.CacheService
+import services.ms_teams.MSTeamsApiService
 import slick.dbio.DBIO
-import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class MSTeamsBotProfileTable(tag: Tag) extends Table[MSTeamsBotProfile](tag, "ms_teams_bot_profiles") {
-  def userId = column[String]("user_id", O.PrimaryKey)
   def teamId = column[String]("team_id")
-  def msTeamsOrgId = column[String]("ms_teams_org_id")
-  def token = column[String]("token")
-  def expiresAt = column[OffsetDateTime]("expires_at")
-  def refreshToken = column[String]("refresh_token")
+  def tenantId = column[String]("tenant_id")
   def createdAt = column[OffsetDateTime]("created_at")
   def allowShortcutMention = column[Boolean]("allow_shortcut_mention")
 
-  def * = (userId, teamId, msTeamsOrgId, token, expiresAt, refreshToken, createdAt, allowShortcutMention) <>
+  def * = (teamId, tenantId, createdAt, allowShortcutMention) <>
     ((MSTeamsBotProfile.apply _).tupled, MSTeamsBotProfile.unapply _)
 
 }
@@ -54,56 +44,31 @@ class MSTeamsBotProfileServiceImpl @Inject() (
 
   val all = TableQuery[MSTeamsBotProfileTable]
 
-  def uncompiledAllForUserIdQuery(userId: Rep[String]) = {
-    all.filter(_.userId === userId)
+  def uncompiledAllForTenantIdQuery(tenantId: Rep[String]) = {
+    all.filter(_.tenantId === tenantId)
   }
-  val allForUserIdQuery = Compiled(uncompiledAllForUserIdQuery _)
+  val allForUserIdQuery = Compiled(uncompiledAllForTenantIdQuery _)
 
-  def uncompiledFindQuery(userId: Rep[String], msTeamsOrgId: Rep[String]) = {
-    uncompiledAllForUserIdQuery(userId).filter(_.msTeamsOrgId === msTeamsOrgId)
+  def uncompiledFindQuery(tenantId: Rep[String]) = {
+    uncompiledAllForTenantIdQuery(tenantId)
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
-  def ensure(
-              userId: String,
-              msTeamsOrgId: String,
-              msTeamsOrgName: String,
-              token: String,
-              expiresAt: OffsetDateTime,
-              refreshToken: String
-            ): Future[MSTeamsBotProfile] = {
-    val query = findQuery(userId, msTeamsOrgId)
+  def ensure(tenantId: String, teamName: String): Future[MSTeamsBotProfile] = {
+    val query = findQuery(tenantId)
     val action = query.result.headOption.flatMap {
       case Some(existing) => {
-        val profile = MSTeamsBotProfile(userId, existing.teamId, msTeamsOrgId, token, expiresAt, refreshToken, existing.createdAt, existing.allowShortcutMention)
-        for {
-          maybeTeam <- DBIO.from(dataService.teams.find(existing.teamId))
-          _ <- query.update(profile)
-          _ <- maybeTeam.map { team =>
-            DBIO.from(dataService.teams.setNameFor(team, msTeamsOrgName))
-          }.getOrElse(DBIO.successful(Unit))
-        } yield profile
+        DBIO.successful(existing)
       }
       case None => {
         for {
-          maybeExistingTeamId <- allForUserIdQuery(userId).result.map(_.headOption.map(_.teamId))
-          maybeExistingTeam <- maybeExistingTeamId.map { existingTeamId =>
-            dataService.teams.findAction(existingTeamId)
-          }.getOrElse(DBIO.successful(None))
-          team <- maybeExistingTeam.map(DBIO.successful).getOrElse(registrationService.registerNewTeamAction(msTeamsOrgName))
-          existingTeamSlackBotProfiles <- dataService.slackBotProfiles.allForAction(team)
+          team <- registrationService.registerNewTeamAction(teamName)
           profile <- {
             val newProfile = MSTeamsBotProfile(
-              userId,
               team.id,
-              msTeamsOrgId,
-              token,
-              expiresAt,
-              refreshToken,
+              tenantId,
               OffsetDateTime.now,
-              allowShortcutMention = existingTeamSlackBotProfiles.headOption.map(_.allowShortcutMention).getOrElse {
-                MSTeamsBotProfile.ALLOW_SHORTCUT_MENTION_DEFAULT
-              }
+              allowShortcutMention = MSTeamsBotProfile.ALLOW_SHORTCUT_MENTION_DEFAULT
             )
             (all += newProfile).map { _ => newProfile }
           }

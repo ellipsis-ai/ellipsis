@@ -1,4 +1,4 @@
-package services.slack
+package services.ms_teams
 
 import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
@@ -8,6 +8,8 @@ import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
+import play.mvc.Http
+import play.utils.UriEncoding
 import services.DefaultServices
 import services.ms_teams.apiModels._
 
@@ -19,22 +21,41 @@ case class MSTeamsApiErrorResponseException(status: Int, statusText: String) ext
 case class MalformedMSTeamsApiResponseException(message: String) extends Exception(message) with InvalidMSTeamsApiResponseException
 case class MSTeamsApiError(code: String) extends Exception(code)
 
-
-case class MSTeamsApiClient(
-                           profile: MSTeamsBotProfile,
-                           services: DefaultServices,
-                           implicit val actorSystem: ActorSystem,
-                           implicit val ec: ExecutionContext
-                         ) {
+trait MSTeamsApiClient {
+  val tenantId: String
+  val maybeEllipsisTeamId: Option[String]
+  val services: DefaultServices
+  implicit val actorSystem: ActorSystem
+  implicit val ec: ExecutionContext
 
   import Formatting._
 
-  val token: String = profile.token
-
-  private val API_BASE_URL = "https://graph.microsoft.com/v1.0/"
+  private val API_BASE_URL = "https://graph.microsoft.com/beta/"
   private val ws = services.ws
+  private val configuration = services.configuration
 
-  private def urlFor(method: String): String = s"$API_BASE_URL/$method"
+  private def encode(segment: String): String = UriEncoding.encodePathSegment(segment, "utf-8")
+
+  private val configPath = "silhouette.ms_teams."
+  private val clientId = configuration.get[String](s"${configPath}clientID")
+  private val clientSecret = configuration.get[String](s"${configPath}clientSecret")
+  private val scope = "https://graph.microsoft.com/.default"
+
+  private def fetchToken: Future[String] = {
+    val params = preparePostParams(Map(
+      "client_id" -> clientId,
+      "scope" -> scope,
+      "client_secret" -> clientSecret,
+      "grant_type" -> "client_credentials"
+    ))
+    ws.
+      url(s"https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token").
+      post(params).map { res =>
+      (res.json \ "access_token").as[String]
+    }
+  }
+
+  private def urlFor(method: String): String = s"$API_BASE_URL$method"
 
   private def responseToJson(response: WSResponse, maybeField: Option[String] = None): JsValue = {
     if (response.status < 400) {
@@ -45,8 +66,8 @@ case class MSTeamsApiClient(
           s"""Slack API returned a non-JSON response${
             maybeField.map(field => s" while retrieving field ${field}").getOrElse(".")
           }
-             |Ellipsis team ID: ${profile.teamId}
-             |MS Teams org ID: ${profile.teamIdForContext}
+             |Ellipsis team ID: ${maybeEllipsisTeamId.getOrElse("None")}
+             |MS Teams tenant ID: ${tenantId}
              |Error:
              |${j.getMessage}
              |
@@ -67,17 +88,17 @@ case class MSTeamsApiClient(
     }
   }
 
-  private def extract[T](response: WSResponse, maybeField: Option[String])(implicit fmt: Format[T]): T = {
-    val json = responseToJson(response, maybeField)
-    maybeField.map(f => json \ f).getOrElse(json).validate[T] match {
+  private def extract[T](response: WSResponse)(implicit fmt: Format[T]): T = {
+    val json = responseToJson(response, None)
+    (json \ "value").validate[T] match {
       case JsSuccess(v, _) => v
       case JsError(_) => {
         (json \ "error").validate[String] match {
           case JsSuccess(code, _) => throw MSTeamsApiError(code)
           case JsError(errors) => throw MalformedMSTeamsApiResponseException(
-            s"""Error converting MS Teams API data ${maybeField.map(f => s"in field `$f`").getOrElse("")}
-               |Ellipsis team ID: ${profile.teamId}
-               |MS Teams org ID: ${profile.teamIdForContext}
+            s"""Error converting MS Teams API data
+               |Ellipsis team ID: ${maybeEllipsisTeamId.getOrElse("None")}
+               |MS Teams tenant ID: ${tenantId}
                |JSON error:
                |${JsError.toJson(errors).toString()}
                """.stripMargin
@@ -96,46 +117,70 @@ case class MSTeamsApiClient(
     }
   }
 
-  val defaultParams: Seq[(String, String)] = Seq(("token", profile.token))
-
-  private def postResponseFor(endpoint: String, params: Map[String, Any]): Future[WSResponse] = {
-    ws.
-      url(urlFor(endpoint)).
-      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-      post(preparePostParams(params ++ defaultParams.toMap))
-  }
+//  private def postResponseFor(endpoint: String, params: Map[String, Any]): Future[WSResponse] = {
+//    ws.
+//      url(urlFor(endpoint)).
+//      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+//      post(preparePostParams(params ++ defaultParams.toMap))
+//  }
 
   private def getResponseFor(endpoint: String, params: Seq[(String, String)]): Future[WSResponse] = {
     Logger.info(s"MSTeamsApiClient query $endpoint with params $params")
-    ws.
-      url(urlFor(endpoint)).
-      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-      withQueryStringParameters((params ++ defaultParams): _*).
-      get
+    for {
+      token <- fetchToken
+      result <- ws.
+        url(urlFor(endpoint)).
+        withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON, Http.HeaderNames.AUTHORIZATION -> s"Bearer $token").
+        withQueryStringParameters(params: _*).
+        get
+    } yield result
   }
 
   def getOrgInfo: Future[Option[MSTeamsOrganization]] = {
     getResponseFor("organization", Seq()).
-      map(r => Some(extract[MSTeamsOrganization](r, None))).
+      map(r => extract[Seq[MSTeamsOrganization]](r).headOption).
       recover {
-        case SlackApiError(err) => {
+        case MSTeamsApiError(err) => {
           Logger.error(
             s"""
                |Failed to retrieve org info: $err
                |
-               |Org ID: ${profile.teamIdForContext}
+               |Tenant ID: ${tenantId}
              """.stripMargin)
           None
         }
       }
   }
+}
+
+case class MSTeamsApiTenantClient(
+                           tenantId: String,
+                           services: DefaultServices,
+                           implicit val actorSystem: ActorSystem,
+                           implicit val ec: ExecutionContext
+                         ) extends MSTeamsApiClient {
+
+  val maybeEllipsisTeamId: Option[String] = None
+
+}
+
+case class MSTeamsApiProfileClient(
+                                   profile: MSTeamsBotProfile,
+                                   services: DefaultServices,
+                                   implicit val actorSystem: ActorSystem,
+                                   implicit val ec: ExecutionContext
+                                 ) extends MSTeamsApiClient {
+
+  val maybeEllipsisTeamId: Option[String] = Some(profile.teamId)
+  val tenantId: String = profile.tenantId
 
 }
 
 @Singleton
 class MSTeamsApiService @Inject()(services: DefaultServices, implicit val actorSystem: ActorSystem, implicit val ec: ExecutionContext) {
 
-  def clientFor(profile: MSTeamsBotProfile): MSTeamsApiClient = MSTeamsApiClient(profile, services, actorSystem, ec)
+  def profileClientFor(profile: MSTeamsBotProfile): MSTeamsApiClient = MSTeamsApiProfileClient(profile, services, actorSystem, ec)
+  def tenantClientFor(tenantId: String): MSTeamsApiClient = MSTeamsApiTenantClient(tenantId, services, actorSystem, ec)
 
   //def adminClient: Future[MSTeamsApiClient] = services.dataService.slackBotProfiles.admin.map(clientFor)
 

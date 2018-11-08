@@ -21,7 +21,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
 import play.api.libs.ws.WSClient
-import services.slack.MSTeamsApiService
+import services.ms_teams.MSTeamsApiService
 import utils.CustomSecuredErrorHandler
 
 import scala.concurrent.ExecutionContext

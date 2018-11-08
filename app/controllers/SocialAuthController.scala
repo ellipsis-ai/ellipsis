@@ -1,8 +1,8 @@
 package controllers
 
 import java.net.{URI, URLDecoder, URLEncoder}
-import java.time.{OffsetDateTime, ZoneId}
 import java.time.format.DateTimeFormatter
+import java.time.{OffsetDateTime, ZoneId}
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
@@ -12,6 +12,7 @@ import javax.inject.Inject
 import play.api.{Configuration, Logger}
 import services.DataService
 import services.slack.SlackApiError
+import services.ms_teams.MSTeamsApiService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
@@ -22,11 +23,11 @@ import models.accounts.github.GithubProvider
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.ms_teams.MSTeamsProvider
 import models.accounts.slack.SlackProvider
-import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.{BotResultService, SimpleTextResult}
 import models.silhouette.EllipsisEnv
+import play.api.libs.ws.WSClient
 import play.api.mvc.{RequestHeader, Result}
 import play.utils.UriEncoding
 
@@ -45,6 +46,8 @@ class SocialAuthController @Inject() (
                                        dataService: DataService,
                                        botResultService: BotResultService,
                                        authInfoRepository: AuthInfoRepository,
+                                       ws: WSClient,
+                                       msTeamsApiService: MSTeamsApiService,
                                        implicit val ec: ExecutionContext,
                                        implicit val actorSystem: ActorSystem
                                      ) extends EllipsisController {
@@ -322,59 +325,37 @@ class SocialAuthController @Inject() (
 
   private def encode(segment: String): String = UriEncoding.encodePathSegment(segment, "utf-8")
 
+  def msTeamsPermissions(
+                          maybeTenantId: Option[String],
+                          maybeDidConsent: Option[String],
+                          maybeState: Option[String]
+                        ) = silhouette.UserAwareAction.async { implicit request =>
+    (for {
+      tenantId <- maybeTenantId
+      didConsent <- maybeDidConsent
+    } yield {
+      val apiClient = msTeamsApiService.tenantClientFor(tenantId)
+      for {
+        orgInfo <- apiClient.getOrgInfo.map(_.get)
+        botProfile <- dataService.msTeamsBotProfiles.ensure(tenantId, orgInfo.displayName)
+      } yield {
+        Ok(s"Yay! You authed for ${orgInfo.displayName}")
+      }
+    }).getOrElse(Future.successful(Ok("boo!")))
+  }
 
   def installForMSTeams(
                        maybeRedirect: Option[String],
                        maybeTeamId: Option[String],
                        maybeChannelId: Option[String]
-                     ) = silhouette.UserAwareAction.async { implicit request =>
-    val provider = msTeamsProvider.withSettings { settings =>
-      val url = routes.SocialAuthController.installForMSTeams(maybeRedirect, maybeTeamId, maybeChannelId).absoluteURL(secure = true)
-      val authorizationParams = maybeTeamId.map { teamId =>
-        settings.authorizationParams + ("team" -> teamId)
-      }.getOrElse(settings.authorizationParams)
-      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams, scope = settings.scope.map(encode))
-    }
-    val authenticateResult = provider.authenticate() recover {
-      case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
-        Left(Redirect(routes.SlackController.add()))
-      }
-      case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
-        Left(Redirect(routes.ApplicationController.index()))
-      }
-    }
-    authenticateResult.flatMap {
-      case Left(result) => Future.successful(result)
-      case Right(authInfo) => {
-        for {
-          profile <- msTeamsProvider.retrieveProfile(authInfo)
-          botProfile <- msTeamsProvider.maybeBotProfileFor(profile, authInfo, dataService).map { maybeBotProfile =>
-            maybeBotProfile.get // Blow up if we can't get a bot profile
-          }
-          _ <- authInfoRepository.save(profile.loginInfo, authInfo)
-          linkedAccount <- dataService.linkedAccounts.find(profile.loginInfo, botProfile.teamId).flatMap { maybeExisting =>
-            maybeExisting.map(Future.successful).getOrElse {
-              val eventualUser = request.identity.map(Future.successful).getOrElse {
-                dataService.users.createFor(botProfile.teamId)
-              }
-              eventualUser.flatMap { user =>
-                dataService.linkedAccounts.save(LinkedAccount(user, profile.loginInfo, OffsetDateTime.now))
-              }
-            }
-          }
-          user <- Future.successful(linkedAccount.user)
-          _ <- announceNewTeam(botProfile, user)
-          result <- Future.successful {
-            maybeRedirect.map { redirect =>
-              Redirect(validatedRedirectUri(redirect))
-            }.getOrElse(Redirect(routes.ApplicationController.index()))
-          }
-          authenticatedResult <- authenticatorResultForUserAndResult(user, result)
-        } yield {
-          authenticatedResult
-        }
-      }
-    }
+                     ) = silhouette.UserAwareAction { implicit request =>
+    (for {
+      clientId <- configuration.getOptional[String]("silhouette.ms_teams.clientID")
+    } yield {
+      val redirectUrl = encode(routes.SocialAuthController.msTeamsPermissions().absoluteURL(secure=true))
+      val url = s"https://login.microsoftonline.com/common/adminconsent?client_id=$clientId&redirect_uri=$redirectUrl"
+      Redirect(url)
+    }).getOrElse(InternalServerError(""))
   }
 
   def authenticateMSTeams(

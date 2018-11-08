@@ -68,7 +68,8 @@ import net.codingwell.scalaguice.ScalaModule
 import services._
 import services.billing.{BillingService, BillingServiceImpl}
 import services.caching.{CacheService, CacheServiceImpl}
-import services.slack.{MSTeamsApiService, SlackApiService, SlackEventService, SlackEventServiceImpl}
+import services.ms_teams.MSTeamsApiService
+import services.slack.{SlackApiService, SlackEventService, SlackEventServiceImpl}
 import services.stats.{StatsService, StatsServiceImpl}
 import utils.SlackFileMap
 

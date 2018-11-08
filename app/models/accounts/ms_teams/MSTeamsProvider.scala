@@ -1,7 +1,5 @@
 package models.accounts.ms_teams
 
-import java.time.OffsetDateTime
-
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException
 import com.mohiva.play.silhouette.impl.providers.OAuth2Provider._
@@ -12,7 +10,7 @@ import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
 import services.DataService
-import services.slack.MSTeamsApiService
+import services.ms_teams.MSTeamsApiService
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -96,14 +94,15 @@ class MSTeamsProvider(
         userId <- (botJson \ "bot_user_id").asOpt[String]
         orgName <- maybeOrgName
       } yield {
-        dataService.msTeamsBotProfiles.ensure(
-          userId,
-          msTeamsProfile.teamId,
-          orgName,
-          authInfo.accessToken,
-          OffsetDateTime.now.plusSeconds(authInfo.expiresIn.map(_.toLong).getOrElse(0L)),
-          authInfo.refreshToken.get
-        ).map(Some(_))
+//        dataService.msTeamsBotProfiles.ensure(
+//          userId,
+//          msTeamsProfile.teamId,
+//          orgName,
+//          authInfo.accessToken,
+//          OffsetDateTime.now.plusSeconds(authInfo.expiresIn.map(_.toLong).getOrElse(0L)),
+//          authInfo.refreshToken.get
+//        ).map(Some(_))
+        Future.successful(None)
       }).getOrElse(Future.successful(None))
     } yield maybeBotProfile
   }
