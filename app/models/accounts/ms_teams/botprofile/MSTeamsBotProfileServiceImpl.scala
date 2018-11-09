@@ -54,6 +54,13 @@ class MSTeamsBotProfileServiceImpl @Inject() (
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
+  def find(tenantId: String): Future[Option[MSTeamsBotProfile]] = {
+    val action = findQuery(tenantId).result.map { r =>
+      r.headOption
+    }
+    dataService.run(action)
+  }
+
   def ensure(tenantId: String, teamName: String): Future[MSTeamsBotProfile] = {
     val query = findQuery(tenantId)
     val action = query.result.headOption.flatMap {

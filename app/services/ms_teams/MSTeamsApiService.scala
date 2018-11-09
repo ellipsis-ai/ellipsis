@@ -39,17 +39,30 @@ trait MSTeamsApiClient {
   private val configPath = "silhouette.ms_teams."
   private val clientId = configuration.get[String](s"${configPath}clientID")
   private val clientSecret = configuration.get[String](s"${configPath}clientSecret")
-  private val scope = "https://graph.microsoft.com/.default"
 
-  private def fetchToken: Future[String] = {
+  private def fetchGraphApiToken: Future[String] = {
     val params = preparePostParams(Map(
       "client_id" -> clientId,
-      "scope" -> scope,
+      "scope" -> "https://graph.microsoft.com/.default",
       "client_secret" -> clientSecret,
       "grant_type" -> "client_credentials"
     ))
     ws.
       url(s"https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token").
+      post(params).map { res =>
+      (res.json \ "access_token").as[String]
+    }
+  }
+
+  private def fetchBotFrameworkToken: Future[String] = {
+    val params = preparePostParams(Map(
+      "client_id" -> clientId,
+      "scope" -> "https://api.botframework.com/.default",
+      "client_secret" -> clientSecret,
+      "grant_type" -> "client_credentials"
+    ))
+    ws.
+      url(s"https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token").
       post(params).map { res =>
       (res.json \ "access_token").as[String]
     }
@@ -117,20 +130,45 @@ trait MSTeamsApiClient {
     }
   }
 
-//  private def postResponseFor(endpoint: String, params: Map[String, Any]): Future[WSResponse] = {
-//    ws.
-//      url(urlFor(endpoint)).
-//      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-//      post(preparePostParams(params ++ defaultParams.toMap))
-//  }
+  private def headersFor(token: String) = {
+    Seq(
+      HeaderNames.CONTENT_TYPE -> MimeTypes.JSON,
+      Http.HeaderNames.AUTHORIZATION -> s"Bearer $token"
+    )
+  }
+
+  private def postResponseFor(endpoint: String, params: Map[String, Any]): Future[WSResponse] = {
+    Logger.info(s"MSTeamsApiClient post $endpoint with params $params")
+    for {
+      token <- fetchGraphApiToken
+      result <- ws.
+        url(urlFor(endpoint)).
+        withHttpHeaders(headersFor(token): _*).
+        post(preparePostParams(params))
+    } yield result
+  }
+
+  def postToResponseUrl(responseUrl: String, value: JsValue): Future[Unit] = {
+    Logger.info(s"MSTeamsApiClient posting response to $responseUrl with value:\n\n${Json.prettyPrint(value)}")
+    for {
+      token <- fetchBotFrameworkToken
+      result <- ws.
+        url(responseUrl).
+        withHttpHeaders(headersFor(token): _*).
+        post(value)
+    } yield {
+      Logger.info(s"Response to reply:\n\n${Json.prettyPrint(result.json)}")
+      Unit
+    }
+  }
 
   private def getResponseFor(endpoint: String, params: Seq[(String, String)]): Future[WSResponse] = {
     Logger.info(s"MSTeamsApiClient query $endpoint with params $params")
     for {
-      token <- fetchToken
+      token <- fetchGraphApiToken
       result <- ws.
         url(urlFor(endpoint)).
-        withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON, Http.HeaderNames.AUTHORIZATION -> s"Bearer $token").
+        withHttpHeaders(headersFor(token): _*).
         withQueryStringParameters(params: _*).
         get
     } yield result
@@ -151,6 +189,7 @@ trait MSTeamsApiClient {
         }
       }
   }
+
 }
 
 case class MSTeamsApiTenantClient(

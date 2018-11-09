@@ -6,12 +6,12 @@ import javax.inject.Inject
 import models.behaviors.events._
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
-import play.api.data.Forms.{mapping, nonEmptyText, optional, seq}
-import play.api.http.{HeaderNames, MimeTypes}
+import play.api.data.Forms.{mapping, nonEmptyText, optional}
 import play.api.libs.json._
 import play.api.{Environment, Logger, Mode}
 import play.utils.UriEncoding
 import services._
+import services.ms_teams.MSTeamsApiService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,6 +21,7 @@ class MSTeamsController @Inject() (
                                   val services: DefaultServices,
                                   val assetsProvider: Provider[RemoteAssets],
                                   val environment: Environment,
+                                  val apiService: MSTeamsApiService,
                                   implicit val ec: ExecutionContext
                                 ) extends EllipsisController {
 
@@ -117,12 +118,17 @@ class MSTeamsController @Inject() (
       "I received: " ++ info.text,
       info.id
     )
-    ws.url(info.responseUrl).
-      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
-      post(Json.toJson(response)).
-      map { res =>
-        Logger.info(s"MS Teams responded:\n${Json.prettyPrint(res.json)}")
-      }
+    for {
+      maybeBotProfile <- info.channelData.tenant.map { tenant =>
+        dataService.msTeamsBotProfiles.find(tenant.id)
+      }.getOrElse(Future.successful(None))
+      maybeApiClient <- Future.successful(maybeBotProfile.map { botProfile =>
+        apiService.profileClientFor(botProfile)
+      })
+      _ <- maybeApiClient.map { apiClient =>
+        apiClient.postToResponseUrl(info.responseUrl, Json.toJson(response)).map(_ => {})
+      }.getOrElse(Future.successful({}))
+    } yield {}
   }
 
   def event = Action { implicit request =>
