@@ -152,20 +152,4 @@ class MSTeamsController @Inject() (
     Ok(views.html.auth.addToMSTeams(viewConfig(None)))
   }
 
-  def signIn(maybeRedirectUrl: Option[String]) = silhouette.UserAwareAction.async { implicit request =>
-    val eventualMaybeTeamAccess = request.identity.map { user =>
-      dataService.users.teamAccessFor(user, None).map(Some(_))
-    }.getOrElse(Future.successful(None))
-    eventualMaybeTeamAccess.map { maybeTeamAccess =>
-      val maybeResult = for {
-        scopes <- configuration.getOptional[String]("silhouette.ms_teams.scope")
-        clientId <- configuration.getOptional[String]("silhouette.ms_teams.clientID")
-      } yield {
-        val redirectUrl = routes.SocialAuthController.authenticateMSTeams(maybeRedirectUrl).absoluteURL(secure=true)
-        Ok(views.html.auth.signInWithSlack(viewConfig(maybeTeamAccess), encode(scopes), encode(clientId), encode(redirectUrl)))
-      }
-      maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
-    }
-  }
-
 }

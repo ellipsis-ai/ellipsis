@@ -229,7 +229,7 @@ class SocialAuthController @Inject() (
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
-        Left(Redirect(routes.SlackController.signIn(maybeRedirect)))
+        Left(Redirect(routes.SocialAuthController.signIn(maybeRedirect)))
       }
       case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
         Left(Redirect(routes.ApplicationController.index()))
@@ -376,11 +376,11 @@ class SocialAuthController @Inject() (
       configuration.getOptional[String]("silhouette.ms_teams.scope").foreach { signInScope =>
         authorizationParams = authorizationParams + ("scope" -> signInScope)
       }
-      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams)
+      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams, scope = authorizationParams.get("scope"))
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
-        Left(Redirect(routes.MSTeamsController.signIn(maybeRedirect)))
+        Left(Redirect(routes.SocialAuthController.signIn(maybeRedirect)))
       }
       case e: com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException => {
         Left(Redirect(routes.ApplicationController.index()))
@@ -391,9 +391,9 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- msTeamsProvider.retrieveProfile(authInfo)
-          botProfiles <- dataService.slackBotProfiles.allForSlackTeamId(profile.teamId)
+          botProfiles <- dataService.msTeamsBotProfiles.find(profile.teamId).map(_.toSeq)
           result <- if (botProfiles.isEmpty) {
-            Future.successful(Redirect(routes.SocialAuthController.installForSlack(maybeRedirect, maybeTeamId, maybeChannelId)))
+            Future.successful(Redirect(routes.SocialAuthController.installForMSTeams(maybeRedirect, maybeTeamId, maybeChannelId)))
           } else {
             val teamId = botProfiles.head.teamId
             if (maybeTeamId.exists(t => t != teamId)) {
@@ -451,7 +451,7 @@ class SocialAuthController @Inject() (
             resultForValidToken <- maybeUser.map { user =>
               authenticatorResultForUserAndResult(user, Redirect(successRedirect))
             }.getOrElse {
-              Future.successful(Redirect(routes.SlackController.signIn(maybeRedirect)))
+              Future.successful(Redirect(routes.SocialAuthController.signIn(maybeRedirect)))
             }
           } yield resultForValidToken
         } else {
@@ -461,6 +461,25 @@ class SocialAuthController @Inject() (
         Future.successful(NotFound("Token not found"))
       }
     } yield result
+  }
+
+  def signIn(maybeRedirectUrl: Option[String]) = silhouette.UserAwareAction.async { implicit request =>
+    val eventualMaybeTeamAccess = request.identity.map { user =>
+      dataService.users.teamAccessFor(user, None).map(Some(_))
+    }.getOrElse(Future.successful(None))
+    eventualMaybeTeamAccess.map { maybeTeamAccess =>
+      val maybeResult = for {
+        slackScopes <- configuration.getOptional[String]("silhouette.slack.signInScope")
+        slackClientId <- configuration.getOptional[String]("silhouette.slack.clientID")
+        msTeamsScopes <- configuration.getOptional[String]("silhouette.ms_teams.scope")
+        msTeamsClientId <- configuration.getOptional[String]("silhouette.ms_teams.clientID")
+      } yield {
+        val slackRedirectUrl = UriEncoding.encodePathSegment(routes.SocialAuthController.authenticateSlack(maybeRedirectUrl).absoluteURL(secure=true), "utf-8")
+        val msTeamsRedirectUrl = UriEncoding.encodePathSegment(routes.SocialAuthController.authenticateMSTeams(maybeRedirectUrl).absoluteURL(secure=true), "utf-8")
+        Ok(views.html.auth.signIn(viewConfig(maybeTeamAccess), slackScopes, slackClientId, slackRedirectUrl, msTeamsScopes, msTeamsClientId, msTeamsRedirectUrl))
+      }
+      maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
+    }
   }
 
   def signOut = silhouette.SecuredAction.async { implicit request =>

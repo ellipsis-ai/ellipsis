@@ -89,14 +89,14 @@ POST        /sign_out                                 @controllers.SocialAuthCon
 GET         /login_with_token/:token                  @controllers.SocialAuthController.loginWithToken(token: String, redirect: Option[String] ?= None)
 GET         /ms_teams/permissions                     @controllers.SocialAuthController.msTeamsPermissions(tenant: Option[String] ?= None, admin_consent: Option[String] ?= None, state: Option[String] ?= None)
 
+GET         /sign_in                                  @controllers.SocialAuthController.signIn(redirect: Option[String] ?= None)
+
 GET         /add_to_slack                             @controllers.SlackController.add
-GET         /sign_in_with_slack                       @controllers.SlackController.signIn(redirect: Option[String] ?= None)
 POST        /slack/event                              @controllers.SlackController.event
 POST        /slack/action                             @controllers.SlackController.action
 POST        /slack/command                            @controllers.SlackController.command
 
 GET         /add_to_ms_teams                          @controllers.MSTeamsController.add
-GET         /sign_in_with_ms_teams                    @controllers.MSTeamsController.signIn(redirect: Option[String] ?= None)
 
 
 #NOCSRF
