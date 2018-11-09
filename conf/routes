@@ -95,6 +95,7 @@ POST        /slack/event                              @controllers.SlackControll
 POST        /slack/action                             @controllers.SlackController.action
 POST        /slack/command                            @controllers.SlackController.command
 
+GET         /add_to_ms_teams                          @controllers.MSTeamsController.add
 GET         /sign_in_with_ms_teams                    @controllers.MSTeamsController.signIn(redirect: Option[String] ?= None)
 
 
