@@ -149,7 +149,7 @@ class MSTeamsController @Inject() (
   private def encode(segment: String): String = UriEncoding.encodePathSegment(segment, "utf-8")
 
   def add = silhouette.UserAwareAction { implicit request =>
-    Ok(views.html.ms_teams.addToMSTeams(viewConfig(None)))
+    Ok(views.html.auth.addToMSTeams(viewConfig(None)))
   }
 
   def signIn(maybeRedirectUrl: Option[String]) = silhouette.UserAwareAction.async { implicit request =>
@@ -162,7 +162,7 @@ class MSTeamsController @Inject() (
         clientId <- configuration.getOptional[String]("silhouette.ms_teams.clientID")
       } yield {
         val redirectUrl = routes.SocialAuthController.authenticateMSTeams(maybeRedirectUrl).absoluteURL(secure=true)
-        Ok(views.html.slack.signInWithSlack(viewConfig(maybeTeamAccess), encode(scopes), encode(clientId), encode(redirectUrl)))
+        Ok(views.html.auth.signInWithSlack(viewConfig(maybeTeamAccess), encode(scopes), encode(clientId), encode(redirectUrl)))
       }
       maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
     }
