@@ -8,7 +8,6 @@ import models.accounts.ms_teams.profile.{MSTeamsProfile, MSTeamsProfileBuilder, 
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
-import services.ms_teams.MSTeamsApiService
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -16,8 +15,7 @@ import scala.util.{Failure, Success, Try}
 class MSTeamsProvider(
                        protected val httpLayer: HTTPLayer,
                        protected val stateHandler: SocialStateHandler,
-                       val settings: OAuth2Settings,
-                       apiService: MSTeamsApiService
+                       val settings: OAuth2Settings
                      ) extends OAuth2Provider with MSTeamsProfileBuilder {
   import MSTeamsProvider._
 
@@ -28,7 +26,7 @@ class MSTeamsProvider(
 
   override val profileParser = new MSTeamsProfileParser
 
-  override def withSettings(f: (Settings) => Settings) = new MSTeamsProvider(httpLayer, stateHandler, f(settings), apiService)
+  override def withSettings(f: (Settings) => Settings) = new MSTeamsProvider(httpLayer, stateHandler, f(settings))
 
   protected def urls: Map[String, String] = Map(
     "org" -> ORGANIZATION_API,

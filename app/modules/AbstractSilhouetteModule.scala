@@ -103,11 +103,10 @@ trait AbstractSilhouetteModule extends ScalaModule {
   def provideMSTeamsProvider(
                             httpLayer: HTTPLayer,
                             stateHandler: SocialStateHandler,
-                            configuration: Configuration,
-                            apiService: MSTeamsApiService
+                            configuration: Configuration
                             ): MSTeamsProvider = {
 
-    new MSTeamsProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.ms_teams"), apiService)
+    new MSTeamsProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.ms_teams"))
   }
 
   @Provides
