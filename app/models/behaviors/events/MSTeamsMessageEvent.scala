@@ -55,12 +55,14 @@ case class MSTeamsMessageEvent(
 
   val messageText: String = message
 
+  val botMentionRegex = s"""<at>${eventContext.info.recipient.name}</at>"""
+
   override val relevantMessageTextWithFormatting: String = {
-    message
+    relevantMessageText
   }
 
   override val relevantMessageText: String = {
-    message
+    message.replaceAll(botMentionRegex, "").trim
   }
 
   lazy val includesBotMention: Boolean = true
