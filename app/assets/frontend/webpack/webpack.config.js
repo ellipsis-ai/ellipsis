@@ -1,5 +1,6 @@
 const config = require('config');
 const baseConfigCreator = require('./webpack.base.config.js');
+const webpack = require("webpack");
 const devServerHost = config.get('webpack.devServer.host');
 const devServerPort = config.get('webpack.devServer.port');
 
@@ -9,7 +10,6 @@ if (!devServerHost || !devServerPort) {
 
 module.exports = exports = function(env) {
   const webpackConfig = Object.assign({}, baseConfigCreator(env));
-  webpackConfig.devtool = 'inline-source-map';
   webpackConfig.entry = Object.assign({}, webpackConfig.entry, {
     devServer: 'webpack/hot/dev-server',
     devServerClient: `webpack-dev-server/client?http://${devServerHost}:${devServerPort}`,
@@ -18,5 +18,11 @@ module.exports = exports = function(env) {
     devtoolModuleFilenameTemplate: "file://[absolute-resource-path]"
   });
   webpackConfig.mode = 'development';
+  webpackConfig.devtool = false;
+  webpackConfig.plugins.push(new webpack.SourceMapDevToolPlugin({
+    filename: "[name].js.map",
+    exclude: ["vendor.js", "editor_worker.js", "ts_worker.js"],
+    publicPath: `http://${devServerHost}:${devServerPort}/javascripts/`
+  }));
   return webpackConfig;
 };
