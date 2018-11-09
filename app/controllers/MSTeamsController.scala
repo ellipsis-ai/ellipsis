@@ -137,16 +137,14 @@ class MSTeamsController @Inject() (
     }
     messageActivityForm.bindFromRequest.fold(
       errors => {
-        Logger.info(s"BadRequest:\n${Json.prettyPrint(errors.errorsAsJson)}")
-        BadRequest("")
+        Logger.info(s"Ignoring MS Teams request:\n${Json.prettyPrint(errors.errorsAsJson)}")
+        Ok("I don't know what to do with this request but I'm not concerned")
       },
       info => respondTo(info)
     )
 
     Ok("Got it!")
   }
-
-  private def encode(segment: String): String = UriEncoding.encodePathSegment(segment, "utf-8")
 
   def add = silhouette.UserAwareAction { implicit request =>
     Ok(views.html.auth.addToMSTeams(viewConfig(None)))
