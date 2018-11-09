@@ -334,14 +334,18 @@ class SocialAuthController @Inject() (
       tenantId <- maybeTenantId
       didConsent <- maybeDidConsent
     } yield {
-      val apiClient = msTeamsApiService.tenantClientFor(tenantId)
-      for {
-        orgInfo <- apiClient.getOrgInfo.map(_.get)
-        botProfile <- dataService.msTeamsBotProfiles.ensure(tenantId, orgInfo.displayName)
-      } yield {
-        Ok(s"Yay! You authed for ${orgInfo.displayName}")
+      if (didConsent == "True") {
+        val apiClient = msTeamsApiService.tenantClientFor(tenantId)
+        for {
+          orgInfo <- apiClient.getOrgInfo.map(_.get)
+          _ <- dataService.msTeamsBotProfiles.ensure(tenantId, orgInfo.displayName)
+        } yield {
+          Redirect(routes.ApplicationController.index())
+        }
+      } else {
+        Future.successful(Redirect(routes.MSTeamsController.add()))
       }
-    }).getOrElse(Future.successful(Ok("boo!")))
+    }).getOrElse(Future.successful(Redirect(routes.MSTeamsController.add())))
   }
 
   def installForMSTeams(
