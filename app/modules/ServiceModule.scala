@@ -68,7 +68,7 @@ import net.codingwell.scalaguice.ScalaModule
 import services._
 import services.billing.{BillingService, BillingServiceImpl}
 import services.caching.{CacheService, CacheServiceImpl}
-import services.ms_teams.MSTeamsApiService
+import services.ms_teams.{MSTeamsApiService, MSTeamsEventService, MSTeamsEventServiceImpl}
 import services.slack.{SlackApiService, SlackEventService, SlackEventServiceImpl}
 import services.stats.{StatsService, StatsServiceImpl}
 import utils.SlackFileMap
@@ -141,6 +141,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[CacheService].to[CacheServiceImpl]
     bind[GraphQLService].to[GraphQLServiceImpl]
     bind[SlackEventService].to[SlackEventServiceImpl]
+    bind[MSTeamsEventService].to[MSTeamsEventServiceImpl]
 
     //  Services for billing
     bind[PlanService].to[PlanServiceImpl]

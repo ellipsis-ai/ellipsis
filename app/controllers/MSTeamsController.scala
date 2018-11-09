@@ -3,15 +3,17 @@ package controllers
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
+import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.events._
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms.{mapping, nonEmptyText, optional}
 import play.api.libs.json._
+import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Environment, Logger, Mode}
-import play.utils.UriEncoding
 import services._
-import services.ms_teams.MSTeamsApiService
+import services.ms_teams.apiModels._
+import services.ms_teams.{MSTeamsApiService, MSTeamsEventService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,6 +23,7 @@ class MSTeamsController @Inject() (
                                   val services: DefaultServices,
                                   val assetsProvider: Provider[RemoteAssets],
                                   val environment: Environment,
+                                  val eventService: MSTeamsEventService,
                                   val apiService: MSTeamsApiService,
                                   implicit val ec: ExecutionContext
                                 ) extends EllipsisController {
@@ -33,39 +36,7 @@ class MSTeamsController @Inject() (
   val botResultService = services.botResultService
   implicit val actorSystem = services.actorSystem
 
-  case class MessageParticipantInfo(id: String, name: String)
-
-  case class ConversationInfo(id: String)
-
-  case class TenantInfo(id: String)
-
-  case class ChannelDataInfo(
-                              clientActivityId: Option[String],
-                              tenant: Option[TenantInfo]
-                            )
-
-  case class ActivityInfo(
-                           activityType: String,
-                           id: String,
-                           timestamp: String,
-                           serviceUrl: String,
-                           channelId: String,
-                           from: MessageParticipantInfo,
-                           conversation: ConversationInfo,
-                           recipient: MessageParticipantInfo,
-                           textFormat: String,
-                           locale: Option[String],
-                           text: String,
-                           channelData: ChannelDataInfo
-                         ) {
-    val responseUrl: String = s"$serviceUrl/v3/conversations/${conversation.id}/activities/${id}"
-  }
-
-  lazy implicit val messageParticipantFormat = Json.format[MessageParticipantInfo]
-  lazy implicit val conversationFormat = Json.format[ConversationInfo]
-  lazy implicit val tenantFormat = Json.format[TenantInfo]
-  lazy implicit val channelDataFormat = Json.format[ChannelDataInfo]
-  lazy implicit val activityFormat = Json.format[ActivityInfo]
+  import _root_.services.ms_teams.apiModels.Formatting._
 
   private val messageParticipantMapping = mapping(
     "id" -> nonEmptyText,
@@ -81,7 +52,8 @@ class MSTeamsController @Inject() (
       "channelId" -> nonEmptyText,
       "from" -> messageParticipantMapping,
       "conversation" -> mapping(
-        "id" -> nonEmptyText
+        "id" -> nonEmptyText,
+        "conversationType" -> nonEmptyText
       )(ConversationInfo.apply)(ConversationInfo.unapply),
       "recipient" -> messageParticipantMapping,
       "textFormat" -> nonEmptyText,
@@ -98,52 +70,80 @@ class MSTeamsController @Inject() (
     })
   )
 
-  case class ResponseInfo(
-                           `type`: String,
-                           from: MessageParticipantInfo,
-                           conversation: ConversationInfo,
-                           recipient: MessageParticipantInfo,
-                           text: String,
-                           replyToId: String
-                         )
-
-  lazy implicit val responseFormat = Json.format[ResponseInfo]
-
-  def respondTo(info: ActivityInfo): Future[Unit] = {
-    val response = ResponseInfo(
-      "message",
-      info.recipient,
-      info.conversation,
-      info.from,
-      "I received: " ++ info.text,
-      info.id
+  private def maybeResultFor[T](form: Form[T], resultFn: T => Result)
+                               (implicit request: Request[AnyContent]): Option[Result] = {
+    form.bindFromRequest.fold(
+      errors => {
+        Logger.info(s"Can't process MS Teams request:\n${Json.prettyPrint(errors.errorsAsJson)}")
+        None
+      },
+      info => Some(resultFn(info))
     )
+  }
+
+  private def processMessageEventsFor(info: ActivityInfo, botProfile: MSTeamsBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
-      maybeBotProfile <- info.channelData.tenant.map { tenant =>
-        dataService.msTeamsBotProfiles.find(tenant.id)
-      }.getOrElse(Future.successful(None))
-      maybeApiClient <- Future.successful(maybeBotProfile.map { botProfile =>
-        apiService.profileClientFor(botProfile)
-      })
-      _ <- maybeApiClient.map { apiClient =>
-        apiClient.postToResponseUrl(info.responseUrl, Json.toJson(response)).map(_ => {})
+        // TODO: take a look
+//      isUserValidForBot <- slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId)
+//      result <- if (!isUserValidForBot) {
+//        if (info.channel.startsWith("D") || botProfile.includesBotMention(slackMessage)) {
+//          dataService.teams.find(botProfile.teamId).flatMap { maybeTeam =>
+//            val teamText = maybeTeam.map { team =>
+//              s"the ${team.name} team"
+//            }.getOrElse("another team")
+//            sendEphemeralMessage(s"Sorry, I'm only able to respond to people from ${teamText}.", info)
+//          }
+//        } else {
+//          Future.successful({})
+//        }
+//      } else {
+//        val maybeFile = info.event match {
+//          case e: MessageSentEventInfo => e.maybeFilesInfo.flatMap(_.headOption.map(i => SlackFile(i.downloadUrl, i.maybeThumbnailUrl)))
+//          case _ => None
+//        }
+        result <- eventService.onEvent(
+          MSTeamsMessageEvent(
+            MSTeamsEventContext(
+              botProfile,
+              info
+            ),
+            info.text, // TODO: formatting
+            None,
+            isUninterruptedConversation = false,
+            isEphemeral = false,
+            None,
+            beQuiet = false
+          )
+        )
+    } yield result
+  }
+
+
+  private def messageEventResult(info: ActivityInfo)(implicit request: Request[AnyContent]): Result = {
+    for {
+      maybeProfile <- info.maybeTenantId.map(id => dataService.msTeamsBotProfiles.find(id)).getOrElse(Future.successful(None))
+      _ <- maybeProfile.map { profile =>
+        processMessageEventsFor(info, profile)
       }.getOrElse(Future.successful({}))
     } yield {}
+
+    // respond immediately
+    Ok(":+1:")
   }
+
+  private def maybeMessageResult(implicit request: Request[AnyContent]): Option[Result] = {
+    maybeResultFor(messageActivityForm, messageEventResult)
+  }
+
 
   def event = Action { implicit request =>
     if (environment.mode == Mode.Dev) {
       Logger.info(s"MS Teams event received:\n${Json.prettyPrint(request.body.asJson.get)}")
     }
-    messageActivityForm.bindFromRequest.fold(
-      errors => {
-        Logger.info(s"Ignoring MS Teams request:\n${Json.prettyPrint(errors.errorsAsJson)}")
-        Ok("I don't know what to do with this request but I'm not concerned")
-      },
-      info => respondTo(info)
-    )
 
-    Ok("Got it!")
+    maybeMessageResult.getOrElse {
+      Ok("I don't know what to do with this request but I'm not concerned")
+    }
   }
 
   def add = silhouette.UserAwareAction { implicit request =>
