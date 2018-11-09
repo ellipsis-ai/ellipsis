@@ -12,8 +12,8 @@ import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Environment, Logger, Mode}
 import services._
+import services.ms_teams.MSTeamsEventService
 import services.ms_teams.apiModels._
-import services.ms_teams.{MSTeamsApiService, MSTeamsEventService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,7 +24,6 @@ class MSTeamsController @Inject() (
                                   val assetsProvider: Provider[RemoteAssets],
                                   val environment: Environment,
                                   val eventService: MSTeamsEventService,
-                                  val apiService: MSTeamsApiService,
                                   implicit val ec: ExecutionContext
                                 ) extends EllipsisController {
 
@@ -35,8 +34,6 @@ class MSTeamsController @Inject() (
   val ws = services.ws
   val botResultService = services.botResultService
   implicit val actorSystem = services.actorSystem
-
-  import _root_.services.ms_teams.apiModels.Formatting._
 
   private val messageParticipantMapping = mapping(
     "id" -> nonEmptyText,
