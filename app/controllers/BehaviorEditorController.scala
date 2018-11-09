@@ -87,9 +87,9 @@ class BehaviorEditorController @Inject() (
 self.MonacoEnvironment = {
   getWorkerUrl: function (moduleId, label) {
     if (label === 'typescript' || label === 'javascript') {
-      return "${assets.getWebpackBundle("ts_worker.js")}";
+      return "${assets.getWebpackBundle("ts_worker.js", forceSameHost = true)}";
     } else {
-      return "${assets.getWebpackBundle("editor_worker.js")}";
+      return "${assets.getWebpackBundle("editor_worker.js", forceSameHost = true)}";
     }
   }
 };
