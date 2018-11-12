@@ -270,7 +270,7 @@ case class MSTeamsEventContext(
   val channel: String = info.conversation.id
   val maybeChannel: Option[String] = Some(channel)
 
-  def maybeTeamIdForContext: Option[String] = Some(profile.tenantId)
+  def maybeTeamIdForContext: Option[String] = Some(profile.teamIdForContext)
 
   def maybeBotUserIdForContext: Option[String] = None
 
