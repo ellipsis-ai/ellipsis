@@ -390,17 +390,11 @@ class SocialAuthController @Inject() (
       case Right(authInfo) => {
         for {
           profile <- msTeamsProvider.retrieveProfile(authInfo)
-          botProfiles <- dataService.msTeamsBotProfiles.find(profile.teamId).map(_.toSeq)
-          result <- if (botProfiles.isEmpty) {
-            Future.successful(Redirect(routes.SocialAuthController.installForMSTeams(maybeRedirect, maybeTeamId, maybeChannelId)))
-          } else {
-            val teamId = botProfiles.head.teamId
+          maybeBotProfile <- dataService.msTeamsBotProfiles.find(profile.teamId)
+          result <- maybeBotProfile.map { botProfile =>
+            val teamId = botProfile.teamId
             if (maybeTeamId.exists(t => t != teamId)) {
-              Future.successful {
-                val redir = s"/oauth/authorize?client_id=${provider.settings.clientID}&redirect_url=${provider.settings.redirectURL}&scope=${provider.settings.authorizationParams("scope")}"
-                val url = s"https://slack.com/signin?redir=${URLEncoder.encode(redir, "UTF-8")}"
-                Redirect(url)
-              }
+              Future.successful(Redirect(routes.SocialAuthController.signIn()))
             } else {
               for {
                 loginInfo <- Future.successful(profile.loginInfo)
@@ -423,7 +417,7 @@ class SocialAuthController @Inject() (
                 authenticatedResult <- authenticatorResultForUserAndResult(user, result)
               } yield authenticatedResult
             }
-          }
+          }.getOrElse(Future.successful(Redirect(routes.SocialAuthController.installForMSTeams(maybeRedirect, maybeTeamId, maybeChannelId))))
         } yield result
       }
     }
