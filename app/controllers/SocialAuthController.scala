@@ -340,7 +340,9 @@ class SocialAuthController @Inject() (
           orgInfo <- apiClient.getOrgInfo.map(_.get)
           _ <- dataService.msTeamsBotProfiles.ensure(tenantId, orgInfo.displayName)
         } yield {
-          Redirect(routes.ApplicationController.index())
+          request.identity.map { _ =>
+            Redirect(routes.ApplicationController.index())
+          }.getOrElse(Redirect(routes.SocialAuthController.authenticateMSTeams(None)))
         }
       } else {
         Future.successful(Redirect(routes.MSTeamsController.add()))
@@ -373,10 +375,7 @@ class SocialAuthController @Inject() (
       maybeTeamId.foreach { teamId =>
         authorizationParams = authorizationParams + ("team" -> teamId)
       }
-      configuration.getOptional[String]("silhouette.ms_teams.scope").foreach { signInScope =>
-        authorizationParams = authorizationParams + ("scope" -> signInScope)
-      }
-      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams, scope = authorizationParams.get("scope"))
+      settings.copy(redirectURL = Some(url), authorizationParams = authorizationParams)
     }
     val authenticateResult = provider.authenticate() recover {
       case e: com.mohiva.play.silhouette.impl.exceptions.AccessDeniedException => {
