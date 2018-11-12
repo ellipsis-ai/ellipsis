@@ -327,10 +327,10 @@ case class MSTeamsEventContext(
     )
     val apiClient = services.msTeamsApiService.profileClientFor(profile)
     for {
-      _ <- maybeResponseUrl.map { responseUrl =>
-        apiClient.postToResponseUrl(responseUrl, Json.toJson(response)).map(_ => {})
-      }.getOrElse(Future.successful({}))
-    } yield None // TODO: might be something to return here
+      maybeResult <- maybeResponseUrl.map { responseUrl =>
+        apiClient.postToResponseUrl(responseUrl, Json.toJson(response)).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield maybeResult
   }
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {

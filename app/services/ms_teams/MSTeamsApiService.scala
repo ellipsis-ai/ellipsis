@@ -148,7 +148,7 @@ trait MSTeamsApiClient {
     } yield result
   }
 
-  def postToResponseUrl(responseUrl: String, value: JsValue): Future[Unit] = {
+  def postToResponseUrl(responseUrl: String, value: JsValue): Future[String] = {
     Logger.info(s"MSTeamsApiClient posting response to $responseUrl with value:\n\n${Json.prettyPrint(value)}")
     for {
       token <- fetchBotFrameworkToken
@@ -157,8 +157,8 @@ trait MSTeamsApiClient {
         withHttpHeaders(headersFor(token): _*).
         post(value)
     } yield {
-      Logger.info(s"Response to reply:\n\n${result}")
-      Unit
+      val json = responseToJson(result, Some("id"))
+      (json \ "id").as[String]
     }
   }
 
