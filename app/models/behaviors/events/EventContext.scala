@@ -264,9 +264,6 @@ case class MSTeamsEventContext(
   val isDirectMessage: Boolean = {
     info.conversation.conversationType == "personal"
   }
-  val isPrivateChannel: Boolean = {
-    info.conversation.conversationType == "group"
-  }
   val isPublicChannel: Boolean = {
     info.conversation.conversationType == "team"
   }
