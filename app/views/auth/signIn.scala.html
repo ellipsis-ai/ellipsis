@@ -5,7 +5,8 @@
   slackRedirectUrl: String,
   msTeamsScopes: String,
   msTeamsClientId: String,
-  msTeamsRedirectUrl: String
+  msTeamsRedirectUrl: String,
+  includeMSTeams: Boolean
 )(implicit r: RequestHeader, m: Messages)
 
 @page.main("Sign in with Slack", config,
@@ -25,7 +26,7 @@
 
         <div class="mtxl">
           @signInWithSlackButton(slackScopes, slackClientId, slackRedirectUrl)
-          @signInWithMSTeamsButton(msTeamsScopes, msTeamsClientId, msTeamsRedirectUrl)
+          @{if (includeMSTeams) { signInWithMSTeamsButton(msTeamsScopes, msTeamsClientId, msTeamsRedirectUrl) } else {}}
         </div>
 
       </div>

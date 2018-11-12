@@ -89,7 +89,7 @@ POST        /sign_out                                 @controllers.SocialAuthCon
 GET         /login_with_token/:token                  @controllers.SocialAuthController.loginWithToken(token: String, redirect: Option[String] ?= None)
 GET         /ms_teams/permissions                     @controllers.SocialAuthController.msTeamsPermissions(tenant: Option[String] ?= None, admin_consent: Option[String] ?= None, state: Option[String] ?= None)
 
-GET         /sign_in                                  @controllers.SocialAuthController.signIn(redirect: Option[String] ?= None)
+GET         /sign_in                                  @controllers.SocialAuthController.signIn(redirect: Option[String] ?= None, ms_teams: Option[Boolean] ?= None)
 
 GET         /add_to_slack                             @controllers.SlackController.add
 POST        /slack/event                              @controllers.SlackController.event

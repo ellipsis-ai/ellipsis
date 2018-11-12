@@ -463,7 +463,7 @@ class SocialAuthController @Inject() (
     } yield result
   }
 
-  def signIn(maybeRedirectUrl: Option[String]) = silhouette.UserAwareAction.async { implicit request =>
+  def signIn(maybeRedirectUrl: Option[String], maybeIncludeMSTeams: Option[Boolean]) = silhouette.UserAwareAction.async { implicit request =>
     val eventualMaybeTeamAccess = request.identity.map { user =>
       dataService.users.teamAccessFor(user, None).map(Some(_))
     }.getOrElse(Future.successful(None))
@@ -476,7 +476,18 @@ class SocialAuthController @Inject() (
       } yield {
         val slackRedirectUrl = UriEncoding.encodePathSegment(routes.SocialAuthController.authenticateSlack(maybeRedirectUrl).absoluteURL(secure=true), "utf-8")
         val msTeamsRedirectUrl = UriEncoding.encodePathSegment(routes.SocialAuthController.authenticateMSTeams(maybeRedirectUrl).absoluteURL(secure=true), "utf-8")
-        Ok(views.html.auth.signIn(viewConfig(maybeTeamAccess), slackScopes, slackClientId, slackRedirectUrl, msTeamsScopes, msTeamsClientId, msTeamsRedirectUrl))
+        Ok(
+          views.html.auth.signIn(
+            viewConfig(maybeTeamAccess),
+            slackScopes,
+            slackClientId,
+            slackRedirectUrl,
+            msTeamsScopes,
+            msTeamsClientId,
+            msTeamsRedirectUrl,
+            maybeIncludeMSTeams.exists(identity)
+          )
+        )
       }
       maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
     }
