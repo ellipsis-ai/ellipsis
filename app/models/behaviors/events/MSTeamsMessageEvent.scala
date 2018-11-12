@@ -41,15 +41,7 @@ case class MSTeamsMessageEvent(
     if (eventContext.isDirectMessage) {
       Future.successful("")
     } else {
-      for {
-        botName <- botName(services)
-      } yield {
-        if (botName == SlackMessageEvent.fallbackBotPrefix) {
-          botName
-        } else {
-          s"@$botName "
-        }
-      }
+      botName(services).map(n => s"@$n ")
     }
   }
 
