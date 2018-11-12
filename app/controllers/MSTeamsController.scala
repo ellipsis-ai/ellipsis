@@ -80,24 +80,8 @@ class MSTeamsController @Inject() (
 
   private def processMessageEventsFor(info: ActivityInfo, botProfile: MSTeamsBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
-        // TODO: take a look
-//      isUserValidForBot <- slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId)
-//      result <- if (!isUserValidForBot) {
-//        if (info.channel.startsWith("D") || botProfile.includesBotMention(slackMessage)) {
-//          dataService.teams.find(botProfile.teamId).flatMap { maybeTeam =>
-//            val teamText = maybeTeam.map { team =>
-//              s"the ${team.name} team"
-//            }.getOrElse("another team")
-//            sendEphemeralMessage(s"Sorry, I'm only able to respond to people from ${teamText}.", info)
-//          }
-//        } else {
-//          Future.successful({})
-//        }
-//      } else {
-//        val maybeFile = info.event match {
-//          case e: MessageSentEventInfo => e.maybeFilesInfo.flatMap(_.headOption.map(i => SlackFile(i.downloadUrl, i.maybeThumbnailUrl)))
-//          case _ => None
-//        }
+        // TODO: in the Slack case we check here if the user is allowed to invoke the bot. I think most of the reasons
+        // don't apply in MS Teams, but we should check at some point what happens with e.g. messages from other bots
         result <- eventService.onEvent(
           MSTeamsMessageEvent(
             MSTeamsEventContext(
