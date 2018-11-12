@@ -76,7 +76,7 @@ trait MSTeamsApiClient {
         response.json
       } catch {
         case j: JsonParseException => throw MalformedMSTeamsApiResponseException(
-          s"""Slack API returned a non-JSON response${
+          s"""MS Teams API returned a non-JSON response${
             maybeField.map(field => s" while retrieving field ${field}").getOrElse(".")
           }
              |Ellipsis team ID: ${maybeEllipsisTeamId.getOrElse("None")}
@@ -91,7 +91,7 @@ trait MSTeamsApiClient {
       }
     } else {
       Logger.error(
-        s"""Received irregular response from Slack API:
+        s"""Received irregular response from MS Teams API:
            |${response.status}: ${response.statusText}
            |
            |Truncated body:
