@@ -11,8 +11,8 @@ import com.mohiva.play.silhouette.api.util.Clock
 import javax.inject.Inject
 import play.api.{Configuration, Logger}
 import services.DataService
-import services.slack.SlackApiError
 import services.ms_teams.MSTeamsApiService
+import services.slack.SlackApiError
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorResult
@@ -89,10 +89,12 @@ class SocialAuthController @Inject() (
     }
   }
 
-  private def announceNewTeam(botProfile: BotProfile, user: User)(implicit request: RequestHeader): Future[Unit] = {
+  private def announceNewTeam(botProfile: BotProfile, maybeUser: Option[User])(implicit request: RequestHeader): Future[Unit] = {
     for {
       team <- dataService.teams.find(botProfile.teamId).map(_.get) /* Blow up if there's no team */
-      userData <- dataService.users.userDataFor(user, team)
+      maybeUserData <- maybeUser.map { user =>
+        dataService.users.userDataFor(user, team).map(Some(_))
+      }.getOrElse(Future.successful(None))
       maybeEvent <- dataService.slackBotProfiles.eventualMaybeEvent(
         LinkedAccount.ELLIPSIS_SLACK_TEAM_ID,
         LinkedAccount.ELLIPSIS_MONITORING_CHANNEL_ID,
@@ -107,10 +109,19 @@ class SocialAuthController @Inject() (
       )
       val isNewTeam = team.createdAt.isAfter(OffsetDateTime.now.minusDays(1))
       val heading = if (isNewTeam) {
-        "New Slack team installed"
+        s"New ${botProfile.context} team installed"
       } else {
-        "Slack team re-installed"
+        s"${botProfile.context} team re-installed"
       }
+      val userPart = maybeUserData.map { userData =>
+        s"""_User:_
+           |**${userData.fullName.getOrElse("(Name unknown)")}**
+           |${botProfile.context} ID: ${userData.userIdForContext.getOrElse("(unknown)")}
+           |Username: @${userData.userName.getOrElse("(unknown)")}
+           |Email: ${userData.email.getOrElse("(unknown)")}
+         """.stripMargin
+      }.getOrElse("<no user data provided for MS Teams>")
+
       val message =
         s"""**${heading}** _(created ${timestamp}):_
            |
@@ -119,11 +130,7 @@ class SocialAuthController @Inject() (
            |Ellipsis ID: ${team.id}
            |Context (${botProfile.context}) team ID: ${botProfile.teamIdForContext}
            |
-           |_User:_
-           |**${userData.fullName.getOrElse("(Name unknown)")}**
-           |Slack ID: ${userData.userIdForContext.getOrElse("(unknown)")}
-           |Username: @${userData.userName.getOrElse("(unknown)")}
-           |Email: ${userData.email.getOrElse("(unknown)")}
+           |$userPart
            |""".stripMargin
       maybeEvent.map { event =>
         val result = SimpleTextResult(event, None, message, responseType = Normal)
@@ -197,7 +204,7 @@ class SocialAuthController @Inject() (
             }
           }
           user <- Future.successful(linkedAccount.user)
-          _ <- announceNewTeam(botProfile, user)
+          _ <- announceNewTeam(botProfile, Some(user))
           result <- Future.successful {
             maybeRedirect.map { redirect =>
               Redirect(validatedRedirectUri(redirect))
@@ -338,7 +345,8 @@ class SocialAuthController @Inject() (
         val apiClient = msTeamsApiService.tenantClientFor(tenantId)
         for {
           orgInfo <- apiClient.getOrgInfo.map(_.get)
-          _ <- dataService.msTeamsBotProfiles.ensure(tenantId, orgInfo.displayName)
+          botProfile <- dataService.msTeamsBotProfiles.ensure(tenantId, orgInfo.displayName)
+          _ <- announceNewTeam(botProfile, None)
         } yield {
           request.identity.map { _ =>
             Redirect(routes.ApplicationController.index())
