@@ -260,6 +260,7 @@ case class MSTeamsEventContext(
   val name: String = Conversation.MS_TEAMS_CONTEXT
   val userId: String = info.from.id
   val teamId: String = profile.teamId
+  val botUserIdForContext: String = info.recipient.id
 
   val isDirectMessage: Boolean = {
     info.conversation.conversationType == "personal"
@@ -272,7 +273,7 @@ case class MSTeamsEventContext(
 
   def maybeTeamIdForContext: Option[String] = Some(profile.teamIdForContext)
 
-  def maybeBotUserIdForContext: Option[String] = None
+  def maybeBotUserIdForContext: Option[String] = Some(botUserIdForContext)
 
   def maybeUserIdForContext: Option[String] = Some(userId)
 
@@ -290,7 +291,7 @@ case class MSTeamsEventContext(
 
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     botName(services).map { botName =>
-      Some(BotInfo(botName, profile.tenantId)) // TODO: not really a user ID
+      Some(BotInfo(botName, botUserIdForContext))
     }
   }
 
