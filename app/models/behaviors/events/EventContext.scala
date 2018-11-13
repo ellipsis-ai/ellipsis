@@ -14,6 +14,7 @@ import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import services.DefaultServices
 import services.ms_teams.apiModels.{ActivityInfo, ResponseInfo}
+import services.caching.SlackMessagePermalinkCacheKey
 import services.slack.SlackApiError
 import slick.dbio.DBIO
 import utils.{SlackChannels, SlackMessageReactionHandler, SlackMessageSender, UploadFileSpec}
@@ -232,12 +233,19 @@ case class SlackEventContext(
     } yield maybeTs
   }
 
+  private def maybePermalinkFunctionFor(key: SlackMessagePermalinkCacheKey, services: DefaultServices): SlackMessagePermalinkCacheKey => Future[Option[String]] = {
+    (key) => {
+      val client = services.slackApiService.clientFor(profile)
+      client.permalinkFor(key.channel, key.messageTs)
+    }
+  }
+
   def maybePermalinkFor(
                           messageTs: String,
                           services: DefaultServices
                         )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val client = services.slackApiService.clientFor(profile)
-    client.permalinkFor(channel, messageTs)
+    val key = SlackMessagePermalinkCacheKey(messageTs, channel, profile.slackTeamId)
+    services.cacheService.getSlackPermalinkForMessage(key, maybePermalinkFunctionFor(key, services))
   }
 
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)

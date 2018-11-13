@@ -82,6 +82,20 @@ class BehaviorEditorController @Inject() (
     }
   }
 
+  private def monacoConfig: String = {
+    s"""
+self.MonacoEnvironment = {
+  getWorkerUrl: function (moduleId, label) {
+    if (label === 'typescript' || label === 'javascript') {
+      return "${assets.getWebpackBundle("ts_worker.js", forceSameHost = true)}";
+    } else {
+      return "${assets.getWebpackBundle("editor_worker.js", forceSameHost = true)}";
+    }
+  }
+};
+"""
+  }
+
   private def editorDataResult(eventualMaybeEditorData: Future[Option[BehaviorEditorData]], maybeShowVersions: Option[Boolean])(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     eventualMaybeEditorData.flatMap { maybeEditorData =>
       maybeEditorData.map { editorData =>
@@ -95,7 +109,8 @@ class BehaviorEditorController @Inject() (
           viewConfig(Some(editorData.teamAccess)),
           "BehaviorEditorConfiguration",
           "behaviorEditor",
-          Json.toJson(config)
+          Json.toJson(config),
+          Some(monacoConfig)
         )))
       }.getOrElse {
         Future.successful(NotFound("Skill not found"))
