@@ -15,4 +15,10 @@ case class TestMessageEvent(
   val user: User = eventContext.user
   val team: Team = eventContext.team
 
+  def messageUserDataList: Set[MessageUserData] = Set.empty
+
+  val isResponseExpected = true
+
+  val maybeMessageIdForReaction: Option[String] = None
+
 }

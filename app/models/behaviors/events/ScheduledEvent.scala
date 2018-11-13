@@ -54,6 +54,8 @@ sealed trait ScheduledEvent extends Event {
   override val maybeScheduled: Option[Scheduled] = Some(scheduled)
   def messageUserDataList: Set[MessageUserData] = underlying.messageUserDataList
 
+  val maybeMessageIdForReaction: Option[String] = None
+
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],
