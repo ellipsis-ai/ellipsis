@@ -14,11 +14,10 @@ import models.behaviors.testing.TestRunEvent
 import models.team.Team
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
-import services.DefaultServices
 import services.caching.SlackMessagePermalinkCacheKey
 import services.ms_teams.apiModels.{ActivityInfo, ResponseInfo}
-import services.{DataService, DefaultServices}
 import services.slack.SlackApiError
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.{SlackChannels, SlackMessageReactionHandler, SlackMessageSender, UploadFileSpec}
 
@@ -39,7 +38,10 @@ sealed trait EventContext {
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]]
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def ensureUserAction(dataService: DataService): DBIO[User]
+  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+  def ensureUserAction(dataService: DataService): DBIO[User] = {
+    dataService.users.ensureUserForAction(loginInfo, ellipsisTeamId)
+  }
 
   def maybeChannelForSendAction(
                                  responseType: BehaviorResponseType,
@@ -92,11 +94,6 @@ case class SlackEventContext(
     botName(services).map { botName =>
       Some(BotInfo(botName, profile.userId))
     }
-  }
-
-  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
-  def ensureUserAction(dataService: DataService): DBIO[User] = {
-    dataService.users.ensureUserForAction(loginInfo, ellipsisTeamId)
   }
 
   val ellipsisTeamId: String = profile.teamId
@@ -287,7 +284,7 @@ case class SlackEventContext(
       profile,
       channel,
       botResult.responseType.maybeThreadTsToUseForNextAction(botResult, channel, maybeMessageId),
-      userId
+      userIdForContext
     )
     SlackRunEvent(
       eventContext,
@@ -310,8 +307,9 @@ case class MSTeamsEventContext(
   import services.ms_teams.apiModels.Formatting._
 
   val name: String = Conversation.MS_TEAMS_CONTEXT
-  val userId: String = info.from.id
-  val teamId: String = profile.teamId
+  val userIdForContext: String = info.from.id
+  val teamIdForContext: String = profile.teamIdForContext
+  val ellipsisTeamId: String = profile.teamId
   val botUserIdForContext: String = info.recipient.id
 
   val isDirectMessage: Boolean = {
@@ -323,11 +321,9 @@ case class MSTeamsEventContext(
   val channel: String = info.conversation.id
   val maybeChannel: Option[String] = Some(channel)
 
-  def maybeTeamIdForContext: Option[String] = Some(profile.teamIdForContext)
-
   def maybeBotUserIdForContext: Option[String] = Some(botUserIdForContext)
 
-  def maybeUserIdForContext: Option[String] = Some(userId)
+  def maybeUserIdForContext: Option[String] = Some(userIdForContext)
 
   def maybeThreadId: Option[String] = Some(info.conversation.id)
 
@@ -440,7 +436,7 @@ case class TestEventContext(
   }
   val isBotMessage: Boolean = false
 
-  def ensureUserAction(dataService: DataService): DBIO[User] = DBIO.successful(user)
+  override def ensureUserAction(dataService: DataService): DBIO[User] = DBIO.successful(user)
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
 
   def maybeChannelForSendAction(
