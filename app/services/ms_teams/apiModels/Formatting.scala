@@ -11,5 +11,7 @@ object Formatting {
   lazy implicit val channelDataFormat = Json.format[ChannelDataInfo]
   lazy implicit val activityFormat = Json.format[ActivityInfo]
   lazy implicit val responseFormat = Json.format[ResponseInfo]
+  lazy implicit val linkAttachmentFormat = Json.format[LinkAttachment]
+  lazy implicit val contentAttachmentFormat = Json.format[ContentAttachment]
 
 }

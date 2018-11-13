@@ -15,11 +15,11 @@ import models.team.Team
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import services.caching.SlackMessagePermalinkCacheKey
-import services.ms_teams.apiModels.{ActivityInfo, ResponseInfo}
+import services.ms_teams.apiModels.ActivityInfo
 import services.slack.SlackApiError
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.{SlackChannels, SlackMessageReactionHandler, SlackMessageSender, UploadFileSpec}
+import utils._
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
@@ -304,8 +304,6 @@ case class MSTeamsEventContext(
                               info: ActivityInfo
                               ) extends EventContext {
 
-  import services.ms_teams.apiModels.Formatting._
-
   val name: String = Conversation.MS_TEAMS_CONTEXT
   val userIdForContext: String = info.from.id
   val teamIdForContext: String = profile.teamIdForContext
@@ -365,19 +363,31 @@ case class MSTeamsEventContext(
                    developerContext: DeveloperContext,
                    services: DefaultServices
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val response = ResponseInfo(
-      "message",
-      info.recipient,
-      info.conversation,
-      info.from,
-      unformattedText,
-      info.id
-    )
-    val apiClient = services.msTeamsApiService.profileClientFor(profile)
     for {
-      maybeResult <- maybeResponseUrl.map { responseUrl =>
-        apiClient.postToResponseUrl(responseUrl, Json.toJson(response)).map(Some(_))
-      }.getOrElse(Future.successful(None))
+      maybeDMChannel <- eventualMaybeDMChannel(services)
+      botName <- botName(services)
+      maybeResult <- MSTeamsMessageSender(
+        services.msTeamsApiService.profileClientFor(profile),
+        userIdForContext,
+        profile.teamIdForContext,
+        info,
+        unformattedText,
+        responseType,
+        developerContext,
+        channel,
+        maybeDMChannel,
+        maybeThreadId,
+        maybeShouldUnfurl,
+        maybeConversation,
+        attachmentGroups,
+        files,
+        choices,
+        botName,
+        event.messageUserDataList(maybeConversation, services),
+        services,
+        event.isEphemeral,
+        event.beQuiet
+      ).send
     } yield maybeResult
   }
 
