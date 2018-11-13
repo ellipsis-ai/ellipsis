@@ -1,8 +1,9 @@
-package models.behaviors.events
+package models.behaviors.events.ms_teams
 
 import akka.actor.ActorSystem
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events._
 import services.{DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
