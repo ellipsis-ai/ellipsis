@@ -6,6 +6,7 @@ import models.accounts.linkedoauth1token.LinkedOAuth1TokenService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
 import models.accounts.logintoken.LoginTokenService
+import models.accounts.ms_teams.botprofile.MSTeamsBotProfileService
 import models.accounts.oauth1api.OAuth1ApiService
 import models.accounts.oauth1application.OAuth1ApplicationService
 import models.accounts.oauth1token.OAuth1TokenService
@@ -41,8 +42,8 @@ import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.invocationtoken.InvocationTokenService
 import models.behaviors.library.LibraryVersionService
 import models.behaviors.linked_github_repo.LinkedGithubRepoService
-import models.behaviors.messagelistener.MessageListenerService
 import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroupService
+import models.behaviors.messagelistener.MessageListenerService
 import models.behaviors.nodemoduleversion.NodeModuleVersionService
 import models.behaviors.savedanswer.SavedAnswerService
 import models.behaviors.scheduling.recurrence.RecurrenceService
@@ -51,12 +52,12 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessageService
 import models.behaviors.triggers.TriggerService
 import models.billing.active_user_record.ActiveUserRecordService
 import models.billing.addon.AddonService
-import models.devmodechannel.DevModeChannelService
-import models.environmentvariable.TeamEnvironmentVariableService
-import models.organization.OrganizationService
 import models.billing.invoice.InvoiceService
 import models.billing.plan.PlanService
 import models.billing.subscription.SubscriptionService
+import models.devmodechannel.DevModeChannelService
+import models.environmentvariable.TeamEnvironmentVariableService
+import models.organization.OrganizationService
 import models.team.TeamService
 import slick.dbio.DBIO
 
@@ -82,6 +83,7 @@ trait DataService {
   val simpleTokenApis: SimpleTokenApiService
   val githubProfiles: GithubProfileService
   val slackBotProfiles: SlackBotProfileService
+  val msTeamsBotProfiles: MSTeamsBotProfileService
   val oauth1Tokens: OAuth1TokenService
   val oauth2Tokens: OAuth2TokenService
   val behaviorGroups: BehaviorGroupService

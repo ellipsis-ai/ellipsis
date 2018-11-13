@@ -1,0 +1,86 @@
+@(
+  config: ViewConfig
+)(implicit r: RequestHeader, m: Messages)
+
+@page.main("Add to Microsoft Teams", config,
+  bodyClass = "bg-light",
+  navClass = "container-narrow container-c",
+  hideNav = true) {
+
+  <div id="content">
+    <div class="bg-black type-white border-emphasis-bottom border-pink">
+      <div class="container container-narrow container-c pvxxxxl mobile-pvxl">
+
+        <h1 class="mobile-mtn">Get started with Ellipsis</h1>
+
+        <p>
+          <span class="type-pink-light">To use Ellipsis, you need to grant it access to your Microsoft Teams organization. </span>
+        </p>
+
+        <div class="mtxl columns columns-elastic mobile-columns-float">
+          <div class="column column-shrink prxxl mobile-mbxl">
+            <div id="no-agreement-container" class="fade-in">
+              <button id="no-agreement-button" type="button" class="button button-shrink button-primary button-l" disabled>
+                <span class="display-inline-block align-t mrs">@views.html.shared.svg.slackLogoMark()</span>
+                <span class="display-inline-block align-t">Add to Microsoft Teams</span>
+              </button>
+            </div>
+
+            <div id="agreement-container" class="display-none fade-in">
+              <a href="@routes.SocialAuthController.installForMSTeams()"
+              class="button button-shrink button-primary button-l">
+                <span class="display-inline-block align-t mrs">@views.html.shared.svg.slackLogoMark()</span>
+                <span class="display-inline-block align-t">Add to Microsoft Teams</span>
+              </a>
+            </div>
+          </div>
+          <div class="column column-expand align-m">
+            <label id="agreement-checkbox-label" for="agreement-checkbox" class="checkbox-button checkbox-button-l button-inverted">
+              <input id="agreement-checkbox" type="checkbox" value="I agree" class="man mrs">
+              <span id="reminder">
+                <span>I agree to the </span>
+                <a target="legal" href="@routes.LegalController.privacyPolicy()" class="link-light-blue">privacy policy</a>
+                <span> and </span>
+                <a target="legal" href="@routes.LegalController.userAgreement()" class="link-light-blue">user agreement.</a>
+              </span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="bg-white">
+      <div class="container container-narrow container-c pvxxxl mobile-pvl">
+
+        <h2 class="mtn">What is Ellipsis?</h2>
+
+        <p>
+          Ellipsis is an assistant that can perform tasks and provide information in response to your messages in chat.
+        </p>
+
+        <p>
+          Install useful skills, customize them, and create new workflows from scratch. Then speak to Ellipsis whenever you need.
+        </p>
+
+        <h3>Quick setup</h3>
+
+        <div class="position-relative mv type-m">
+          <span class="box-number bg-pink type-white mrm">1</span>
+          <span>Grant Ellipsis access to your Microsoft Teams organization</span>
+        </div>
+
+        <div class="position-relative mvl type-m">
+          <span class="box-number bg-pink type-white mrm">2</span>
+          <span>Add the Ellipsis App to one of your Teams</span>
+        </div>
+
+        <div class="position-relative mvl type-m">
+          <span class="box-number bg-pink type-white mrm">3</span>
+          <span>Type <span class="box-chat box-chat-selected type-white">@@Ellipsis help</span> in a channel</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <script src="@config.assets.getWebpackBundle("add_to_slack.js")"></script>
+}

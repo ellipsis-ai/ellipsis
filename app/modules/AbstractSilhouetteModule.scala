@@ -13,6 +13,7 @@ import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepo
 import com.mohiva.play.silhouette.impl.util._
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import models.accounts.github.GithubProvider
+import models.accounts.ms_teams.MSTeamsProvider
 import models.accounts.slack.SlackProvider
 import models.silhouette._
 import net.ceedubs.ficus.Ficus._
@@ -20,6 +21,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
 import play.api.libs.ws.WSClient
+import services.ms_teams.MSTeamsApiService
 import utils.CustomSecuredErrorHandler
 
 import scala.concurrent.ExecutionContext
@@ -95,6 +97,16 @@ trait AbstractSilhouetteModule extends ScalaModule {
                             configuration: Configuration): SlackProvider = {
 
     new SlackProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.slack"))
+  }
+
+  @Provides
+  def provideMSTeamsProvider(
+                            httpLayer: HTTPLayer,
+                            stateHandler: SocialStateHandler,
+                            configuration: Configuration
+                            ): MSTeamsProvider = {
+
+    new MSTeamsProvider(httpLayer, stateHandler, configuration.underlying.as[OAuth2Settings]("silhouette.ms_teams"))
   }
 
   @Provides

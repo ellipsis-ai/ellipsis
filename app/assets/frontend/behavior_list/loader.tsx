@@ -23,7 +23,8 @@ export interface BehaviorListLoaderProps {
   teamTimeZone?: Option<string>,
   branchName: Option<string>,
   botName: string,
-  feedbackContainer?: Option<HTMLElement>
+  feedbackContainer?: Option<HTMLElement>,
+  isLinkedToGithub: boolean
 }
 
 export type PublishedBehaviorGroupLoadStatus = "loaded" | "loading" | "error";
@@ -324,7 +325,9 @@ class BehaviorListLoader extends React.Component<BehaviorListLoaderProps, State>
           teamId={this.props.teamId}
           slackTeamId={this.props.slackTeamId}
           botName={this.props.botName}
+          csrfToken={this.props.csrfToken}
           notification={this.renderTimeZoneSetNotification()}
+          isLinkedToGithub={this.props.isLinkedToGithub}
           {...pageProps}
         />
       );

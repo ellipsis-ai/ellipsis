@@ -8,5 +8,7 @@ case class ApplicationIndexConfig(
   slackTeamId: Option[String],
   teamTimeZone: Option[String],
   branchName: Option[String],
-  botName: String
+  botName: String,
+  isLinkedToGithub: Boolean
 )
+

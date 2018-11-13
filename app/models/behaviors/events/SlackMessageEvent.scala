@@ -29,6 +29,8 @@ case class SlackMessageEvent(
 
   val eventType: EventType = EventType.chat
 
+  val maybeMessageIdForReaction: Option[String] = Some(ts)
+
   override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     eventContext.maybePermalinkFor(ts, services)
   }
@@ -79,11 +81,6 @@ case class SlackMessageEvent(
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(eventContext.userIdForContext, eventContext.name, maybeChannel, Some(ts), ellipsisTeamId)
-  }
-
-  override def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)
-                                    (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
-    eventContext.reactionHandler(eventualResults, Some(ts), services)
   }
 
 }

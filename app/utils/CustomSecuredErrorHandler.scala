@@ -27,7 +27,6 @@ class CustomSecuredErrorHandler @Inject() (
     } else {
       Some(path)
     }
-    // TODO: platform-agnostic
     render.async {
       case Accepts.JavaScript() => {
         if (isIndex) {
@@ -46,7 +45,7 @@ class CustomSecuredErrorHandler @Inject() (
   }
 
   def redirectToSignIn(maybeRedirect: Option[String])(implicit request: RequestHeader): Future[Result] = {
-    Future.successful(Results.Redirect(controllers.routes.SlackController.signIn(maybeRedirect)))
+    Future.successful(Results.Redirect(controllers.routes.SocialAuthController.signIn(maybeRedirect)))
   }
 
   def onNotAuthorized(implicit request: RequestHeader): Future[Result] = {

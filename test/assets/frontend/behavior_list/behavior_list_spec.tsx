@@ -1,141 +1,169 @@
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
-import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
+import BehaviorList, {BehaviorListProps} from '../../../../app/assets/frontend/behavior_list/index';
 import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
 import BehaviorGroupCard from '../../../../app/assets/frontend/behavior_list/behavior_group_card';
 import Page from '../../../../app/assets/frontend/shared_ui/page';
+import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavior_version";
+import {TriggerType} from "../../../../app/assets/frontend/models/trigger";
+
+const absoluteUrl = () => "https://nope/";
 
 describe('BehaviorList', () => {
-  jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get' });
-  jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get' });
-  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get' });
+  jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.GithubConfigController.index = () => ({ url: '/githubConfig', method: 'get', absoluteURL: absoluteUrl });
 
   const normalResponseType = "Normal";
 
-  const behaviorVersionTask1 = Object.freeze({
+  const behaviorVersionTask1: BehaviorVersionJson = {
     "teamId": "abcdef",
     "groupId": "sfgsdf",
     "behaviorId": "b1",
     "name": "THE task",
     "functionBody": "use strict;",
     "responseTemplate": "A template",
-    "params": [],
+    "inputIds": [],
     "triggers": [{
       "text": "B",
       "requiresMention": false,
       "isRegex": true,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }, {
       "text": "C",
       "requiresMention": false,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
-      "responseTypeId": normalResponseType
+      "responseTypeId": normalResponseType,
+      isDataType: false,
+      isTest: false
     },
     "createdAt": 1468338136532
-  });
-  const behaviorVersionTask2 = Object.freeze({
+  };
+  const behaviorVersionTask2: BehaviorVersionJson = {
     "teamId": "abcdef",
     "groupId": "gsdfgsg",
     "behaviorId": "b2",
     "name": "Some task",
     "functionBody": "use strict;",
     "responseTemplate": "A template",
-    "params": [],
+    "inputIds": [],
     "triggers": [{
       "text": "A",
       "requiresMention": true,
       "isRegex": true,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
-      "responseTypeId": normalResponseType
+      "responseTypeId": normalResponseType,
+      isDataType: false,
+      isTest: false
     },
     "createdAt": 1468359271138
-  });
-  const behaviorVersionTask3 = Object.freeze({
+  };
+  const behaviorVersionTask3: BehaviorVersionJson = {
     "teamId": "abcdef",
     "groupId": "gsdfgsg",
     "behaviorId": "b3",
     "name": "A task",
     "functionBody": "use strict;",
     "responseTemplate": "A template",
-    "params": [],
+    "inputIds": [],
     "triggers": [{
       "text": "A",
       "requiresMention": true,
       "isRegex": true,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
-      "responseTypeId": normalResponseType
+      "responseTypeId": normalResponseType,
+      isDataType: false,
+      isTest: false
     },
     "createdAt": 1511817369237
-  });
-  const behaviorVersionKnowledge1 = Object.freeze({
+  };
+  const behaviorVersionKnowledge1: BehaviorVersionJson = {
     "teamId": "abcdef",
     "groupId": "jfghjfg",
     "behaviorId": "b4",
     "name": "Knowledge 1",
     "functionBody": "",
     "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
-    "params": [],
+    "inputIds": [],
     "triggers": [],
     "config": {
-      "responseTypeId": normalResponseType
+      "responseTypeId": normalResponseType,
+      isDataType: false,
+      isTest: false
     },
     "createdAt": 1466109904858
-  });
-  const behaviorVersionKnowledge2 = Object.freeze({
+  };
+  const behaviorVersionKnowledge2: BehaviorVersionJson = {
     "teamId": "abcdef",
     "groupId": "klmnop",
     "behaviorId": "b5",
     "name": "Knowledge 2",
     "functionBody": "",
     "responseTemplate": "The magic 8-ball says:\n\n“Concentrate and ask again.”",
-    "params": [],
+    "inputIds": [],
     "triggers": [],
     "config": {
-      "responseTypeId": normalResponseType
+      "responseTypeId": normalResponseType,
+      isDataType: false,
+      isTest: false
     },
     "createdAt": 1511816895686
-  });
-  const group1 = Object.freeze(BehaviorGroup.fromJson({
+  }
+  const group1 = BehaviorGroup.fromJson({
     id: "a",
     name: "A",
     description: "",
     behaviorVersions: [behaviorVersionTask1, behaviorVersionTask3],
+    actionInputs: [],
+    dataTypeInputs: [],
     libraryVersions: [],
     requiredAWSConfigs: [],
     requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
-    createdAt: 1466109904858
-  }));
-  const group2 = Object.freeze(BehaviorGroup.fromJson({
+    createdAt: 1466109904858,
+    isManaged: false
+  });
+  const group2 = BehaviorGroup.fromJson({
     id: "b",
     name: "B",
     description: "",
     behaviorVersions: [behaviorVersionTask2],
+    actionInputs: [],
+    dataTypeInputs: [],
     libraryVersions: [],
     requiredAWSConfigs: [],
     requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
-    createdAt: 1466109904858
-  }));
-  const group3 = Object.freeze(BehaviorGroup.fromJson({
+    createdAt: 1466109904858,
+    isManaged: false
+  });
+  const group3 = BehaviorGroup.fromJson({
     id: "c",
     name: "",
     description: "",
     behaviorVersions: [behaviorVersionKnowledge2, behaviorVersionKnowledge1],
+    actionInputs: [],
+    dataTypeInputs: [],
     libraryVersions: [],
     requiredAWSConfigs: [],
     requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
-    createdAt: 1466109904858
-  }));
-  const defaultConfig = Object.freeze({
+    createdAt: 1466109904858,
+    isManaged: false
+  });
+  const defaultConfig: BehaviorListProps = {
     onLoadPublishedBehaviorGroups: jest.fn(),
     onBehaviorGroupImport: jest.fn(),
     onBehaviorGroupUpdate: jest.fn(),
@@ -154,8 +182,10 @@ describe('BehaviorList', () => {
     teamId: "1",
     slackTeamId: "1",
     botName: "TestBot",
-    notification: null
-  });
+    notification: null,
+    csrfToken: "hi",
+    isLinkedToGithub: false
+  };
 
   class Footer extends React.Component {
     renderFooter(content) {
@@ -172,13 +202,13 @@ describe('BehaviorList', () => {
   }
 
   function createBehaviorList(config) {
-    const footer = TestUtils.renderIntoDocument(<Footer/>);
+    const footer = TestUtils.renderIntoDocument(<Footer/>) as Footer;
     return TestUtils.renderIntoDocument(
       <BehaviorList {...config} {...Page.requiredPropDefaults()} onRenderFooter={footer.renderFooter} />
-    );
+    ) as BehaviorList;
   }
 
-  let config = {};
+  let config: BehaviorListProps;
 
   beforeEach(() => {
     config = Object.assign({}, defaultConfig);
@@ -187,7 +217,7 @@ describe('BehaviorList', () => {
   describe('render', () => {
     it('renders a card for each group', () => {
       const list = createBehaviorList(config);
-      expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorGroupCard).length).toEqual(config.localBehaviorGroups.length);
+      expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorGroupCard as React.ComponentClass<any>).length).toEqual(config.localBehaviorGroups.length);
     });
   });
 
@@ -207,7 +237,7 @@ describe('BehaviorList', () => {
   });
 
   describe('toggleInfoPanel', () => {
-    let list;
+    let list: BehaviorList;
 
     beforeEach(() => {
       jest.clearAllTimers();
@@ -250,12 +280,13 @@ describe('BehaviorList', () => {
       list.setState({
         selectedBehaviorGroup: group1
       });
-      list.setState = jest.fn((newState, callback) => {
+      const setStateMock = jest.fn((newState, callback) => {
         callback();
       });
+      list.setState = setStateMock;
       list.toggleInfoPanel(group2);
       expect(setTimeout).not.toBeCalled();
-      expect(list.setState.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
+      expect(setStateMock.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
       expect(list.toggleActivePanel).toBeCalledWith('moreInfo');
     });
 
@@ -264,14 +295,15 @@ describe('BehaviorList', () => {
       list.setState({
         selectedBehaviorGroup: group1
       });
-      list.setState = jest.fn((newState, callback) => {
+      const setStateMock = jest.fn((newState, callback) => {
         callback();
       });
+      list.setState = setStateMock;
       list.toggleInfoPanel(group2);
       expect(list.clearActivePanel).toBeCalled();
       expect(setTimeout).toBeCalled();
       jest.runOnlyPendingTimers();
-      expect(list.setState.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
+      expect(setStateMock.mock.calls[0][0].selectedBehaviorGroup).toBe(group2);
       expect(list.toggleActivePanel).toBeCalledWith('moreInfo');
     });
   });

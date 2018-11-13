@@ -16,17 +16,12 @@ import Select from '../../form/select';
 import {maybeDiffFor, ModifiedDiff} from '../../models/diffs';
 import autobind from '../../lib/autobind';
 import SVGWarning from '../../svg/warning';
+import {GithubFetchError} from '../../models/github/github_fetch_error';
 
 const versionSources = {
   local: "local",
   github: "github"
 };
-
-type GithubFetchError = {
-  message: string,
-  type?: string,
-  details?: {}
-}
 
 type Props = {
   csrfToken: string,
@@ -790,11 +785,9 @@ class VersionBrowser extends React.Component<Props, State> {
               <div className="bg-white border-emphasis-bottom border-light container container-wide pvl">
                 <LinkGithubRepo
                   ref={(el) => this.linkGitHubRepoComponent = el}
-                  group={this.props.currentGroup}
                   linked={this.getLinkedGithubRepo()}
                   onDoneClick={this.onLinkedGithubRepo}
                   onLinkGithubRepo={this.props.onLinkGithubRepo}
-                  csrfToken={this.props.csrfToken}
                 />
               </div>
             </Collapsible>

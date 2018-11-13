@@ -60,25 +60,9 @@ class SlackController @Inject() (
       clientId <- configuration.getOptional[String]("silhouette.slack.clientID")
     } yield {
         val redirectUrl = routes.SocialAuthController.installForSlack().absoluteURL(secure=true)
-        Ok(views.html.slack.addToSlack(viewConfig(None), scopes, clientId, redirectUrl))
+        Ok(views.html.auth.addToSlack(viewConfig(None), scopes, clientId, redirectUrl))
       }
     maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
-  }
-
-  def signIn(maybeRedirectUrl: Option[String]) = silhouette.UserAwareAction.async { implicit request =>
-    val eventualMaybeTeamAccess = request.identity.map { user =>
-      dataService.users.teamAccessFor(user, None).map(Some(_))
-    }.getOrElse(Future.successful(None))
-    eventualMaybeTeamAccess.map { maybeTeamAccess =>
-      val maybeResult = for {
-        scopes <- configuration.getOptional[String]("silhouette.slack.signInScope")
-        clientId <- configuration.getOptional[String]("silhouette.slack.clientID")
-      } yield {
-          val redirectUrl = routes.SocialAuthController.authenticateSlack(maybeRedirectUrl).absoluteURL(secure=true)
-          Ok(views.html.slack.signInWithSlack(viewConfig(maybeTeamAccess), scopes, clientId, UriEncoding.encodePathSegment(redirectUrl, "utf-8")))
-        }
-      maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
-    }
   }
 
   trait RequestInfo {
@@ -347,25 +331,28 @@ class SlackController @Inject() (
   )
 
   private def processReactionEventsFor(info: ReactionAddedRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
-    for {
-      maybeSlackMessage <- SlackMessage.maybeFromMessageTs(info.event.item.ts, info.event.item.channel, botProfile, services)
-      isUserValidForBot <- slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId)
-      result <- if (!isUserValidForBot) {
-        Future.successful({})
+    slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId).flatMap { isUserValidForBot =>
+      if (isUserValidForBot) {
+        for {
+          maybeSlackMessage <- SlackMessage.maybeFromMessageTs(info.event.item.ts, info.event.item.channel, botProfile, services)
+          result <- {
+            val event = SlackReactionAddedEvent(
+              SlackEventContext(
+                botProfile,
+                info.channel,
+                maybeThreadId = None,
+                info.userId
+              ),
+              info.event.reaction,
+              maybeSlackMessage
+            )
+            slackEventService.onEvent(event)
+          }
+        } yield result
       } else {
-        val event = SlackReactionAddedEvent(
-          SlackEventContext(
-            botProfile,
-            info.channel,
-            maybeThreadId = None,
-            info.userId
-          ),
-          info.event.reaction,
-          maybeSlackMessage
-        )
-        slackEventService.onEvent(event)
+        Future.successful({})
       }
-    } yield result
+    }
   }
 
   private def processMessageEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
@@ -820,13 +807,13 @@ class SlackController @Inject() (
 
   implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
 
-  private def sendEphemeralMessage(message: String, slackTeamId: String, slackChannelId: String, slackUserId: String): Future[Unit] = {
+  private def sendEphemeralMessage(message: String, slackTeamId: String, slackChannelId: String, maybeThreadTs: Option[String], slackUserId: String): Future[Unit] = {
     for {
       maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(slackTeamId).map(_.headOption)
       _ <- (for {
         profile <- maybeProfile
       } yield {
-        services.slackApiService.clientFor(profile).postEphemeralMessage(message, slackChannelId, slackUserId)
+        services.slackApiService.clientFor(profile).postEphemeralMessage(message, slackChannelId, maybeThreadTs, slackUserId)
       }).getOrElse {
         Future.successful({})
       }
@@ -834,17 +821,13 @@ class SlackController @Inject() (
   }
 
   private def sendEphemeralMessage(message: String, info: ActionsTriggeredInfo): Future[Unit] = {
-    sendEphemeralMessage(message, info.slackTeamIdForBot, info.channel.id, info.user.id)
+    sendEphemeralMessage(message, info.slackTeamIdForBot, info.channel.id, info.maybeOriginalMessageThreadId, info.user.id)
   }
 
   private def sendEphemeralMessage(message: String, info: MessageRequestInfo): Future[Unit] = {
     info.slackTeamIdsForBots.headOption.map { slackTeamId =>
-      sendEphemeralMessage(message, slackTeamId, info.channel, info.userId)
+      sendEphemeralMessage(message, slackTeamId, info.channel, info.maybeThreadTs, info.userId)
     }.getOrElse(Future.successful({}))
-  }
-
-  private def sendEphemeralMessage(message: String, info: ReactionAddedRequestInfo): Future[Unit] = {
-    sendEphemeralMessage(message, info.teamId, info.channel, info.userId)
   }
 
   private def updateActionsMessageFor(

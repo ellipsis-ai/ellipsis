@@ -4,14 +4,19 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import json.SlackUserData
+import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
-import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
+import models.behaviors._
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.{ActionChoice, BotInfo, BotResult, DeveloperContext}
+import models.behaviors.testing.TestRunEvent
 import models.team.Team
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
+import services.DefaultServices
+import services.caching.SlackMessagePermalinkCacheKey
+import services.ms_teams.apiModels.{ActivityInfo, ResponseInfo}
 import services.{DataService, DefaultServices}
 import services.slack.SlackApiError
 import slick.dbio.DBIO
@@ -62,6 +67,17 @@ sealed trait EventContext {
                    developerContext: DeveloperContext,
                    services: DefaultServices
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
+
+  def newRunEventFor(
+                   botResult: BotResult,
+                   nextAction: NextAction,
+                   behaviorVersion: BehaviorVersion,
+                   channel: String,
+                   maybeMessageId: Option[String]
+                 ): Event
+
+  def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
+                     (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]]
 
 }
 
@@ -237,12 +253,19 @@ case class SlackEventContext(
     } yield maybeTs
   }
 
+  private def maybePermalinkFunctionFor(key: SlackMessagePermalinkCacheKey, services: DefaultServices): SlackMessagePermalinkCacheKey => Future[Option[String]] = {
+    (key) => {
+      val client = services.slackApiService.clientFor(profile)
+      client.permalinkFor(key.channel, key.messageTs)
+    }
+  }
+
   def maybePermalinkFor(
                           messageTs: String,
                           services: DefaultServices
                         )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val client = services.slackApiService.clientFor(profile)
-    client.permalinkFor(channel, messageTs)
+    val key = SlackMessagePermalinkCacheKey(messageTs, channel, profile.slackTeamId)
+    services.cacheService.getSlackPermalinkForMessage(key, maybePermalinkFunctionFor(key, services))
   }
 
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
@@ -251,6 +274,146 @@ case class SlackEventContext(
       SlackMessageReactionHandler.handle(services.slackApiService.clientFor(profile), eventualResults, channel, messageTs)
     }
     eventualResults
+  }
+
+  def newRunEventFor(
+                    botResult: BotResult,
+                    nextAction: NextAction,
+                    behaviorVersion: BehaviorVersion,
+                    channel: String,
+                    maybeMessageId: Option[String]
+                  ): Event = {
+    val eventContext = SlackEventContext(
+      profile,
+      channel,
+      botResult.responseType.maybeThreadTsToUseForNextAction(botResult, channel, maybeMessageId),
+      userId
+    )
+    SlackRunEvent(
+      eventContext,
+      behaviorVersion,
+      nextAction.argumentsMap,
+      Some(botResult.event.eventType),
+      botResult.event.isEphemeral,
+      botResult.event.maybeResponseUrl,
+      maybeMessageId
+    )
+  }
+
+}
+
+case class MSTeamsEventContext(
+                              profile: MSTeamsBotProfile,
+                              info: ActivityInfo
+                              ) extends EventContext {
+
+  import services.ms_teams.apiModels.Formatting._
+
+  val name: String = Conversation.MS_TEAMS_CONTEXT
+  val userId: String = info.from.id
+  val teamId: String = profile.teamId
+  val botUserIdForContext: String = info.recipient.id
+
+  val isDirectMessage: Boolean = {
+    info.conversation.conversationType == "personal"
+  }
+  val isPublicChannel: Boolean = {
+    info.conversation.conversationType == "team"
+  }
+  val channel: String = info.conversation.id
+  val maybeChannel: Option[String] = Some(channel)
+
+  def maybeTeamIdForContext: Option[String] = Some(profile.teamIdForContext)
+
+  def maybeBotUserIdForContext: Option[String] = Some(botUserIdForContext)
+
+  def maybeUserIdForContext: Option[String] = Some(userId)
+
+  def maybeThreadId: Option[String] = Some(info.conversation.id)
+
+  def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    Future.successful(None)
+  }
+
+  def messageRecipientPrefix(isUninterruptedConversation: Boolean): String = ""
+
+  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    Future.successful("Ellipsis")
+  }
+
+  def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
+    botName(services).map { botName =>
+      Some(BotInfo(botName, botUserIdForContext))
+    }
+  }
+
+  def maybeChannelForSendAction(
+                                 responseType: BehaviorResponseType,
+                                 maybeConversation: Option[Conversation],
+                                 services: DefaultServices
+                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
+    DBIO.successful(None)
+  }
+
+  val maybeResponseUrl: Option[String] = Some(info.responseUrl)
+
+  def sendMessage(
+                   event: Event,
+                   unformattedText: String,
+                   responseType: BehaviorResponseType,
+                   maybeShouldUnfurl: Option[Boolean],
+                   maybeConversation: Option[Conversation],
+                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   files: Seq[UploadFileSpec],
+                   choices: Seq[ActionChoice],
+                   developerContext: DeveloperContext,
+                   services: DefaultServices
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    val response = ResponseInfo(
+      "message",
+      info.recipient,
+      info.conversation,
+      info.from,
+      unformattedText,
+      info.id
+    )
+    val apiClient = services.msTeamsApiService.profileClientFor(profile)
+    for {
+      maybeResult <- maybeResponseUrl.map { responseUrl =>
+        apiClient.postToResponseUrl(responseUrl, Json.toJson(response)).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield maybeResult
+  }
+
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+    Future.successful(JsObject(Seq())) // TODO: this
+  }
+
+  def newRunEventFor(
+                   botResult: BotResult,
+                   nextAction: NextAction,
+                   behaviorVersion: BehaviorVersion,
+                   channel: String,
+                   maybeMessageId: Option[String]
+                 ): Event = {
+    val eventContext = MSTeamsEventContext(
+      profile,
+      info
+    )
+    MSTeamsRunEvent(
+      eventContext,
+      behaviorVersion,
+      nextAction.argumentsMap,
+      Some(botResult.event.eventType),
+      botResult.event.isEphemeral,
+      botResult.event.maybeResponseUrl,
+      maybeMessageId
+    )
+  }
+
+  def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
+                     (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
+    eventualResults // TODO: this
   }
 
 }
@@ -312,4 +475,24 @@ case class TestEventContext(
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }
+
+  def newRunEventFor(
+                   botResult: BotResult,
+                   nextAction: NextAction,
+                   behaviorVersion: BehaviorVersion,
+                   channel: String,
+                   maybeMessageId: Option[String]
+                 ): Event = {
+    TestRunEvent(
+      copy(),
+      behaviorVersion,
+      nextAction.argumentsMap
+    )
+  }
+
+  def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
+                     (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
+    eventualResults
+  }
+
 }

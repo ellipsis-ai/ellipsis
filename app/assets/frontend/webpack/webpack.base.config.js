@@ -1,7 +1,6 @@
 /* eslint no-console: "off" */
 const webpack = require('webpack');
 const path = require('path');
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 /**
  * Base configuration object for Webpack
@@ -30,13 +29,19 @@ const webpackConfig = {
     regionalSettings: './app/assets/frontend/settings/regional_settings/loader',
     scheduling: './app/assets/frontend/scheduling/loader',
     styleguideColors: './app/assets/frontend/styleguide/colors/loader',
-    supportRequest: './app/assets/frontend/support/loader'
+    supportRequest: './app/assets/frontend/support/loader',
+
+    // Monaco language workers
+    'editor_worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
+    'ts_worker': 'monaco-editor/esm/vs/language/typescript/ts.worker'
   },
   output: {
+    globalObject: "self",
     path: "",
     filename: '[name].js',
     sourceMapFilename: '[name].map',
-    publicPath: '/javascripts/'
+    publicPath: '/javascripts/',
+    pathinfo: false
   },
   module: {
     rules: [{
@@ -62,11 +67,19 @@ const webpackConfig = {
   optimization: {
     splitChunks: {
       cacheGroups: {
-        monaco: {
-          name: "monaco",
+        // Monaco editor workers are loaded into isolated threads:
+        "editor_worker": {
+          name: "editor_worker",
           chunks: "all",
-          test: /[\\/]node_modules[\\/]monaco-editor/
+          test: /[\\/]node_modules[\\/]monaco-editor[\\/]esm[\\/]vs[\\/]editor[\\/]editor.worker/
         },
+        "ts_worker": {
+          name: "ts_worker",
+          chunks: "all",
+          test: /[\\/]node_modules[\\/]monaco-editor[\\/]esm[\\/]vs[\\/]language[\\/]typescript[\\/]ts.worker/
+        },
+
+        // Commonly-loaded vendor code (do not include Monaco since it balloons too much):
         vendor: {
           name: "vendor",
           chunks: "all",
@@ -77,11 +90,7 @@ const webpackConfig = {
   },
   plugins: [
     /* Force moment to only load English locale instead of all */
-    new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
-
-    new MonacoWebpackPlugin({
-      languages: ["typescript", "javascript", "markdown"]
-    })
+    new webpack.ContextReplacementPlugin(/moment[\/\\]locale$/, /en/)
   ]
 };
 

@@ -320,4 +320,9 @@ class CacheServiceImpl @Inject() (
     get[Boolean](cacheKeyForSlackUserIsOnBotTeam(slackUserId, slackBotProfile, maybeEnterpriseId))
   }
 
+  private val slackMessagePermalinkCache: Cache[SlackMessagePermalinkCacheKey, Option[String]] = LfuCache(cacheSettingsWithTimeToLive(slackApiCallExpiry))
+
+  def getSlackPermalinkForMessage(key: SlackMessagePermalinkCacheKey, dataFn: SlackMessagePermalinkCacheKey => Future[Option[String]]): Future[Option[String]] = {
+    slackMessagePermalinkCache.getOrLoad(key, dataFn)
+  }
 }

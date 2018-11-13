@@ -1,16 +1,14 @@
 package models.behaviors
 
 import akka.actor.ActorSystem
-import com.google.common.util.concurrent.Futures.FutureCombiner
 import javax.inject.Inject
-import models.behaviors.behaviorversion.{BehaviorVersion, Threaded}
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventHandler, SlackEventContext, SlackRunEvent}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
 import services.slack.SlackEventService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.SlackTimestamp
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -45,40 +43,19 @@ class BotResultServiceImpl @Inject() (
 
   private def runNextAction(nextAction: NextAction, botResult: BotResult, maybeMessageTs: Option[String])(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
-      maybeSlackChannelId <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
+      maybeOriginatingResponseChannel <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
         DBIO.from(botResult.event.maybeChannelToUseFor(behaviorVersion, services))
       }.getOrElse(DBIO.successful(None))
       maybeBehaviorVersion <- botResult.maybeBehaviorVersion.map { originatingBehaviorVersion =>
         dataService.behaviorVersions.findByNameAction(nextAction.actionName, originatingBehaviorVersion.groupVersion)
       }.getOrElse(DBIO.successful(None))
-      maybeBotProfile <- dataService.slackBotProfiles.allForSlackTeamIdAction(botResult.event.eventContext.teamIdForContext).map(_.headOption)
-      user <- botResult.event.ensureUserAction(dataService)
-      maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
-      maybeThreadId <- DBIO.successful(if (botResult.responseType == Threaded) {
-        botResult.maybeConversation.flatMap(_.maybeThreadId).orElse(maybeMessageTs)
-      } else {
-        None
-      })
       maybeEvent <- DBIO.successful(
         for {
-          botProfile <- maybeBotProfile
-          linkedAccount <- maybeSlackLinkedAccount
           behaviorVersion <- maybeBehaviorVersion
-          channel <- maybeSlackChannelId
-        } yield SlackRunEvent(
-          SlackEventContext(
-            botProfile,
-            channel,
-            maybeThreadId,
-            linkedAccount.loginInfo.providerKey
-          ),
-          behaviorVersion,
-          nextAction.argumentsMap,
-          Some(botResult.event.eventType),
-          botResult.event.isEphemeral,
-          botResult.event.maybeResponseUrl,
-          maybeMessageTs
-        )
+          channel <- maybeOriginatingResponseChannel
+        } yield {
+          botResult.event.eventContext.newRunEventFor(botResult, nextAction, behaviorVersion, channel, maybeMessageTs)
+        }
       )
       _ <- if (maybeBehaviorVersion.isDefined) {
         runBehaviorFor(maybeEvent, botResult.maybeBehaviorVersion)
