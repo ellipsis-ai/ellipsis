@@ -8,6 +8,7 @@ import models.accounts.linkedoauth1token.LinkedOAuth1TokenService
 import models.accounts.linkedoauth2token.LinkedOAuth2TokenService
 import models.accounts.linkedsimpletoken.LinkedSimpleTokenService
 import models.accounts.logintoken.LoginTokenService
+import models.accounts.ms_teams.botprofile.MSTeamsBotProfileService
 import models.accounts.oauth1api.OAuth1ApiService
 import models.accounts.oauth1application.OAuth1ApplicationService
 import models.accounts.oauth1token.OAuth1TokenService
@@ -86,6 +87,7 @@ class PostgresDataService @Inject() (
                                       val simpleTokenApisProvider: Provider[SimpleTokenApiService],
                                       val githubProfilesProvider: Provider[GithubProfileService],
                                       val slackBotProfilesProvider: Provider[SlackBotProfileService],
+                                      val msTeamsBotProfilesProvider: Provider[MSTeamsBotProfileService],
                                       val oauth1TokensProvider: Provider[OAuth1TokenService],
                                       val oauth2TokensProvider: Provider[OAuth2TokenService],
                                       val behaviorGroupsProvider: Provider[BehaviorGroupService],
@@ -148,6 +150,7 @@ class PostgresDataService @Inject() (
   val simpleTokenApis = simpleTokenApisProvider.get
   val githubProfiles = githubProfilesProvider.get
   val slackBotProfiles = slackBotProfilesProvider.get
+  val msTeamsBotProfiles = msTeamsBotProfilesProvider.get
   val oauth1Tokens = oauth1TokensProvider.get
   val oauth2Tokens = oauth2TokensProvider.get
   val behaviorGroups = behaviorGroupsProvider.get

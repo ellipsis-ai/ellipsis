@@ -60,25 +60,9 @@ class SlackController @Inject() (
       clientId <- configuration.getOptional[String]("silhouette.slack.clientID")
     } yield {
         val redirectUrl = routes.SocialAuthController.installForSlack().absoluteURL(secure=true)
-        Ok(views.html.slack.addToSlack(viewConfig(None), scopes, clientId, redirectUrl))
+        Ok(views.html.auth.addToSlack(viewConfig(None), scopes, clientId, redirectUrl))
       }
     maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
-  }
-
-  def signIn(maybeRedirectUrl: Option[String]) = silhouette.UserAwareAction.async { implicit request =>
-    val eventualMaybeTeamAccess = request.identity.map { user =>
-      dataService.users.teamAccessFor(user, None).map(Some(_))
-    }.getOrElse(Future.successful(None))
-    eventualMaybeTeamAccess.map { maybeTeamAccess =>
-      val maybeResult = for {
-        scopes <- configuration.getOptional[String]("silhouette.slack.signInScope")
-        clientId <- configuration.getOptional[String]("silhouette.slack.clientID")
-      } yield {
-          val redirectUrl = routes.SocialAuthController.authenticateSlack(maybeRedirectUrl).absoluteURL(secure=true)
-          Ok(views.html.slack.signInWithSlack(viewConfig(maybeTeamAccess), scopes, clientId, UriEncoding.encodePathSegment(redirectUrl, "utf-8")))
-        }
-      maybeResult.getOrElse(Redirect(routes.ApplicationController.index()))
-    }
   }
 
   trait RequestInfo {

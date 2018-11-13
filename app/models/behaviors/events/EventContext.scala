@@ -3,6 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import json.Formatting._
 import json.SlackUserData
+import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
@@ -12,6 +13,7 @@ import models.team.Team
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import services.DefaultServices
+import services.ms_teams.apiModels.{ActivityInfo, ResponseInfo}
 import services.caching.SlackMessagePermalinkCacheKey
 import services.slack.SlackApiError
 import slick.dbio.DBIO
@@ -252,6 +254,95 @@ case class SlackEventContext(
       SlackMessageReactionHandler.handle(services.slackApiService.clientFor(profile), eventualResults, channel, messageTs)
     }
     eventualResults
+  }
+
+}
+
+case class MSTeamsEventContext(
+                              profile: MSTeamsBotProfile,
+                              info: ActivityInfo
+                              ) extends EventContext {
+
+  import services.ms_teams.apiModels.Formatting._
+
+  val name: String = Conversation.MS_TEAMS_CONTEXT
+  val userId: String = info.from.id
+  val teamId: String = profile.teamId
+  val botUserIdForContext: String = info.recipient.id
+
+  val isDirectMessage: Boolean = {
+    info.conversation.conversationType == "personal"
+  }
+  val isPublicChannel: Boolean = {
+    info.conversation.conversationType == "team"
+  }
+  val channel: String = info.conversation.id
+  val maybeChannel: Option[String] = Some(channel)
+
+  def maybeTeamIdForContext: Option[String] = Some(profile.teamIdForContext)
+
+  def maybeBotUserIdForContext: Option[String] = Some(botUserIdForContext)
+
+  def maybeUserIdForContext: Option[String] = Some(userId)
+
+  def maybeThreadId: Option[String] = Some(info.conversation.id)
+
+  def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    Future.successful(None)
+  }
+
+  def messageRecipientPrefix(isUninterruptedConversation: Boolean): String = ""
+
+  def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    Future.successful("Ellipsis")
+  }
+
+  def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
+    botName(services).map { botName =>
+      Some(BotInfo(botName, botUserIdForContext))
+    }
+  }
+
+  def maybeChannelForSendAction(
+                                 responseType: BehaviorResponseType,
+                                 maybeConversation: Option[Conversation],
+                                 services: DefaultServices
+                               )(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
+    DBIO.successful(None)
+  }
+
+  val maybeResponseUrl: Option[String] = Some(info.responseUrl)
+
+  def sendMessage(
+                   event: Event,
+                   unformattedText: String,
+                   responseType: BehaviorResponseType,
+                   maybeShouldUnfurl: Option[Boolean],
+                   maybeConversation: Option[Conversation],
+                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   files: Seq[UploadFileSpec],
+                   choices: Seq[ActionChoice],
+                   developerContext: DeveloperContext,
+                   services: DefaultServices
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    val response = ResponseInfo(
+      "message",
+      info.recipient,
+      info.conversation,
+      info.from,
+      unformattedText,
+      info.id
+    )
+    val apiClient = services.msTeamsApiService.profileClientFor(profile)
+    for {
+      maybeResult <- maybeResponseUrl.map { responseUrl =>
+        apiClient.postToResponseUrl(responseUrl, Json.toJson(response)).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield maybeResult
+  }
+
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+    Future.successful(JsObject(Seq())) // TODO: this
   }
 
 }
