@@ -1,10 +1,9 @@
 package utils
 
 import javax.inject.Inject
-
 import com.google.inject.Singleton
 import models.IDs
-import models.behaviors.events.SlackFile
+import models.behaviors.events.slack.SlackFile
 import services.caching.CacheService
 
 @Singleton

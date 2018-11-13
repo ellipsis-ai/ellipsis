@@ -12,6 +12,7 @@ import models.accounts.user.User
 import models.behaviors.BotResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events._
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent, SlackRunEvent}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team

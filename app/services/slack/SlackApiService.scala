@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
-import models.behaviors.events.SlackMessage
+import models.behaviors.events.slack.SlackMessage
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._

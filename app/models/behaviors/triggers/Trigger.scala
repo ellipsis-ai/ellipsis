@@ -4,7 +4,8 @@ import java.util.regex.PatternSyntaxException
 
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{Event, MessageEvent, SlashCommandEvent}
+import models.behaviors.events.slack.SlashCommandEvent
+import models.behaviors.events.{Event, MessageEvent}
 import services.AWSLambdaConstants
 import utils.FuzzyMatchPattern
 

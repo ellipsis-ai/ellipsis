@@ -12,7 +12,7 @@ import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.profile.SlackProfile
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, SlackMessageEvent}
+import models.behaviors.events.Event
 import models.team.Team
 import play.api.Logger
 import play.api.libs.json.Json
@@ -20,6 +20,7 @@ import services.DefaultServices
 import services.slack.SlackApiClient
 import json.Formatting._
 import models.accounts.slack.SlackUserTeamIds
+import models.behaviors.events.slack.SlackMessageEvent
 
 import scala.concurrent.{ExecutionContext, Future}
 

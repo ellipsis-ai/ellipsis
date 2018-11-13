@@ -1,4 +1,4 @@
-package models.behaviors.events
+package models.behaviors.events.slack
 
 import services.slack.apiModels.{ActionField, ActionSelectOption}
 

@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
+import models.behaviors.events.slack.SlackMessageEvent
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.Logger

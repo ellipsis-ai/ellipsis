@@ -10,7 +10,8 @@ import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
-import models.behaviors.events.{Event, EventType, SlackMessageEvent}
+import models.behaviors.events.slack.SlackMessageEvent
+import models.behaviors.events.{Event, EventType}
 import models.behaviors.triggers.Trigger
 import services.caching.CacheService
 import services.{DataService, DefaultServices}

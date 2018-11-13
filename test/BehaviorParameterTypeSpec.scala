@@ -3,7 +3,8 @@ import java.time.{OffsetDateTime, ZoneId}
 
 import models.IDs
 import models.behaviors.behaviorparameter._
-import models.behaviors.events.{SlackFile, SlackMessageEvent}
+import models.behaviors.events.SlackFile
+import models.behaviors.events.slack.SlackMessageEvent
 import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._

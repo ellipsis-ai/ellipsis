@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.slack.{SlackMessageEvent, SlackRunEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage

@@ -1,11 +1,10 @@
-package models.behaviors.events
+package models.behaviors.events.slack
 
 import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.BotResult
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events._
 import services.{DataService, DefaultServices}
-import utils.SlackMessageReactionHandler
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex

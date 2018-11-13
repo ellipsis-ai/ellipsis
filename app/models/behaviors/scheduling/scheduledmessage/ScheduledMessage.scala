@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.events._
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team

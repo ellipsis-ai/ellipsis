@@ -7,8 +7,9 @@ import models.accounts.{MSTeamsContext, SlackContext}
 import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
+import models.behaviors.events.slack.SlackMessageActionConstants._
+import models.behaviors.events.slack.{SlackMessage, SlackMessageActionButton, SlackMessageActionsGroup, SlackMessageEvent}
 import models.behaviors.triggers.Trigger
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO

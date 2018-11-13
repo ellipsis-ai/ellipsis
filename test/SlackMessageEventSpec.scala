@@ -3,7 +3,8 @@ import java.time.OffsetDateTime
 import json.SlackUserData
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.events.{SlackEventContext, SlackMessage, SlackMessageEvent}
+import models.behaviors.events.slack.SlackMessageEvent
+import models.behaviors.events.{SlackEventContext, SlackMessage}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec

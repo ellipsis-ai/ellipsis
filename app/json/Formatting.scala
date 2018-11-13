@@ -6,7 +6,8 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors._
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.behaviortestresult.BehaviorTestResult
-import models.behaviors.events.{MessageUserData, SlackFile, SlackMessage}
+import models.behaviors.events.MessageUserData
+import models.behaviors.events.slack.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
 import services.caching.SlackMessageEventData

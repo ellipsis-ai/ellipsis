@@ -1,5 +1,6 @@
-package models.behaviors.events
+package models.behaviors.events.slack
 
+import models.behaviors.events.MessageUserData
 import utils.SlackMessageSender
 
 case class SlackMessageActionsGroup(
@@ -44,4 +45,3 @@ case class SlackMessageActionsGroup(
   }
 
 }
-
