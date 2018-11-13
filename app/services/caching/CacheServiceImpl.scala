@@ -14,7 +14,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
-import models.behaviors.events.{slack, _}
+import models.behaviors.events._
 import models.behaviors.events.slack.{SlackFile, SlackMessage, SlackMessageEvent}
 import play.api.Logger
 import play.api.cache.SyncCacheApi
@@ -121,7 +121,7 @@ class CacheServiceImpl @Inject() (
     get[JsValue](key).flatMap { eventJson =>
       eventJson.validate[SlackMessageEventData] match {
         case JsSuccess(event, _) => {
-          Some(slack.SlackMessageEvent(
+          Some(SlackMessageEvent(
             SlackEventContext(
               event.profile,
               event.channel,
