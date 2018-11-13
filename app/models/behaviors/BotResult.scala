@@ -527,11 +527,12 @@ case class AdminSkillErrorNotificationResult(
     s" running action `$action` in skill `$skill` $skillLink"
   }.getOrElse("")
   lazy val text: String = {
-    val userId = originalResult.event.eventContext.userId
+    val userIdForContext = originalResult.event.eventContext.userIdForContext
+    val contextUserText = s"Context User ID: <@${userIdForContext}> (ID #${userIdForContext})"
     s"""Error$description
        |
        |Team: $teamLink
-       |User: <@${userId}> (ID #${userId})
+       |$contextUserText
        |Result type: ${originalResult.resultType}
        |
      """.stripMargin
@@ -557,7 +558,7 @@ case class MissingTeamEnvVarsResult(
 
   val linkToEnvVarConfig: String = {
     val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val path = controllers.web.settings.routes.EnvironmentVariablesController.list(Some(event.teamId), Some(missingEnvVars.mkString(",")))
+    val path = controllers.web.settings.routes.EnvironmentVariablesController.list(Some(event.ellipsisTeamId), Some(missingEnvVars.mkString(",")))
     val url = s"$baseUrl$path"
     s"[Configure environment variables](${url})"
   }

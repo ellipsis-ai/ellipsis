@@ -1,6 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import json.SlackUserData
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
@@ -13,10 +14,10 @@ import models.behaviors.testing.TestRunEvent
 import models.team.Team
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
-import services.DefaultServices
 import services.caching.SlackMessagePermalinkCacheKey
 import services.ms_teams.apiModels.{ActivityInfo, ResponseInfo}
 import services.slack.SlackApiError
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.{SlackChannels, SlackMessageReactionHandler, SlackMessageSender, UploadFileSpec}
 
@@ -29,10 +30,18 @@ sealed trait EventContext {
   val isDirectMessage: Boolean
   val maybeChannel: Option[String]
   val name: String
-  val userId: String
-  val teamId: String
 
+  val ellipsisTeamId: String
+  val userIdForContext: String
+  val teamIdForContext: String
+
+  def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]]
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
+
+  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+  def ensureUserAction(dataService: DataService): DBIO[User] = {
+    dataService.users.ensureUserForAction(loginInfo, ellipsisTeamId)
+  }
 
   def maybeChannelForSendAction(
                                  responseType: BehaviorResponseType,
@@ -47,10 +56,6 @@ sealed trait EventContext {
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
 
   def maybeThreadId: Option[String]
-  def maybeTeamIdForContext: Option[String]
-  def maybeUserIdForContext: Option[String]
-  def maybeBotUserIdForContext: Option[String]
-  def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]]
 
   def sendMessage(
                    event: Event,
@@ -82,7 +87,7 @@ case class SlackEventContext(
                               profile: SlackBotProfile,
                               channel: String,
                               maybeThreadId: Option[String],
-                              userId: String
+                              userIdForContext: String
                             ) extends EventContext {
 
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
@@ -91,22 +96,22 @@ case class SlackEventContext(
     }
   }
 
-  val teamId: String = profile.teamId
+  val ellipsisTeamId: String = profile.teamId
   lazy val name: String = Conversation.SLACK_CONTEXT
   val maybeChannel: Option[String] = Some(channel)
-  val maybeTeamIdForContext: Option[String] = Some(profile.slackTeamId)
-  def maybeUserIdForContext: Option[String] = Some(userId)
-  def maybeBotUserIdForContext: Option[String] = Some(profile.userId)
+  val teamIdForContext: String = profile.slackTeamId
+  val botUserId: String = profile.userId
+  val isBotMessage: Boolean = botUserId == userIdForContext
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    if (profile.userId == userId) {
+    if (isBotMessage) {
       Future.successful(None)
     } else {
-      services.slackApiService.clientFor(profile).openConversationFor(userId).map(Some(_)).recover {
+      services.slackApiService.clientFor(profile).openConversationFor(userIdForContext).map(Some(_)).recover {
         case e: SlackApiError => {
           if (e.code != "cannot_dm_bot") {
             val msg =
-              s"""Couldn't open DM channel to user with ID ${userId} on Slack team ${profile.slackTeamId} due to Slack API error: ${e.code}
+              s"""Couldn't open DM channel to user with ID ${userIdForContext} on Slack team ${profile.slackTeamId} due to Slack API error: ${e.code}
                  |Original event channel: $channel
                """.stripMargin
             Logger.error(msg, e)
@@ -153,7 +158,7 @@ case class SlackEventContext(
     if (isDirectMessage || isUninterruptedConversation) {
       ""
     } else {
-      s"<@$userId>: "
+      s"<@$userIdForContext>: "
     }
   }
 
@@ -180,10 +185,10 @@ case class SlackEventContext(
     val client = services.slackApiService.clientFor(profile)
     val slackChannels = SlackChannels(client)
     for {
-      maybeUser <- services.slackEventService.maybeSlackUserDataFor(userId, client, (e) => {
+      maybeUser <- services.slackEventService.maybeSlackUserDataFor(userIdForContext, client, (e) => {
         Logger.error(
           s"""Slack API reported user not found while generating details about the user to send to an action:
-             |Slack user ID: ${userId}
+             |Slack user ID: ${userIdForContext}
              |Ellipsis bot Slack team ID: ${profile.slackTeamId}
              |Ellipsis team ID: ${profile.teamId}
            """.stripMargin, e)
@@ -221,7 +226,7 @@ case class SlackEventContext(
       botName <- botName(services)
       maybeTs <- SlackMessageSender(
         services.slackApiService.clientFor(profile),
-        userId,
+        userIdForContext,
         profile.slackTeamId,
         unformattedText,
         responseType,
@@ -279,7 +284,7 @@ case class SlackEventContext(
       profile,
       channel,
       botResult.responseType.maybeThreadTsToUseForNextAction(botResult, channel, maybeMessageId),
-      userId
+      userIdForContext
     )
     SlackRunEvent(
       eventContext,
@@ -302,8 +307,9 @@ case class MSTeamsEventContext(
   import services.ms_teams.apiModels.Formatting._
 
   val name: String = Conversation.MS_TEAMS_CONTEXT
-  val userId: String = info.from.id
-  val teamId: String = profile.teamId
+  val userIdForContext: String = info.from.id
+  val teamIdForContext: String = profile.teamIdForContext
+  val ellipsisTeamId: String = profile.teamId
   val botUserIdForContext: String = info.recipient.id
 
   val isDirectMessage: Boolean = {
@@ -315,11 +321,9 @@ case class MSTeamsEventContext(
   val channel: String = info.conversation.id
   val maybeChannel: Option[String] = Some(channel)
 
-  def maybeTeamIdForContext: Option[String] = Some(profile.teamIdForContext)
-
   def maybeBotUserIdForContext: Option[String] = Some(botUserIdForContext)
 
-  def maybeUserIdForContext: Option[String] = Some(userId)
+  def maybeUserIdForContext: Option[String] = Some(userIdForContext)
 
   def maybeThreadId: Option[String] = Some(info.conversation.id)
 
@@ -419,15 +423,20 @@ case class TestEventContext(
   val isPublicChannel: Boolean = false
   val isDirectMessage: Boolean = false
   val maybeChannel: Option[String] = None
-  val userId: String = user.id
-  val teamId: String = team.id
-  val maybeTeamIdForContext: Option[String] = None
   val maybeThreadId: Option[String] = None
+
+  val userIdForContext: String = user.id
+
+  // these are the same for the test context:
+  val ellipsisTeamId: String = team.id
+  val teamIdForContext: String = ellipsisTeamId
+
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     Future.successful(None)
   }
-  def maybeUserIdForContext: Option[String] = None
-  def maybeBotUserIdForContext: Option[String] = None
+  val isBotMessage: Boolean = false
+
+  override def ensureUserAction(dataService: DataService): DBIO[User] = DBIO.successful(user)
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
 
   def maybeChannelForSendAction(

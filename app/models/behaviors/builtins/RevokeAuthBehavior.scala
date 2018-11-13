@@ -17,7 +17,7 @@ case class RevokeAuthBehavior(
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     val dataService = services.dataService
     for {
-      maybeTeam <- dataService.teams.find(event.teamId)
+      maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
       user <- event.ensureUser(dataService)
       maybeApplication <- maybeTeam.map { team =>
         dataService.oauth2Applications.allUsableFor(team)

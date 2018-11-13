@@ -21,7 +21,7 @@ case class SetDefaultTimeZoneBehavior(
     val maybeTz = TimeZoneParser.maybeZoneFor(tzString)
     maybeTz.map { tz =>
       for {
-        maybeTeam <- dataService.teams.find(event.teamId)
+        maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
         maybeWithZone <- maybeTeam.map { team =>
           dataService.teams.setTimeZoneFor(team, tz).map(Some(_))
         }.getOrElse(Future.successful(None))

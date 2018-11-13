@@ -18,7 +18,7 @@ case class ResetBehaviorsBehavior(
     val dataService = services.dataService
     val eventualReply = try {
       for {
-        maybeTeam <- dataService.teams.find(event.teamId)
+        maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
         groups <- maybeTeam.map { team =>
           dataService.behaviorGroups.allFor(team)
         }.getOrElse(Future.successful(Seq()))

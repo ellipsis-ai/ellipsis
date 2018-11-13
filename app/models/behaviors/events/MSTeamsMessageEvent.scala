@@ -21,7 +21,7 @@ case class MSTeamsMessageEvent(
 
   val profile: MSTeamsBotProfile = eventContext.profile
   val channel: String = eventContext.channel
-  val user: String = eventContext.userId
+  val user: String = eventContext.userIdForContext
 
   val eventType: EventType = EventType.chat
 
@@ -50,12 +50,12 @@ case class MSTeamsMessageEvent(
 
   val botMentionRegex = s"""<at>${eventContext.info.recipient.name}</at>"""
 
-  override val relevantMessageTextWithFormatting: String = {
-    relevantMessageText
-  }
-
   override val relevantMessageText: String = {
     message.replaceAll(botMentionRegex, "").trim
+  }
+
+  override val relevantMessageTextWithFormatting: String = {
+    relevantMessageText
   }
 
   lazy val includesBotMention: Boolean = true
@@ -69,13 +69,13 @@ case class MSTeamsMessageEvent(
   override val isResponseExpected: Boolean = includesBotMention
 
   override def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, maybeThreadId, teamId).flatMap { maybeConvo =>
+    dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, maybeThreadId, ellipsisTeamId).flatMap { maybeConvo =>
       maybeConvo.map(c => Future.successful(Some(c))).getOrElse(maybeConversationRootedHere(dataService))
     }
   }
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, None, teamId)
+    dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, None, ellipsisTeamId)
   }
 
 }

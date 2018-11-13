@@ -230,7 +230,7 @@ case class DisplayHelpBehavior(
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
-      maybeTeam <- dataService.teams.find(event.teamId)
+      maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
       user <- event.ensureUser(dataService)
       maybeBehaviorGroups <- maybeTeam.map { team =>
         maybeSkillId match {

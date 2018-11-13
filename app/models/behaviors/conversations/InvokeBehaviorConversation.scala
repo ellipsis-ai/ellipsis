@@ -178,7 +178,6 @@ object InvokeBehaviorConversation {
                  dataService: DataService,
                  cacheService: CacheService
                  )(implicit ec: ExecutionContext): Future[InvokeBehaviorConversation] = {
-    val maybeTeamIdForContext = event.maybeTeamIdForContext
     val action = for {
       maybeParent <- maybeParent.map { parent =>
         dataService.parentConversations.createAction(parent).map(Some(_))
@@ -191,8 +190,8 @@ object InvokeBehaviorConversation {
         event.eventContext.name,
         maybeChannel,
         maybeParent.flatMap(_.parent.maybeThreadId).orElse(maybeThreadId),
-        event.eventContext.userId,
-        maybeTeamIdForContext,
+        event.eventContext.userIdForContext,
+        Some(event.eventContext.teamIdForContext),
         OffsetDateTime.now,
         None,
         Conversation.NEW_STATE,
@@ -203,7 +202,7 @@ object InvokeBehaviorConversation {
       _ <- dataService.conversations.saveAction(newInstance)
     } yield {
       maybeChannel.foreach { channel =>
-        cacheService.cacheLastConversationId(event.teamId, channel, newInstance.id)
+        cacheService.cacheLastConversationId(event.ellipsisTeamId, channel, newInstance.id)
       }
       cacheService.cacheMessageUserDataList(event.messageUserDataList.toSeq, newInstance.id)
       newInstance

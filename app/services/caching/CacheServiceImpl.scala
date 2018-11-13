@@ -100,7 +100,7 @@ class CacheServiceImpl @Inject() (
           ev.profile,
           ev.channel,
           ev.maybeThreadId,
-          ev.user,
+          ev.eventContext.userIdForContext,
           ev.message,
           ev.maybeFile,
           ev.ts,

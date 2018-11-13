@@ -1,7 +1,6 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
-import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
@@ -21,11 +20,10 @@ import scala.concurrent.{ExecutionContext, Future}
 trait Event {
   type EC <: EventContext
   val eventContext: EC
-  val maybeTeamIdForContext: Option[String] = eventContext.maybeTeamIdForContext
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     eventContext.maybeBotInfo(services)
   }
-  val teamId: String = eventContext.teamId
+  val ellipsisTeamId: String = eventContext.ellipsisTeamId
   val maybeChannel: Option[String] = eventContext.maybeChannel
   lazy val maybeThreadId: Option[String] = eventContext.maybeThreadId
   val messageText: String
@@ -59,27 +57,23 @@ trait Event {
     val channelText = maybeChannel.map { channel =>
       s" in channel [${channel}]"
     }.getOrElse("")
-    val userText = s" for context user ID [${result.event.eventContext.userId}]"
+    val contextUserText = s" for context user ID [$result.event.eventContext.userIdForContext]"
     val convoText = result.maybeConversation.map { convo =>
       s" in conversation [${convo.id}]"
     }.getOrElse("")
     val sourceText = maybeSource.getOrElse(logTextForResultSource)
-    val logIntro = s"Sending result $sourceText [${messageText}]$channelText$userText$convoText: [${result.fullText}]"
+    val logIntro = s"Sending result $sourceText [${messageText}]$channelText$contextUserText$convoText: [${result.fullText}]"
     s"$logIntro\n${result.filesAsLogText}"
   }
 
-  def loginInfo: LoginInfo = LoginInfo(eventContext.name, eventContext.userId)
-
-  def ensureUserAction(dataService: DataService): DBIO[User] = {
-    dataService.users.ensureUserForAction(loginInfo, teamId)
-  }
+  def ensureUserAction(dataService: DataService): DBIO[User] = eventContext.ensureUserAction(dataService)
 
   def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
     dataService.run(ensureUserAction(dataService))
   }
 
   def userInfoAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
-    UserInfo.buildForAction(this, maybeConversation, teamId, services)
+    UserInfo.buildForAction(this, maybeConversation, services)
   }
 
   def messageInfo(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
@@ -104,9 +98,9 @@ trait Event {
 
   def navLinkList(lambdaService: AWSLambdaService): Seq[(String, String)] = {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(teamId))
-      val schedulingPath = baseUrl + controllers.routes.ScheduledActionsController.index(None, None, Some(teamId))
-      val settingsPath = baseUrl + controllers.web.settings.routes.EnvironmentVariablesController.list(Some(teamId))
+      val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(ellipsisTeamId))
+      val schedulingPath = baseUrl + controllers.routes.ScheduledActionsController.index(None, None, Some(ellipsisTeamId))
+      val settingsPath = baseUrl + controllers.web.settings.routes.EnvironmentVariablesController.list(Some(ellipsisTeamId))
       Seq(
         "View and install skills" -> skillsListPath,
         "Scheduling" -> schedulingPath,
@@ -123,7 +117,7 @@ trait Event {
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.BehaviorEditorController.newGroup(Some(teamId))
+      val path = controllers.routes.BehaviorEditorController.newGroup(Some(ellipsisTeamId))
       s"$baseUrl$path"
     }.get
     s"[teach me something new]($newBehaviorLink)"
@@ -131,7 +125,7 @@ trait Event {
 
   def installLinkFor(lambdaService: AWSLambdaService): String = {
     val installLink = lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ApplicationController.index(Some(teamId))
+      val path = controllers.routes.ApplicationController.index(Some(ellipsisTeamId))
       s"$baseUrl$path"
     }.get
     s"[install new skills]($installLink)"
