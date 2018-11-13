@@ -2,7 +2,6 @@ package models.behaviors.events
 
 import akka.actor.ActorSystem
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
-import models.behaviors.BotResult
 import models.behaviors.conversations.conversation.Conversation
 import services.{DataService, DefaultServices}
 
@@ -25,6 +24,8 @@ case class MSTeamsMessageEvent(
   val user: String = eventContext.userId
 
   val eventType: EventType = EventType.chat
+
+  val maybeMessageIdForReaction: Option[String] = None // TODO: populate this
 
   override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(None) // TODO: maybe implement this
@@ -75,13 +76,6 @@ case class MSTeamsMessageEvent(
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, None, teamId)
-  }
-
-  override def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)
-                                    (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
-    eventualResults
-    // TODO: this
-//    eventContext.reactionHandler(eventualResults, Some(ts), services)
   }
 
 }

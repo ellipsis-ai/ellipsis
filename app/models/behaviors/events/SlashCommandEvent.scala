@@ -35,6 +35,8 @@ case class SlashCommandEvent(
 
   override val beQuiet: Boolean = true
 
+  val maybeMessageIdForReaction: Option[String] = None
+
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],
                                maybeLimitToBehavior: Option[Behavior],

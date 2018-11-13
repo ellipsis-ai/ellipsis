@@ -49,33 +49,12 @@ class BotResultServiceImpl @Inject() (
       maybeBehaviorVersion <- botResult.maybeBehaviorVersion.map { originatingBehaviorVersion =>
         dataService.behaviorVersions.findByNameAction(nextAction.actionName, originatingBehaviorVersion.groupVersion)
       }.getOrElse(DBIO.successful(None))
-      maybeBotProfile <- botResult.event.maybeTeamIdForContext.map { teamIdForContext =>
-        dataService.slackBotProfiles.allForSlackTeamIdAction(teamIdForContext).map(_.headOption)
-      }.getOrElse(DBIO.successful(None))
-      user <- botResult.event.ensureUserAction(dataService)
-      maybeSlackLinkedAccount <- dataService.linkedAccounts.maybeForSlackForAction(user)
       maybeEvent <- DBIO.successful(
         for {
-          botProfile <- maybeBotProfile
-          linkedAccount <- maybeSlackLinkedAccount
           behaviorVersion <- maybeBehaviorVersion
           channel <- maybeOriginatingResponseChannel
         } yield {
-          val eventContext = SlackEventContext(
-            botProfile,
-            channel,
-            botResult.responseType.maybeThreadTsToUseForNextAction(botResult, channel, maybeMessageTs),
-            linkedAccount.loginInfo.providerKey
-          )
-          SlackRunEvent(
-            eventContext,
-            behaviorVersion,
-            nextAction.argumentsMap,
-            Some(botResult.event.eventType),
-            botResult.event.isEphemeral,
-            botResult.event.maybeResponseUrl,
-            maybeMessageTs
-          )
+          botResult.event.eventContext.newRunEventFor(botResult, nextAction, behaviorVersion, channel, maybeMessageTs)
         }
       )
       _ <- if (maybeBehaviorVersion.isDefined) {
