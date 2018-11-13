@@ -190,14 +190,18 @@ trait MSTeamsApiClient {
       }
   }
 
+  val userIdForContext = services.configuration.get[String]("silhouette.ms_teams.clientID")
+
+  def botDMDeepLink: String = s"https://teams.microsoft.com/l/chat/0/0?users=28:${userIdForContext}"
+
 }
 
 case class MSTeamsApiTenantClient(
-                           tenantId: String,
-                           services: DefaultServices,
-                           implicit val actorSystem: ActorSystem,
-                           implicit val ec: ExecutionContext
-                         ) extends MSTeamsApiClient {
+                                   tenantId: String,
+                                   services: DefaultServices,
+                                   implicit val actorSystem: ActorSystem,
+                                   implicit val ec: ExecutionContext
+                                 ) extends MSTeamsApiClient {
 
   val maybeEllipsisTeamId: Option[String] = None
 

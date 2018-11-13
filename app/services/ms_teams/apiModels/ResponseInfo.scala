@@ -6,5 +6,6 @@ case class ResponseInfo(
                          conversation: ConversationInfo,
                          recipient: MessageParticipantInfo,
                          text: String,
+                         textFormat: String,
                          replyToId: String
                        )
