@@ -5,6 +5,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.events._
+import models.behaviors.events.ms_teams.MSTeamsMessageEvent
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms.{mapping, nonEmptyText, optional}

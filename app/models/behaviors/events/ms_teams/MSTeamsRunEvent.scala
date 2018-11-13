@@ -1,6 +1,7 @@
-package models.behaviors.events
+package models.behaviors.events.ms_teams
 
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.{Event, EventType, MSTeamsEventContext, RunEvent}
 
 case class MSTeamsRunEvent(
                           eventContext: MSTeamsEventContext,
