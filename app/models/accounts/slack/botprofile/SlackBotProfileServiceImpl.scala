@@ -8,7 +8,8 @@ import javax.inject.{Inject, Provider}
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.registration.RegistrationService
 import models.accounts.user.User
-import models.behaviors.events.{EventType, SlackEventContext, SlackMessage, SlackMessageEvent}
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
+import models.behaviors.events.{EventType, SlackEventContext}
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger

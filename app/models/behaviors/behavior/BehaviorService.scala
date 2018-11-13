@@ -3,7 +3,7 @@ package models.behaviors.behavior
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.SlackMessageEvent
+import models.behaviors.events.slack.SlackMessageEvent
 import models.team.Team
 import play.api.Configuration
 import slick.dbio.DBIO

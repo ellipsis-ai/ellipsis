@@ -1,8 +1,9 @@
-package models.behaviors.events
+package models.behaviors.events.slack
 
 import akka.actor.ActorSystem
 import models.behaviors.BotResult
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.{Event, EventType, RunEvent, SlackEventContext}
 import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -3,7 +3,7 @@ package models.behaviors
 import akka.actor.ActorSystem
 import javax.inject.Inject
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{Event, EventHandler, SlackEventContext, SlackRunEvent}
+import models.behaviors.events.{Event, EventHandler, SlackEventContext}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
 import services.slack.SlackEventService

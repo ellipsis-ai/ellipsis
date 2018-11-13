@@ -3,7 +3,7 @@ import java.time.OffsetDateTime
 import json.{SlackUserData, SlackUserProfileData}
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.events.SlackMessage
+import models.behaviors.events.slack.SlackMessage
 import org.scalatestplus.play.PlaySpec
 
 class SlackMessageSpec extends PlaySpec {

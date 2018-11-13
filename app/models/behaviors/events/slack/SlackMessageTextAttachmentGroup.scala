@@ -1,5 +1,6 @@
-package models.behaviors.events
+package models.behaviors.events.slack
 
+import models.behaviors.events.MessageUserData
 import utils.Color
 
 case class SlackMessageTextAttachmentGroup(

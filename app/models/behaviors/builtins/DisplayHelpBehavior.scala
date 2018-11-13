@@ -3,8 +3,9 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorVersionData}
 import models.behaviors.behaviorversion.Normal
-import models.behaviors.events.SlackMessageActionConstants._
-import models.behaviors.events._
+import models.behaviors.events.Event
+import models.behaviors.events.slack.SlackMessageActionConstants._
+import models.behaviors.events.slack._
 import models.behaviors.{BotResult, SuccessResult, TextWithAttachmentsResult}
 import models.help._
 import services.caching.CacheService

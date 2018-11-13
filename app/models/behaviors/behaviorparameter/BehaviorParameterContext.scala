@@ -6,7 +6,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
-import models.behaviors.events.SlackMessageActionConstants._
+import models.behaviors.events.slack.SlackMessageActionConstants._
 import services.caching.CacheService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO

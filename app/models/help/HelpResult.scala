@@ -1,8 +1,9 @@
 package models.help
 
 import json.{BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.SlackMessageActionConstants._
+import models.behaviors.events.slack.SlackMessageActionConstants._
 import models.behaviors.events._
+import models.behaviors.events.slack.{SlackMessageAction, SlackMessageActionButton, SlackMessageActionMenu, SlackMessageActionMenuItem}
 import services.{AWSLambdaService, DataService}
 
 trait HelpResult {

@@ -1,7 +1,8 @@
-package models.behaviors.events
+package models.behaviors.events.slack
 
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
+import models.behaviors.events.MessageEvent
 import services.DefaultServices
 import services.slack.SlackEventService
 

@@ -1,6 +1,7 @@
 import json.BehaviorVersionData
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.events.{SlackEventContext, SlackMessage, SlackMessageEvent}
+import models.behaviors.events.SlackEventContext
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
 import support.DBSpec
 import utils.SlackTimestamp
 

@@ -3,7 +3,8 @@ package models.accounts.slack.botprofile
 import java.time.OffsetDateTime
 
 import models.accounts.{BotContext, BotProfile, SlackContext}
-import models.behaviors.events.{MessageEvent, SlackMessage, SlackMessageEvent}
+import models.behaviors.events.MessageEvent
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
 
 case class SlackBotProfile(
                             userId: String,

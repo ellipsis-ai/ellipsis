@@ -5,7 +5,8 @@ import models.accounts.user.User
 import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{SlackEventContext, SlackMessage, SlackMessageEvent}
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
+import models.behaviors.events.SlackEventContext
 import models.behaviors.{DeveloperContext, NoResponseResult, SuccessResult}
 import models.team.Team
 import org.mockito.Mockito._

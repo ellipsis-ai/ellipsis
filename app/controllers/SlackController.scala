@@ -9,8 +9,9 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.{Normal, Threaded}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.SlackMessageActionConstants._
+import models.behaviors.events.slack.SlackMessageActionConstants._
 import models.behaviors.events._
+import models.behaviors.events.slack._
 import models.behaviors.{ActionChoice, SimpleTextResult}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv

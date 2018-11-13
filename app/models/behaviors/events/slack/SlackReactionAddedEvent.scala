@@ -1,38 +1,34 @@
-package models.behaviors.events
+package models.behaviors.events.slack
 
-import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
+import models.behaviors.events.{Event, EventType, MessageUserData, SlackEventContext}
 import models.team.Team
 import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class SlashCommandEvent(
-                              eventContext: SlackEventContext,
-                              message: SlackMessage,
-                              responseUrl: String
-                            ) extends Event {
+case class SlackReactionAddedEvent(
+                                    eventContext: SlackEventContext,
+                                    reaction: String,
+                                    maybeMessage: Option[SlackMessage]
+                                  ) extends Event {
 
   override type EC = SlackEventContext
 
-  val profile: SlackBotProfile = eventContext.profile
-  val channel: String = eventContext.channel
-
   val eventType: EventType = EventType.chat
 
-  override val isEphemeral: Boolean = true
-  override val maybeResponseUrl: Option[String] = Some(responseUrl)
+  override val isEphemeral: Boolean = false
 
-  lazy val messageText: String = message.originalText
+  lazy val messageText: String = maybeMessage.map(_.originalText).getOrElse("")
   lazy val invocationLogText: String = relevantMessageText
 
   val maybeOriginalEventType: Option[EventType] = None
 
-  override val isResponseExpected: Boolean = true
+  override val isResponseExpected: Boolean = false
   val includesBotMention: Boolean = true
 
-  override val beQuiet: Boolean = true
+  override val maybeReactionAdded: Option[String] = Some(reaction)
 
   val maybeMessageIdForReaction: Option[String] = None
 
@@ -64,7 +60,9 @@ case class SlashCommandEvent(
 
 
   def messageUserDataList: Set[MessageUserData] = {
-    message.userList.map(MessageUserData.fromSlackUserData)
+    maybeMessage.map { message =>
+      message.userList.map(MessageUserData.fromSlackUserData)
+    }.getOrElse(Set())
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this

@@ -15,6 +15,7 @@ import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events._
+import models.behaviors.events.slack.{SlackFile, SlackMessage, SlackMessageEvent}
 import play.api.Logger
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._

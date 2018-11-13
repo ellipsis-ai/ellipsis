@@ -10,6 +10,7 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.slack.{SlackMessageEvent, SlackRunEvent}
 import models.behaviors.testing.TestRunEvent
 import models.team.Team
 import play.api.Logger

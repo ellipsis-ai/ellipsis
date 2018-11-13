@@ -1,33 +1,39 @@
-package models.behaviors.events
+package models.behaviors.events.slack
 
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
+import models.behaviors.events.{Event, EventType, MessageUserData, SlackEventContext}
 import models.team.Team
 import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class SlackReactionAddedEvent(
-                                    eventContext: SlackEventContext,
-                                    reaction: String,
-                                    maybeMessage: Option[SlackMessage]
-                                  ) extends Event {
+case class SlashCommandEvent(
+                              eventContext: SlackEventContext,
+                              message: SlackMessage,
+                              responseUrl: String
+                            ) extends Event {
 
   override type EC = SlackEventContext
 
+  val profile: SlackBotProfile = eventContext.profile
+  val channel: String = eventContext.channel
+
   val eventType: EventType = EventType.chat
 
-  override val isEphemeral: Boolean = false
+  override val isEphemeral: Boolean = true
+  override val maybeResponseUrl: Option[String] = Some(responseUrl)
 
-  lazy val messageText: String = maybeMessage.map(_.originalText).getOrElse("")
+  lazy val messageText: String = message.originalText
   lazy val invocationLogText: String = relevantMessageText
 
   val maybeOriginalEventType: Option[EventType] = None
 
-  override val isResponseExpected: Boolean = false
+  override val isResponseExpected: Boolean = true
   val includesBotMention: Boolean = true
 
-  override val maybeReactionAdded: Option[String] = Some(reaction)
+  override val beQuiet: Boolean = true
 
   val maybeMessageIdForReaction: Option[String] = None
 
@@ -59,9 +65,7 @@ case class SlackReactionAddedEvent(
 
 
   def messageUserDataList: Set[MessageUserData] = {
-    maybeMessage.map { message =>
-      message.userList.map(MessageUserData.fromSlackUserData)
-    }.getOrElse(Set())
+    message.userList.map(MessageUserData.fromSlackUserData)
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this

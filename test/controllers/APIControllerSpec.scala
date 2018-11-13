@@ -18,6 +18,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.events._
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.recurrence.Daily
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior

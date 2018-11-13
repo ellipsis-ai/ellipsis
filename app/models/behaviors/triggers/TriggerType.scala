@@ -1,6 +1,7 @@
 package models.behaviors.triggers
 
-import models.behaviors.events.{Event, MessageEvent, SlackReactionAddedEvent, SlashCommandEvent}
+import models.behaviors.events.slack.{SlackReactionAddedEvent, SlashCommandEvent}
+import models.behaviors.events.{Event, MessageEvent}
 import utils.Enum
 
 object TriggerType extends Enum[TriggerType] {
