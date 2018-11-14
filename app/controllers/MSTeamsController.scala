@@ -121,15 +121,6 @@ class MSTeamsController @Inject() (
                                                        info: ActivityInfo
                                                      ): Future[Unit] = {
     for {
-//      maybeThreadIdToUse <- info.maybeOriginalMessageThreadId.map(tid => Future.successful(Some(tid))).getOrElse {
-//        dataService.behaviorVersions.findWithoutAccessCheck(actionChoice.originatingBehaviorVersionId).map { maybeOriginatingBehaviorVersion =>
-//          if (maybeOriginatingBehaviorVersion.exists(_.responseType == Threaded)) {
-//            maybeInstantResponseTs.orElse(info.original_message.map(_.ts))
-//          } else {
-//            None
-//          }
-//        }
-//      }
       maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(actionChoice.originatingBehaviorVersionId)
       maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
       maybeActiveGroupVersion <- maybeGroupVersion.map { groupVersion =>
@@ -170,7 +161,7 @@ class MSTeamsController @Inject() (
         info.from.id,
         info.id,
         None,
-        false,
+        isEphemeral = false,
         actionChoice.shouldBeQuiet
       )
     } yield {}
