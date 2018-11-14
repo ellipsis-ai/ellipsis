@@ -6,11 +6,14 @@ import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
 import javax.inject.{Inject, Provider}
 import models.accounts.registration.RegistrationService
-import models.behaviors.BotResultService
+import models.behaviors.events.MSTeamsEventContext
+import models.behaviors.{BotResult, BotResultService}
+import models.behaviors.events.ms_teams.MSTeamsMessageEvent
 import play.api.libs.ws.WSClient
 import services.DataService
 import services.caching.CacheService
 import services.ms_teams.MSTeamsApiService
+import services.ms_teams.apiModels.ActivityInfo
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -83,6 +86,42 @@ class MSTeamsBotProfileServiceImpl @Inject() (
       }
     }
     dataService.run(action)
+  }
+
+  private def sendResult(eventualMaybeResult: Future[Option[BotResult]]): Future[Option[String]] = {
+    for {
+      maybeResult <- eventualMaybeResult
+      maybeTimestamp <- maybeResult.map { result =>
+        botResultService.sendIn(result, None)
+      }.getOrElse(Future.successful(None))
+    } yield maybeTimestamp
+  }
+
+  def sendResultWithNewEvent(
+                              description: String,
+                              getEventualMaybeResult: MSTeamsMessageEvent => Future[Option[BotResult]],
+                              botProfile: MSTeamsBotProfile,
+                              info: ActivityInfo,
+                              channelId: String,
+                              userId: String,
+                              originalMessageTs: String,
+                              maybeThreadTs: Option[String],
+                              isEphemeral: Boolean,
+                              beQuiet: Boolean
+                            ): Future[Option[String]] = {
+    val event = MSTeamsMessageEvent(
+      MSTeamsEventContext(
+        botProfile,
+        info
+      ),
+      "",
+      None,
+      isUninterruptedConversation = false,
+      isEphemeral,
+      Some(info.responseUrl),
+      beQuiet
+    )
+    sendResult(getEventualMaybeResult(event))
   }
 
 }

@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorVersionData}
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.Event
-import models.behaviors.events.slack.SlackMessageActionConstants._
+import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack._
 import models.behaviors.{BotResult, SuccessResult, TextWithAttachmentsResult}
 import models.help._

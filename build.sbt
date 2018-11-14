@@ -48,6 +48,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick" % "3.0.1",
   "com.typesafe.play" %% "play-slick-evolutions" % "3.0.1",
   "com.typesafe.play" %% "play-json" % "2.6.3",
+  "ai.x" %% "play-json-extensions" % "0.10.0",
   "org.postgresql" % "postgresql" % "42.1.1",
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "net.ceedubs" %% "ficus" % "1.1.2",

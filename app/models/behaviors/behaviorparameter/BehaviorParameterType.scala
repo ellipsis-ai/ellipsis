@@ -18,7 +18,7 @@ import models.behaviors.conversations.parentconversation.{NewParentConversation,
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.events.{Event, MessageAttachmentGroup}
-import models.behaviors.events.slack.SlackMessageActionConstants._
+import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack._
 import models.team.Team
 import play.api.libs.json._

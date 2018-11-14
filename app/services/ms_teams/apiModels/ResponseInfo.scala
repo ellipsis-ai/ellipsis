@@ -7,5 +7,6 @@ case class ResponseInfo(
                          recipient: MessageParticipantInfo,
                          text: String,
                          textFormat: String,
-                         replyToId: String
+                         replyToId: String,
+                         attachments: Option[Seq[Attachment]]
                        )

@@ -1,5 +1,7 @@
 package services.ms_teams.apiModels
 
+import models.behaviors.ActionChoice
+
 case class ActivityInfo(
                          activityType: String,
                          id: String,
@@ -9,9 +11,10 @@ case class ActivityInfo(
                          from: MessageParticipantInfo,
                          conversation: ConversationInfo,
                          recipient: MessageParticipantInfo,
-                         textFormat: String,
+                         textFormat: Option[String],
                          locale: Option[String],
-                         text: String,
+                         text: Option[String],
+                         value: Option[ActionChoice],
                          channelData: ChannelDataInfo
                        ) {
   val responseUrl: String = s"$serviceUrl/v3/conversations/${conversation.id}/activities/${id}"
