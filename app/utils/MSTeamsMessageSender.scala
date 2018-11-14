@@ -1,9 +1,13 @@
 package utils
 
 import akka.actor.ActorSystem
+import json.Formatting._
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
+import models.behaviors.events.MessageActionConstants._
+import models.behaviors.events.ms_teams.{MSTeamsMessageActionButton, MSTeamsMessageActionsGroup, MSTeamsMessageAttachmentGroup, MSTeamsMessageTextAttachmentGroup}
+import models.behaviors.events.slack.SlackMessageTextAttachmentGroup
 import models.behaviors.{ActionChoice, DeveloperContext}
 import play.api.libs.json.Json
 import services.DefaultServices
@@ -46,9 +50,54 @@ case class MSTeamsMessageSender(
                                  beQuiet: Boolean
                              ) {
 
+  import _root_.services.ms_teams.apiModels.Formatting._
+
   val configuration = services.configuration
 
-  import _root_.services.ms_teams.apiModels.Formatting._
+  val choicesAttachmentGroups: Seq[MSTeamsMessageActionsGroup] = {
+    if (choices.isEmpty) {
+      Seq()
+    } else {
+      val actionList = choices.zipWithIndex.map { case(ea, i) =>
+        val value = Json.toJson(ea).toString()
+        val valueToUse = if (value.length > MSTeamsMessageSender.MAX_ACTION_VALUE_CHARS) {
+          services.cacheService.cacheSlackActionValue(value)
+        } else {
+          value
+        }
+        MSTeamsMessageActionButton(ACTION_CHOICE, ea.label, valueToUse)
+      }
+      Seq(MSTeamsMessageActionsGroup(
+        ACTION_CHOICES,
+        actionList,
+        None,
+        None,
+        Some(Color.BLUE_LIGHTER),
+        None
+      ))
+    }
+  }
+
+  val attachmentGroupsToUse = {
+    val groups = attachmentGroups ++ choicesAttachmentGroups
+    if (developerContext.isForUndeployedBehaviorVersion) {
+      val baseUrl = configuration.get[String]("application.apiBaseUrl")
+      val path = controllers.routes.HelpController.devMode(Some(teamIdForContext), Some(botName)).url
+      val link = s"[development]($baseUrl$path)"
+      groups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None, None))
+    } else if (developerContext.hasUndeployedBehaviorVersionForAuthor) {
+      val baseUrl = configuration.get[String]("application.apiBaseUrl")
+      val path = controllers.routes.HelpController.devMode(Some(teamIdForContext), Some(botName)).url
+      val link = s"[dev mode]($baseUrl$path)"
+      groups ++ Seq(
+        MSTeamsMessageTextAttachmentGroup(
+          s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link.", None, None
+        )
+      )
+    } else {
+      groups
+    }
+  }
 
   private def postEphemeralMessage(
                                     text: String,
@@ -69,7 +118,8 @@ case class MSTeamsMessageSender(
       info.from,
       unformattedText,
       "markdown",
-      info.id
+      info.id,
+      maybeAttachments
     )
     client.postToResponseUrl(info.responseUrl, Json.toJson(response)).recover(postErrorRecovery(info, text))
   }
@@ -147,7 +197,10 @@ case class MSTeamsMessageSender(
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = unformattedText // TODO: formatting
-    val attachments = Seq()
+    val attachments = attachmentGroupsToUse.flatMap {
+      case a: MSTeamsMessageAttachmentGroup => a.attachments.map(_.underlying)
+      case _ => Seq()
+    }
     for {
       _ <- sendPreamble(formattedText)
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)

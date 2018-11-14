@@ -1,8 +1,8 @@
-package models.behaviors.events.slack
+package models.behaviors.events
 
 import scala.util.matching.Regex
 
-object SlackMessageActionConstants {
+object MessageActionConstants {
   val SHOW_BEHAVIOR_GROUP_HELP = "help_for_skill"
   val LIST_BEHAVIOR_GROUP_ACTIONS = "help_actions_for_skill"
   val SHOW_HELP_INDEX = "help_index"

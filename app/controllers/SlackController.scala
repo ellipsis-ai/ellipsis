@@ -9,7 +9,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.{Normal, Threaded}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.slack.SlackMessageActionConstants._
+import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.events.slack._
 import models.behaviors.{ActionChoice, SimpleTextResult}
@@ -21,7 +21,6 @@ import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Environment, Logger, Mode}
-import play.utils.UriEncoding
 import services._
 import services.slack.SlackEventService
 import utils.SlashCommandInfo

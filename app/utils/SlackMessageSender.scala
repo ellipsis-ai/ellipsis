@@ -5,7 +5,7 @@ import json.Formatting._
 import models.SlackMessageFormatter
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.slack.SlackMessageActionConstants._
+import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.events.slack.{SlackMessageActionButton, SlackMessageActionsGroup, SlackMessageAttachmentGroup, SlackMessageTextAttachmentGroup}
 import models.behaviors.{ActionChoice, DeveloperContext}

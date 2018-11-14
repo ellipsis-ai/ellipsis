@@ -5,7 +5,7 @@ import models.behaviors.behaviorparameter.FetchValidValuesBadResultException
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.slack.SlackMessageActionConstants._
+import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack.{SlackMessageActionButton, SlackMessageActionsGroup, SlackMessageEvent}
 import models.behaviors.{BotResult, SimpleTextResult, TextWithAttachmentsResult}
 import services.DefaultServices
