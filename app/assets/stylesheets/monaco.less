@@ -4,6 +4,8 @@
 @import (reference) "borders";
 @import (reference) "position";
 
+@leftMarginWidth: 54px;
+
 .monaco-editor {
 
   // Monaco uses a class that we define in type.less, so undo that
@@ -22,7 +24,7 @@
     content: "";
     position: absolute;
     z-index: -1;
-    width: 56px;
+    width: @leftMarginWidth;
     height: 100%;
     background-color: @almost-white;
     margin-right: @s;
@@ -32,7 +34,7 @@
   &::before, &::after {
     content: "";
     position: absolute;
-    left: 56px;
+    left: @leftMarginWidth;
     right: 0;
     .border-top();
     .position-z-above();
@@ -45,6 +47,10 @@
 
   &::after {
     bottom: 0;
+  }
+
+  .context-view.monaco-menu-container {    // Avoid context menu being directly underneath the mouse
+    margin: 0.5rem;
   }
 
 }
