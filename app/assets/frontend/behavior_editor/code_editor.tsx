@@ -25,9 +25,9 @@ languages.typescript.javascriptDefaults.setDiagnosticsOptions({
   noSemanticValidation: false,
   noSyntaxValidation: false
 });
-javascriptDefaults.addExtraLib(lib_es5_dts, `es5-${Date.now()}`);
-javascriptDefaults.addExtraLib(lib_es2015_dts, `es2015-${Date.now()}`);
-javascriptDefaults.addExtraLib(NODE_JS_V6_D_TS, `node_js_v6-${Date.now()}`);
+javascriptDefaults.addExtraLib(lib_es5_dts, `ts:es5-${Date.now()}`);
+javascriptDefaults.addExtraLib(lib_es2015_dts, `ts:es2015-${Date.now()}`);
+javascriptDefaults.addExtraLib(NODE_JS_V6_D_TS, `ts:node_js_v6-${Date.now()}`);
 
 export interface EditorCursorPosition {
   top: number
@@ -90,7 +90,7 @@ class CodeEditor extends React.Component<Props> {
     if (this.currentDefinitions) {
       this.currentDefinitions.dispose();
     }
-    this.currentDefinitions = javascriptDefaults.addExtraLib(newDefinitions, `ellipsis-${Date.now()}`);
+    this.currentDefinitions = javascriptDefaults.addExtraLib(newDefinitions, `ts:ellipsis-${Date.now()}`);
   }
 
   editorDidMount(editor: editor.IStandaloneCodeEditor): void {

@@ -237,7 +237,7 @@ ${this.props.nodeModules.map((ea) => this.emptyModuleFor(ea.from)).join("\n")}
                 <div className="column column-shrink plxxxl prn align-r position-relative">
                   <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>
                 </div>
-                <div className="column column-expand pll">
+                <div className="column column-expand pls">
                   <code className="type-s">
                     <span className="type-s type-weak">{
                       this.props.functionExecutesImmediately ?
