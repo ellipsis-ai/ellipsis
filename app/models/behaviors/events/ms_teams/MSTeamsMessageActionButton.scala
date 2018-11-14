@@ -5,5 +5,5 @@ import services.ms_teams.apiModels.CardAction
 
 case class MSTeamsMessageActionButton(name: String, text: String, value: String, maybeStyle: Option[String] = None) extends MSTeamsMessageAction {
 
-  lazy val cardButton: CardAction = CardAction("Action.Submit", text, Json.parse(value))
+  lazy val cardAction: CardAction = CardAction("Action.Submit", text, Json.parse(value))
 }

@@ -29,7 +29,7 @@ object Formatting {
       }
     }
   }
-  lazy implicit val cardButtonFormat: Format[CardAction] = Jsonx.formatCaseClass[CardAction]
+  lazy implicit val cardActionFormat: Format[CardAction] = Jsonx.formatCaseClass[CardAction]
   lazy implicit val textBlockFormat: Format[TextBlock] = Jsonx.formatCaseClass[TextBlock]
   lazy implicit val attachmentContentFormat: Format[AttachmentContent] = Jsonx.formatSealed[AttachmentContent]
   lazy implicit val cardElementFormat: Format[CardElement] = Jsonx.formatSealed[CardElement]

@@ -19,7 +19,7 @@ case class MSTeamsMessageActionsGroup(
     val groupSize = if (size % maxPerGroup == 1) { maxPerGroup - 1 } else { maxPerGroup }
     val maybeCallbackId = Some(id)
     actions.grouped(groupSize).zipWithIndex.map { case(segment, index) =>
-      val actions = segment.map(_.cardButton)
+      val actions = segment.map(_.cardAction)
       if (index == 0) {
         MSTeamsMessageAttachment(
           maybeText,
