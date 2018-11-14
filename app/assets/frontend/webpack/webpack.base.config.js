@@ -83,7 +83,7 @@ const webpackConfig = {
         vendor: {
           name: "vendor",
           chunks: "all",
-          test: /[\\/]node_modules[\\/](core-js|javascript-debounce|uuid|react|react-dom|urijs|diff|whatwg-fetch|moment|emoji-mart)/
+          test: /[\\/]node_modules[\\/](core-js|javascript-debounce|uuid|react|react-dom|urijs|diff|whatwg-fetch|moment|emoji-mart)[\\/]/
         }
       }
     }

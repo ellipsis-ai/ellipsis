@@ -1,15 +1,12 @@
 import * as React from 'react';
 import autobind from "../lib/autobind";
 import MonacoEditor from "react-monaco-editor";
-import {languages, editor, IDisposable} from "monaco-editor";
+import '../code_editor/monaco-config';
+import {languages, editor, IDisposable} from "monaco-editor/esm/vs/editor/editor.api";
+import javascriptDefaults = languages.typescript.javascriptDefaults;
+import typescript = languages.typescript;
 import {lib_es5_dts, lib_es2015_dts} from "monaco-editor/esm/vs/language/typescript/lib/lib";
 import {NODE_JS_V6_D_TS} from "../code_editor/definitions/nodejs";
-import 'monaco-editor/esm/vs/basic-languages/javascript/javascript';
-import 'monaco-editor/esm/vs/basic-languages/typescript/typescript';
-import 'monaco-editor/esm/vs/basic-languages/markdown/markdown';
-import 'monaco-editor/esm/vs/language/typescript/tsMode';
-import typescript = languages.typescript;
-import javascriptDefaults = languages.typescript.javascriptDefaults;
 
 /* Monaco loads as a global instance, so we only want to set defaults once on page load: */
 javascriptDefaults.setCompilerOptions({
@@ -24,7 +21,7 @@ javascriptDefaults.setCompilerOptions({
   strictFunctionTypes: true,
   strictNullChecks: true
 });
-javascriptDefaults.setDiagnosticsOptions({
+languages.typescript.javascriptDefaults.setDiagnosticsOptions({
   noSemanticValidation: false,
   noSyntaxValidation: false
 });
@@ -100,8 +97,9 @@ class CodeEditor extends React.Component<Props> {
     this.editor = editor;
     editor.onDidChangeCursorPosition(this.onEditorPositionChange);
     const tabSize = this.tabSizeForLanguage();
-    if (tabSize) {
-      editor.getModel().updateOptions({
+    const model = editor.getModel();
+    if (tabSize && model) {
+      model.updateOptions({
         tabSize: tabSize
       });
     }
@@ -110,12 +108,14 @@ class CodeEditor extends React.Component<Props> {
   onEditorPositionChange(event: editor.ICursorPositionChangedEvent): void {
     if (this.container && this.editor) {
       const scrolledPosition = this.editor.getScrolledVisiblePosition(event.position);
-      const rect = this.container.getBoundingClientRect();
-      const top = rect.top + window.scrollY + scrolledPosition.top;
-      this.props.onCursorChange({
-        top: top,
-        bottom: top + scrolledPosition.height
-      });
+      if (scrolledPosition) {
+        const rect = this.container.getBoundingClientRect();
+        const top = rect.top + window.scrollY + scrolledPosition.top;
+        this.props.onCursorChange({
+          top: top,
+          bottom: top + scrolledPosition.height
+        });
+      }
     }
   }
 
