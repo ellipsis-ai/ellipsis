@@ -51,7 +51,7 @@ class RegionalSettings extends React.Component<Props, State> {
 
     getCurrentTime(): string {
       const time = moment().utc();
-      if (this.props.teamTimeZoneOffset) {
+      if (typeof this.props.teamTimeZoneOffset === "number") {
         time.add(this.props.teamTimeZoneOffset, 'seconds');
       }
       return time.format('h:mm:ss A');
@@ -71,7 +71,7 @@ class RegionalSettings extends React.Component<Props, State> {
     }
 
     renderCurrentTime() {
-      if (this.props.teamTimeZoneOffset) {
+      if (typeof this.props.teamTimeZoneOffset === "number") {
         return (
           <span> — {this.state.currentTime}</span>
         );
