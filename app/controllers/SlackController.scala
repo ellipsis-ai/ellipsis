@@ -37,7 +37,7 @@ class SlackController @Inject() (
                                   implicit val ec: ExecutionContext
                                 ) extends EllipsisController with ChatPlatformController {
 
-  override type ActionsTriggeredInfoType = ActionsTriggeredInfo
+  override type ActionsTriggeredInfoType = SlackActionsTriggeredInfo
   override type BotProfileType = SlackBotProfile
 
   val configuration = services.configuration
@@ -595,7 +595,7 @@ class SlackController @Inject() (
                              ts: Option[String] = None
                            )
   case class FieldInfo(title: Option[String], value: Option[String], short: Option[Boolean] = None)
-  case class ActionsTriggeredInfo(
+  case class SlackActionsTriggeredInfo(
                                    callback_id: String,
                                    actions: Seq[ActionTriggeredInfo],
                                    team: TeamInfo,
@@ -607,7 +607,7 @@ class SlackController @Inject() (
                                    token: String,
                                    original_message: Option[OriginalMessageInfo],
                                    response_url: String
-                                 ) extends RequestInfo with ActionsTriggeredInfoInterface {
+                                 ) extends RequestInfo with ActionsTriggeredInfo {
 
     val channelId: String = channel.id
     val teamIdForContext: String = slackTeamIdForBot
@@ -1098,7 +1098,7 @@ class SlackController @Inject() (
   implicit val messageReads = Json.reads[OriginalMessageInfo]
   implicit val messageWrites = Json.writes[OriginalMessageInfo]
 
-  implicit val actionsTriggeredReads = Json.reads[ActionsTriggeredInfo]
+  implicit val actionsTriggeredReads = Json.reads[SlackActionsTriggeredInfo]
 
   private def maybeSlackUserIdForActionChoice(actionChoice: ActionChoice): Future[Option[String]] = {
     dataService.users.find(actionChoice.userId).flatMap { maybeUser =>
@@ -1120,13 +1120,14 @@ class SlackController @Inject() (
         //
         // TODO: Investigate whether this is safe and/or desirable
         val unescapedPayload = SlackMessage.unescapeSlackHTMLEntities(payload)
-        Json.parse(unescapedPayload).validate[ActionsTriggeredInfo] match {
+        Json.parse(unescapedPayload).validate[SlackActionsTriggeredInfo] match {
           case JsSuccess(info, _) => {
             if (info.isValid) {
               info.maybeBotProfile.flatMap { maybeBotProfile =>
-                maybeBotProfile.map { botProfile =>
-                  permissionResultFor(info, botProfile)
-                }.getOrElse(Future.successful(Ok("")))
+                (for {
+                  botProfile <- maybeBotProfile
+                  result <- maybePermissionResultFor(info, botProfile)
+                } yield result).getOrElse(Future.successful(Ok("")))
               }
             } else {
               Future.successful(Forbidden("Bad token"))
