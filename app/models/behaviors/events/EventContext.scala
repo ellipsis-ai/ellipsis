@@ -86,7 +86,7 @@ sealed trait EventContext {
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
                      (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]]
 
-  def messageActionButtonFor(callbackId: String, label: String, value: String): MessageActionButtonType
+  def messageActionButtonFor(callbackId: String, label: String, property: String, value: String): MessageActionButtonType
 
   def messageActionsGroupFor(callbackId: String, actionList: Seq[MessageActionButtonType]): MessageActionsGroupType
 
@@ -309,7 +309,7 @@ case class SlackEventContext(
     )
   }
 
-  def messageActionButtonFor(callbackId: String, label: String, value: String) = {
+  def messageActionButtonFor(callbackId: String, label: String, property: String, value: String) = {
     SlackMessageActionButton(callbackId, label, value)
   }
 
@@ -445,8 +445,8 @@ case class MSTeamsEventContext(
     eventualResults // TODO: this
   }
 
-  def messageActionButtonFor(callbackId: String, label: String, value: String) = {
-    MSTeamsMessageActionButton(callbackId, label, value)
+  def messageActionButtonFor(callbackId: String, label: String, property: String, value: String) = {
+    MSTeamsMessageActionButton(callbackId, label, Json.obj(property -> value).toString())
   }
 
   def messageActionsGroupFor(callbackId: String, actionList: Seq[MSTeamsMessageActionButton]) = {
@@ -535,7 +535,7 @@ case class TestEventContext(
     eventualResults
   }
 
-  def messageActionButtonFor(callbackId: String, label: String, value: String) = {
+  def messageActionButtonFor(callbackId: String, label: String, property: String, value: String) = {
     SlackMessageActionButton(callbackId, label, value)
   }
 

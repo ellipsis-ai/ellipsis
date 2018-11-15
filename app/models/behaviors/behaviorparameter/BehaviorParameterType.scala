@@ -319,8 +319,8 @@ object YesNoType extends BuiltInType {
       val callbackId = context.yesNoCallbackId
       val eventContext = context.event.eventContext
       val actionList = Seq(
-        eventContext.messageActionButtonFor(callbackId, "Yes", Json.obj("yesNoValue" -> YES).toString()),
-        eventContext.messageActionButtonFor(callbackId, "No", Json.obj("yesNoValue" -> NO).toString())
+        eventContext.messageActionButtonFor(callbackId, "Yes", "yesNoValue", YES),
+        eventContext.messageActionButtonFor(callbackId, "No", "yesNoValue", NO)
       )
       val actionsGroup = eventContext.messageActionsGroupFor(callbackId, actionList)
       TextWithAttachmentsResult(
