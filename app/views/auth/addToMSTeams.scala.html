@@ -17,24 +17,8 @@
           <span class="type-pink-light">To use Ellipsis, you need to grant it access to your Microsoft Teams organization. </span>
         </p>
 
-        <div class="mtxl columns columns-elastic mobile-columns-float">
-          <div class="column column-shrink prxxl mobile-mbxl">
-            <div id="no-agreement-container" class="fade-in">
-              <button id="no-agreement-button" type="button" class="button button-shrink button-primary button-l" disabled>
-                <span class="display-inline-block align-t mrs">@views.html.shared.svg.slackLogoMark()</span>
-                <span class="display-inline-block align-t">Add to Microsoft Teams</span>
-              </button>
-            </div>
-
-            <div id="agreement-container" class="display-none fade-in">
-              <a href="@routes.SocialAuthController.installForMSTeams()"
-              class="button button-shrink button-primary button-l">
-                <span class="display-inline-block align-t mrs">@views.html.shared.svg.slackLogoMark()</span>
-                <span class="display-inline-block align-t">Add to Microsoft Teams</span>
-              </a>
-            </div>
-          </div>
-          <div class="column column-expand align-m">
+        <div class="mtxl">
+          <div class="display-inline-block align-m mrm mbm">
             <label id="agreement-checkbox-label" for="agreement-checkbox" class="checkbox-button checkbox-button-l button-inverted">
               <input id="agreement-checkbox" type="checkbox" value="I agree" class="man mrs">
               <span id="reminder">
@@ -44,6 +28,21 @@
                 <a target="legal" href="@routes.LegalController.userAgreement()" class="link-light-blue">user agreement.</a>
               </span>
             </label>
+          </div><div class="display-inline-block align-m mbm">
+            <div id="no-agreement-container" class="fade-in">
+              <button id="no-agreement-button" type="button" class="button button-shrink button-msteams button-l" disabled>
+                <span class="display-inline-block align-t mrs">@views.html.shared.svg.msTeamsLogoMark()</span>
+                <span class="display-inline-block align-t">Add to Microsoft Teams</span>
+              </button>
+            </div>
+
+            <div id="agreement-container" class="display-none fade-in">
+              <a href="@routes.SocialAuthController.installForMSTeams()"
+              class="button button-shrink button-msteams button-l">
+                <span class="display-inline-block align-t mrs">@views.html.shared.svg.msTeamsLogoMark()</span>
+                <span class="display-inline-block align-t">Add to Microsoft Teams</span>
+              </a>
+            </div>
           </div>
         </div>
 
