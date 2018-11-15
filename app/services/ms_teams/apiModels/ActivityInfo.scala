@@ -13,7 +13,7 @@ case class ActivityInfo(
                          recipient: MessageParticipantInfo,
                          textFormat: Option[String],
                          text: Option[String],
-                         value: Option[ActionChoice],
+                         maybeActionChoice: Option[ActionChoice],
                          channelData: ChannelDataInfo
                        ) {
   val responseUrl: String = s"$serviceUrl/v3/conversations/${conversation.id}/activities/${id}"

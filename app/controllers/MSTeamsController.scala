@@ -41,6 +41,11 @@ class MSTeamsController @Inject() (
   override type BotProfileType = MSTeamsBotProfile
   override type ActionsTriggeredInfoType = MSTeamsActionsTriggeredInfo
 
+  case class PostedValue(
+                          maybeActionChoice: Option[ActionChoice],
+                          maybeYesNoValue: Option[String]
+                        )
+
   case class MSTeamsActionsTriggeredInfo(
                                            activityType: String,
                                            id: String,
@@ -52,7 +57,7 @@ class MSTeamsController @Inject() (
                                            recipient: MessageParticipantInfo,
                                            textFormat: Option[String],
                                            text: Option[String],
-                                           value: Option[ActionChoice],
+                                           value: Option[PostedValue],
                                            channelData: ChannelDataInfo
                                          ) extends ActionsTriggeredInfo {
 
@@ -71,7 +76,7 @@ class MSTeamsController @Inject() (
       recipient,
       textFormat,
       text,
-      value,
+      maybeSelectedActionChoice,
       channelData
     )
 
@@ -79,7 +84,29 @@ class MSTeamsController @Inject() (
     def findButtonLabelForNameAndValue(name: String,value: String): Option[String] = None
     def findOptionLabelForValue(value: String): Option[String] = None
     def formattedUserFor(permission: ActionPermission): String = from.name
-    def inputChoiceResultFor(value: String)(implicit request: Request[AnyContent]): Future[Unit] = Future.successful({})
+    def inputChoiceResultFor(value: String)(implicit request: Request[AnyContent]): Future[Unit] = {
+      for {
+        maybeProfile <- dataService.msTeamsBotProfiles.find(teamIdForContext).map(_.headOption)
+        _ <- (for {
+          profile <- maybeProfile
+        } yield {
+          eventService.onEvent(MSTeamsMessageEvent(
+            MSTeamsEventContext(
+              profile,
+              this.toActivityInfo
+            ),
+            value,
+            None,
+            isUninterruptedConversation = false,
+            isEphemeral = false,
+            None,
+            beQuiet = false
+          ))
+        }).getOrElse {
+          Future.successful({})
+        }
+      } yield {}
+    }
     def instantBackgroundResponse(responseText: String, permission: ActionPermission): Future[Option[String]] = Future.successful(Some("foo"))
     def isForDataTypeChoiceForDoneConversation: Future[Boolean] = Future.successful(false)
     def isForYesNoForDoneConversation: Future[Boolean] = Future.successful(false)
@@ -92,10 +119,10 @@ class MSTeamsController @Inject() (
     def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = None
     def maybeHelpIndexAt: Option[Int] = None
     def maybeHelpRunBehaviorVersionId: Option[String] = None
-    def maybeSelectedActionChoice: Option[ActionChoice] = value
+    def maybeSelectedActionChoice: Option[ActionChoice] = value.flatMap(_.maybeActionChoice)
     val maybeStopConversationResponse: Option[StopConversationResponse] = None
     val maybeUserIdForDataTypeChoice: Option[String] = None
-    def maybeYesNoAnswer: Option[String] = None
+    def maybeYesNoAnswer: Option[String] = value.flatMap(_.maybeYesNoValue)
     def onEvent(event: Event): Future[Unit] = Future.successful({})
     def processTriggerableAndActiveActionChoice(
                                                  actionChoice: ActionChoice,
@@ -169,6 +196,25 @@ class MSTeamsController @Inject() (
     "name" -> nonEmptyText
   )(MessageParticipantInfo.apply)(MessageParticipantInfo.unapply)
 
+  private val actionChoiceMapping = mapping(
+    "label" -> nonEmptyText,
+    "actionName" -> nonEmptyText,
+    "args" -> optional(seq(mapping(
+      "name" -> nonEmptyText,
+      "value" -> nonEmptyText
+    )(ActionArg.apply)(ActionArg.unapply))),
+    "allowOthers" -> optional(boolean),
+    "allowMultipleSelections" -> optional(boolean),
+    "userId" -> nonEmptyText,
+    "originatingBehaviorVersionId" -> nonEmptyText,
+    "quiet" -> optional(boolean)
+  )(ActionChoice.apply)(ActionChoice.unapply)
+
+  private val postedValueMapping = mapping(
+    "actionChoice" -> optional(actionChoiceMapping),
+    "yesNoValue" -> optional(nonEmptyText)
+  )(PostedValue.apply)(PostedValue.unapply)
+
   private val messageActivityForm = Form(
     mapping(
       "type" -> nonEmptyText,
@@ -184,19 +230,7 @@ class MSTeamsController @Inject() (
       "recipient" -> messageParticipantMapping,
       "textFormat" -> optional(nonEmptyText),
       "text" -> optional(nonEmptyText),
-      "value" -> optional(mapping(
-        "label" -> nonEmptyText,
-        "actionName" -> nonEmptyText,
-        "args" -> optional(seq(mapping(
-          "name" -> nonEmptyText,
-          "value" -> nonEmptyText
-        )(ActionArg.apply)(ActionArg.unapply))),
-        "allowOthers" -> optional(boolean),
-        "allowMultipleSelections" -> optional(boolean),
-        "userId" -> nonEmptyText,
-        "originatingBehaviorVersionId" -> nonEmptyText,
-        "quiet" -> optional(boolean)
-      )(ActionChoice.apply)(ActionChoice.unapply)),
+      "value" -> optional(postedValueMapping),
       "channelData" -> mapping(
         "clientActivityId" -> optional(nonEmptyText),
         "tenant" -> optional(mapping(
@@ -229,7 +263,7 @@ class MSTeamsController @Inject() (
               botProfile,
               info.toActivityInfo
             ),
-            info.text.orElse(info.value.map(_.label)).getOrElse(""), // TODO: formatting
+            info.text.getOrElse(""), // TODO: formatting
             None,
             isUninterruptedConversation = false,
             isEphemeral = false,
