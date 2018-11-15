@@ -138,7 +138,8 @@ const actionInput1: InputJson = Object.freeze({
     id: 'Text',
     name: 'Text',
     exportId: 'Text',
-    needsConfig: false
+    needsConfig: false,
+    typescriptType: 'string'
   },
   isSavedForTeam: false,
   isSavedForUser: true,
@@ -153,7 +154,8 @@ const actionInputChanged: InputJson = Object.freeze({
     id: 'sdflkjafks',
     name: 'Person',
     exportId: 'sdflkjafks',
-    needsConfig: false
+    needsConfig: false,
+    typescriptType: '{ id: string, label: string, [k: string]: any }'
   },
   isSavedForTeam: true,
   isSavedForUser: false,
@@ -168,7 +170,8 @@ const actionInput2: InputJson = Object.freeze({
     id: 'Text',
     name: 'Text',
     exportId: 'Text',
-    needsConfig: false
+    needsConfig: false,
+    typescriptType: 'string'
   },
   isSavedForTeam: false,
   isSavedForUser: false,
@@ -301,7 +304,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "inputId": "fLL6qZ9rSR-gdVXrbz8sEQ",
     "exportId": "_lpHYaeKQfqd4Gghk3fhGg",
     "name": "whenToAnnounce",
-    "paramType": {"exportId": "Text", "name": "Text"},
+    "paramType": {"exportId": "Text", "name": "Text", typescriptType: "string"},
     "question": "What time should I send you your agenda for the day? e.g. “9 AM” or “10 AM Eastern time”, or “none” if you don’t want an agenda",
     "isSavedForTeam": false,
     "isSavedForUser": false
@@ -310,7 +313,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "inputId": "P1GZEO9nTKKFl5dP707j1A",
     "exportId": "w4C6zIa4SNO1X_91WiQTTQ",
     "name": "shouldRemind",
-    "paramType": {"exportId": "Yes/No", "name": "Yes/No"},
+    "paramType": {"exportId": "Yes/No", "name": "Yes/No", typescriptType: "boolean"},
     "question": "Would you like me to send you a reminder before each event begins?",
     "isSavedForTeam": false,
     "isSavedForUser": false
@@ -476,7 +479,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "inputId": "515vXugFTA6-wZnXl8CzYA",
     "exportId": "w4C6zIa4SNO1X_91WiQTTQ",
     "name": "shouldRemind",
-    "paramType": {"id": "Yes/No", "exportId": "Yes/No", "name": "Yes/No", "needsConfig": false},
+    "paramType": {"id": "Yes/No", "exportId": "Yes/No", "name": "Yes/No", "needsConfig": false, typescriptType: "boolean"},
     "question": "Would you like me to send you a reminder before each event begins?",
     "isSavedForTeam": false,
     "isSavedForUser": false
@@ -485,7 +488,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "inputId": "IiSaZaA1Rbe_4JvsIZsBfQ",
     "exportId": "_lpHYaeKQfqd4Gghk3fhGg",
     "name": "whenToAnnounce",
-    "paramType": {"id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false},
+    "paramType": {"id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false, typescriptType: "string"},
     "question": "What time should I send you your agenda for the day? e.g. “9 AM” or “10 AM Eastern time”, or “none” if you don’t want an agenda",
     "isSavedForTeam": false,
     "isSavedForUser": false

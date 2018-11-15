@@ -12,7 +12,8 @@ case class BehaviorParameterTypeData(
                                       id: Option[String],
                                       exportId: Option[String],
                                       name: String,
-                                      needsConfig: Option[Boolean]
+                                      needsConfig: Option[Boolean],
+                                      typescriptType: Option[String]
                                     ) extends FieldTypeForSchema {
 
   def maybeBuiltinType: Option[BehaviorParameterType] = {
@@ -39,7 +40,7 @@ case class BehaviorParameterTypeData(
   }
 
   def copyForExport(groupExporter: BehaviorGroupExporter): BehaviorParameterTypeData = {
-    copy(id = None, needsConfig = None)
+    copy(id = None, needsConfig = None, typescriptType = None)
   }
 
 }
@@ -48,7 +49,7 @@ object BehaviorParameterTypeData {
 
   def from(paramType: BehaviorParameterType, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorParameterTypeData] = {
     paramType.needsConfig(dataService).map { needsConfig =>
-      BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(needsConfig))
+      BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(needsConfig), Some(paramType.typescriptType))
     }
   }
 

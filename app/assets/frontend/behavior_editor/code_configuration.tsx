@@ -153,7 +153,7 @@ class CodeConfiguration extends React.Component<Props, State> {
       return `
 ${ellipsisObjectDefinitions}
 
-${this.props.inputs.map(ea => `declare var ${ea.name}: any;`).join("\n")}
+${this.props.inputs.map(ea => `declare var ${ea.name}: ${ea.paramType ? ea.paramType.typescriptType : "any"};`).join("\n")}
 
 ${this.props.libraries.map((ea) => ea.name ? this.emptyModuleFor(ea.name) : "").join("\n")}
 

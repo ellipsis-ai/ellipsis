@@ -38,6 +38,8 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
   val id: String
   val exportId: String
   val name: String
+  val typescriptType: String
+
   def needsConfig(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean]
   val isBuiltIn: Boolean
 
@@ -167,6 +169,8 @@ object TextType extends BuiltInType {
 
   val outputName: String = "String"
 
+  val typescriptType: String = "string"
+
   override val mayRequireTypedAnswer: Boolean = true
 
   def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = DBIO.successful(true)
@@ -188,6 +192,8 @@ object NumberType extends BuiltInType {
   val name = "Number"
 
   val outputName: String = "Float"
+
+  val typescriptType: String = "number"
 
   override val mayRequireTypedAnswer: Boolean = true
 
@@ -221,6 +227,8 @@ object DateTimeType extends BuiltInType {
   val name: String = "Date & Time"
 
   val outputName: String = "String"
+
+  val typescriptType: String = "string"
 
   override val mayRequireTypedAnswer: Boolean = true
 
@@ -275,6 +283,8 @@ object YesNoType extends BuiltInType {
   val noStrings = Seq("n", "no", "nope", "nah", "f", "false", "no way", "no chance")
 
   val outputName: String = "Boolean"
+
+  val typescriptType: String = "boolean"
 
   def matchStringFor(text: String): String = text.toLowerCase.trim
 
@@ -338,6 +348,17 @@ object FileType extends BuiltInType {
   val name = "File"
 
   val outputName: String = "File"
+
+  val typescriptType: String =
+    """{
+      |  id: string,
+      |  fetch: () => Promise<{
+      |    value: any,
+      |    contentType: string,
+      |    filename: string
+      |  }>
+      |} | null
+    """.stripMargin
 
   override val mayRequireTypedAnswer: Boolean = true
 
@@ -407,6 +428,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
   val name = behaviorVersion.maybeName.getOrElse("Unnamed data type")
 
   val outputName: String = behaviorVersion.outputName
+
+  val typescriptType: String = BehaviorParameterType.typescriptTypeForDataTypes
+
   override lazy val inputName: String = behaviorVersion.inputName
 
   val isBuiltIn: Boolean = false
@@ -932,6 +956,15 @@ object BehaviorParameterType {
   val DATA_PROPERTY = "data"
   val SEARCH_COUNT_THRESHOLD = 30
   val otherId: String = "other"
+
+  val typescriptTypeForDataTypes: String = {
+    """{
+      |  id: string,
+      |  label: string,
+      |  [k: string]: any
+      |}
+    """.stripMargin
+  }
 
   val allBuiltin = Seq(
     TextType,

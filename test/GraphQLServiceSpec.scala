@@ -2,7 +2,7 @@ import json._
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.behaviorparameter.{NumberType, TextType, YesNoType}
+import models.behaviors.behaviorparameter.{BehaviorParameterType, NumberType, TextType, YesNoType}
 import models.behaviors.defaultstorageitem.{IdPassedForCreationException, NoIdPassedForUpdateException}
 import play.api.libs.json._
 import services.{DataService, GraphQLService, ItemNotFoundError}
@@ -41,7 +41,7 @@ class GraphQLServiceSpec extends DBSpec {
   def buildGroupDataFor(group: BehaviorGroup, user : User): BehaviorGroupData = {
         val behaviorVersionData = buildBehaviorVersionDataFor(group, Some("SomeType"), Seq(("foo", textTypeData(dataService))))
         val fieldsForData2 = Seq(
-          ("someType", BehaviorParameterTypeData(behaviorVersionData.id, None, behaviorVersionData.name.get, None)),
+          ("someType", BehaviorParameterTypeData(behaviorVersionData.id, None, behaviorVersionData.name.get, None, Some(BehaviorParameterType.typescriptTypeForDataTypes))),
           ("bar", numberTypeData(dataService)),
           ("maybe", yesNoTypeData(dataService))
         )
