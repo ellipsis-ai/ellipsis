@@ -1,66 +1,85 @@
 import * as React from 'react';
 import SearchInput from './search';
 import Select from './select';
-import debounce from 'javascript-debounce';
+import * as debounce from 'javascript-debounce';
+import autobind from "../lib/autobind";
 
-const SearchWithResults = React.createClass({
-    propTypes: {
-      placeholder: React.PropTypes.string,
-      value: React.PropTypes.string.isRequired,
-      options: React.PropTypes.arrayOf(React.PropTypes.shape({
-        name: React.PropTypes.string.isRequired,
-        value: React.PropTypes.string.isRequired
-      })).isRequired,
-      isSearching: React.PropTypes.bool.isRequired,
-      noMatches: React.PropTypes.bool.isRequired,
-      error: React.PropTypes.string,
-      onChangeSearch: React.PropTypes.func.isRequired,
-      onSelect: React.PropTypes.func.isRequired,
-      onEnterKey: React.PropTypes.func
-    },
+interface Props {
+  placeholder?: string
+  value: string,
+  options: Array<{
+    name: string,
+    value: string
+  }>,
+  isSearching: boolean,
+  noMatches: boolean,
+  error?: Option<string>
+  onChangeSearch: (newSearch: string) => void,
+  onSelect: (newValue: string, newIndex: number) => void,
+  onEnterKey?: (value: string) => void
+}
 
-    getInitialState: function() {
-      return {
+interface State {
+  searchText: string
+}
+
+class SearchWithResults extends React.Component<Props, State> {
+    input: Option<SearchInput>;
+    selector: Option<Select>;
+    delayChangeSearch: (newSearch: string) => void;
+
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+      this.delayChangeSearch = debounce(this.onChangeSearch, 250);
+      this.state = {
         searchText: ""
       };
-    },
+    }
 
-    componentDidMount: function() {
-      this.delayChangeSearch = debounce(this.onChangeSearch, 250);
+    componentDidMount(): void {
       if (this.selector) {
         this.selector.scrollToSelectedOption();
       }
-    },
+    }
 
-    componentDidUpdate(prevProps) {
+    componentDidUpdate(prevProps: Props): void {
       if (prevProps.options !== this.props.options && this.selector) {
         this.selector.scrollToSelectedOption();
       }
-    },
+    }
 
-    onChangeSearch: function(newSearch) {
+    onChangeSearch(newSearch: string): void {
       this.props.onChangeSearch(newSearch);
-    },
+    }
 
-    onSelect: function(newValue, newIndex) {
+    onSelect(newValue: string, newIndex: number): void {
       this.props.onSelect(newValue, newIndex);
-    },
+    }
 
-    onSelectNext: function() {
+    onSelectNext(): void {
       if (this.selector) {
         this.selector.selectNextItem();
-        this.onSelect(this.selector.getCurrentValue(), this.selector.getCurrentIndex());
+        const newValue = this.selector.getCurrentValue();
+        const newIndex = this.selector.getCurrentIndex();
+        if (typeof newValue === "string" && typeof newIndex  === 'number') {
+          this.onSelect(newValue, newIndex);
+        }
       }
-    },
+    }
 
-    onSelectPrevious: function() {
+    onSelectPrevious(): void {
       if (this.selector) {
         this.selector.selectPreviousItem();
-        this.onSelect(this.selector.getCurrentValue(), this.selector.getCurrentIndex());
+        const newValue = this.selector.getCurrentValue();
+        const newIndex = this.selector.getCurrentIndex();
+        if (typeof newValue === "string" && typeof newIndex === 'number') {
+          this.onSelect(newValue, newIndex);
+        }
       }
-    },
+    }
 
-    updateSearchText: function(newValue) {
+    updateSearchText(newValue: string): void {
       const newQuery = newValue.trim();
       if (newQuery) {
         this.setState({
@@ -75,9 +94,9 @@ const SearchWithResults = React.createClass({
           this.onChangeSearch(newQuery);
         });
       }
-    },
+    }
 
-    renderSearchMessage: function() {
+    renderSearchMessage() {
       if (this.props.error) {
         return (
           <div className="fade-in maxs pvxs phs type-pink type-bold type-italic">
@@ -92,31 +111,33 @@ const SearchWithResults = React.createClass({
         return (
           <div className="fade-in maxs pvxs phs type-italic type-disabled">No matches found</div>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    focus: function() {
+    focus(): void {
       if (this.input) {
         this.input.focus();
       }
-    },
+    }
 
-    onEnterKey: function() {
+    onEnterKey(): void {
       if (this.props.onEnterKey) {
         this.props.onEnterKey(this.props.value);
       }
-    },
+    }
 
-    clearSearch: function() {
+    clearSearch(): void {
       if (this.input) {
         this.input.clearValue();
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
-          <div className={this.state.isSearching ? "pulse" : ""}>
+          <div className={this.props.isSearching ? "pulse" : ""}>
             <div className="mvl width-30 mobile-width-full">
               <SearchInput
                 ref={(input) => this.input = input}
@@ -133,7 +154,7 @@ const SearchWithResults = React.createClass({
                   ref={(selector) => this.selector = selector}
                   value={this.props.value}
                   onChange={this.onSelect}
-                  size="5"
+                  size={5}
                   withSearch={true}
                 >
                   {this.props.options.map((ea) => (
@@ -149,6 +170,6 @@ const SearchWithResults = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default SearchWithResults;

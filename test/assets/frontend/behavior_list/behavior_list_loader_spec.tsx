@@ -185,14 +185,14 @@ describe('BehaviorListApp', () => {
     it('renders a BehaviorList when the time zone is set', () => {
       const list = createBehaviorListLoader(config);
       expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList as ComponentClass<any>).length).toBe(1);
-      expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter).length).toBe(0);
+      expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter as ComponentClass<any>).length).toBe(0);
     });
 
     it('renders a TimeZoneSetter when no time zone is set', () => {
       config.teamTimeZone = null;
       const list = createBehaviorListLoader(config);
       expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList as ComponentClass<any>).length).toBe(0);
-      expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter).length).toBe(1);
+      expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter as ComponentClass<any>).length).toBe(1);
     });
   });
 

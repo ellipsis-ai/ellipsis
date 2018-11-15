@@ -3,34 +3,57 @@ import {DataRequest} from '../lib/data_request';
 import Button from '../form/button';
 import DynamicLabelButton from '../form/dynamic_label_button';
 import TimeZoneSelector from './time_zone_selector';
+import autobind from "../lib/autobind";
 
-const TeamTimeZoneSetter = React.createClass({
-    propTypes: {
-      csrfToken: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired,
-      onSave: React.PropTypes.func.isRequired,
-      onCancel: React.PropTypes.func,
-      teamTimeZone: React.PropTypes.string
-    },
+interface TeamTimeZoneData {
+  tzName: string,
+  formattedName?: Option<string>,
+  currentOffset: number
+}
 
-    getInitialState: function() {
-      return {
+interface Props {
+  csrfToken: string
+  teamId: string
+  onSave: (tzName: string, formattedName: string, newOffset: number) => void
+  onCancel?: () => void
+  teamTimeZone?: Option<string>
+}
+
+interface State {
+  timeZoneId: string,
+  timeZoneName: string,
+  isSaving: boolean,
+  justSaved: boolean,
+  error: Option<string>
+}
+
+class TeamTimeZoneSetter extends React.Component<Props, State> {
+    timeZoneSelector: Option<TimeZoneSelector>;
+
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+      this.state = {
         timeZoneId: "",
         timeZoneName: "",
         isSaving: false,
         justSaved: false,
         error: null
       };
-    },
+    }
 
-    onChange: function(timeZoneId, timeZoneName) {
+    onChange(timeZoneId: string, timeZoneName: string) {
       this.setState({
         timeZoneId: timeZoneId,
         timeZoneName: timeZoneName
       });
-    },
+    }
 
-    setTimeZone: function() {
+    isTeamTimeZoneData(json: any): json is TeamTimeZoneData {
+      return typeof json.tzName === "string";
+    }
+
+    setTimeZone(): void {
       const newTz = this.state.timeZoneId;
       const displayName = this.state.timeZoneName;
       this.setState({
@@ -43,8 +66,8 @@ const TeamTimeZoneSetter = React.createClass({
             tzName: newTz,
             teamId: this.props.teamId
           }, this.props.csrfToken)
-          .then((json) => {
-            if (json.tzName) {
+          .then((json: TeamTimeZoneData | { message?: string }) => {
+            if (this.isTeamTimeZoneData(json)) {
               this.setState({
                 isSaving: false,
                 justSaved: true
@@ -61,15 +84,15 @@ const TeamTimeZoneSetter = React.createClass({
             });
           });
       });
-    },
+    }
 
-    focus: function() {
+    focus(): void {
       if (this.timeZoneSelector) {
         this.timeZoneSelector.focus();
       }
-    },
+    }
 
-    renderStatus: function() {
+    renderStatus() {
       if (this.state.error) {
         return (
           <span className="align-button type-italic type-pink fade-in">— {this.state.error}</span>
@@ -78,10 +101,12 @@ const TeamTimeZoneSetter = React.createClass({
         return (
           <span className="align-button type-green type-bold fade-in">— Team time zone updated</span>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
 
@@ -114,6 +139,6 @@ const TeamTimeZoneSetter = React.createClass({
         </div>
       );
     }
-  });
+}
 
 export default TeamTimeZoneSetter;
