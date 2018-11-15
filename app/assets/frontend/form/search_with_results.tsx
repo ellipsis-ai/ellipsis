@@ -68,7 +68,7 @@ class SearchWithResults extends React.Component<Props, State> {
       }
     }
 
-    onSelectPrevious() {
+    onSelectPrevious(): void {
       if (this.selector) {
         this.selector.selectPreviousItem();
         const newValue = this.selector.getCurrentValue();

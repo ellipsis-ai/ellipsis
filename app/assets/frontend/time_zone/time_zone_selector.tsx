@@ -130,7 +130,7 @@ class TimeZoneSelector extends React.PureComponent<Props, State> {
       });
     }
 
-    setSelectedTimeZoneFromCity(cityInfo: CityInfo) {
+    setSelectedTimeZoneFromCity(cityInfo: CityInfo): void {
       const optionProps = this.getOptionPropsFromCityInfo(cityInfo);
       this.updateCityAndOption(optionProps.key, optionProps);
     }
@@ -151,14 +151,14 @@ class TimeZoneSelector extends React.PureComponent<Props, State> {
       return this.state.cityResults.map(this.getOptionPropsFromCityInfo);
     }
 
-    updateSelectedTimeZone(valueOrNull: Option<string>, newValueIndex: number) {
+    updateSelectedTimeZone(valueOrNull: Option<string>, newValueIndex: number): void {
       const newResult = this.getFilteredTzInfo()[newValueIndex];
       if (newResult) {
         this.updateCityAndOption(newResult.key, newResult);
       }
     }
 
-    updateCityAndOption(cityKey: string, option: CityOption) {
+    updateCityAndOption(cityKey: string, option: CityOption): void {
       this.setState({
         selectedCity: cityKey,
         selectedOption: option

@@ -31,7 +31,7 @@ class TimeOfDayEditor extends React.Component<Props, State> {
       };
     }
 
-    componentWillReceiveProps(nextProps: Props) {
+    componentWillReceiveProps(nextProps: Props): void {
       if (this.props.recurrence.id !== nextProps.recurrence.id) {
         this.setState(this.defaultState());
       }
@@ -150,7 +150,7 @@ class TimeOfDayEditor extends React.Component<Props, State> {
       });
     }
 
-    updateSelectedTimeZone(timeZoneId: string, cityName: string, timeZoneName: string) {
+    updateSelectedTimeZone(timeZoneId: string, cityName: string, timeZoneName: string): void {
       this.props.onChange(this.props.recurrence.clone({
         timeZone: timeZoneId,
         timeZoneName: timeZoneName
