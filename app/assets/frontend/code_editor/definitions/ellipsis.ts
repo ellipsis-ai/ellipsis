@@ -62,7 +62,7 @@ declare namespace ellipsis {
     /** The content of the file, as a string */
     content: string
     
-    /** An optional filetype, e.g. "text" or "jpg"
+    /** An optional filetype, e.g. "text" or "jpg" */
     filetype?: string
   }
 
@@ -71,7 +71,7 @@ declare namespace ellipsis {
     /** The name of the file being attached */
     filename: string
     
-    /** An optional filetype, e.g. "text" or "jpg"
+    /** An optional filetype, e.g. "text" or "jpg" */
     filetype?: string
   }
 
@@ -85,7 +85,7 @@ declare namespace ellipsis {
     /** The secret access key for this AWS configuration */ 
     secretAccessKey: string
     
-    /** The region for this AWS configuration, e.g. "us-east-1"
+    /** The region for this AWS configuration, e.g. "us-east-1" */
     region: string
   }
 
