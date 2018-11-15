@@ -535,6 +535,8 @@ case class TestEventContext(
     eventualResults
   }
 
+  // TODO: we may have some reason to not use Slack here (although this was the existing behavior)
+
   def messageActionButtonFor(callbackId: String, label: String, property: String, value: String) = {
     SlackMessageActionButton(callbackId, label, value)
   }
