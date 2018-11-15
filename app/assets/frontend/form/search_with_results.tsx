@@ -28,7 +28,7 @@ class SearchWithResults extends React.Component<Props, State> {
     selector: Option<Select>;
     delayChangeSearch: (newSearch: string) => void;
 
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.delayChangeSearch = debounce(this.onChangeSearch, 250);
@@ -37,41 +37,49 @@ class SearchWithResults extends React.Component<Props, State> {
       };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
       if (this.selector) {
         this.selector.scrollToSelectedOption();
       }
     }
 
-    componentDidUpdate(prevProps) {
+    componentDidUpdate(prevProps: Props): void {
       if (prevProps.options !== this.props.options && this.selector) {
         this.selector.scrollToSelectedOption();
       }
     }
 
-    onChangeSearch(newSearch) {
+    onChangeSearch(newSearch: string): void {
       this.props.onChangeSearch(newSearch);
     }
 
-    onSelect(newValue, newIndex) {
+    onSelect(newValue: string, newIndex: number): void {
       this.props.onSelect(newValue, newIndex);
     }
 
-    onSelectNext() {
+    onSelectNext(): void {
       if (this.selector) {
         this.selector.selectNextItem();
-        this.onSelect(this.selector.getCurrentValue(), this.selector.getCurrentIndex());
+        const newValue = this.selector.getCurrentValue();
+        const newIndex = this.selector.getCurrentIndex();
+        if (typeof newValue === "string" && typeof newIndex  === 'number') {
+          this.onSelect(newValue, newIndex);
+        }
       }
     }
 
     onSelectPrevious() {
       if (this.selector) {
         this.selector.selectPreviousItem();
-        this.onSelect(this.selector.getCurrentValue(), this.selector.getCurrentIndex());
+        const newValue = this.selector.getCurrentValue();
+        const newIndex = this.selector.getCurrentIndex();
+        if (typeof newValue === "string" && typeof newIndex === 'number') {
+          this.onSelect(newValue, newIndex);
+        }
       }
     }
 
-    updateSearchText(newValue) {
+    updateSearchText(newValue: string): void {
       const newQuery = newValue.trim();
       if (newQuery) {
         this.setState({
@@ -108,19 +116,19 @@ class SearchWithResults extends React.Component<Props, State> {
       }
     }
 
-    focus() {
+    focus(): void {
       if (this.input) {
         this.input.focus();
       }
     }
 
-    onEnterKey() {
+    onEnterKey(): void {
       if (this.props.onEnterKey) {
         this.props.onEnterKey(this.props.value);
       }
     }
 
-    clearSearch() {
+    clearSearch(): void {
       if (this.input) {
         this.input.clearValue();
       }

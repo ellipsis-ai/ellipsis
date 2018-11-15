@@ -86,7 +86,7 @@ class TeamTimeZoneSetter extends React.Component<Props, State> {
       });
     }
 
-    focus() {
+    focus(): void {
       if (this.timeZoneSelector) {
         this.timeZoneSelector.focus();
       }
