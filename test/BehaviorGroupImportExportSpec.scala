@@ -185,7 +185,8 @@ class BehaviorGroupImportExportSpec extends DBSpec {
           dataTypeVersionData.id,
           dataTypeVersionData.exportId,
           dataTypeVersionData.name.get,
-          None
+          None,
+          Some(BehaviorParameterType.typescriptTypeForDataTypes)
         )
 
         val inputData = newInputDataFor(Some(dataTypeParamData))

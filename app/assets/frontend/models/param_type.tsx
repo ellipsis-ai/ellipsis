@@ -7,7 +7,7 @@ export interface ParamTypeJson {
   exportId: string
   name: string
   needsConfig?: Option<boolean>
-  typescriptType: string
+  typescriptType?: Option<string>
 }
 
 interface ParamTypeInterface extends ParamTypeJson {}
@@ -16,11 +16,12 @@ class ParamType implements ParamTypeInterface {
   readonly isBuiltIn: boolean;
   readonly name: string;
   readonly needsConfig: boolean;
+  readonly typescriptType: string;
 
   constructor(
     readonly id: Option<string>,
     readonly exportId: string,
-    readonly typescriptType: string,
+    maybeTypescriptType: Option<string>,
     maybeName?: Option<string>,
     maybeNeedsConfig?: Option<boolean>
   ) {
@@ -32,7 +33,7 @@ class ParamType implements ParamTypeInterface {
         isBuiltIn: { value: isBuiltIn, enumerable: true },
         name: { value: (typeof maybeName === "string" ? maybeName : ""), enumerable: true },
         needsConfig: { value: (typeof maybeNeedsConfig === "boolean" ? maybeNeedsConfig : false), enumerable: true },
-        typescriptType: { value: typescriptType, enumerable: true }
+        typescriptType: { value: (typeof maybeTypescriptType === "string" ? maybeTypescriptType : "any"), enumerable: true }
       });
     }
 

@@ -39,6 +39,7 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
   val exportId: String
   val name: String
   val typescriptType: String
+
   def needsConfig(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean]
   val isBuiltIn: Boolean
 
@@ -424,13 +425,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   val outputName: String = behaviorVersion.outputName
 
-  val typescriptType: String =
-    """{
-      |  id: string,
-      |  label: string,
-      |  [k: string]: any
-      |}
-    """.stripMargin
+  val typescriptType: String = BehaviorParameterType.typescriptTypeForDataTypes
+
   override lazy val inputName: String = behaviorVersion.inputName
 
   val isBuiltIn: Boolean = false
@@ -956,6 +952,15 @@ object BehaviorParameterType {
   val DATA_PROPERTY = "data"
   val SEARCH_COUNT_THRESHOLD = 30
   val otherId: String = "other"
+
+  val typescriptTypeForDataTypes: String = {
+    """{
+      |  id: string,
+      |  label: string,
+      |  [k: string]: any
+      |}
+    """.stripMargin
+  }
 
   val allBuiltin = Seq(
     TextType,

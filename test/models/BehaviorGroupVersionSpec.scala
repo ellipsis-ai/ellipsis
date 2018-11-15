@@ -3,7 +3,7 @@ package models
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import json.{BehaviorGroupData, BehaviorParameterTypeData, BehaviorVersionData, DataTypeFieldData}
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.behaviorparameter.TextType
+import models.behaviors.behaviorparameter.{BehaviorParameterType, TextType}
 import play.api.libs.json.Json
 import support.DBSpec
 
@@ -58,7 +58,8 @@ class BehaviorGroupVersionSpec extends DBSpec {
           dataTypeVersionData.id,
           dataTypeVersionData.exportId,
           dataTypeVersionData.name.get,
-          None
+          None,
+          Some(BehaviorParameterType.typescriptTypeForDataTypes)
         )
 
         val inputData = newInputDataFor(Some(dataTypeParamData))
