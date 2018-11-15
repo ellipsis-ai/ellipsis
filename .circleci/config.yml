@@ -42,7 +42,7 @@ jobs:
             - v9-node-{{ arch }}-{{ checksum "package-lock.json" }}
       - restore_cache:
           keys:
-            - v6-npm_modules-{{ arch }}-{{ checksum "npm_modules/npm_checksum" }}
+            - v7-npm_modules-{{ arch }}-{{ checksum "npm_modules/npm_checksum" }}
       - run:
           name: Install npm dependencies
           command: |
@@ -59,10 +59,9 @@ jobs:
           paths:
             - npm_modules/ellipsis-action-logs/node_modules
             - npm_modules/ellipsis-aws-billing/node_modules
-            - npm_modules/ellipsis-date-range-parser/node_modules
             - npm_modules/ellipsis-default-storage/node_modules
             - npm_modules/ellipsis-post-message/node_modules
-          key: v6-npm_modules-{{ arch }}-{{ checksum "npm_modules/npm_checksum" }}
+          key: v7-npm_modules-{{ arch }}-{{ checksum "npm_modules/npm_checksum" }}
       - run:
           name: Run JavaScript linter
           command: |
