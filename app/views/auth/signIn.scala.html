@@ -25,8 +25,12 @@
         </p>
 
         <div class="mtxl">
-          @signInWithSlackButton(slackScopes, slackClientId, slackRedirectUrl)
-          @{if (includeMSTeams) { signInWithMSTeamsButton(msTeamsScopes, msTeamsClientId, msTeamsRedirectUrl) } else {}}
+          <span class="mrl">
+            @signInWithSlackButton(slackScopes, slackClientId, slackRedirectUrl)
+          </span>
+          <span class="mrl">
+            @{if (includeMSTeams) { signInWithMSTeamsButton(msTeamsScopes, msTeamsClientId, msTeamsRedirectUrl) } else {}}
+          </span>
         </div>
 
       </div>

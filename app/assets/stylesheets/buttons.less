@@ -590,7 +590,11 @@ button.button-error,
 a.button-error,
 button.button-inverted,
 a.button-inverted,
-.checkbox-button.button-inverted {
+.checkbox-button.button-inverted,
+button.button-slack,
+a.button-slack,
+button.button-msteams,
+a.button-msteams {
   font-weight: 600;
   color: @white;
   .light-antialiasing();
@@ -611,10 +615,48 @@ a.button-primary:focus {
 }
 
 button.button-primary:active,
-a.button-primary:focus {
+a.button-primary:active {
   background-color: @blue-dark;
   border-color: @blue-dark;
   color: @white;
+}
+
+button.button-slack,
+a.button-slack {
+  background-color: @slack-green;
+  border-color: @slack-green;
+  color: @white;
+}
+
+button.button-slack:focus,
+a.button-slack:focus {
+  background-color: @slack-green;
+  border-color: @slack-green-dark;
+}
+
+button.button-slack:active,
+a.button-slack:active {
+  background-color: @slack-green-dark;
+  border-color: @slack-green-dark;
+}
+
+button.button-msteams,
+a.button-msteams {
+  background-color: @msTeams-blue;
+  border-color: @msTeams-blue;
+  color: @white;
+}
+
+button.button-msteams:focus,
+a.button-msteams:focus {
+  background-color: @msTeams-blue;
+  border-color: @msTeams-blue-dark;
+}
+
+button.button-msteams:active,
+a.button-msteams:active {
+  background-color: @msTeams-blue-dark;
+  border-color: @msTeams-blue-dark;
 }
 
 button.button-error,
