@@ -12,7 +12,8 @@ case class BehaviorParameterTypeData(
                                       id: Option[String],
                                       exportId: Option[String],
                                       name: String,
-                                      needsConfig: Option[Boolean]
+                                      needsConfig: Option[Boolean],
+                                      typescriptType: String
                                     ) extends FieldTypeForSchema {
 
   def maybeBuiltinType: Option[BehaviorParameterType] = {
@@ -48,7 +49,7 @@ object BehaviorParameterTypeData {
 
   def from(paramType: BehaviorParameterType, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorParameterTypeData] = {
     paramType.needsConfig(dataService).map { needsConfig =>
-      BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(needsConfig))
+      BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(needsConfig), paramType.typescriptType)
     }
   }
 
