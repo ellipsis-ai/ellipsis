@@ -20,24 +20,8 @@
           <span class="type-pink-light">To use Ellipsis, you need to add it to your Slack workspace. </span>
         </p>
 
-        <div class="mtxl columns columns-elastic mobile-columns-float">
-          <div class="column column-shrink prxxl mobile-mbxl">
-            <div id="no-agreement-container" class="fade-in">
-              <button id="no-agreement-button" type="button" class="button button-shrink button-primary button-l" disabled>
-                <span class="display-inline-block align-t mrs">@views.html.shared.svg.slackLogoMark()</span>
-                <span class="display-inline-block align-t">Add to Slack</span>
-              </button>
-            </div>
-
-            <div id="agreement-container" class="display-none fade-in">
-              <a href="https://slack.com/oauth/authorize?scope=@scopes&amp;client_id=@clientId&amp;redirect_uri=@redirectUrl"
-              class="button button-shrink button-primary button-l">
-                <span class="display-inline-block align-t mrs">@views.html.shared.svg.slackLogoMark()</span>
-                <span class="display-inline-block align-t">Add to Slack</span>
-              </a>
-            </div>
-          </div>
-          <div class="column column-expand align-m">
+        <div class="mtxl">
+          <div class="display-inline-block align-m mrm mbm">
             <label id="agreement-checkbox-label" for="agreement-checkbox" class="checkbox-button checkbox-button-l button-inverted">
               <input id="agreement-checkbox" type="checkbox" value="I agree" class="man mrs">
               <span id="reminder">
@@ -47,6 +31,21 @@
                 <a target="legal" href="@routes.LegalController.userAgreement()" class="link-light-blue">user agreement.</a>
               </span>
             </label>
+          </div><div class="display-inline-block align-m mbm">
+            <div id="no-agreement-container" class="fade-in">
+              <button id="no-agreement-button" type="button" class="button button-shrink button-slack button-l" disabled>
+                <span class="display-inline-block align-t mrs">@views.html.shared.svg.slackLogoMark()</span>
+                <span class="display-inline-block align-t">Add to Slack</span>
+              </button>
+            </div>
+
+            <div id="agreement-container" class="display-none fade-in">
+              <a href="https://slack.com/oauth/authorize?scope=@scopes&amp;client_id=@clientId&amp;redirect_uri=@redirectUrl"
+              class="button button-shrink button-slack button-l">
+                <span class="display-inline-block align-t mrs">@views.html.shared.svg.slackLogoMark()</span>
+                <span class="display-inline-block align-t">Add to Slack</span>
+              </a>
+            </div>
           </div>
         </div>
 
@@ -79,7 +78,7 @@
 
         <div class="position-relative mvl type-m">
           <span class="box-number bg-pink type-white mrm">3</span>
-          <span>Type <span class="box-chat box-chat-selected type-white">...help</span> in the channel</span>
+          <span>Type <span class="box-chat box-chat-selected type-white">@@ellipsis help</span> in the channel</span>
         </div>
 
       </div>
