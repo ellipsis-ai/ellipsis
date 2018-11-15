@@ -330,7 +330,8 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return ParamType.fromProps({
         id: this.id || "unknown",
         exportId: this.exportId || "unknown",
-        name: this.name || "Unnamed data type"
+        name: this.name || "Unnamed data type",
+        typescriptType: ParamType.typescriptTypeForDataTypes()
       });
     }
 

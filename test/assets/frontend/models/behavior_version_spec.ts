@@ -108,7 +108,8 @@ const defaultStorageDataType: BehaviorVersionJson = Object.freeze({
         fieldType: {
           name: "Text",
           id: "Text",
-          exportId: "Text"
+          exportId: "Text",
+          typescriptType: "string"
         },
         isLabel: true
       }, {
@@ -118,7 +119,8 @@ const defaultStorageDataType: BehaviorVersionJson = Object.freeze({
         fieldType: {
           name: "Text",
           id: "Text",
-          exportId: "Text"
+          exportId: "Text",
+          typescriptType: "string"
         },
         isLabel: false
       }],

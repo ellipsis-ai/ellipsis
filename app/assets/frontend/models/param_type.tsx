@@ -99,6 +99,14 @@ class ParamType implements ParamTypeInterface {
     static fromJson(props: ParamTypeJson): ParamType {
       return ParamType.fromProps(props);
     }
+
+    static typescriptTypeForDataTypes(): string {
+      return `{
+  id: string,
+  label: string,
+  [k: string]: any
+}`;
+    }
   }
 
 export default ParamType;
