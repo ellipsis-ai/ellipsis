@@ -4,10 +4,12 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.behaviors.events.ms_teams.MSTeamsMessageEvent
-import models.behaviors.{ActionArg, ActionChoice}
+import models.behaviors.{ActionArg, ActionChoice, BotResult}
+import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
 import play.api.data.Forms._
@@ -28,15 +30,139 @@ class MSTeamsController @Inject() (
                                   val environment: Environment,
                                   val eventService: MSTeamsEventService,
                                   implicit val ec: ExecutionContext
-                                ) extends EllipsisController {
+                                ) extends EllipsisController with ChatPlatformController {
 
-  val dataService = services.dataService
   val configuration = services.configuration
   val lambdaService = services.lambdaService
-  val cacheService = services.cacheService
   val ws = services.ws
   val botResultService = services.botResultService
   implicit val actorSystem = services.actorSystem
+
+  override type BotProfileType = MSTeamsBotProfile
+  override type ActionsTriggeredInfoType = MSTeamsActionsTriggeredInfo
+
+  case class MSTeamsActionsTriggeredInfo(
+                                           activityType: String,
+                                           id: String,
+                                           timestamp: String,
+                                           serviceUrl: String,
+                                           channelId: String,
+                                           from: MessageParticipantInfo,
+                                           conversation: ConversationInfo,
+                                           recipient: MessageParticipantInfo,
+                                           textFormat: Option[String],
+                                           text: Option[String],
+                                           value: Option[ActionChoice],
+                                           channelData: ChannelDataInfo
+                                         ) extends ActionsTriggeredInfo {
+
+    val responseUrl: String = s"$serviceUrl/v3/conversations/${conversation.id}/activities/${id}"
+
+    val maybeTenantId: Option[String] = channelData.tenant.map(_.id)
+
+    def toActivityInfo: ActivityInfo = ActivityInfo(
+      activityType,
+      id,
+      timestamp,
+      serviceUrl,
+      channelId,
+      from,
+      conversation,
+      recipient,
+      textFormat,
+      text,
+      value,
+      channelData
+    )
+
+    val contextName: String = Conversation.MS_TEAMS_CONTEXT
+    def findButtonLabelForNameAndValue(name: String,value: String): Option[String] = None
+    def findOptionLabelForValue(value: String): Option[String] = None
+    def formattedUserFor(permission: ActionPermission): String = from.name
+    def inputChoiceResultFor(value: String)(implicit request: Request[AnyContent]): Future[Unit] = Future.successful({})
+    def instantBackgroundResponse(responseText: String, permission: ActionPermission): Future[Option[String]] = Future.successful(Some("foo"))
+    def isForDataTypeChoiceForDoneConversation: Future[Boolean] = Future.successful(false)
+    def isForYesNoForDoneConversation: Future[Boolean] = Future.successful(false)
+    def isIncorrectTeam(botProfile: BotProfileType): Future[Boolean] = Future.successful(false)
+    def isIncorrectUserTryingDataTypeChoice: Boolean = false
+    def isIncorrectUserTryingYesNo: Boolean = false
+    def maybeActionListForSkillId: Option[HelpGroupSearchValue] = None
+    val maybeConfirmContinueConversationResponse: Option[ConfirmContinueConversationResponse] = None
+    def maybeDataTypeChoice: Option[String] = None
+    def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = None
+    def maybeHelpIndexAt: Option[Int] = None
+    def maybeHelpRunBehaviorVersionId: Option[String] = None
+    def maybeSelectedActionChoice: Option[ActionChoice] = value
+    val maybeStopConversationResponse: Option[StopConversationResponse] = None
+    val maybeUserIdForDataTypeChoice: Option[String] = None
+    def maybeYesNoAnswer: Option[String] = None
+    def onEvent(event: Event): Future[Unit] = Future.successful({})
+    def processTriggerableAndActiveActionChoice(
+                                                 actionChoice: ActionChoice,
+                                                 maybeGroupVersion: Option[BehaviorGroupVersion],
+                                                 botProfile: BotProfileType,
+                                                 maybeInstantResponseTs: Option[String]
+                                               ): Future[Unit] = {
+      for {
+        _ <- dataService.msTeamsBotProfiles.sendResultWithNewEvent(
+          s"run action named ${actionChoice.actionName}",
+          event => for {
+            maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+              dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
+            }.getOrElse(Future.successful(None))
+            params <- maybeBehaviorVersion.map { behaviorVersion =>
+              dataService.behaviorParameters.allFor(behaviorVersion)
+            }.getOrElse(Future.successful(Seq()))
+            invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
+              params.find(_.name == name).map { param =>
+                (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+              }
+            })
+            maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+              dataService.behaviorResponses.buildFor(
+                event,
+                behaviorVersion,
+                invocationParams,
+                None,
+                None,
+                None,
+                userExpectsResponse = true
+              ).map(Some(_))
+            }.getOrElse(Future.successful(None))
+            maybeResult <- maybeResponse.map { response =>
+              response.result.map(Some(_))
+            }.getOrElse(Future.successful(None))
+          } yield maybeResult,
+          botProfile,
+          toActivityInfo,
+          conversation.id,
+          from.id,
+          id,
+          None,
+          isEphemeral = false,
+          actionChoice.shouldBeQuiet
+        )
+      } yield {}
+    }
+    def result(maybeResultText: Option[String], permission: ActionPermission): Result = {
+      val instantResponse = maybeResultText.map(t => instantBackgroundResponse(t, permission)).getOrElse(Future.successful(None))
+      permission.runInBackground(instantResponse)
+      Ok("")
+    }
+    def sendCannotBeTriggeredFor(actionChoice: ActionChoice, maybeGroupVersion: Option[BehaviorGroupVersion]): Future[Unit] = Future.successful({})
+    def sendEphemeralMessage(message: String): Future[Unit] = Future.successful({})
+    def sendResultWithNewEvent(
+                                description: String,
+                                getEventualMaybeResult: MessageEvent => Future[Option[BotResult]],
+                                botProfile: BotProfileType,
+                                beQuiet: Boolean
+                              ): Future[Option[String]] = Future.successful(None)
+    val teamIdForContext: String = maybeTenantId.get // TODO: hm
+    val teamIdForUserForContext: String = teamIdForContext
+    def updateActionsMessageFor(maybeResultText: Option[String], shouldRemoveActions: Boolean): Future[Unit] = Future.successful({})
+    val userIdForContext: String = from.id
+
+  }
 
   private val messageParticipantMapping = mapping(
     "id" -> nonEmptyText,
@@ -57,7 +183,6 @@ class MSTeamsController @Inject() (
       )(ConversationInfo.apply)(ConversationInfo.unapply),
       "recipient" -> messageParticipantMapping,
       "textFormat" -> optional(nonEmptyText),
-      "locale" -> optional(nonEmptyText),
       "text" -> optional(nonEmptyText),
       "value" -> optional(mapping(
         "label" -> nonEmptyText,
@@ -78,7 +203,7 @@ class MSTeamsController @Inject() (
           "id" -> nonEmptyText
         )(TenantInfo.apply)(TenantInfo.unapply))
       )(ChannelDataInfo.apply)(ChannelDataInfo.unapply)
-    )(ActivityInfo.apply)(ActivityInfo.unapply) verifying ("Not a valid message event", fields => fields match {
+    )(MSTeamsActionsTriggeredInfo.apply)(MSTeamsActionsTriggeredInfo.unapply) verifying ("Not a valid message event", fields => fields match {
       case info => info.activityType == "message"
     })
   )
@@ -94,7 +219,7 @@ class MSTeamsController @Inject() (
     )
   }
 
-  private def processMessageEventsFor(info: ActivityInfo, botProfile: MSTeamsBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
+  private def processMessageEventsFor(info: MSTeamsActionsTriggeredInfo, botProfile: MSTeamsBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
         // TODO: in the Slack case we check here if the user is allowed to invoke the bot. I think most of the reasons
         // don't apply in MS Teams, but we should check at some point what happens with e.g. messages from other bots
@@ -102,7 +227,7 @@ class MSTeamsController @Inject() (
           MSTeamsMessageEvent(
             MSTeamsEventContext(
               botProfile,
-              info
+              info.toActivityInfo
             ),
             info.text.orElse(info.value.map(_.label)).getOrElse(""), // TODO: formatting
             None,
@@ -115,67 +240,11 @@ class MSTeamsController @Inject() (
     } yield result
   }
 
-  private def processTriggerableAndActiveActionChoice(
-                                                       actionChoice: ActionChoice,
-                                                       botProfile: MSTeamsBotProfile,
-                                                       info: ActivityInfo
-                                                     ): Future[Unit] = {
-    for {
-      maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(actionChoice.originatingBehaviorVersionId)
-      maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
-      maybeActiveGroupVersion <- maybeGroupVersion.map { groupVersion =>
-        dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(groupVersion.group, Conversation.MS_TEAMS_CONTEXT, info.conversation.id)
-      }.getOrElse(Future.successful(None))
-      _ <- dataService.msTeamsBotProfiles.sendResultWithNewEvent(
-        s"run action named ${actionChoice.actionName}",
-        event => for {
-          maybeBehaviorVersion <- maybeActiveGroupVersion.map { groupVersion =>
-            dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
-          }.getOrElse(Future.successful(None))
-          params <- maybeBehaviorVersion.map { behaviorVersion =>
-            dataService.behaviorParameters.allFor(behaviorVersion)
-          }.getOrElse(Future.successful(Seq()))
-          invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
-            params.find(_.name == name).map { param =>
-              (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
-            }
-          })
-          maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-            dataService.behaviorResponses.buildFor(
-              event,
-              behaviorVersion,
-              invocationParams,
-              None,
-              None,
-              None,
-              userExpectsResponse = true
-            ).map(Some(_))
-          }.getOrElse(Future.successful(None))
-          maybeResult <- maybeResponse.map { response =>
-            response.result.map(Some(_))
-          }.getOrElse(Future.successful(None))
-        } yield maybeResult,
-        botProfile,
-        info,
-        info.conversation.id,
-        info.from.id,
-        info.id,
-        None,
-        isEphemeral = false,
-        actionChoice.shouldBeQuiet
-      )
-    } yield {}
-  }
-
-
-
-  private def messageEventResult(info: ActivityInfo)(implicit request: Request[AnyContent]): Result = {
+  private def messageEventResult(info: MSTeamsActionsTriggeredInfo)(implicit request: Request[AnyContent]): Result = {
     for {
       maybeProfile <- info.maybeTenantId.map(id => dataService.msTeamsBotProfiles.find(id)).getOrElse(Future.successful(None))
       _ <- maybeProfile.map { profile =>
-        info.value.map { actionChoice =>
-          processTriggerableAndActiveActionChoice(actionChoice, profile, info)
-        }.getOrElse {
+        maybePermissionResultFor(info, profile).getOrElse {
           processMessageEventsFor(info, profile)
         }
       }.getOrElse(Future.successful({}))

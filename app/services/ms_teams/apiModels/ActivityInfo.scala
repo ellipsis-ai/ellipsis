@@ -12,7 +12,6 @@ case class ActivityInfo(
                          conversation: ConversationInfo,
                          recipient: MessageParticipantInfo,
                          textFormat: Option[String],
-                         locale: Option[String],
                          text: Option[String],
                          value: Option[ActionChoice],
                          channelData: ChannelDataInfo

@@ -20,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ChatPlatformController {
 
-  trait ActionsTriggeredInfoInterface {
+  trait ActionsTriggeredInfo {
 
     val channelId: String
     val userIdForContext: String
@@ -89,7 +89,7 @@ trait ChatPlatformController {
   }
 
   type BotProfileType <: BotProfile
-  type ActionsTriggeredInfoType <: ActionsTriggeredInfoInterface
+  type ActionsTriggeredInfoType <: ActionsTriggeredInfo
 
   val services: DefaultServices
   val dataService: DataService = services.dataService
@@ -689,19 +689,17 @@ trait ChatPlatformController {
 
   }
 
-  import play.api.mvc.Results._
-
-  def permissionResultFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Result] = {
-    DataTypeChoicePermission.maybeResultFor(info, botProfile).getOrElse {
-      YesNoChoicePermission.maybeResultFor(info, botProfile).getOrElse {
-        ActionChoicePermission.maybeResultFor(info, botProfile).getOrElse {
-          HelpIndexPermission.maybeResultFor(info, botProfile).getOrElse {
-            HelpForSkillPermission.maybeResultFor(info, botProfile).getOrElse {
-              HelpListAllActionsPermission.maybeResultFor(info, botProfile).getOrElse {
-                ConfirmContinueConversationPermission.maybeResultFor(info, botProfile).getOrElse {
-                  StopConversationPermission.maybeResultFor(info, botProfile).getOrElse {
-                    HelpRunBehaviorVersionPermission.maybeResultFor(info, botProfile).getOrElse {
-                      Future.successful(Ok(""))
+  def maybePermissionResultFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[Result]] = {
+    DataTypeChoicePermission.maybeResultFor(info, botProfile).orElse {
+      YesNoChoicePermission.maybeResultFor(info, botProfile).orElse {
+        ActionChoicePermission.maybeResultFor(info, botProfile).orElse {
+          HelpIndexPermission.maybeResultFor(info, botProfile).orElse {
+            HelpForSkillPermission.maybeResultFor(info, botProfile).orElse {
+              HelpListAllActionsPermission.maybeResultFor(info, botProfile).orElse {
+                ConfirmContinueConversationPermission.maybeResultFor(info, botProfile).orElse {
+                  StopConversationPermission.maybeResultFor(info, botProfile).orElse {
+                    HelpRunBehaviorVersionPermission.maybeResultFor(info, botProfile).orElse {
+                      None
                     }
                   }
                 }
