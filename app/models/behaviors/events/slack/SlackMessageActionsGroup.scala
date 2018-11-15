@@ -1,6 +1,6 @@
 package models.behaviors.events.slack
 
-import models.behaviors.events.MessageUserData
+import models.behaviors.events.{MessageActionsGroup, MessageUserData}
 import utils.SlackMessageSender
 
 case class SlackMessageActionsGroup(
@@ -11,7 +11,9 @@ case class SlackMessageActionsGroup(
                                      maybeColor: Option[String],
                                      maybeTitle: Option[String] = None,
                                      maybeTitleLink: Option[String] = None
-                              ) extends SlackMessageAttachmentGroup {
+                              ) extends SlackMessageAttachmentGroup with MessageActionsGroup {
+
+  override type ActionType = SlackMessageAction
 
   val attachments: Seq[SlackMessageAttachment] = {
     val size = actions.length

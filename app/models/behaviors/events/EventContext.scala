@@ -10,8 +10,8 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.ms_teams.MSTeamsRunEvent
-import models.behaviors.events.slack.{SlackMessageEvent, SlackRunEvent}
+import models.behaviors.events.ms_teams.{MSTeamsMessageActionButton, MSTeamsMessageActionsGroup, MSTeamsRunEvent}
+import models.behaviors.events.slack.{SlackMessageActionButton, SlackMessageActionsGroup, SlackMessageEvent, SlackRunEvent}
 import models.behaviors.testing.TestRunEvent
 import models.team.Team
 import play.api.Logger
@@ -27,6 +27,9 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait EventContext {
+
+  type MessageActionsGroupType <: MessageActionsGroup
+  type MessageActionButtonType <: MessageActionButton
 
   val isPublicChannel: Boolean
   val isDirectMessage: Boolean
@@ -83,6 +86,10 @@ sealed trait EventContext {
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
                      (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]]
 
+  def messageActionButtonFor(callbackId: String, label: String, value: String): MessageActionButtonType
+
+  def messageActionsGroupFor(callbackId: String, actionList: Seq[MessageActionButtonType]): MessageActionsGroupType
+
 }
 
 case class SlackEventContext(
@@ -91,6 +98,9 @@ case class SlackEventContext(
                               maybeThreadId: Option[String],
                               userIdForContext: String
                             ) extends EventContext {
+
+  override type MessageActionsGroupType = SlackMessageActionsGroup
+  override type MessageActionButtonType = SlackMessageActionButton
 
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     botName(services).map { botName =>
@@ -299,12 +309,23 @@ case class SlackEventContext(
     )
   }
 
+  def messageActionButtonFor(callbackId: String, label: String, value: String) = {
+    SlackMessageActionButton(callbackId, label, value)
+  }
+
+  def messageActionsGroupFor(callbackId: String, actionList: Seq[SlackMessageActionButton]) = {
+    SlackMessageActionsGroup(callbackId, actionList, None, None, None)
+  }
+
 }
 
 case class MSTeamsEventContext(
                               profile: MSTeamsBotProfile,
                               info: ActivityInfo
                               ) extends EventContext {
+
+  override type MessageActionsGroupType = MSTeamsMessageActionsGroup
+  override type MessageActionButtonType = MSTeamsMessageActionButton
 
   val name: String = Conversation.MS_TEAMS_CONTEXT
   val userIdForContext: String = info.from.id
@@ -424,12 +445,23 @@ case class MSTeamsEventContext(
     eventualResults // TODO: this
   }
 
+  def messageActionButtonFor(callbackId: String, label: String, value: String) = {
+    MSTeamsMessageActionButton(callbackId, label, value)
+  }
+
+  def messageActionsGroupFor(callbackId: String, actionList: Seq[MSTeamsMessageActionButton]) = {
+    MSTeamsMessageActionsGroup(callbackId, actionList, None, None, None)
+  }
+
 }
 
 case class TestEventContext(
                              user: User,
                              team: Team
                            ) extends EventContext {
+
+  override type MessageActionsGroupType = SlackMessageActionsGroup
+  override type MessageActionButtonType = SlackMessageActionButton
 
   val name = "test"
   val isPublicChannel: Boolean = false
@@ -501,6 +533,14 @@ case class TestEventContext(
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
                      (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
     eventualResults
+  }
+
+  def messageActionButtonFor(callbackId: String, label: String, value: String) = {
+    SlackMessageActionButton(callbackId, label, value)
+  }
+
+  def messageActionsGroupFor(callbackId: String, actionList: Seq[SlackMessageActionButton]) = {
+    SlackMessageActionsGroup(callbackId, actionList, None, None, None)
   }
 
 }

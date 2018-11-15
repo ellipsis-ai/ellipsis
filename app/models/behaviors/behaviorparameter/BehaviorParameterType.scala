@@ -317,8 +317,12 @@ object YesNoType extends BuiltInType {
                                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map { superPromptResult =>
       val callbackId = context.yesNoCallbackId
-      val actionList = Seq(SlackMessageActionButton(callbackId, "Yes", YES), SlackMessageActionButton(callbackId, "No", NO))
-      val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, None, None, None)
+      val eventContext = context.event.eventContext
+      val actionList = Seq(
+        eventContext.messageActionButtonFor(callbackId, "Yes", Json.obj("yesNoValue" -> YES).toString()),
+        eventContext.messageActionButtonFor(callbackId, "No", Json.obj("yesNoValue" -> NO).toString())
+      )
+      val actionsGroup = eventContext.messageActionsGroupFor(callbackId, actionList)
       TextWithAttachmentsResult(
         superPromptResult.event,
         superPromptResult.maybeConversation,

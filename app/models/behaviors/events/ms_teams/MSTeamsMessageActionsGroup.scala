@@ -1,7 +1,7 @@
 package models.behaviors.events.ms_teams
 
-import models.behaviors.events.MessageUserData
-import utils.SlackMessageSender
+import models.behaviors.events.{MessageActionsGroup, MessageUserData}
+import utils.MSTeamsMessageSender
 
 case class MSTeamsMessageActionsGroup(
                                      id: String,
@@ -11,11 +11,13 @@ case class MSTeamsMessageActionsGroup(
                                      maybeColor: Option[String],
                                      maybeTitle: Option[String] = None,
                                      maybeTitleLink: Option[String] = None
-                                   ) extends MSTeamsMessageAttachmentGroup {
+                                   ) extends MSTeamsMessageAttachmentGroup with MessageActionsGroup {
+
+  override type ActionType = MSTeamsMessageAction
 
   val attachments: Seq[MSTeamsMessageAttachment] = {
     val size = actions.length
-    val maxPerGroup = SlackMessageSender.MAX_ACTIONS_PER_ATTACHMENT
+    val maxPerGroup = MSTeamsMessageSender.MAX_ACTIONS_PER_ATTACHMENT
     val groupSize = if (size % maxPerGroup == 1) { maxPerGroup - 1 } else { maxPerGroup }
     val maybeCallbackId = Some(id)
     actions.grouped(groupSize).zipWithIndex.map { case(segment, index) =>
