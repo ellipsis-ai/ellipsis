@@ -2053,9 +2053,6 @@ const BehaviorEditor = React.createClass({
 
           <Collapsible revealWhen={this.props.activePanelName === 'helpForBehaviorCode'} onChange={this.layoutDidUpdate}>
             <BehaviorCodeHelp
-              envVariableNames={this.getEnvVariableNames()}
-              oauthApiAccessTokens={this.getOAuthApiApplications()}
-              onAddNewEnvVariable={this.onAddNewEnvVariable}
               onCollapseClick={this.props.onClearActivePanel}
               isDataType={this.isDataTypeBehavior()}
             />
