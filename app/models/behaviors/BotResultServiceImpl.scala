@@ -97,7 +97,7 @@ class BotResultServiceImpl @Inject() (
           botResult.responseType,
           maybeShouldUnfurl,
           maybeConversation,
-          botResult.attachmentGroups,
+          botResult.attachments,
           files,
           maybeChoices.getOrElse(Seq()),
           botResult.developerContext,

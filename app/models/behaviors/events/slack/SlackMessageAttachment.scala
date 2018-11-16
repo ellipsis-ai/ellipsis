@@ -11,7 +11,7 @@ case class SlackMessageAttachment(
                                    maybeTitleLink: Option[String] = None,
                                    maybeColor: Option[String] = None,
                                    maybeCallbackId: Option[String] = None,
-                                   actions: Seq[ActionField] = Seq()
+                                   actions: Seq[SlackMessageAction] = Seq()
                                  ) extends MessageAttachment {
   val underlying = Attachment(
     fallback = Some("This feature is unavailable on this platform."),
@@ -27,7 +27,7 @@ case class SlackMessageAttachment(
     fields = Seq(),
     image_url = None,
     thumb_url = None,
-    actions = actions,
+    actions = actions.map(_.actionField),
     mrkdwn_in = Seq("text")
   )
 }

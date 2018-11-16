@@ -4,10 +4,10 @@ import akka.actor.ActorSystem
 import json.Formatting._
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events._
 import models.behaviors.events.MessageActionConstants._
-import models.behaviors.events.ms_teams.{MSTeamsMessageActionButton, MSTeamsMessageActionsGroup, MSTeamsMessageAttachmentGroup, MSTeamsMessageTextAttachmentGroup}
-import models.behaviors.events.slack.SlackMessageTextAttachmentGroup
+import models.behaviors.events._
+import models.behaviors.events.ms_teams._
+import models.behaviors.events.slack.SlackMessageAttachment
 import models.behaviors.{ActionChoice, DeveloperContext}
 import play.api.libs.json.Json
 import services.DefaultServices
@@ -40,7 +40,7 @@ case class MSTeamsMessageSender(
                                  maybeThreadId: Option[String],
                                  maybeShouldUnfurl: Option[Boolean],
                                  maybeConversation: Option[Conversation],
-                                 attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
+                                 attachments: Seq[MessageAttachment] = Seq(),
                                  files: Seq[UploadFileSpec] = Seq(),
                                  choices: Seq[ActionChoice],
                                  botName: String,
@@ -54,7 +54,7 @@ case class MSTeamsMessageSender(
 
   val configuration = services.configuration
 
-  val choicesAttachmentGroups: Seq[MSTeamsMessageActionsGroup] = {
+  val choicesAttachments: Seq[MSTeamsMessageAttachment] = {
     if (choices.isEmpty) {
       Seq()
     } else {
@@ -67,35 +67,38 @@ case class MSTeamsMessageSender(
         }
         MSTeamsMessageActionButton(ACTION_CHOICE, ea.label, valueToUse)
       }
-      Seq(MSTeamsMessageActionsGroup(
-        ACTION_CHOICES,
-        actionList,
+      Seq(MSTeamsMessageAttachment(
+        None,
+        None,
         None,
         None,
         Some(Color.BLUE_LIGHTER),
-        None
+        Some(ACTION_CHOICES),
+        actionList
       ))
     }
   }
 
-  val attachmentGroupsToUse = {
-    val groups = attachmentGroups ++ choicesAttachmentGroups
+  val attachmentsToUse: Seq[MessageAttachment] = {
+    val toUse = attachments ++ choicesAttachments
     if (developerContext.isForUndeployedBehaviorVersion) {
       val baseUrl = configuration.get[String]("application.apiBaseUrl")
       val path = controllers.routes.HelpController.devMode(Some(teamIdForContext), Some(botName)).url
       val link = s"[development]($baseUrl$path)"
-      groups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None, None))
+      toUse ++ Seq(MSTeamsMessageAttachment(Some(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7"), None, None))
     } else if (developerContext.hasUndeployedBehaviorVersionForAuthor) {
       val baseUrl = configuration.get[String]("application.apiBaseUrl")
       val path = controllers.routes.HelpController.devMode(Some(teamIdForContext), Some(botName)).url
       val link = s"[dev mode]($baseUrl$path)"
-      groups ++ Seq(
-        MSTeamsMessageTextAttachmentGroup(
-          s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link.", None, None
+      toUse ++ Seq(
+        MSTeamsMessageAttachment(
+          Some(s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link."),
+          None,
+          None
         )
       )
     } else {
-      groups
+      toUse
     }
   }
 
@@ -197,9 +200,9 @@ case class MSTeamsMessageSender(
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = unformattedText // TODO: formatting
-    val attachments = attachmentGroupsToUse.flatMap {
-      case a: MSTeamsMessageAttachmentGroup => a.attachments.map(_.underlying)
-      case _ => Seq()
+    val attachments = attachmentsToUse.flatMap {
+      case a: MSTeamsMessageAttachment => Some(a.underlying)
+      case _ => None
     }
     for {
       _ <- sendPreamble(formattedText)

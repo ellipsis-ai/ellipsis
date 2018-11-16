@@ -9,7 +9,7 @@ import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events._
 import models.behaviors.events.MessageActionConstants._
-import models.behaviors.events.slack.{SlackMessage, SlackMessageActionButton, SlackMessageActionsGroup, SlackMessageEvent}
+import models.behaviors.events.slack._
 import models.behaviors.triggers.Trigger
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -131,8 +131,8 @@ trait Conversation {
           val callbackId = stopConversationCallbackIdFor(event.eventContext.userIdForContext, Some(id))
           val actionList = Seq(SlackMessageActionButton(callbackId, "Stop asking", id))
           val question = result.text
-          val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, Some(question), None, None)
-          Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.responseType, Seq(actionsGroup)))
+          val attachments = SlackMessageAttachment(Some(question), None, None, None, None, Some(callbackId), actionList)
+          Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.responseType, Seq(attachments)))
         }
       }.getOrElse(DBIO.successful(None))
     }

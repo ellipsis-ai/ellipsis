@@ -186,7 +186,7 @@ sealed trait BotResult {
 
   val shouldSend: Boolean = true
 
-  def attachmentGroups: Seq[MessageAttachmentGroup] = Seq()
+  def attachments: Seq[MessageAttachment] = Seq()
 
   def isForManagedGroup(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     maybeBehaviorVersion.map { behaviorVersion =>
@@ -316,7 +316,7 @@ case class TextWithAttachmentsResult(
                                       maybeConversation: Option[Conversation],
                                       simpleText: String,
                                       override val responseType: BehaviorResponseType,
-                                      override val attachmentGroups: Seq[MessageAttachmentGroup]
+                                      override val attachments: Seq[MessageAttachment]
                                     ) extends BotResult {
   val resultType = ResultType.TextWithActions
 

@@ -173,13 +173,13 @@ trait Event {
                    responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   attachments: Seq[MessageAttachment],
                    files: Seq[UploadFileSpec],
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
                    services: DefaultServices
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    eventContext.sendMessage(this, text, responseType, maybeShouldUnfurl, maybeConversation, attachmentGroups, files, choices, developerContext, services)
+    eventContext.sendMessage(this, text, responseType, maybeShouldUnfurl, maybeConversation, attachments, files, choices, developerContext, services)
   }
 
   def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {

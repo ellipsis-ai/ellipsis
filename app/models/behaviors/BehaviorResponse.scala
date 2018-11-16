@@ -153,7 +153,7 @@ case class BehaviorResponse(
           behaviorVersion.responseType,
           maybeShouldUnfurl = None,
           None,
-          attachmentGroups = Seq(),
+          attachments = Seq(),
           files = Seq(),
           choices = Seq(),
           DeveloperContext.default,
