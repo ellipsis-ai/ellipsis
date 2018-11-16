@@ -232,6 +232,15 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
       maybeChannelData.exists(_.isOtherDm) mustEqual true
     }
 
+    "mark a conversation as neither kind of DM if it's a private group channel" in new TestContext {
+      val group = makeSlackGroup(channel1Id, "private")
+      val slackChannels = mock[SlackChannels]
+      when(slackChannels.getMembersFor(channel1Id)).thenReturn(Future.successful(Seq(slackUserId, slackBotUserId)))
+      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(group, Some(userSlackProfile), slackChannels, isAdmin = false))
+      maybeChannelData.exists(_.isSelfDm) mustEqual false
+      maybeChannelData.exists(_.isOtherDm) mustEqual false
+    }
+
     "return None if the user is not a member of an IM and is not an admin" in new TestContext {
       val slackChannels = mock[SlackChannels]
       when(slackChannels.getMembersFor(convoId = dmId)).thenReturn(Future.successful(Seq(otherSlackUserId, slackBotUserId)))
