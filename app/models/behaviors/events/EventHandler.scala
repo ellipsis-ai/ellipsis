@@ -6,7 +6,7 @@ import models.behaviors.behaviorversion.Normal
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
-import models.behaviors.events.slack.{SlackMessageActionButton, SlackMessageActionsGroup, SlackMessageEvent}
+import models.behaviors.events.slack.{SlackMessageActionButton, SlackMessageAttachment, SlackMessageEvent}
 import models.behaviors.{BotResult, SimpleTextResult, TextWithAttachmentsResult}
 import services.DefaultServices
 import utils.Color
@@ -99,14 +99,16 @@ class EventHandler @Inject() (
               s"It’s been a while since I asked you the question above."
             } + s"\n\nJust so I’m sure, is this an answer?"
 
-            val actions = SlackMessageActionsGroup(
-              callbackId,
-              actionList,
+            val attachment = SlackMessageAttachment(
               Some(event.relevantMessageTextWithFormatting),
               Some(event.messageUserDataList(Some(updatedConvo), services)),
-              Some(Color.PINK)
+              None,
+              None,
+              Some(Color.PINK),
+              Some(callbackId),
+              actionList
             )
-            TextWithAttachmentsResult(event, Some(updatedConvo), prompt, responseType = Normal, Seq(actions))
+            TextWithAttachmentsResult(event, Some(updatedConvo), prompt, responseType = Normal, Seq(attachment))
           }
         } else {
           val eventualResult = dataService.run(updatedConvo.resultForAction(event, services))

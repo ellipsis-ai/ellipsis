@@ -223,7 +223,7 @@ class ConversationServiceImpl @Inject() (
           conversation.behaviorVersion.responseType,
           maybeShouldUnfurl = None,
           Some(conversation),
-          attachmentGroups = Seq(),
+          attachments = Seq(),
           files = Seq(),
           choices = Seq(),
           DeveloperContext.default,

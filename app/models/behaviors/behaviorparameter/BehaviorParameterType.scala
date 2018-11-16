@@ -17,9 +17,9 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.{NewParentConversation, ParentConversation}
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
-import models.behaviors.events.{Event, MessageAttachmentGroup}
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack._
+import models.behaviors.events.{Event, MessageAttachment}
 import models.team.Team
 import play.api.libs.json._
 import services.AWSLambdaConstants._
@@ -322,7 +322,7 @@ object YesNoType extends BuiltInType {
         eventContext.messageActionButtonFor(callbackId, "Yes", "yesNoValue", YES),
         eventContext.messageActionButtonFor(callbackId, "No", "yesNoValue", NO)
       )
-      val actionsGroup = eventContext.messageActionsGroupFor(callbackId, actionList)
+      val actionsGroup = eventContext.messageAttachmentFor(callbackId, actionList)
       TextWithAttachmentsResult(
         superPromptResult.event,
         superPromptResult.maybeConversation,
@@ -781,13 +781,13 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         maybeStartAgainButtonFor(params, callbackId),
         Some(SlackMessageActionButton(callbackId, Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
       ).flatten
-      val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, None, None, None)
+      val attachment = SlackMessageAttachment(None, None, None, None, None, Some(callbackId), actionList)
       TextWithAttachmentsResult(
         context.event,
         context.maybeConversation,
         text,
         context.behaviorVersion.responseType,
-        Seq(actionsGroup)
+        Seq(attachment)
       )
     }
   }
@@ -833,11 +833,11 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
             SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
           } ++ builtinMenuItems
           val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
-          val groups: Seq[MessageAttachmentGroup] = Seq(
-            SlackMessageActionsGroup(context.dataTypeChoiceCallbackId, actionsList, None, None, Some(Color.BLUE_LIGHT))
+          val attachments: Seq[MessageAttachment] = Seq(
+            SlackMessageAttachment(None, None, None, None, Some(Color.BLUE_LIGHT), Some(context.dataTypeChoiceCallbackId), actionsList)
           )
           promptTextForAction(None, context, None, false).map { text =>
-            TextWithAttachmentsResult(context.event, context.maybeConversation, text, context.behaviorVersion.responseType, groups)
+            TextWithAttachmentsResult(context.event, context.maybeConversation, text, context.behaviorVersion.responseType, attachments)
           }
         }
       }

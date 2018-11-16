@@ -10,8 +10,8 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.ms_teams.{MSTeamsMessageActionButton, MSTeamsMessageActionsGroup, MSTeamsRunEvent}
-import models.behaviors.events.slack.{SlackMessageActionButton, SlackMessageActionsGroup, SlackMessageEvent, SlackRunEvent}
+import models.behaviors.events.ms_teams.{MSTeamsMessageActionButton, MSTeamsMessageAttachment, MSTeamsRunEvent}
+import models.behaviors.events.slack._
 import models.behaviors.testing.TestRunEvent
 import models.team.Team
 import play.api.Logger
@@ -28,7 +28,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait EventContext {
 
-  type MessageActionsGroupType <: MessageActionsGroup
+  type MessageAttachmentType <: MessageAttachment
   type MessageActionButtonType <: MessageActionButton
 
   val isPublicChannel: Boolean
@@ -68,7 +68,7 @@ sealed trait EventContext {
                    responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   attachments: Seq[MessageAttachment],
                    files: Seq[UploadFileSpec],
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
@@ -88,7 +88,7 @@ sealed trait EventContext {
 
   def messageActionButtonFor(callbackId: String, label: String, property: String, value: String): MessageActionButtonType
 
-  def messageActionsGroupFor(callbackId: String, actionList: Seq[MessageActionButtonType]): MessageActionsGroupType
+  def messageAttachmentFor(callbackId: String, actionList: Seq[MessageActionButtonType]): MessageAttachmentType
 
 }
 
@@ -99,7 +99,7 @@ case class SlackEventContext(
                               userIdForContext: String
                             ) extends EventContext {
 
-  override type MessageActionsGroupType = SlackMessageActionsGroup
+  override type MessageAttachmentType = SlackMessageAttachment
   override type MessageActionButtonType = SlackMessageActionButton
 
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
@@ -227,7 +227,7 @@ case class SlackEventContext(
                    responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   attachments: Seq[MessageAttachment],
                    files: Seq[UploadFileSpec],
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
@@ -248,7 +248,7 @@ case class SlackEventContext(
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,
-        attachmentGroups,
+        attachments,
         files,
         choices,
         services.configuration,
@@ -313,8 +313,8 @@ case class SlackEventContext(
     SlackMessageActionButton(callbackId, label, value)
   }
 
-  def messageActionsGroupFor(callbackId: String, actionList: Seq[SlackMessageActionButton]) = {
-    SlackMessageActionsGroup(callbackId, actionList, None, None, None)
+  def messageAttachmentFor(callbackId: String, actionList: Seq[SlackMessageActionButton]) = {
+    SlackMessageAttachment(None, None, None, None, None, Some(callbackId), actionList)
   }
 
 }
@@ -324,7 +324,7 @@ case class MSTeamsEventContext(
                               info: ActivityInfo
                               ) extends EventContext {
 
-  override type MessageActionsGroupType = MSTeamsMessageActionsGroup
+  override type MessageAttachmentType = MSTeamsMessageAttachment
   override type MessageActionButtonType = MSTeamsMessageActionButton
 
   val name: String = Conversation.MS_TEAMS_CONTEXT
@@ -380,7 +380,7 @@ case class MSTeamsEventContext(
                    responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   attachments: Seq[MessageAttachment],
                    files: Seq[UploadFileSpec],
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
@@ -402,7 +402,7 @@ case class MSTeamsEventContext(
         maybeThreadId,
         maybeShouldUnfurl,
         maybeConversation,
-        attachmentGroups,
+        attachments,
         files,
         choices,
         botName,
@@ -449,8 +449,8 @@ case class MSTeamsEventContext(
     MSTeamsMessageActionButton(callbackId, label, Json.obj(property -> value).toString())
   }
 
-  def messageActionsGroupFor(callbackId: String, actionList: Seq[MSTeamsMessageActionButton]) = {
-    MSTeamsMessageActionsGroup(callbackId, actionList, None, None, None)
+  def messageAttachmentFor(callbackId: String, actionList: Seq[MSTeamsMessageActionButton]) = {
+    MSTeamsMessageAttachment(None, None, None, None, None, Some(callbackId), actionList)
   }
 
 }
@@ -460,7 +460,7 @@ case class TestEventContext(
                              team: Team
                            ) extends EventContext {
 
-  override type MessageActionsGroupType = SlackMessageActionsGroup
+  override type MessageAttachmentType = SlackMessageAttachment
   override type MessageActionButtonType = SlackMessageActionButton
 
   val name = "test"
@@ -507,7 +507,7 @@ case class TestEventContext(
                    responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
-                   attachmentGroups: Seq[MessageAttachmentGroup],
+                   attachments: Seq[MessageAttachment],
                    files: Seq[UploadFileSpec],
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
@@ -541,8 +541,8 @@ case class TestEventContext(
     SlackMessageActionButton(callbackId, label, value)
   }
 
-  def messageActionsGroupFor(callbackId: String, actionList: Seq[SlackMessageActionButton]) = {
-    SlackMessageActionsGroup(callbackId, actionList, None, None, None)
+  def messageAttachmentFor(callbackId: String, actionList: Seq[SlackMessageActionButton]) = {
+    SlackMessageAttachment(None, None, None, None, None, Some(callbackId), actionList)
   }
 
 }

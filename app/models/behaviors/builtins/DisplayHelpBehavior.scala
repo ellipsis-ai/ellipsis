@@ -3,7 +3,7 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorVersionData}
 import models.behaviors.behaviorversion.Normal
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, slack}
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack._
 import models.behaviors.{BotResult, SuccessResult, TextWithAttachmentsResult}
@@ -74,18 +74,19 @@ case class DisplayHelpBehavior(
     } else {
       skillActions
     }
-    val actionsGroup = SlackMessageActionsGroup(
-      SHOW_HELP_INDEX,
-      actionList,
+    val attachment = slack.SlackMessageAttachment(
       maybeInstructions,
       None,
+      if (startAt == 0) { Some("Skills") } else { None },
+      None,
       Some(Color.PINK),
-      if (startAt == 0) { Some("Skills") } else { None }
+      Some(SHOW_HELP_INDEX),
+      actionList
     )
     val attachments = if (startAt == 0) {
-      Seq(generalHelpGroup(botPrefix), actionsGroup)
+      Seq(generalHelpAttachment(botPrefix), attachment)
     } else {
-      Seq(actionsGroup)
+      Seq(attachment)
     }
     TextWithAttachmentsResult(event, None, intro, responseType = Normal, attachments)
   }
@@ -97,8 +98,8 @@ case class DisplayHelpBehavior(
      """.stripMargin
   }
 
-  def generalHelpGroup(botPrefix: String): SlackMessageAttachmentGroup = {
-    SlackMessageTextAttachmentGroup(generalHelpText(botPrefix: String), None, Some("General"))
+  def generalHelpAttachment(botPrefix: String): SlackMessageAttachment = {
+    SlackMessageAttachment(Some(generalHelpText(botPrefix: String)), None, Some("General"))
   }
 
   def skillNameFor(result: HelpResult): String = {
@@ -211,16 +212,16 @@ case class DisplayHelpBehavior(
       Some("Select or type an action to run it now:")
     }
 
-    val actionsGroup = SlackMessageActionsGroup(SHOW_BEHAVIOR_GROUP_HELP, actionList, actionText, None, Some(Color.BLUE_LIGHT), None)
+    val attachment = slack.SlackMessageAttachment(actionText, None, None, None, Some(Color.BLUE_LIGHT), Some(SHOW_BEHAVIOR_GROUP_HELP), actionList)
 
-    TextWithAttachmentsResult(event, None, resultText, responseType = Normal, Seq(actionsGroup))
+    TextWithAttachmentsResult(event, None, resultText, responseType = Normal, Seq(attachment))
   }
 
   def emptyResult(botPrefix: String): BotResult = {
     val actionList = Seq(SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0"))
     val resultText = s"I don’t know anything$matchString."
-    val actionsGroup = SlackMessageActionsGroup("help_no_result", actionList, None, None, Some(Color.PINK))
-    TextWithAttachmentsResult(event, None, resultText, responseType = Normal, Seq(generalHelpGroup(botPrefix), actionsGroup))
+    val attachment = SlackMessageAttachment(None, None, None, None,  Some(Color.PINK), Some("help_no_result"), actionList)
+    TextWithAttachmentsResult(event, None, resultText, responseType = Normal, Seq(generalHelpAttachment(botPrefix), attachment))
   }
 
   def searchedHelp: Boolean = maybeHelpSearch.isDefined

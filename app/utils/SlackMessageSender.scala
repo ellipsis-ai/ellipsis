@@ -6,8 +6,8 @@ import models.SlackMessageFormatter
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
-import models.behaviors.events._
-import models.behaviors.events.slack.{SlackMessageActionButton, SlackMessageActionsGroup, SlackMessageAttachmentGroup, SlackMessageTextAttachmentGroup}
+import models.behaviors.events.{slack, _}
+import models.behaviors.events.slack._
 import models.behaviors.{ActionChoice, DeveloperContext}
 import play.api.Configuration
 import play.api.libs.json.Json
@@ -79,7 +79,7 @@ case class SlackMessageSender(
                                maybeThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
-                               attachmentGroups: Seq[MessageAttachmentGroup] = Seq(),
+                               attachments: Seq[MessageAttachment] = Seq(),
                                files: Seq[UploadFileSpec] = Seq(),
                                choices: Seq[ActionChoice],
                                configuration: Configuration,
@@ -91,7 +91,7 @@ case class SlackMessageSender(
                                beQuiet: Boolean
                              ) {
 
-  val choicesAttachmentGroups: Seq[SlackMessageActionsGroup] = {
+  val choicesAttachments: Seq[SlackMessageAttachment] = {
     if (choices.isEmpty) {
       Seq()
     } else {
@@ -104,31 +104,34 @@ case class SlackMessageSender(
         }
         SlackMessageActionButton(ACTION_CHOICE, ea.label, valueToUse)
       }
-      Seq(SlackMessageActionsGroup(
-        ACTION_CHOICES,
-        actionList,
+      Seq(slack.SlackMessageAttachment(
+        None,
+        None,
         None,
         None,
         Some(Color.BLUE_LIGHTER),
-        None
+        Some(ACTION_CHOICES),
+        actionList
       ))
     }
   }
 
-  val attachmentGroupsToUse = {
-    val groups = attachmentGroups ++ choicesAttachmentGroups
+  val attachmentsToUse = {
+    val groups = attachments ++ choicesAttachments
     if (developerContext.isForUndeployedBehaviorVersion) {
       val baseUrl = configuration.get[String]("application.apiBaseUrl")
       val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
       val link = s"[development]($baseUrl$path)"
-      groups ++ Seq(SlackMessageTextAttachmentGroup(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7", None, None))
+      groups ++ Seq(SlackMessageAttachment(Some(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7"), None, None))
     } else if (developerContext.hasUndeployedBehaviorVersionForAuthor) {
       val baseUrl = configuration.get[String]("application.apiBaseUrl")
       val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
       val link = s"[dev mode]($baseUrl$path)"
       groups ++ Seq(
-        SlackMessageTextAttachmentGroup(
-          s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link.", None, None
+        SlackMessageAttachment(
+          Some(s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link."),
+          None,
+          None
         )
       )
     } else {
@@ -291,9 +294,9 @@ case class SlackMessageSender(
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, userDataList)
-    val attachments = attachmentGroupsToUse.flatMap {
-      case a: SlackMessageAttachmentGroup => a.attachments.map(_.underlying)
-      case _ => Seq()
+    val attachments = attachmentsToUse.flatMap {
+      case a: SlackMessageAttachment => Some(a.underlying)
+      case _ => None
     }
     for {
       _ <- sendPreamble(formattedText)
