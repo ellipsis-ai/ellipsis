@@ -1,8 +1,9 @@
+import java.time.temporal.ChronoField
 import java.time.{LocalTime, OffsetDateTime, ZoneId}
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
-import json.ScheduledActionsConfig
+import json.{ScheduleChannelData, ScheduledActionsConfig}
 import models.IDs
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -18,7 +19,7 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.{DataService, DefaultServices}
-import services.slack.apiModels.SlackTeam
+import services.slack.apiModels.{SlackTeam, SlackUserProfile}
 import services.slack.{SlackApiClient, SlackApiError}
 import support.TestContext
 import utils._
@@ -190,6 +191,62 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           assert(false, "No config returned")
         }
       }
+    }
+
+  }
+
+  "maybeChannelDataFor" should {
+    val dmId = "D1234"
+    val dmName = "Direct message"
+    val dmConversation = SlackConversation(
+      id = dmId,
+      name = Some(dmName),
+      is_channel = Some(false),
+      is_group = Some(false),
+      is_im = Some(true),
+      created = Some(System.currentTimeMillis()),
+      creator = None,
+      is_archived = Some(false),
+      is_general = Some(false),
+      name_normalized = None,
+      is_shared = Some(false),
+      is_ext_shared = Some(false),
+      is_org_shared = Some(false),
+      is_member = Some(true),
+      is_private = Some(true),
+      is_read_only = Some(false),
+      is_mpim = Some(false),
+      latest = None,
+      topic = None,
+      purpose = None,
+      num_members = Some(2),
+      locale = None
+    )
+
+    "mark a conversation as isSelfDm if the user and bot are members of an IM" in new TestContext {
+      val maybeSlackProfile = Some(SlackProfile(SlackUserTeamIds(slackTeamId), LoginInfo("slack", slackUserId), None))
+      val slackChannels = mock[SlackChannels]
+      when(slackChannels.getMembersFor(convoId = dmId)).thenReturn(Future.successful(Seq(slackUserId, slackBotUserId)))
+      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(dmConversation, maybeSlackProfile, slackChannels, isAdmin = false))
+      maybeChannelData.exists(_.isSelfDm) mustEqual true
+      maybeChannelData.exists(_.isOtherDm) mustEqual false
+    }
+
+    "mark a conversation as isOtherDm if the user is not a member but is an admin" in new TestContext {
+      val maybeSlackProfile = Some(SlackProfile(SlackUserTeamIds(slackTeamId), LoginInfo("slack", slackUserId), None))
+      val slackChannels = mock[SlackChannels]
+      when(slackChannels.getMembersFor(convoId = dmId)).thenReturn(Future.successful(Seq(otherSlackUserId, slackBotUserId)))
+      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(dmConversation, maybeSlackProfile, slackChannels, isAdmin = true))
+      maybeChannelData.exists(_.isSelfDm) mustEqual false
+      maybeChannelData.exists(_.isOtherDm) mustEqual true
+    }
+
+    "return None if the user is not a member of an IM and is not an admin" in new TestContext {
+      val maybeSlackProfile = Some(SlackProfile(SlackUserTeamIds(slackTeamId), LoginInfo("slack", slackUserId), None))
+      val slackChannels = mock[SlackChannels]
+      when(slackChannels.getMembersFor(convoId = dmId)).thenReturn(Future.successful(Seq(otherSlackUserId, slackBotUserId)))
+      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(dmConversation, maybeSlackProfile, slackChannels, isAdmin = false))
+      maybeChannelData mustBe None
     }
 
   }

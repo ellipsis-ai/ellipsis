@@ -31,16 +31,14 @@ case class ScheduledActionsConfig(
 
 object ScheduledActionsConfig {
 
-  private def maybeIsPrivateMemberAlongWithBotFor(
+  private def maybeUserIsPrivateMember(
                                                    convo: SlackConversation,
                                                    maybeSlackUserProfile: Option[SlackProfile],
                                                    channels: SlackChannels
                                                  )(implicit ec: ExecutionContext): Future[Option[Boolean]] = {
     if (convo.isIm || convo.isMpim || convo.isPrivateChannel) {
       channels.getMembersFor(convo.id).map { members =>
-        val includesUser = maybeSlackUserProfile.exists(userProfile => members.contains(userProfile.slackUserId))
-        val includesBot = members.contains(channels.botUserId)
-        Some(includesUser && includesBot)
+        maybeSlackUserProfile.map(userProfile => members.contains(userProfile.slackUserId))
       }
     } else {
       Future.successful(None)
@@ -53,7 +51,7 @@ object ScheduledActionsConfig {
                                    channels: SlackChannels,
                                    isAdmin: Boolean
                                  )(implicit ec: ExecutionContext): Future[Option[ScheduleChannelData]] = {
-    maybeIsPrivateMemberAlongWithBotFor(convo, maybeSlackUserProfile, channels).map { maybeIsPrivateMemberAlongWithBot =>
+    maybeUserIsPrivateMember(convo, maybeSlackUserProfile, channels).map { maybeUserIsPrivateMember =>
       val baseData = ScheduleChannelData(
         convo.id,
         convo.computedName,
@@ -68,12 +66,12 @@ object ScheduledActionsConfig {
         convo.isReadOnly,
         convo.isOrgShared
       )
-      maybeIsPrivateMemberAlongWithBot.map { isPrivateMemberAlongWithBot =>
-        if (convo.isVisibleToUserWhere(isPrivateMemberAlongWithBot, isAdmin)) {
+      maybeUserIsPrivateMember.map { isPrivateMember =>
+        if (convo.isVisibleToUserWhere(isPrivateMember, isAdmin)) {
           Some(
             baseData.copy(
-              isSelfDm = convo.isIm && isPrivateMemberAlongWithBot,
-              isOtherDm = convo.isIm && !isPrivateMemberAlongWithBot
+              isSelfDm = convo.isIm && convo.isBotMember && isPrivateMember,
+              isOtherDm = convo.isIm && convo.isBotMember && !isPrivateMember
             )
           )
         } else {
