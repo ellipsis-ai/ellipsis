@@ -180,7 +180,10 @@ class BehaviorGroupServiceImpl @Inject() (
         dataService.behaviors.unlearn(ea)
       })
       deleted <- {
-        val action = rawFindQuery(group.id).delete
+        val action = for {
+          _ <- dataService.managedBehaviorGroups.deleteForAction(group)
+          deleted <- rawFindQuery(group.id).delete
+        } yield deleted
         dataService.run(action).map(_ => group)
       }
     } yield deleted

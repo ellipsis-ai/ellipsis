@@ -314,7 +314,10 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def delete(behaviorVersion: BehaviorVersion): Future[BehaviorVersion] = {
-    val action = all.filter(_.id === behaviorVersion.id).delete.map(_ => behaviorVersion)
+    val action = for {
+      _ <- defaultServices.dataService.behaviorTestResults.deleteForAction(behaviorVersion)
+      deletedBehaviorVersion <- all.filter(_.id === behaviorVersion.id).delete.map(_ => behaviorVersion)
+    } yield deletedBehaviorVersion
     dataService.run(action)
   }
 

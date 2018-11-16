@@ -12,6 +12,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.TestEventContext
 import models.behaviors.testing.TestMessageEvent
 import services.{AWSLambdaService, DataService}
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -69,4 +70,7 @@ class BehaviorTestResultServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def deleteForAction(behaviorVersion: BehaviorVersion): DBIO[Unit] = {
+    findByBehaviorVersionQuery(behaviorVersion.id).delete.map(_ => Unit)
+  }
 }

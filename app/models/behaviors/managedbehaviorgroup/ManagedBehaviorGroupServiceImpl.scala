@@ -69,9 +69,12 @@ class ManagedBehaviorGroupServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def deleteForAction(group: BehaviorGroup): DBIO[Unit] = {
+    findForQuery(group.id).delete.map(_ => {})
+  }
+
   def deleteFor(group: BehaviorGroup): Future[Unit] = {
-    val action = findForQuery(group.id).delete.map(_ => {})
-    dataService.run(action)
+    dataService.run(deleteForAction(group))
   }
 
 

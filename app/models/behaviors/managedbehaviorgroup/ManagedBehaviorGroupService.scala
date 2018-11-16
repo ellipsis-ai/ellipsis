@@ -19,6 +19,8 @@ trait ManagedBehaviorGroupService {
 
   def ensureFor(group: BehaviorGroup, maybeContact: Option[User]): Future[ManagedBehaviorGroup]
 
+  def deleteForAction(group: BehaviorGroup): DBIO[Unit]
+
   def deleteFor(group: BehaviorGroup): Future[Unit]
 
 }
