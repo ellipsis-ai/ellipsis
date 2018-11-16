@@ -47,7 +47,7 @@ object ScheduledActionsConfig {
     }
   }
 
-  private def maybeChannelDataFor(
+  def maybeChannelDataFor(
                                    convo: SlackConversation,
                                    maybeSlackUserProfile: Option[SlackProfile],
                                    channels: SlackChannels,
@@ -73,8 +73,7 @@ object ScheduledActionsConfig {
           Some(
             baseData.copy(
               isSelfDm = convo.isIm && isPrivateMemberAlongWithBot,
-              isOtherDm = convo.isIm && !isPrivateMemberAlongWithBot,
-              isBotMember = isPrivateMemberAlongWithBot
+              isOtherDm = convo.isIm && !isPrivateMemberAlongWithBot
             )
           )
         } else {

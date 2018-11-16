@@ -49,7 +49,7 @@ case class NotInvitedToChannelException(channel: String, slackTeamId: String, us
 }
 
 case class ChannelNotFoundException(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
-  def channelReason(channelIdOrLink: String) = s"The channel could not be found. It may have been deleted."
+  def channelReason(channelIdOrLink: String) = s"The channel could not be found. It may be private and the bot is not a member, or it may no longer exist."
 }
 
 case class RestrictedFromChannel(channel: String, slackTeamId: String, userId: String, text: String) extends SlackMessageSenderChannelException {
