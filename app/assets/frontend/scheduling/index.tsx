@@ -413,7 +413,7 @@ class Scheduling extends React.Component<Props, State> {
       } else if (group.isMissing) {
         return (
           <span className="type-s type-pink type-bold type-italic">
-            — Warning: No information about this channel was found. It may have been deleted.
+            — Warning: No information about this channel was found. It may be private and the bot is not a member, or it may no longer exist.
           </span>
         );
       } else if (group.isReadOnly) {
