@@ -1,9 +1,8 @@
-import java.time.temporal.ChronoField
 import java.time.{LocalTime, OffsetDateTime, ZoneId}
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
-import json.{ScheduleChannelData, ScheduledActionsConfig}
+import json.ScheduledActionsConfig
 import models.IDs
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -18,9 +17,9 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
-import services.{DataService, DefaultServices}
-import services.slack.apiModels.{SlackTeam, SlackUserProfile}
+import services.slack.apiModels.SlackTeam
 import services.slack.{SlackApiClient, SlackApiError}
+import services.{DataService, DefaultServices}
 import support.TestContext
 import utils._
 
