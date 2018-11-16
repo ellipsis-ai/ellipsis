@@ -31,14 +31,14 @@ case class ScheduledActionsConfig(
 
 object ScheduledActionsConfig {
 
-  private def maybeUserIsPrivateMember(
+  def maybeUserIsPrivateMember(
                                                    convo: SlackConversation,
                                                    maybeSlackUserProfile: Option[SlackProfile],
                                                    channels: SlackChannels
                                                  )(implicit ec: ExecutionContext): Future[Option[Boolean]] = {
     if (convo.isIm || convo.isMpim || convo.isPrivateChannel) {
       channels.getMembersFor(convo.id).map { members =>
-        maybeSlackUserProfile.map(userProfile => members.contains(userProfile.slackUserId))
+        Some(maybeSlackUserProfile.exists(userProfile => members.contains(userProfile.slackUserId)))
       }
     } else {
       Future.successful(None)

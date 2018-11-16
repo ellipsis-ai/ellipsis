@@ -43,6 +43,17 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
     makeSlackGroup(channel2Id, "other")
   )
   val maybeCsrfToken = Some("nothing to see here")
+  val dmId = "D1234"
+  val dmName = "Direct message"
+  val dmWithBot = SlackConversation.defaultFor(dmId, dmName)
+    .copy(
+      is_channel = Some(false),
+      is_group = Some(false),
+      is_im = Some(true),
+      is_private = Some(true),
+      is_member = Some(true),
+      num_members = Some(2)
+    )
 
   def makeSlackGroup(id: String, name: String): SlackConversation = {
     SlackConversation.defaultFor(id, name).copy(is_group = Some(true), is_private = Some(true))
@@ -196,58 +207,60 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
   }
 
   "maybeChannelDataFor" should {
-    val dmId = "D1234"
-    val dmName = "Direct message"
-    val dmConversation = SlackConversation(
-      id = dmId,
-      name = Some(dmName),
-      is_channel = Some(false),
-      is_group = Some(false),
-      is_im = Some(true),
-      created = Some(System.currentTimeMillis()),
-      creator = None,
-      is_archived = Some(false),
-      is_general = Some(false),
-      name_normalized = None,
-      is_shared = Some(false),
-      is_ext_shared = Some(false),
-      is_org_shared = Some(false),
-      is_member = Some(true),
-      is_private = Some(true),
-      is_read_only = Some(false),
-      is_mpim = Some(false),
-      latest = None,
-      topic = None,
-      purpose = None,
-      num_members = Some(2),
-      locale = None
-    )
+    val userSlackProfile = SlackProfile(SlackUserTeamIds(slackTeamId), LoginInfo("slack", slackUserId), None)
 
     "mark a conversation as isSelfDm if the user and bot are members of an IM" in new TestContext {
-      val maybeSlackProfile = Some(SlackProfile(SlackUserTeamIds(slackTeamId), LoginInfo("slack", slackUserId), None))
       val slackChannels = mock[SlackChannels]
       when(slackChannels.getMembersFor(convoId = dmId)).thenReturn(Future.successful(Seq(slackUserId, slackBotUserId)))
-      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(dmConversation, maybeSlackProfile, slackChannels, isAdmin = false))
+      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(dmWithBot, Some(userSlackProfile), slackChannels, isAdmin = false))
       maybeChannelData.exists(_.isSelfDm) mustEqual true
       maybeChannelData.exists(_.isOtherDm) mustEqual false
     }
 
     "mark a conversation as isOtherDm if the user is not a member but is an admin" in new TestContext {
-      val maybeSlackProfile = Some(SlackProfile(SlackUserTeamIds(slackTeamId), LoginInfo("slack", slackUserId), None))
       val slackChannels = mock[SlackChannels]
       when(slackChannels.getMembersFor(convoId = dmId)).thenReturn(Future.successful(Seq(otherSlackUserId, slackBotUserId)))
-      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(dmConversation, maybeSlackProfile, slackChannels, isAdmin = true))
+      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(dmWithBot, Some(userSlackProfile), slackChannels, isAdmin = true))
+      maybeChannelData.exists(_.isSelfDm) mustEqual false
+      maybeChannelData.exists(_.isOtherDm) mustEqual true
+    }
+
+    "mark a conversation as isOtherDm if the user is not on the team but is an admin" in new TestContext {
+      val slackChannels = mock[SlackChannels]
+      when(slackChannels.getMembersFor(convoId = dmId)).thenReturn(Future.successful(Seq(otherSlackUserId, slackBotUserId)))
+      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(dmWithBot, None, slackChannels, isAdmin = true))
       maybeChannelData.exists(_.isSelfDm) mustEqual false
       maybeChannelData.exists(_.isOtherDm) mustEqual true
     }
 
     "return None if the user is not a member of an IM and is not an admin" in new TestContext {
-      val maybeSlackProfile = Some(SlackProfile(SlackUserTeamIds(slackTeamId), LoginInfo("slack", slackUserId), None))
       val slackChannels = mock[SlackChannels]
       when(slackChannels.getMembersFor(convoId = dmId)).thenReturn(Future.successful(Seq(otherSlackUserId, slackBotUserId)))
-      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(dmConversation, maybeSlackProfile, slackChannels, isAdmin = false))
+      val maybeChannelData = await(ScheduledActionsConfig.maybeChannelDataFor(dmWithBot, Some(userSlackProfile), slackChannels, isAdmin = false))
       maybeChannelData mustBe None
     }
 
+  }
+
+  "maybeUserIsPrivateMember" should {
+    val userSlackProfile = SlackProfile(SlackUserTeamIds(slackTeamId), LoginInfo("slack", slackUserId), None)
+
+    "return Some(false) if the user is not a member of a private conversation" in new TestContext {
+      val slackChannels = mock[SlackChannels]
+      when(slackChannels.getMembersFor(dmId)).thenReturn(Future.successful(Seq(otherSlackUserId, slackBotUserId)))
+      await(ScheduledActionsConfig.maybeUserIsPrivateMember(dmWithBot, Some(userSlackProfile), slackChannels)) mustEqual Some(false)
+    }
+
+    "return Some(true) if the user is a member of a private conversation" in new TestContext {
+      val slackChannels = mock[SlackChannels]
+      when(slackChannels.getMembersFor(dmId)).thenReturn(Future.successful(Seq(slackUserId, slackBotUserId)))
+      await(ScheduledActionsConfig.maybeUserIsPrivateMember(dmWithBot, Some(userSlackProfile), slackChannels)) mustEqual Some(true)
+    }
+
+    "return None if the conversation is not private" in new TestContext {
+      val slackChannels = mock[SlackChannels]
+      val channel = SlackConversation.defaultFor(channel1Id, "Channel").copy(is_channel = Some(true), is_member = Some(true))
+      await(ScheduledActionsConfig.maybeUserIsPrivateMember(channel, Some(userSlackProfile), slackChannels)) mustEqual None
+    }
   }
 }
