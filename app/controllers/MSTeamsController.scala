@@ -110,14 +110,16 @@ class MSTeamsController @Inject() (
     def isIncorrectTeam(botProfile: BotProfileType): Future[Boolean] = Future.successful(false)
     def isIncorrectUserTryingDataTypeChoice: Boolean = false
     def isIncorrectUserTryingYesNo: Boolean = false
-    def maybeActionListForSkillId: Option[HelpGroupSearchValue] = None
+    def maybeActionListForSkillId: Option[HelpGroupSearchValue] = {
+      maybeValueResultMatching(LIST_BEHAVIOR_GROUP_ACTIONS).flatMap(_.asOpt[String]).map(HelpGroupSearchValue.fromString)
+    }
     val maybeConfirmContinueConversationResponse: Option[ConfirmContinueConversationResponse] = None
     def maybeDataTypeChoice: Option[String] = maybeValueResultMatching(DATA_TYPE_CHOICE).flatMap(_.asOpt[String])
     def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
       maybeValueResultMatching(SHOW_BEHAVIOR_GROUP_HELP).flatMap(_.asOpt[String]).map(HelpGroupSearchValue.fromString)
     }
     def maybeHelpIndexAt: Option[Int] = maybeValueResultMatching(SHOW_BEHAVIOR_GROUP_HELP).flatMap(_.asOpt[Int])
-    def maybeHelpRunBehaviorVersionId: Option[String] = None
+    def maybeHelpRunBehaviorVersionId: Option[String] = maybeValueResultMatching(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION).flatMap(_.asOpt[String])
     def maybeSelectedActionChoice: Option[ActionChoice] = maybeValueResultMatching(ACTION_CHOICE).flatMap(_.asOpt[ActionChoice])
     val maybeStopConversationResponse: Option[StopConversationResponse] = None
     val maybeUserIdForDataTypeChoice: Option[String] = None
@@ -130,7 +132,7 @@ class MSTeamsController @Inject() (
                                                  maybeInstantResponseTs: Option[String]
                                                ): Future[Unit] = {
       for {
-        _ <- dataService.msTeamsBotProfiles.sendResultWithNewEvent(
+        _ <- sendResultWithNewEvent(
           s"run action named ${actionChoice.actionName}",
           event => for {
             maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
@@ -160,12 +162,6 @@ class MSTeamsController @Inject() (
             }.getOrElse(Future.successful(None))
           } yield maybeResult,
           botProfile,
-          toActivityInfo,
-          conversation.id,
-          from.id,
-          id,
-          None,
-          isEphemeral = false,
           actionChoice.shouldBeQuiet
         )
       } yield {}
@@ -182,7 +178,20 @@ class MSTeamsController @Inject() (
                                 getEventualMaybeResult: MessageEvent => Future[Option[BotResult]],
                                 botProfile: BotProfileType,
                                 beQuiet: Boolean
-                              ): Future[Option[String]] = Future.successful(None)
+                              ): Future[Option[String]] = {
+      dataService.msTeamsBotProfiles.sendResultWithNewEvent(
+        "help index",
+        getEventualMaybeResult,
+        botProfile,
+        toActivityInfo,
+        conversation.id,
+        from.id,
+        id,
+        None,
+        isEphemeral = false,
+        beQuiet
+      )
+    }
     val teamIdForContext: String = maybeTenantId.get // TODO: hm
     val teamIdForUserForContext: String = teamIdForContext
     def updateActionsMessageFor(maybeResultText: Option[String], shouldRemoveActions: Boolean): Future[Unit] = Future.successful({})
