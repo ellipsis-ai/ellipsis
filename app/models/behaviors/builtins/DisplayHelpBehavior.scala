@@ -3,9 +3,9 @@ package models.behaviors.builtins
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorVersionData}
 import models.behaviors.behaviorversion.Normal
-import models.behaviors.events.{Event, slack}
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack._
+import models.behaviors.events.{Event, EventContext}
 import models.behaviors.{BotResult, SuccessResult, TextWithAttachmentsResult}
 import models.help._
 import services.caching.CacheService
@@ -28,6 +28,8 @@ case class DisplayHelpBehavior(
   val lambdaService: AWSLambdaService = services.lambdaService
   val dataService: DataService = services.dataService
   val cacheService: CacheService = services.cacheService
+
+  val eventContext: EventContext = event.eventContext
 
   private def maybeHelpSearch: Option[String] = {
     maybeHelpString.filter(_.trim.nonEmpty)
@@ -61,7 +63,6 @@ case class DisplayHelpBehavior(
     } else {
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
-    val eventContext = event.eventContext
     val skillActions = resultsToShow.map(result => {
       val label = result.group.shortName
       val buttonValue = HelpGroupSearchValue(result.group.helpActionId, maybeHelpSearch).toString
@@ -98,7 +99,7 @@ case class DisplayHelpBehavior(
   }
 
   def generalHelpAttachment(botPrefix: String) = {
-    event.eventContext.messageAttachmentFor(maybeText = Some(generalHelpText(botPrefix: String)), maybeTitle = Some("General"))
+    eventContext.messageAttachmentFor(maybeText = Some(generalHelpText(botPrefix: String)), maybeTitle = Some("General"))
   }
 
   def skillNameFor(result: HelpResult): String = {
@@ -182,6 +183,39 @@ case class DisplayHelpBehavior(
     } yield maybeResult
   }
 
+  val helpIndexAction = eventContext.messageActionButtonFor(SHOW_HELP_INDEX, "More help…", "0")
+
+  def maybeShowAllBehaviorVersionsAction(result: HelpResult, maybeSearchText: Option[String], includeNonMatchingResults: Boolean = false) = {
+    if (!includeNonMatchingResults && !result.group.isMiscellaneous && result.matchingBehaviorVersions.nonEmpty && result.nonMatchingBehaviorVersions.nonEmpty) {
+      val numVersions = result.triggerableBehaviorVersions.length
+      val label = if (numVersions == 2) {
+        s"Show both actions"
+      } else {
+        s"Show all $numVersions actions"
+      }
+      Some(eventContext.messageActionButtonFor(LIST_BEHAVIOR_GROUP_ACTIONS, label, HelpGroupSearchValue(result.group.helpActionId, maybeSearchText).toString))
+    } else {
+      None
+    }
+  }
+
+  def runActionsFor(behaviorVersions: Seq[BehaviorVersionData]) = {
+    if (behaviorVersions.length == 1) {
+      behaviorVersions.headOption.flatMap { version =>
+        version.id.map { versionId =>
+          Seq(eventContext.messageActionButtonFor(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, "Run this action", versionId))
+        }
+      }.getOrElse(Seq())
+    } else {
+      val menuItems = behaviorVersions.flatMap { ea =>
+        ea.id.map { behaviorVersionId =>
+          eventContext.messageActionMenuItemFor(ea.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
+        }
+      }
+      Seq(eventContext.messageActionMenuFor(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, "Actions", menuItems))
+    }
+  }
+
   def skillActionsListResultFor(result: HelpResult, behaviorVersions: Seq[BehaviorVersionData]): BotResult = {
     val intro = if (isFirstTrigger) {
       s"Here’s what I know$matchString."
@@ -198,9 +232,9 @@ case class DisplayHelpBehavior(
          |$versionsText
          |""".stripMargin
 
-    val runnableActions = result.slackRunActionsFor(behaviorVersions)
-    val indexAction = result.slackHelpIndexAction
-    val actionList = result.maybeShowAllBehaviorVersionsAction(maybeHelpSearch, includeNonMatchingResults).map { showAllAction =>
+    val runnableActions = runActionsFor(behaviorVersions)
+    val indexAction = helpIndexAction
+    val actionList = maybeShowAllBehaviorVersionsAction(result, maybeHelpSearch, includeNonMatchingResults).map { showAllAction =>
       runnableActions ++ Seq(showAllAction, indexAction)
     } getOrElse {
       runnableActions :+ indexAction
@@ -211,7 +245,7 @@ case class DisplayHelpBehavior(
       Some("Select or type an action to run it now:")
     }
 
-    val attachment = slack.SlackMessageAttachment(actionText, None, None, None, Some(Color.BLUE_LIGHT), Some(SHOW_BEHAVIOR_GROUP_HELP), actionList)
+    val attachment = eventContext.messageAttachmentFor(actionText, None, None, None, Some(Color.BLUE_LIGHT), Some(SHOW_BEHAVIOR_GROUP_HELP), actionList)
 
     TextWithAttachmentsResult(event, None, resultText, responseType = Normal, Seq(attachment))
   }
@@ -247,7 +281,7 @@ case class DisplayHelpBehavior(
         groups <- maybeBehaviorGroups
       } yield {
         Future.sequence(groups.map { group =>
-          dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(group, event.eventContext.name, channel).flatMap { maybeGroupVersion =>
+          dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(group, eventContext.name, channel).flatMap { maybeGroupVersion =>
             maybeGroupVersion.map { groupVersion =>
               BehaviorGroupData.buildFor(groupVersion, user, None, dataService, cacheService).map(Some(_))
             }.getOrElse(Future.successful(None))

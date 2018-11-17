@@ -1,10 +1,11 @@
 package models.behaviors.events.slack
 
+import models.behaviors.events.{MessageMenu, MessageMenuItem}
 import services.slack.apiModels.{ActionField, ActionSelectOption}
 
-case class SlackMessageActionMenu(name: String, text: String, options: Seq[SlackMessageActionMenuItem]) extends SlackMessageAction {
+case class SlackMessageMenu(name: String, text: String, options: Seq[SlackMessageMenuItem]) extends MessageMenu with SlackMessageAction {
   lazy val selectOptions = options.map(ea => ActionSelectOption(ea.text, ea.value))
   lazy val actionField: ActionField = ActionField(name, text, `type` = "select", options = Some(selectOptions))
 }
 
-case class SlackMessageActionMenuItem(text: String, value: String)
+case class SlackMessageMenuItem(text: String, value: String) extends MessageMenuItem

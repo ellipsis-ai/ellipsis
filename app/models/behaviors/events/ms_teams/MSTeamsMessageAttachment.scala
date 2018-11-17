@@ -1,7 +1,7 @@
 package models.behaviors.events.ms_teams
 
 import models.behaviors.events.{MessageAttachment, MessageUserData}
-import services.ms_teams.apiModels.{AdaptiveCard, ContentAttachment}
+import services.ms_teams.apiModels.{AdaptiveCard, CardElement, ContentAttachment, TextBlock}
 
 case class MSTeamsMessageAttachment(
                                    maybeText: Option[String] = None,
@@ -12,8 +12,12 @@ case class MSTeamsMessageAttachment(
                                    maybeCallbackId: Option[String] = None,
                                    actions: Seq[MSTeamsMessageAction] = Seq()
                                  ) extends MessageAttachment {
+
+  val bodyElements: Seq[CardElement] = maybeText.map(t => TextBlock(t)).toSeq ++ actions.flatMap(_.bodyElements)
+  val actionElements: Seq[CardElement] = actions.flatMap(_.actionElements)
+
   val underlying = ContentAttachment(
     "application/vnd.microsoft.card.adaptive",
-    AdaptiveCard(Seq(), actions.map(_.cardAction))
+    AdaptiveCard(bodyElements, actionElements)
   )
 }

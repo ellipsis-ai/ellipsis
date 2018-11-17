@@ -113,8 +113,10 @@ class MSTeamsController @Inject() (
     def maybeActionListForSkillId: Option[HelpGroupSearchValue] = None
     val maybeConfirmContinueConversationResponse: Option[ConfirmContinueConversationResponse] = None
     def maybeDataTypeChoice: Option[String] = None
-    def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = None
-    def maybeHelpIndexAt: Option[Int] = None
+    def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
+      maybeValueResultMatching(SHOW_BEHAVIOR_GROUP_HELP).flatMap(_.asOpt[String]).map(HelpGroupSearchValue.fromString)
+    }
+    def maybeHelpIndexAt: Option[Int] = maybeValueResultMatching(SHOW_BEHAVIOR_GROUP_HELP).flatMap(_.asOpt[Int])
     def maybeHelpRunBehaviorVersionId: Option[String] = None
     def maybeSelectedActionChoice: Option[ActionChoice] = maybeValueResultMatching(ACTION_CHOICE).flatMap(_.asOpt[ActionChoice])
     val maybeStopConversationResponse: Option[StopConversationResponse] = None

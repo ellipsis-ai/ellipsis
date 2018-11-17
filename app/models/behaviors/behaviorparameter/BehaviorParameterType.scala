@@ -774,7 +774,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     DBIO.successful(context.simpleTextResultFor(s"OK, you chose “other”. What do you want to say instead?"))
   }
 
-  private def maybeStartAgainMenuItemFor(params: Seq[BehaviorParameter]): Option[SlackMessageActionMenuItem] = {
+  private def maybeStartAgainMenuItemFor(params: Seq[BehaviorParameter]): Option[SlackMessageMenuItem] = {
     if (params.isEmpty) {
       None
     } else {
@@ -840,16 +840,17 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         if (areValidValuesSimple(validValues, params)) {
           promptResultWithSimpleValidValues(validValues, context, params)
         } else {
+          val eventContext = context.event.eventContext
           val builtinMenuItems = Seq(
-            maybeStartAgainMenuItemFor(params),
-            Some(SlackMessageActionMenuItem(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
+//            maybeStartAgainMenuItemFor(params),
+            Some(eventContext.messageActionMenuItemFor(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
           ).flatten
           val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
-            SlackMessageActionMenuItem(s"${i+1}. ${ea.label}", ea.label)
+            eventContext.messageActionMenuItemFor(s"${i+1}. ${ea.label}", ea.label)
           } ++ builtinMenuItems
-          val actionsList = Seq(SlackMessageActionMenu("ignored", "Choose an option", menuItems))
+          val actionsList = Seq(eventContext.messageActionMenuFor("ignored", "Choose an option", menuItems))
           val attachments: Seq[MessageAttachment] = Seq(
-            SlackMessageAttachment(None, None, None, None, Some(Color.BLUE_LIGHT), Some(context.dataTypeChoiceCallbackId), actionsList)
+            eventContext.messageAttachmentFor(None, None, None, None, Some(Color.BLUE_LIGHT), Some(context.dataTypeChoiceCallbackId), actionsList)
           )
           promptTextForAction(None, context, None, false).map { text =>
             TextWithAttachmentsResult(context.event, context.maybeConversation, text, context.behaviorVersion.responseType, attachments)
