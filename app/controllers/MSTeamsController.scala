@@ -180,7 +180,7 @@ class MSTeamsController @Inject() (
                                 beQuiet: Boolean
                               ): Future[Option[String]] = {
       dataService.msTeamsBotProfiles.sendResultWithNewEvent(
-        "help index",
+        description,
         getEventualMaybeResult,
         botProfile,
         toActivityInfo,
