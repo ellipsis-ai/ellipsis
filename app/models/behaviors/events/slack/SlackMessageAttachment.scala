@@ -2,11 +2,11 @@ package models.behaviors.events.slack
 
 import models.SlackMessageFormatter
 import models.behaviors.events.{MessageAttachment, MessageUserData}
-import services.slack.apiModels.{ActionField, Attachment}
+import services.slack.apiModels.Attachment
 
 case class SlackMessageAttachment(
-                                   maybeText: Option[String],
-                                   maybeUserDataList: Option[Set[MessageUserData]],
+                                   maybeText: Option[String] = None,
+                                   maybeUserDataList: Option[Set[MessageUserData]] = None,
                                    maybeTitle: Option[String] = None,
                                    maybeTitleLink: Option[String] = None,
                                    maybeColor: Option[String] = None,

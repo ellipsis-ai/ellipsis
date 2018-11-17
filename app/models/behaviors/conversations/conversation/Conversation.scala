@@ -129,10 +129,11 @@ trait Conversation {
         respondAction(event, isReminding=true, services).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
           val callbackId = stopConversationCallbackIdFor(event.eventContext.userIdForContext, Some(id))
-          val actionList = Seq(SlackMessageActionButton(callbackId, "Stop asking", id))
+          val eventContext = event.eventContext
+          val actionList = Seq(eventContext.messageActionButtonFor(callbackId, "Stop asking", id))
           val question = result.text
-          val attachments = SlackMessageAttachment(Some(question), None, None, None, None, Some(callbackId), actionList)
-          Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.responseType, Seq(attachments)))
+          val attachment = eventContext.messageAttachmentFor(maybeText = Some(question), maybeCallbackId = Some(callbackId), actions = actionList)
+          Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.responseType, Seq(attachment)))
         }
       }.getOrElse(DBIO.successful(None))
     }

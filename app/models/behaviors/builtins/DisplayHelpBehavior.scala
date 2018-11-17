@@ -61,27 +61,26 @@ case class DisplayHelpBehavior(
     } else {
       Some("Click a skill to learn more, or try searching a different keyword.")
     }
+    val eventContext = event.eventContext
     val skillActions = resultsToShow.map(result => {
       val label = result.group.shortName
       val buttonValue = HelpGroupSearchValue(result.group.helpActionId, maybeHelpSearch).toString
-      SlackMessageActionButton(SHOW_BEHAVIOR_GROUP_HELP, label, buttonValue)
+      eventContext.messageActionButtonFor(SHOW_BEHAVIOR_GROUP_HELP, label, buttonValue)
     })
 
     val remainingGroupCount = resultsRemaining.length
     val actionList = if (remainingGroupCount > 0) {
       val label = if (remainingGroupCount == 1) { "1 more skill…" } else { s"$remainingGroupCount more skills…" }
-      skillActions :+ SlackMessageActionButton(SHOW_HELP_INDEX, label, endAt.toString, maybeStyle = Some("primary"))
+      skillActions :+ eventContext.messageActionButtonFor(SHOW_HELP_INDEX, label, endAt.toString, maybeStyle = Some("primary"))
     } else {
       skillActions
     }
-    val attachment = slack.SlackMessageAttachment(
-      maybeInstructions,
-      None,
-      if (startAt == 0) { Some("Skills") } else { None },
-      None,
-      Some(Color.PINK),
-      Some(SHOW_HELP_INDEX),
-      actionList
+    val attachment = eventContext.messageAttachmentFor(
+      maybeText = maybeInstructions,
+      maybeTitle = if (startAt == 0) { Some("Skills") } else { None },
+      maybeColor = Some(Color.PINK),
+      maybeCallbackId = Some(SHOW_HELP_INDEX),
+      actions = actionList
     )
     val attachments = if (startAt == 0) {
       Seq(generalHelpAttachment(botPrefix), attachment)
@@ -98,8 +97,8 @@ case class DisplayHelpBehavior(
      """.stripMargin
   }
 
-  def generalHelpAttachment(botPrefix: String): SlackMessageAttachment = {
-    SlackMessageAttachment(Some(generalHelpText(botPrefix: String)), None, Some("General"))
+  def generalHelpAttachment(botPrefix: String) = {
+    event.eventContext.messageAttachmentFor(maybeText = Some(generalHelpText(botPrefix: String)), maybeTitle = Some("General"))
   }
 
   def skillNameFor(result: HelpResult): String = {

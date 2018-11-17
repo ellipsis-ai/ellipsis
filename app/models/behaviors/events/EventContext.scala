@@ -86,9 +86,22 @@ sealed trait EventContext {
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
                      (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]]
 
-  def messageActionButtonFor(callbackId: String, label: String, property: String, value: String): MessageActionButtonType
+  def messageActionButtonFor(
+                              callbackId: String,
+                              label: String,
+                              value: String,
+                              maybeStyle: Option[String] = None
+                            ): MessageActionButtonType
 
-  def messageAttachmentFor(callbackId: String, actionList: Seq[MessageActionButtonType]): MessageAttachmentType
+  def messageAttachmentFor(
+                            maybeText: Option[String] = None,
+                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeTitle: Option[String] = None,
+                            maybeTitleLink: Option[String] = None,
+                            maybeColor: Option[String] = None,
+                            maybeCallbackId: Option[String] = None,
+                            actions: Seq[MessageActionButtonType] = Seq()
+                          ): MessageAttachmentType
 
 }
 
@@ -309,12 +322,25 @@ case class SlackEventContext(
     )
   }
 
-  def messageActionButtonFor(callbackId: String, label: String, property: String, value: String) = {
+  def messageActionButtonFor(
+                              callbackId: String,
+                              label: String,
+                              value: String,
+                              maybeStyle: Option[String] = None
+                            ) = {
     SlackMessageActionButton(callbackId, label, value)
   }
 
-  def messageAttachmentFor(callbackId: String, actionList: Seq[SlackMessageActionButton]) = {
-    SlackMessageAttachment(None, None, None, None, None, Some(callbackId), actionList)
+  def messageAttachmentFor(
+                            maybeText: Option[String] = None,
+                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeTitle: Option[String] = None,
+                            maybeTitleLink: Option[String] = None,
+                            maybeColor: Option[String] = None,
+                            maybeCallbackId: Option[String] = None,
+                            actions: Seq[SlackMessageActionButton] = Seq()
+                          ): SlackMessageAttachment = {
+    SlackMessageAttachment(maybeText, maybeUserDataList, maybeTitle, maybeTitleLink, maybeColor, maybeCallbackId, actions)
   }
 
 }
@@ -445,12 +471,25 @@ case class MSTeamsEventContext(
     eventualResults // TODO: this
   }
 
-  def messageActionButtonFor(callbackId: String, label: String, property: String, value: String) = {
-    MSTeamsMessageActionButton(callbackId, label, Json.obj(property -> value).toString())
+  def messageActionButtonFor(
+                              callbackId: String,
+                              label: String,
+                              value: String,
+                              maybeStyle: Option[String] = None
+                            ) = {
+    MSTeamsMessageActionButton(label, Json.obj(callbackId -> value).toString())
   }
 
-  def messageAttachmentFor(callbackId: String, actionList: Seq[MSTeamsMessageActionButton]) = {
-    MSTeamsMessageAttachment(None, None, None, None, None, Some(callbackId), actionList)
+  def messageAttachmentFor(
+                            maybeText: Option[String] = None,
+                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeTitle: Option[String] = None,
+                            maybeTitleLink: Option[String] = None,
+                            maybeColor: Option[String] = None,
+                            maybeCallbackId: Option[String] = None,
+                            actions: Seq[MSTeamsMessageActionButton] = Seq()
+                          ): MSTeamsMessageAttachment = {
+    MSTeamsMessageAttachment(maybeText, maybeUserDataList, maybeTitle, maybeTitleLink, maybeColor, maybeCallbackId, actions)
   }
 
 }
@@ -537,12 +576,25 @@ case class TestEventContext(
 
   // TODO: we may have some reason to not use Slack here (although this was the existing behavior)
 
-  def messageActionButtonFor(callbackId: String, label: String, property: String, value: String) = {
+  def messageActionButtonFor(
+                              callbackId: String,
+                              label: String,
+                              value: String,
+                              maybeStyle: Option[String] = None
+                            ) = {
     SlackMessageActionButton(callbackId, label, value)
   }
 
-  def messageAttachmentFor(callbackId: String, actionList: Seq[SlackMessageActionButton]) = {
-    SlackMessageAttachment(None, None, None, None, None, Some(callbackId), actionList)
+  def messageAttachmentFor(
+                            maybeText: Option[String] = None,
+                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeTitle: Option[String] = None,
+                            maybeTitleLink: Option[String] = None,
+                            maybeColor: Option[String] = None,
+                            maybeCallbackId: Option[String] = None,
+                            actions: Seq[SlackMessageActionButton] = Seq()
+                          ): SlackMessageAttachment = {
+    SlackMessageAttachment(maybeText, maybeUserDataList, maybeTitle, maybeTitleLink, maybeColor, maybeCallbackId, actions)
   }
 
 }

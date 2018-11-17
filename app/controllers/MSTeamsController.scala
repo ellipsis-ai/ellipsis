@@ -3,16 +3,16 @@ package controllers
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
+import json.Formatting._
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.events.ms_teams.MSTeamsMessageEvent
-import models.behaviors.{ActionArg, ActionChoice, BotResult}
+import models.behaviors.{ActionChoice, BotResult}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
-import play.api.data.Form
-import play.api.data.Forms._
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Environment, Logger, Mode}
@@ -41,24 +41,19 @@ class MSTeamsController @Inject() (
   override type BotProfileType = MSTeamsBotProfile
   override type ActionsTriggeredInfoType = MSTeamsActionsTriggeredInfo
 
-  case class PostedValue(
-                          maybeActionChoice: Option[ActionChoice],
-                          maybeYesNoValue: Option[String]
-                        )
-
   case class MSTeamsActionsTriggeredInfo(
-                                           activityType: String,
-                                           id: String,
-                                           timestamp: String,
-                                           serviceUrl: String,
-                                           channelId: String,
-                                           from: MessageParticipantInfo,
-                                           conversation: ConversationInfo,
-                                           recipient: MessageParticipantInfo,
-                                           textFormat: Option[String],
-                                           text: Option[String],
-                                           value: Option[PostedValue],
-                                           channelData: ChannelDataInfo
+                                          `type`: String,
+                                          id: String,
+                                          timestamp: String,
+                                          serviceUrl: String,
+                                          channelId: String,
+                                          from: MessageParticipantInfo,
+                                          conversation: ConversationInfo,
+                                          recipient: MessageParticipantInfo,
+                                          textFormat: Option[String],
+                                          text: Option[String],
+                                          value: Option[JsObject],
+                                          channelData: ChannelDataInfo
                                          ) extends ActionsTriggeredInfo {
 
     val responseUrl: String = s"$serviceUrl/v3/conversations/${conversation.id}/activities/${id}"
@@ -66,20 +61,22 @@ class MSTeamsController @Inject() (
     val maybeTenantId: Option[String] = channelData.tenant.map(_.id)
 
     def toActivityInfo: ActivityInfo = ActivityInfo(
-      activityType,
       id,
-      timestamp,
       serviceUrl,
-      channelId,
       from,
       conversation,
       recipient,
-      textFormat,
       text,
-      maybeSelectedActionChoice,
       channelData
     )
 
+    def maybeValueResultMatching(keyPrefix: String): Option[JsLookupResult] = {
+        value.flatMap { v =>
+          v.value.keys.find(_.startsWith(keyPrefix)).map { k =>
+            (v \ k)
+          }
+      }
+    }
     val contextName: String = Conversation.MS_TEAMS_CONTEXT
     def findButtonLabelForNameAndValue(name: String,value: String): Option[String] = None
     def findOptionLabelForValue(value: String): Option[String] = None
@@ -119,10 +116,10 @@ class MSTeamsController @Inject() (
     def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = None
     def maybeHelpIndexAt: Option[Int] = None
     def maybeHelpRunBehaviorVersionId: Option[String] = None
-    def maybeSelectedActionChoice: Option[ActionChoice] = value.flatMap(_.maybeActionChoice)
+    def maybeSelectedActionChoice: Option[ActionChoice] = maybeValueResultMatching(ACTION_CHOICE).flatMap(_.asOpt[ActionChoice])
     val maybeStopConversationResponse: Option[StopConversationResponse] = None
     val maybeUserIdForDataTypeChoice: Option[String] = None
-    def maybeYesNoAnswer: Option[String] = value.flatMap(_.maybeYesNoValue)
+    def maybeYesNoAnswer: Option[String] = maybeValueResultMatching(YES_NO_CHOICE).flatMap(_.asOpt[String])
     def onEvent(event: Event): Future[Unit] = Future.successful({})
     def processTriggerableAndActiveActionChoice(
                                                  actionChoice: ActionChoice,
@@ -191,68 +188,6 @@ class MSTeamsController @Inject() (
 
   }
 
-  private val messageParticipantMapping = mapping(
-    "id" -> nonEmptyText,
-    "name" -> nonEmptyText
-  )(MessageParticipantInfo.apply)(MessageParticipantInfo.unapply)
-
-  private val actionChoiceMapping = mapping(
-    "label" -> nonEmptyText,
-    "actionName" -> nonEmptyText,
-    "args" -> optional(seq(mapping(
-      "name" -> nonEmptyText,
-      "value" -> nonEmptyText
-    )(ActionArg.apply)(ActionArg.unapply))),
-    "allowOthers" -> optional(boolean),
-    "allowMultipleSelections" -> optional(boolean),
-    "userId" -> nonEmptyText,
-    "originatingBehaviorVersionId" -> nonEmptyText,
-    "quiet" -> optional(boolean)
-  )(ActionChoice.apply)(ActionChoice.unapply)
-
-  private val postedValueMapping = mapping(
-    "actionChoice" -> optional(actionChoiceMapping),
-    "yesNoValue" -> optional(nonEmptyText)
-  )(PostedValue.apply)(PostedValue.unapply)
-
-  private val messageActivityForm = Form(
-    mapping(
-      "type" -> nonEmptyText,
-      "id" -> nonEmptyText,
-      "timestamp" -> nonEmptyText,
-      "serviceUrl" -> nonEmptyText,
-      "channelId" -> nonEmptyText,
-      "from" -> messageParticipantMapping,
-      "conversation" -> mapping(
-        "id" -> nonEmptyText,
-        "conversationType" -> nonEmptyText
-      )(ConversationInfo.apply)(ConversationInfo.unapply),
-      "recipient" -> messageParticipantMapping,
-      "textFormat" -> optional(nonEmptyText),
-      "text" -> optional(nonEmptyText),
-      "value" -> optional(postedValueMapping),
-      "channelData" -> mapping(
-        "clientActivityId" -> optional(nonEmptyText),
-        "tenant" -> optional(mapping(
-          "id" -> nonEmptyText
-        )(TenantInfo.apply)(TenantInfo.unapply))
-      )(ChannelDataInfo.apply)(ChannelDataInfo.unapply)
-    )(MSTeamsActionsTriggeredInfo.apply)(MSTeamsActionsTriggeredInfo.unapply) verifying ("Not a valid message event", fields => fields match {
-      case info => info.activityType == "message"
-    })
-  )
-
-  private def maybeResultFor[T](form: Form[T], resultFn: T => Result)
-                               (implicit request: Request[AnyContent]): Option[Result] = {
-    form.bindFromRequest.fold(
-      errors => {
-        Logger.info(s"Can't process MS Teams request:\n${Json.prettyPrint(errors.errorsAsJson)}")
-        None
-      },
-      info => Some(resultFn(info))
-    )
-  }
-
   private def processMessageEventsFor(info: MSTeamsActionsTriggeredInfo, botProfile: MSTeamsBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
         // TODO: in the Slack case we check here if the user is allowed to invoke the bot. I think most of the reasons
@@ -288,10 +223,22 @@ class MSTeamsController @Inject() (
     Ok(":+1:")
   }
 
-  private def maybeMessageResult(implicit request: Request[AnyContent]): Option[Result] = {
-    maybeResultFor(messageActivityForm, messageEventResult)
-  }
+  import _root_.services.ms_teams.apiModels.Formatting._
+  implicit lazy val actionsTriggeredInfoFormat = Json.format[MSTeamsActionsTriggeredInfo]
 
+  private def maybeMessageResult(implicit request: Request[AnyContent]): Option[Result] = {
+    request.body.asJson.flatMap { json =>
+      json.validate[MSTeamsActionsTriggeredInfo] match {
+        case JsError(errors) => {
+          Logger.info(s"Can't process MS Teams request:\n${errors.toString}")
+          None
+        }
+        case JsSuccess(info, _) => {
+          Some(messageEventResult(info))
+        }
+      }
+    }
+  }
 
   def event = Action { implicit request =>
     if (environment.mode == Mode.Dev) {
