@@ -848,7 +848,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
           val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
             eventContext.messageActionMenuItemFor(s"${i+1}. ${ea.label}", ea.label)
           } ++ builtinMenuItems
-          val actionsList = Seq(eventContext.messageActionMenuFor("ignored", "Choose an option", menuItems))
+          val actionsList = Seq(eventContext.messageActionMenuFor(context.dataTypeChoiceCallbackId, "Choose an option", menuItems))
           val attachments: Seq[MessageAttachment] = Seq(
             eventContext.messageAttachmentFor(None, None, None, None, Some(Color.BLUE_LIGHT), Some(context.dataTypeChoiceCallbackId), actionsList)
           )
