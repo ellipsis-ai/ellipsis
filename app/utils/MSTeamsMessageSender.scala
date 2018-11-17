@@ -7,7 +7,6 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.events.ms_teams._
-import models.behaviors.events.slack.SlackMessageAttachment
 import models.behaviors.{ActionChoice, DeveloperContext}
 import play.api.libs.json.Json
 import services.DefaultServices
@@ -59,22 +58,18 @@ case class MSTeamsMessageSender(
       Seq()
     } else {
       val actionList = choices.zipWithIndex.map { case(ea, i) =>
-        val value = Json.toJson(ea).toString()
+        val value = Json.obj(ACTION_CHOICE -> Json.toJson(ea)).toString()
         val valueToUse = if (value.length > MSTeamsMessageSender.MAX_ACTION_VALUE_CHARS) {
           services.cacheService.cacheSlackActionValue(value)
         } else {
           value
         }
-        MSTeamsMessageActionButton(ACTION_CHOICE, ea.label, valueToUse)
+        MSTeamsMessageActionButton(ea.label, valueToUse)
       }
       Seq(MSTeamsMessageAttachment(
-        None,
-        None,
-        None,
-        None,
-        Some(Color.BLUE_LIGHTER),
-        Some(ACTION_CHOICES),
-        actionList
+        maybeColor = Some(Color.BLUE_LIGHTER),
+        maybeCallbackId = Some(ACTION_CHOICES),
+        actions = actionList
       ))
     }
   }

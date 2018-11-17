@@ -6,7 +6,6 @@ import play.api.libs.json.{JsString, JsValue, Json}
 import services.ms_teams.apiModels.CardAction
 
 case class MSTeamsMessageActionButton(
-                                       name: String,
                                        text: String,
                                        value: String,
                                        maybeStyle: Option[String] = None

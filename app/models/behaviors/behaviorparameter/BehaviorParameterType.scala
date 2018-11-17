@@ -329,10 +329,10 @@ object YesNoType extends BuiltInType {
       val callbackId = context.yesNoCallbackId
       val eventContext = context.event.eventContext
       val actionList = Seq(
-        eventContext.messageActionButtonFor(callbackId, "Yes", "yesNoValue", YES),
-        eventContext.messageActionButtonFor(callbackId, "No", "yesNoValue", NO)
+        eventContext.messageActionButtonFor(callbackId, "Yes", YES),
+        eventContext.messageActionButtonFor(callbackId, "No", NO)
       )
-      val actionsGroup = eventContext.messageAttachmentFor(callbackId, actionList)
+      val actionsGroup = eventContext.messageAttachmentFor(maybeCallbackId = Some(callbackId), actions = actionList)
       TextWithAttachmentsResult(
         superPromptResult.event,
         superPromptResult.maybeConversation,
@@ -783,15 +783,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  private def maybeStartAgainButtonFor(params: Seq[BehaviorParameter], callbackId: String): Option[SlackMessageActionButton] = {
-    if (params.isEmpty) {
-      None
-    } else {
-      // TODO: revisit this
-      None //Some(SlackMessageActionButton(callbackId, Conversation.START_AGAIN_MENU_ITEM_TEXT, Conversation.START_AGAIN_MENU_ITEM_TEXT))
-    }
-  }
-
   private def promptResultWithSimpleValidValues(
                                                  validValues: Seq[ValidValue],
                                                  context: BehaviorParameterContext,
@@ -799,13 +790,13 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     promptTextForAction(None, context, None, false).map { text =>
       val callbackId = context.dataTypeChoiceCallbackId
+      val eventContext = context.event.eventContext
       val actionList = validValues.map { ea =>
-        SlackMessageActionButton(callbackId, ea.label, ea.label)
+        eventContext.messageActionButtonFor(callbackId, ea.label, ea.label)
       } ++ Seq(
-        maybeStartAgainButtonFor(params, callbackId),
-        Some(SlackMessageActionButton(callbackId, Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
+        Some(eventContext.messageActionButtonFor(callbackId, Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
       ).flatten
-      val attachment = SlackMessageAttachment(None, None, None, None, None, Some(callbackId), actionList)
+      val attachment = eventContext.messageAttachmentFor(maybeCallbackId = Some(callbackId), actions = actionList)
       TextWithAttachmentsResult(
         context.event,
         context.maybeConversation,
