@@ -6,10 +6,25 @@ sealed trait CardElement {
 
 }
 
-case class CardAction(
-                       `type`: String,
+case class ActionSubmit(
                        title: String,
                        data: JsValue
-                     ) extends CardElement
+                     ) extends CardElement {
+  val `type`: String = "Action.Submit"
+}
 
-case class TextBlock(`type`: String, text: String) extends CardElement
+case class TextBlock(text: String) extends CardElement {
+  val `type`: String = "TextBlock"
+}
+
+case class InputChoice(title: String, value: String) {
+  val `type`: String = "Input.Choice"
+}
+
+case class InputChoiceSet(
+                           id: String,
+                           value: String,
+                           choices: Seq[InputChoice]
+                         ) extends CardElement {
+  val `type`: String = "Input.ChoiceSet"
+}

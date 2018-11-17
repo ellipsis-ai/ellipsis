@@ -5,6 +5,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.BotProfile
 import models.behaviors.{ActionChoice, BotResult}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants.{BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, SHOW_BEHAVIOR_GROUP_HELP}
@@ -664,17 +665,27 @@ trait ChatPlatformController {
       }
     }
 
+    private def canBeTriggered(maybeBehaviorVersion: Option[BehaviorVersion], info: ActionsTriggeredInfoType, botProfile: BotProfileType): Future[Boolean] = {
+      if (botProfile.supportsSharedChannels) {
+        for {
+          maybeUser <- dataService.users.ensureUserFor(info.loginInfo, botProfile.teamId).map(Some(_))
+          canBeTriggered <- (for {
+            behaviorVersion <- maybeBehaviorVersion
+            user <- maybeUser
+          } yield behaviorVersion.groupVersion.canBeTriggeredBy(user, dataService)).getOrElse(Future.successful(false))
+        } yield canBeTriggered
+      } else {
+        Future.successful(true)
+      }
+    }
+
     def buildFor(behaviorVersionId: String, info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[HelpRunBehaviorVersionPermission] = {
       for {
         maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
         isActive <- maybeBehaviorVersion.map { behaviorVersion =>
           dataService.behaviorGroupVersions.isActive(behaviorVersion.groupVersion, info.contextName, info.channelId)
         }.getOrElse(Future.successful(false))
-        maybeUser <- dataService.users.ensureUserFor(info.loginInfo, botProfile.teamId).map(Some(_))
-        canBeTriggered <- (for {
-          behaviorVersion <- maybeBehaviorVersion
-          user <- maybeUser
-        } yield behaviorVersion.groupVersion.canBeTriggeredBy(user, dataService)).getOrElse(Future.successful(false))
+        canBeTriggered <- canBeTriggered(maybeBehaviorVersion, info, botProfile)
       } yield {
         HelpRunBehaviorVersionPermission(
           behaviorVersionId,

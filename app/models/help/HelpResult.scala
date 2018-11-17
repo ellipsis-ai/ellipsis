@@ -1,9 +1,7 @@
 package models.help
 
 import json.{BehaviorTriggerData, BehaviorVersionData}
-import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.events.slack.{SlackMessageAction, SlackMessageActionButton, SlackMessageActionMenu, SlackMessageActionMenuItem}
 import services.{AWSLambdaService, DataService}
 
 trait HelpResult {
@@ -14,8 +12,6 @@ trait HelpResult {
 
   val dataService: DataService
   val lambdaService: AWSLambdaService
-
-  val slackHelpIndexAction = SlackMessageActionButton(SHOW_HELP_INDEX, "More help…", "0")
 
   def description: String
 
@@ -32,7 +28,7 @@ trait HelpResult {
     }
   }
 
-  private lazy val triggerableBehaviorVersions: Seq[BehaviorVersionData] = group.behaviorVersions.filter(_.triggers.nonEmpty)
+  lazy val triggerableBehaviorVersions: Seq[BehaviorVersionData] = group.behaviorVersions.filter(_.triggers.nonEmpty)
   lazy val matchingBehaviorVersions: Seq[BehaviorVersionData] = triggerableBehaviorVersions.filter(_.triggers.exists(matchingTriggers.contains))
   lazy val nonMatchingBehaviorVersions: Seq[BehaviorVersionData] = triggerableBehaviorVersions.filterNot(_.triggers.exists(matchingTriggers.contains))
 
@@ -45,37 +41,6 @@ trait HelpResult {
       }
     } else {
       nonMatchingBehaviorVersions
-    }
-  }
-
-  def maybeShowAllBehaviorVersionsAction(maybeSearchText: Option[String], includeNonMatchingResults: Boolean = false): Option[SlackMessageAction] = {
-    if (!includeNonMatchingResults && !group.isMiscellaneous && matchingBehaviorVersions.nonEmpty && nonMatchingBehaviorVersions.nonEmpty) {
-      val numVersions = triggerableBehaviorVersions.length
-      val label = if (numVersions == 2) {
-        s"Show both actions"
-      } else {
-        s"Show all $numVersions actions"
-      }
-      Some(SlackMessageActionButton(LIST_BEHAVIOR_GROUP_ACTIONS, label, HelpGroupSearchValue(group.helpActionId, maybeSearchText).toString))
-    } else {
-      None
-    }
-  }
-
-  def slackRunActionsFor(behaviorVersions: Seq[BehaviorVersionData]): Seq[SlackMessageAction] = {
-    if (behaviorVersions.length == 1) {
-      behaviorVersions.headOption.flatMap { version =>
-        version.id.map { versionId =>
-          Seq(SlackMessageActionButton(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, "Run this action", versionId))
-        }
-      }.getOrElse(Seq())
-    } else {
-      val menuItems = behaviorVersions.flatMap { ea =>
-        ea.id.map { behaviorVersionId =>
-          SlackMessageActionMenuItem(ea.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
-        }
-      }
-      Seq(SlackMessageActionMenu(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, "Actions", menuItems))
     }
   }
 

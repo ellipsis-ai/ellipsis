@@ -3,7 +3,7 @@ package models.behaviors.events.ms_teams
 import com.fasterxml.jackson.core.JsonParseException
 import models.behaviors.events.MessageActionButton
 import play.api.libs.json.{JsString, JsValue, Json}
-import services.ms_teams.apiModels.CardAction
+import services.ms_teams.apiModels.{ActionSubmit, CardElement}
 
 case class MSTeamsMessageActionButton(
                                        text: String,
@@ -19,5 +19,6 @@ case class MSTeamsMessageActionButton(
     }
   }
 
-  def cardAction: CardAction = CardAction("Action.Submit", text, jsonValue)
+  def bodyElements: Seq[CardElement] = Seq()
+  def actionElements: Seq[CardElement] = Seq(ActionSubmit(text, jsonValue))
 }

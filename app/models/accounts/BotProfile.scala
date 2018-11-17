@@ -9,6 +9,7 @@ trait BotProfile {
   val teamIdForContext: String
   val createdAt: OffsetDateTime
   val allowShortcutMention: Boolean
+  val supportsSharedChannels: Boolean
 }
 
 object BotContext extends Enum[BotContext] {

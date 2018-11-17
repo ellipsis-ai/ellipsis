@@ -10,7 +10,7 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.ms_teams.{MSTeamsMessageActionButton, MSTeamsMessageAttachment, MSTeamsRunEvent}
+import models.behaviors.events.ms_teams._
 import models.behaviors.events.slack._
 import models.behaviors.testing.TestRunEvent
 import models.team.Team
@@ -29,7 +29,9 @@ import scala.concurrent.{ExecutionContext, Future}
 sealed trait EventContext {
 
   type MessageAttachmentType <: MessageAttachment
-  type MessageActionButtonType <: MessageActionButton
+  type MessageActionType <: MessageAction
+  type MenuType <: MessageMenu
+  type MenuItemType <: MessageMenuItem
 
   val isPublicChannel: Boolean
   val isDirectMessage: Boolean
@@ -91,7 +93,18 @@ sealed trait EventContext {
                               label: String,
                               value: String,
                               maybeStyle: Option[String] = None
-                            ): MessageActionButtonType
+                            ): MessageActionType
+
+  def messageActionMenuItemFor(
+                                text: String,
+                                value: String
+                              ): MenuItemType
+
+  def messageActionMenuFor(
+                            name: String,
+                            text: String,
+                            options: Seq[MenuItemType]
+                          ): MessageActionType
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
@@ -100,7 +113,7 @@ sealed trait EventContext {
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
                             maybeCallbackId: Option[String] = None,
-                            actions: Seq[MessageActionButtonType] = Seq()
+                            actions: Seq[MessageActionType] = Seq()
                           ): MessageAttachmentType
 
 }
@@ -113,7 +126,9 @@ case class SlackEventContext(
                             ) extends EventContext {
 
   override type MessageAttachmentType = SlackMessageAttachment
-  override type MessageActionButtonType = SlackMessageActionButton
+  override type MessageActionType = SlackMessageAction
+  override type MenuType = SlackMessageMenu
+  override type MenuItemType = SlackMessageMenuItem
 
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     botName(services).map { botName =>
@@ -331,6 +346,21 @@ case class SlackEventContext(
     SlackMessageActionButton(callbackId, label, value)
   }
 
+  def messageActionMenuItemFor(
+                                text: String,
+                                value: String
+                              ): SlackMessageMenuItem = {
+    SlackMessageMenuItem(text, value)
+  }
+
+  def messageActionMenuFor(
+                            name: String,
+                            text: String,
+                            options: Seq[SlackMessageMenuItem]
+                          ): SlackMessageMenu = {
+    SlackMessageMenu(name, text, options)
+  }
+
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
                             maybeUserDataList: Option[Set[MessageUserData]] = None,
@@ -338,7 +368,7 @@ case class SlackEventContext(
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
                             maybeCallbackId: Option[String] = None,
-                            actions: Seq[SlackMessageActionButton] = Seq()
+                            actions: Seq[SlackMessageAction] = Seq()
                           ): SlackMessageAttachment = {
     SlackMessageAttachment(maybeText, maybeUserDataList, maybeTitle, maybeTitleLink, maybeColor, maybeCallbackId, actions)
   }
@@ -351,7 +381,9 @@ case class MSTeamsEventContext(
                               ) extends EventContext {
 
   override type MessageAttachmentType = MSTeamsMessageAttachment
-  override type MessageActionButtonType = MSTeamsMessageActionButton
+  override type MessageActionType = MSTeamsMessageAction
+  override type MenuType = MSTeamsMessageMenu
+  override type MenuItemType = MSTeamsMessageMenuItem
 
   val name: String = Conversation.MS_TEAMS_CONTEXT
   val userIdForContext: String = info.from.id
@@ -480,6 +512,21 @@ case class MSTeamsEventContext(
     MSTeamsMessageActionButton(label, Json.obj(callbackId -> value).toString())
   }
 
+  def messageActionMenuItemFor(
+                                text: String,
+                                value: String
+                              ): MSTeamsMessageMenuItem = {
+    MSTeamsMessageMenuItem(text, value)
+  }
+
+  def messageActionMenuFor(
+                            name: String,
+                            text: String,
+                            options: Seq[MSTeamsMessageMenuItem]
+                          ): MSTeamsMessageMenu = {
+    MSTeamsMessageMenu(name, text, options)
+  }
+
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
                             maybeUserDataList: Option[Set[MessageUserData]] = None,
@@ -487,7 +534,7 @@ case class MSTeamsEventContext(
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
                             maybeCallbackId: Option[String] = None,
-                            actions: Seq[MSTeamsMessageActionButton] = Seq()
+                            actions: Seq[MSTeamsMessageAction] = Seq()
                           ): MSTeamsMessageAttachment = {
     MSTeamsMessageAttachment(maybeText, maybeUserDataList, maybeTitle, maybeTitleLink, maybeColor, maybeCallbackId, actions)
   }
@@ -500,7 +547,9 @@ case class TestEventContext(
                            ) extends EventContext {
 
   override type MessageAttachmentType = SlackMessageAttachment
-  override type MessageActionButtonType = SlackMessageActionButton
+  override type MessageActionType = SlackMessageAction
+  override type MenuType = SlackMessageMenu
+  override type MenuItemType = SlackMessageMenuItem
 
   val name = "test"
   val isPublicChannel: Boolean = false
@@ -585,6 +634,21 @@ case class TestEventContext(
     SlackMessageActionButton(callbackId, label, value)
   }
 
+  def messageActionMenuItemFor(
+                                text: String,
+                                value: String
+                              ): SlackMessageMenuItem = {
+    SlackMessageMenuItem(text, value)
+  }
+
+  def messageActionMenuFor(
+                            name: String,
+                            text: String,
+                            options: Seq[SlackMessageMenuItem]
+                          ): SlackMessageMenu = {
+    SlackMessageMenu(name, text, options)
+  }
+
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
                             maybeUserDataList: Option[Set[MessageUserData]] = None,
@@ -592,7 +656,7 @@ case class TestEventContext(
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
                             maybeCallbackId: Option[String] = None,
-                            actions: Seq[SlackMessageActionButton] = Seq()
+                            actions: Seq[SlackMessageAction] = Seq()
                           ): SlackMessageAttachment = {
     SlackMessageAttachment(maybeText, maybeUserDataList, maybeTitle, maybeTitleLink, maybeColor, maybeCallbackId, actions)
   }

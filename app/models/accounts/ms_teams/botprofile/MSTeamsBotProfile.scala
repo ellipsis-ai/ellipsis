@@ -13,6 +13,7 @@ case class MSTeamsBotProfile(
 
   val context: BotContext = MSTeamsContext
   val teamIdForContext: String = tenantId
+  val supportsSharedChannels: Boolean = false
 
 }
 
