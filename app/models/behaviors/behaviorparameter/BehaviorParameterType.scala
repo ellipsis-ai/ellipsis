@@ -774,15 +774,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     DBIO.successful(context.simpleTextResultFor(s"OK, you chose “other”. What do you want to say instead?"))
   }
 
-  private def maybeStartAgainMenuItemFor(params: Seq[BehaviorParameter]): Option[SlackMessageMenuItem] = {
-    if (params.isEmpty) {
-      None
-    } else {
-      // TODO: revisit this
-      None //Some(SlackMessageActionMenuItem(Conversation.START_AGAIN_MENU_ITEM_TEXT, Conversation.START_AGAIN_MENU_ITEM_TEXT))
-    }
-  }
-
   private def promptResultWithSimpleValidValues(
                                                  validValues: Seq[ValidValue],
                                                  context: BehaviorParameterContext,
@@ -842,7 +833,6 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         } else {
           val eventContext = context.event.eventContext
           val builtinMenuItems = Seq(
-//            maybeStartAgainMenuItemFor(params),
             Some(eventContext.messageActionMenuItemFor(Conversation.CANCEL_MENU_ITEM_TEXT, Conversation.CANCEL_MENU_ITEM_TEXT))
           ).flatten
           val menuItems = validValues.zipWithIndex.map { case (ea, i) =>
