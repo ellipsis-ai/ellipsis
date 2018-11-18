@@ -63,6 +63,9 @@ trait ChatPlatformController {
     def maybeYesNoAnswer: Option[String]
     def isForYesNoForDoneConversation: Future[Boolean]
 
+    def maybeTextInputAnswer: Option[String]
+    def isForTextInputForDoneConversation: Future[Boolean]
+
     def onEvent(event: Event): Future[Unit]
 
     def sendResultWithNewEvent(
@@ -282,6 +285,38 @@ trait ChatPlatformController {
       for {
         isConversationDone <- info.isForYesNoForDoneConversation
       } yield YesNoChoicePermission(
+        value,
+        info,
+        isConversationDone,
+        botProfile,
+        request
+      )
+    }
+
+  }
+
+  case class TextInputPermission(
+                                    choice: String,
+                                    info: ActionsTriggeredInfoType,
+                                    isConversationDone: Boolean,
+                                    botProfile: BotProfileType,
+                                    implicit val request: Request[AnyContent]
+                                  ) extends InputChoicePermission {
+    val isIncorrectUser: Boolean = info.isIncorrectUserTryingYesNo
+  }
+
+  object TextInputPermission extends ActionPermissionType[TextInputPermission] {
+
+    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[TextInputPermission]] = {
+      info.maybeTextInputAnswer.map { value =>
+        buildFor(value, info, botProfile)
+      }
+    }
+
+    def buildFor(value: String, info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[TextInputPermission] = {
+      for {
+        isConversationDone <- info.isForTextInputForDoneConversation
+      } yield TextInputPermission(
         value,
         info,
         isConversationDone,
@@ -708,15 +743,17 @@ trait ChatPlatformController {
 
   def maybePermissionResultFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[Result]] = {
     DataTypeChoicePermission.maybeResultFor(info, botProfile).orElse {
-      YesNoChoicePermission.maybeResultFor(info, botProfile).orElse {
-        ActionChoicePermission.maybeResultFor(info, botProfile).orElse {
-          HelpIndexPermission.maybeResultFor(info, botProfile).orElse {
-            HelpForSkillPermission.maybeResultFor(info, botProfile).orElse {
-              HelpListAllActionsPermission.maybeResultFor(info, botProfile).orElse {
-                ConfirmContinueConversationPermission.maybeResultFor(info, botProfile).orElse {
-                  StopConversationPermission.maybeResultFor(info, botProfile).orElse {
-                    HelpRunBehaviorVersionPermission.maybeResultFor(info, botProfile).orElse {
-                      None
+      TextInputPermission.maybeResultFor(info, botProfile).orElse {
+        YesNoChoicePermission.maybeResultFor(info, botProfile).orElse {
+          ActionChoicePermission.maybeResultFor(info, botProfile).orElse {
+            HelpIndexPermission.maybeResultFor(info, botProfile).orElse {
+              HelpForSkillPermission.maybeResultFor(info, botProfile).orElse {
+                HelpListAllActionsPermission.maybeResultFor(info, botProfile).orElse {
+                  ConfirmContinueConversationPermission.maybeResultFor(info, botProfile).orElse {
+                    StopConversationPermission.maybeResultFor(info, botProfile).orElse {
+                      HelpRunBehaviorVersionPermission.maybeResultFor(info, botProfile).orElse {
+                        None
+                      }
                     }
                   }
                 }
