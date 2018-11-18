@@ -186,6 +186,33 @@ object TextType extends BuiltInType {
 
   val invalidPromptModifier: String = s"I need a valid answer. $stopInstructions"
 
+  override def promptResultForAction(
+                                      maybePreviousCollectedValue: Option[String],
+                                      context: BehaviorParameterContext,
+                                      paramState: ParamCollectionState,
+                                      isReminding: Boolean
+                                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map { superPromptResult =>
+      val eventContext = context.event.eventContext
+      if (eventContext.usesTextInputs) {
+        val callbackId = context.textInputCallbackId
+        val actionList = Seq(
+          eventContext.messageActionTextInputFor(callbackId)
+        )
+        val actionsGroup = eventContext.messageAttachmentFor(maybeCallbackId = Some(callbackId), actions = actionList)
+        TextWithAttachmentsResult(
+          superPromptResult.event,
+          superPromptResult.maybeConversation,
+          superPromptResult.fullText,
+          superPromptResult.responseType,
+          Seq(actionsGroup)
+        )
+      } else {
+        superPromptResult
+      }
+    }
+  }
+
 }
 
 object NumberType extends BuiltInType {
