@@ -212,7 +212,7 @@ case class DisplayHelpBehavior(
           eventContext.messageActionMenuItemFor(ea.maybeFirstTrigger.getOrElse("Run"), behaviorVersionId)
         }
       }
-      Seq(eventContext.messageActionMenuFor(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, "Actions", menuItems))
+      Seq(eventContext.messageActionMenuFor(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, "Run action", menuItems))
     }
   }
 

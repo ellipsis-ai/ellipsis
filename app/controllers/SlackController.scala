@@ -639,7 +639,7 @@ class SlackController @Inject() (
 
     }
 
-    def inputChoiceResultFor(value: String)(implicit request: Request[AnyContent]): Future[Unit] = {
+    def inputChoiceResultFor(value: String, maybeResultText: Option[String])(implicit request: Request[AnyContent]): Future[Unit] = {
       for {
         maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(team.id).map(_.headOption)
         maybeSlackMessage <- maybeProfile.map { profile =>
@@ -677,7 +677,8 @@ class SlackController @Inject() (
 
     def updateActionsMessageFor(
                                  maybeResultText: Option[String],
-                                 shouldRemoveActions: Boolean
+                                 shouldRemoveActions: Boolean,
+                                 botProfile: BotProfileType
                                ): Future[Unit] = {
       original_message.map { originalMessage =>
         val maybeOriginalColor = originalMessage.attachments.headOption.flatMap(_.color)
