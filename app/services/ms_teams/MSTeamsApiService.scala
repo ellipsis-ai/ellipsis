@@ -162,6 +162,21 @@ trait MSTeamsApiClient {
     }
   }
 
+  def updateMessage(serviceUrl: String, conversationId: String, activityId: String, value: JsValue): Future[String] = {
+    val updateUrl = s"$serviceUrl/v3/conversations/$conversationId/activities/$activityId/"
+    Logger.info(s"MSTeamsApiClient updating message at $updateUrl with value:\n\n${Json.prettyPrint(value)}")
+    for {
+      token <- fetchBotFrameworkToken
+      result <- ws.
+        url(updateUrl).
+        withHttpHeaders(headersFor(token): _*).
+        put(value)
+    } yield {
+      val json = responseToJson(result, Some("id"))
+      (json \ "id").as[String]
+    }
+  }
+
   private def getResponseFor(endpoint: String, params: Seq[(String, String)]): Future[WSResponse] = {
     Logger.info(s"MSTeamsApiClient query $endpoint with params $params")
     for {

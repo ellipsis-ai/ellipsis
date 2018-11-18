@@ -17,8 +17,9 @@ import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Environment, Logger, Mode}
 import services._
-import services.ms_teams.MSTeamsEventService
 import services.ms_teams.apiModels._
+import services.ms_teams.apiModels.Formatting._
+import services.ms_teams.{MSTeamsApiService, MSTeamsEventService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -29,6 +30,7 @@ class MSTeamsController @Inject() (
                                   val assetsProvider: Provider[RemoteAssets],
                                   val environment: Environment,
                                   val eventService: MSTeamsEventService,
+                                  val apiService: MSTeamsApiService,
                                   implicit val ec: ExecutionContext
                                 ) extends EllipsisController with ChatPlatformController {
 
@@ -53,10 +55,9 @@ class MSTeamsController @Inject() (
                                           textFormat: Option[String],
                                           text: Option[String],
                                           value: Option[JsObject],
+                                          replyToId: Option[String],
                                           channelData: ChannelDataInfo
                                          ) extends ActionsTriggeredInfo {
-
-    val responseUrl: String = s"$serviceUrl/v3/conversations/${conversation.id}/activities/${id}"
 
     val maybeTenantId: Option[String] = channelData.tenant.map(_.id)
 
@@ -70,23 +71,35 @@ class MSTeamsController @Inject() (
       channelData
     )
 
-    def maybeValueResultMatching(keyPrefix: String): Option[JsLookupResult] = {
-        value.flatMap { v =>
-          v.value.keys.find(_.startsWith(keyPrefix)).map { k =>
-            (v \ k)
-          }
+    def maybeKeyMatching(keyPrefix: String): Option[String] = {
+      value.flatMap { v =>
+        v.value.keys.find(_.startsWith(keyPrefix))
       }
+    }
+    def maybeValueResultMatching(keyPrefix: String): Option[JsLookupResult] = {
+      for {
+        v <- value
+        k <- maybeKeyMatching(keyPrefix)
+      } yield (v \ k)
     }
     val contextName: String = Conversation.MS_TEAMS_CONTEXT
     def findButtonLabelForNameAndValue(name: String,value: String): Option[String] = None
     def findOptionLabelForValue(value: String): Option[String] = None
-    def formattedUserFor(permission: ActionPermission): String = from.name
-    def inputChoiceResultFor(value: String)(implicit request: Request[AnyContent]): Future[Unit] = {
+    def formattedUserFor(permission: ActionPermission): String = {
+      if (conversation.conversationType == "personal" || permission.beQuiet) {
+        "You"
+      } else {
+        s"@${from.name}"
+      }
+
+    }
+    def inputChoiceResultFor(value: String, maybeResultText: Option[String])(implicit request: Request[AnyContent]): Future[Unit] = {
       for {
         maybeProfile <- dataService.msTeamsBotProfiles.find(teamIdForContext).map(_.headOption)
         _ <- (for {
           profile <- maybeProfile
         } yield {
+          updateActionsMessageFor(maybeResultText, shouldRemoveActions = true, profile)
           eventService.onEvent(MSTeamsMessageEvent(
             MSTeamsEventContext(
               profile,
@@ -105,7 +118,15 @@ class MSTeamsController @Inject() (
       } yield {}
     }
     def instantBackgroundResponse(responseText: String, permission: ActionPermission): Future[Option[String]] = Future.successful(Some("foo"))
-    def isForDataTypeChoiceForDoneConversation: Future[Boolean] = Future.successful(false)
+    def isForDataTypeChoiceForDoneConversation: Future[Boolean] = {
+      maybeKeyMatching(DATA_TYPE_CHOICE).map { key =>
+        maybeConversationIdForCallbackId(DATA_TYPE_CHOICE, key).map { convoId =>
+          dataService.conversations.find(convoId).map { maybeConvo =>
+            maybeConvo.exists(_.isDone)
+          }
+        }.getOrElse(Future.successful(false))
+      }.getOrElse(Future.successful(false))
+    }
     def isForYesNoForDoneConversation: Future[Boolean] = Future.successful(false)
     def isIncorrectTeam(botProfile: BotProfileType): Future[Boolean] = Future.successful(false)
     def isIncorrectUserTryingDataTypeChoice: Boolean = false
@@ -194,7 +215,28 @@ class MSTeamsController @Inject() (
     }
     val teamIdForContext: String = maybeTenantId.get // TODO: hm
     val teamIdForUserForContext: String = teamIdForContext
-    def updateActionsMessageFor(maybeResultText: Option[String], shouldRemoveActions: Boolean): Future[Unit] = Future.successful({})
+
+    def updateActionsMessageFor(maybeResultText: Option[String], shouldRemoveActions: Boolean, botProfile: MSTeamsBotProfile): Future[Unit] = {
+      if (shouldRemoveActions) {
+        replyToId.map { rtid =>
+          val client = apiService.profileClientFor(botProfile)
+          val updated = ResponseInfo(
+            "message",
+            from = recipient,
+            conversation,
+            recipient = from,
+            maybeResultText.getOrElse("updated"),
+            "markdown",
+            rtid,
+            Some(Seq())
+          )
+          client.updateMessage(serviceUrl, conversation.id, rtid, Json.toJson(updated)).map(_ => {})
+        }.getOrElse(Future.successful({}))
+      } else {
+        Future.successful({})
+      }
+    }
+
     val userIdForContext: String = from.id
 
   }
@@ -233,8 +275,6 @@ class MSTeamsController @Inject() (
     // respond immediately
     Ok(":+1:")
   }
-
-  import _root_.services.ms_teams.apiModels.Formatting._
   implicit lazy val actionsTriggeredInfoFormat = Json.format[MSTeamsActionsTriggeredInfo]
 
   private def maybeMessageResult(implicit request: Request[AnyContent]): Option[Result] = {

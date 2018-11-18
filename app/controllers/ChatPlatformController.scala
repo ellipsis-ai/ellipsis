@@ -49,10 +49,11 @@ trait ChatPlatformController {
     def maybeSelectedActionChoice: Option[ActionChoice]
     def updateActionsMessageFor(
                                  maybeResultText: Option[String],
-                                 shouldRemoveActions: Boolean
+                                 shouldRemoveActions: Boolean,
+                                 botProfile: BotProfileType
                                ): Future[Unit]
     def sendEphemeralMessage(message: String): Future[Unit]
-    def inputChoiceResultFor(value: String)(implicit request: Request[AnyContent]): Future[Unit]
+    def inputChoiceResultFor(value: String, maybeResultText: Option[String])(implicit request: Request[AnyContent]): Future[Unit]
 
     def isIncorrectUserTryingDataTypeChoice: Boolean
     def maybeDataTypeChoice: Option[String]
@@ -211,17 +212,18 @@ trait ChatPlatformController {
     val isIncorrectUser: Boolean
     val maybeResultText = Some(s"${info.formattedUserFor(this)} chose $choice")
     val shouldRemoveActions = true
+    val botProfile: BotProfileType
 
     def runInBackground(maybeInstantResponseTs: Future[Option[String]]) = {
       if (isConversationDone) {
-        info.updateActionsMessageFor(Some(s"This conversation is no longer active"), shouldRemoveActions)
+        info.updateActionsMessageFor(Some(s"This conversation is no longer active"), shouldRemoveActions, botProfile)
       } else if (isIncorrectUser) {
         info.maybeUserIdForDataTypeChoice.foreach { correctUserId =>
           val correctUser = s"<@${correctUserId}>"
           info.sendEphemeralMessage(s"Only $correctUser can answer this")
         }
       } else {
-        info.inputChoiceResultFor(choice)
+        info.inputChoiceResultFor(choice, maybeResultText)
       }
     }
   }
@@ -230,6 +232,7 @@ trait ChatPlatformController {
                                        choice: String,
                                        info: ActionsTriggeredInfoType,
                                        isConversationDone: Boolean,
+                                       botProfile: BotProfileType,
                                        implicit val request: Request[AnyContent]
                                      ) extends InputChoicePermission {
     val isIncorrectUser: Boolean = info.isIncorrectUserTryingDataTypeChoice
@@ -239,17 +242,18 @@ trait ChatPlatformController {
 
     def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[DataTypeChoicePermission]] = {
       info.maybeDataTypeChoice.map { choice =>
-        buildFor(choice, info)
+        buildFor(choice, info, botProfile)
       }
     }
 
-    def buildFor(choice: String, info: ActionsTriggeredInfoType)(implicit request: Request[AnyContent]): Future[DataTypeChoicePermission] = {
+    def buildFor(choice: String, info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[DataTypeChoicePermission] = {
       for {
         isConversationDone <- info.isForDataTypeChoiceForDoneConversation
       } yield DataTypeChoicePermission(
         choice,
         info,
         isConversationDone,
+        botProfile,
         request
       )
     }
@@ -260,6 +264,7 @@ trait ChatPlatformController {
                                     choice: String,
                                     info: ActionsTriggeredInfoType,
                                     isConversationDone: Boolean,
+                                    botProfile: BotProfileType,
                                     implicit val request: Request[AnyContent]
                                   ) extends InputChoicePermission {
     val isIncorrectUser: Boolean = info.isIncorrectUserTryingYesNo
@@ -269,17 +274,18 @@ trait ChatPlatformController {
 
     def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[YesNoChoicePermission]] = {
       info.maybeYesNoAnswer.map { value =>
-        buildFor(value, info)
+        buildFor(value, info, botProfile)
       }
     }
 
-    def buildFor(value: String, info: ActionsTriggeredInfoType)(implicit request: Request[AnyContent]): Future[YesNoChoicePermission] = {
+    def buildFor(value: String, info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[YesNoChoicePermission] = {
       for {
         isConversationDone <- info.isForYesNoForDoneConversation
       } yield YesNoChoicePermission(
         value,
         info,
         isConversationDone,
+        botProfile,
         request
       )
     }
