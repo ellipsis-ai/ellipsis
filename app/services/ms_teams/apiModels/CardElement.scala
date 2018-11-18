@@ -28,9 +28,3 @@ case class InputChoiceSet(
                          ) extends CardElement {
   val `type`: String = "Input.ChoiceSet"
 }
-
-case class InputText(
-                    id: String
-                    ) extends CardElement {
-  val `type`: String = "Input.Text"
-}

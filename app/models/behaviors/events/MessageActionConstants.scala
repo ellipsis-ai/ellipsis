@@ -15,7 +15,6 @@ object MessageActionConstants {
   val ACTION_CHOICES = "action_choices"
   val ACTION_CHOICE = "action_choice"
   val YES_NO_CHOICE = "yes_no_choice"
-  val TEXT_INPUT = "text_input"
   val YES = "yes"
   val NO = "no"
 
@@ -40,10 +39,6 @@ object MessageActionConstants {
 
   def yesNoCallbackIdFor(userIdForContext: String, maybeConversationId: Option[String]): String = {
     callbackIdFor(YES_NO_CHOICE, userIdForContext, maybeConversationId)
-  }
-
-  def textInputCallbackIdFor(userIdForContext: String, maybeConversationId: Option[String]): String = {
-    callbackIdFor(TEXT_INPUT, userIdForContext, maybeConversationId)
   }
 
   def continueConversationCallbackIdFor(userIdForContext: String, maybeConversationId: Option[String]): String = {

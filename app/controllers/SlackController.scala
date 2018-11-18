@@ -1007,10 +1007,6 @@ class SlackController @Inject() (
       }
     }
 
-    def maybeTextInputAnswer: Option[String] = None
-
-    def isForTextInputForDoneConversation: Future[Boolean] = Future.successful(false)
-
     val maybeUserIdForYesNoChoice: Option[String] = maybeUserIdForCallbackId(YES_NO_CHOICE, callback_id)
 
     def isIncorrectUserTryingYesNo: Boolean = {

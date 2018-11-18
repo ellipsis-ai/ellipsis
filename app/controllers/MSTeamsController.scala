@@ -128,7 +128,6 @@ class MSTeamsController @Inject() (
       }.getOrElse(Future.successful(false))
     }
     def isForYesNoForDoneConversation: Future[Boolean] = Future.successful(false)
-    def isForTextInputForDoneConversation: Future[Boolean] = Future.successful(false)
     def isIncorrectTeam(botProfile: BotProfileType): Future[Boolean] = Future.successful(false)
     def isIncorrectUserTryingDataTypeChoice: Boolean = false
     def isIncorrectUserTryingYesNo: Boolean = false
@@ -146,7 +145,6 @@ class MSTeamsController @Inject() (
     val maybeStopConversationResponse: Option[StopConversationResponse] = None
     val maybeUserIdForDataTypeChoice: Option[String] = None
     def maybeYesNoAnswer: Option[String] = maybeValueResultMatching(YES_NO_CHOICE).flatMap(_.asOpt[String])
-    def maybeTextInputAnswer: Option[String] = maybeValueResultMatching(TEXT_INPUT).flatMap(_.asOpt[String])
     def onEvent(event: Event): Future[Unit] = Future.successful({})
     def processTriggerableAndActiveActionChoice(
                                                  actionChoice: ActionChoice,

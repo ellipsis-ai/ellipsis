@@ -47,5 +47,4 @@ case class BehaviorParameterContext(
 
   def yesNoCallbackId: String = yesNoCallbackIdFor(event.eventContext.userIdForContext, maybeConversation.map(_.id))
 
-  def textInputCallbackId: String = textInputCallbackIdFor(event.eventContext.userIdForContext, maybeConversation.map(_.id))
 }

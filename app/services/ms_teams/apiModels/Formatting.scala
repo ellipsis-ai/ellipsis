@@ -49,13 +49,6 @@ object Formatting {
     ) (s => (s.id, s.value, s.choices, s.`type`))
   lazy implicit val inputChoiceSetFormat: Format[InputChoiceSet] = Format(inputChoiceSetReads, inputChoiceSetWrites)
 
-  lazy implicit val inputTextReads: Reads[InputText] = Json.reads[InputText]
-  lazy implicit val inputTextWrites: Writes[InputText] = (
-    (JsPath \ "id").write[String] and
-      (JsPath \ "type").write[String]
-    ) (i => (i.id, i.`type`))
-  lazy implicit val inputTextFormat: Format[InputText] = Format(inputTextReads, inputTextWrites)
-
   lazy implicit val textBlockReads: Reads[TextBlock] = Json.reads[TextBlock]
   lazy implicit val textBlockWrites: Writes[TextBlock] = (
     (JsPath \ "text").write[String] and
