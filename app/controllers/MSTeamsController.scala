@@ -132,12 +132,12 @@ class MSTeamsController @Inject() (
           maybeBotProfile <- maybeBotProfile
           maybeTs <- maybeBotProfile.map { botProfile =>
             sendResultWithNewEvent(
-              "Message acknowledging response to Slack action",
-              slackMessageEvent => for {
-                maybeConversation <- slackMessageEvent.maybeOngoingConversation(dataService)
+              "Message acknowledging response to MS Teams action",
+              messageEvent => for {
+                maybeConversation <- messageEvent.maybeOngoingConversation(dataService)
               } yield {
                 Some(SimpleTextResult(
-                  slackMessageEvent,
+                  messageEvent,
                   maybeConversation,
                   s"_${trimmed}_",
                   responseType = Normal,
