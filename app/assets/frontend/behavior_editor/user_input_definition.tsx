@@ -8,6 +8,7 @@ import SVGInfo from '../svg/info';
 import Input from '../models/input';
 import ParamType from '../models/param_type';
 import autobind from "../lib/autobind";
+import {SavedAnswer} from "./user_input_configuration";
 
 enum InputSaveOption {
   EACH_TIME = "each_time",
@@ -26,10 +27,7 @@ interface Props {
   onNameFocus: () => void,
   onNameBlur: () => void,
   numLinkedTriggers: number,
-  savedAnswers: {
-    myValueString: string,
-    userAnswerCount: number
-  }
+  savedAnswers: Option<SavedAnswer>,
   onToggleSavedAnswer: (inputId: string) => void,
   onConfigureType: (paramTypeId: string) => void,
 }
@@ -37,7 +35,7 @@ interface Props {
 class UserInputDefinition extends React.Component<Props> {
   nameInput: Option<FormInput>;
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     autobind(this);
   }
@@ -121,8 +119,7 @@ class UserInputDefinition extends React.Component<Props> {
   }
 
   getSavedAnswerCount(): number {
-    return this.props.savedAnswers ?
-      this.props.savedAnswers.userAnswerCount : 0;
+    return this.props.savedAnswers ? this.props.savedAnswers.userAnswerCount : 0;
   }
 
   getParamTypesOptions(): Array<SelectOption> {
