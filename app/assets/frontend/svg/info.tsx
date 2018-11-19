@@ -1,13 +1,14 @@
 import * as React from 'react';
 
-const SVGInfo = React.createClass({
-    propTypes: {
-      label: React.PropTypes.string
-    },
-    label: function() {
+interface Props {
+  label?: Option<string>
+}
+
+class SVGInfo extends React.PureComponent<Props> {
+    label() {
       return this.props.label || 'info';
-    },
-    render: function() {
+    }
+    render() {
       return (
         <svg role="img" aria-label={this.label()} height="100%" viewBox="0 0 22 24">
           <title>{this.label()}</title>
@@ -20,6 +21,6 @@ const SVGInfo = React.createClass({
         </svg>
       );
     }
-});
+}
 
 export default SVGInfo;
