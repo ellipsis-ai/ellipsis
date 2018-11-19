@@ -57,7 +57,8 @@ class MSTeamsController @Inject() (
                                           text: Option[String],
                                           value: Option[JsObject],
                                           replyToId: Option[String],
-                                          channelData: ChannelDataInfo
+                                          channelData: ChannelDataInfo,
+                                          entities: Option[JsValue]
                                          ) extends ActionsTriggeredInfo {
 
     val maybeTenantId: Option[String] = channelData.tenant.map(_.id)
@@ -90,7 +91,7 @@ class MSTeamsController @Inject() (
       if (conversation.conversationType == "personal" || permission.beQuiet) {
         "You"
       } else {
-        s"@${from.name}"
+        s"<at>${from.name}</at>"
       }
 
     }
@@ -255,8 +256,7 @@ class MSTeamsController @Inject() (
       if (shouldRemoveActions) {
         replyToId.map { rtid =>
           val client = apiService.profileClientFor(botProfile)
-          val updated = ResponseInfo(
-            "message",
+          val updated = ResponseInfo.newForMessage(
             from = recipient,
             conversation,
             recipient = from,

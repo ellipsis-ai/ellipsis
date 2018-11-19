@@ -63,6 +63,16 @@ object Formatting {
     ) (b => (b.text, b.`type`))
   lazy implicit val textBlockFormat: Format[TextBlock] = Format(textBlockReads, textBlockWrites)
 
+  lazy implicit val channelAccountFormat: Format[ChannelAccount] = Jsonx.formatCaseClass[ChannelAccount]
+
+  lazy implicit val mentionEntityReads: Reads[MentionEntity] = Json.reads[MentionEntity]
+  lazy implicit val mentionEntityWrites: Writes[MentionEntity] = (
+    (JsPath \ "mentioned").write[ChannelAccount] and
+      (JsPath \ "text").write[String] and
+      (JsPath \ "type").write[String]
+    ) (m => (m.mentioned, m.text, m.`type`))
+  lazy implicit val mentionEntityFormat: Format[MentionEntity] = Format(mentionEntityReads, mentionEntityWrites)
+
   lazy implicit val attachmentContentFormat: Format[AttachmentContent] = Jsonx.formatSealed[AttachmentContent]
   lazy implicit val cardElementFormat: Format[CardElement] = Jsonx.formatSealed[CardElement]
   lazy implicit val contentAttachmentFormat: Format[ContentAttachment] = Jsonx.formatCaseClass[ContentAttachment]
