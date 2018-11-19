@@ -100,7 +100,7 @@ class MSTeamsController @Inject() (
         _ <- (for {
           profile <- maybeProfile
         } yield {
-          updateActionsMessageFor(maybeResultText, shouldRemoveActions = true, profile)
+          deleteMessage(profile)
           eventService.onEvent(MSTeamsMessageEvent(
             MSTeamsEventContext(
               profile,
@@ -270,6 +270,13 @@ class MSTeamsController @Inject() (
       } else {
         Future.successful({})
       }
+    }
+
+    def deleteMessage(botProfile: MSTeamsBotProfile): Future[Unit] = {
+      replyToId.map { rtid =>
+        val client = apiService.profileClientFor(botProfile)
+        client.deleteMessage(serviceUrl, conversation.id, rtid).map(_ => {})
+      }.getOrElse(Future.successful({}))
     }
 
     val userIdForContext: String = from.id

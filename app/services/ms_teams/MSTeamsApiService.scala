@@ -162,15 +162,34 @@ trait MSTeamsApiClient {
     }
   }
 
+  private def messageUrlFor(serviceUrl: String, conversationId: String, activityId: String): String = {
+    s"$serviceUrl/v3/conversations/$conversationId/activities/$activityId/"
+  }
+
   def updateMessage(serviceUrl: String, conversationId: String, activityId: String, value: JsValue): Future[String] = {
-    val updateUrl = s"$serviceUrl/v3/conversations/$conversationId/activities/$activityId/"
-    Logger.info(s"MSTeamsApiClient updating message at $updateUrl with value:\n\n${Json.prettyPrint(value)}")
+    val url = messageUrlFor(serviceUrl, conversationId, activityId)
+    Logger.info(s"MSTeamsApiClient updating message at $url with value:\n\n${Json.prettyPrint(value)}")
     for {
       token <- fetchBotFrameworkToken
       result <- ws.
-        url(updateUrl).
+        url(url).
         withHttpHeaders(headersFor(token): _*).
         put(value)
+    } yield {
+      val json = responseToJson(result, Some("id"))
+      (json \ "id").as[String]
+    }
+  }
+
+  def deleteMessage(serviceUrl: String, conversationId: String, activityId: String): Future[String] = {
+    val url = messageUrlFor(serviceUrl, conversationId, activityId)
+    Logger.info(s"MSTeamsApiClient deleting message at $url")
+    for {
+      token <- fetchBotFrameworkToken
+      result <- ws.
+        url(url).
+        withHttpHeaders(headersFor(token): _*).
+        delete()
     } yield {
       val json = responseToJson(result, Some("id"))
       (json \ "id").as[String]
