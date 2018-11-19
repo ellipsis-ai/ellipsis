@@ -6,11 +6,12 @@ import javax.inject.Inject
 import json.Formatting._
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.events.ms_teams.MSTeamsMessageEvent
-import models.behaviors.{ActionChoice, BotResult}
+import models.behaviors.{ActionChoice, BotResult, SimpleTextResult}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.libs.json._
@@ -117,7 +118,39 @@ class MSTeamsController @Inject() (
         }
       } yield {}
     }
-    def instantBackgroundResponse(responseText: String, permission: ActionPermission): Future[Option[String]] = Future.successful(Some("foo"))
+    def maybeBotProfile: Future[Option[MSTeamsBotProfile]] = {
+      maybeTenantId.map { tid =>
+        dataService.msTeamsBotProfiles.find(tid)
+      }.getOrElse(Future.successful(None))
+    }
+    def instantBackgroundResponse(responseText: String, permission: ActionPermission): Future[Option[String]] = {
+      val trimmed = responseText.trim.replaceAll("(^\\u00A0|\\u00A0$)", "")
+      if (trimmed.isEmpty) {
+        Future.successful(None)
+      } else {
+        for {
+          maybeBotProfile <- maybeBotProfile
+          maybeTs <- maybeBotProfile.map { botProfile =>
+            sendResultWithNewEvent(
+              "Message acknowledging response to MS Teams action",
+              messageEvent => for {
+                maybeConversation <- messageEvent.maybeOngoingConversation(dataService)
+              } yield {
+                Some(SimpleTextResult(
+                  messageEvent,
+                  maybeConversation,
+                  s"_${trimmed}_",
+                  responseType = Normal,
+                  shouldInterrupt = false
+                ))
+              },
+              botProfile,
+              beQuiet = false
+            )
+          }.getOrElse(Future.successful(None))
+        } yield maybeTs
+      }
+    }
     def isForDataTypeChoiceForDoneConversation: Future[Boolean] = {
       maybeKeyMatching(DATA_TYPE_CHOICE).map { key =>
         maybeConversationIdForCallbackId(DATA_TYPE_CHOICE, key).map { convoId =>
