@@ -8,93 +8,106 @@ import BehaviorVersion from '../models/behavior_version';
 import Input from '../models/input';
 import ParamType from '../models/param_type';
 import Trigger from '../models/trigger';
+import autobind from "../lib/autobind";
 
-const UserInputConfiguration = React.createClass({
-    propTypes: {
-      onInputChange: React.PropTypes.func.isRequired,
-      onInputMove: React.PropTypes.func.isRequired,
-      onInputDelete: React.PropTypes.func.isRequired,
-      onInputAdd: React.PropTypes.func.isRequired,
-      onInputNameFocus: React.PropTypes.func.isRequired,
-      onInputNameBlur: React.PropTypes.func.isRequired,
-      userInputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
-      paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
-      triggers: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Trigger)).isRequired,
-      hasSharedAnswers: React.PropTypes.bool.isRequired,
-      otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-      onToggleSharedAnswer: React.PropTypes.func.isRequired,
-      savedAnswers: React.PropTypes.arrayOf(
-        React.PropTypes.shape({
-          inputId: React.PropTypes.string.isRequired,
-          userAnswerCount: React.PropTypes.number.isRequired,
-          myValueString: React.PropTypes.string
-        })
-      ).isRequired,
-      onToggleSavedAnswer: React.PropTypes.func.isRequired,
-      onConfigureType: React.PropTypes.func.isRequired,
-      onToggleInputHelp: React.PropTypes.func.isRequired,
-      helpInputVisible: React.PropTypes.bool.isRequired
-    },
+export interface SavedAnswer {
+  inputId: string,
+  userAnswerCount: number,
+  myValueString?: Option<string>
+}
 
-    componentDidUpdate: function(prevProps) {
+interface Props {
+  onInputChange: (inputIndex: number, newInput: Input) => void,
+  onInputMove: (oldIndex: number, newIndex: number) => void,
+  onInputDelete: (inputIndex: number) => void,
+  onInputAdd: (optionalNewName?: Option<string>, optionalCallback?: () => void) => void,
+  onInputNameFocus: (inputIndex: number) => void,
+  onInputNameBlur: (inputIndex: number) => void,
+  userInputs: Array<Input>,
+  paramTypes: Array<ParamType>,
+  triggers: Array<Trigger>,
+  hasSharedAnswers: boolean,
+  otherBehaviorsInGroup: Array<BehaviorVersion>,
+  onToggleSharedAnswer: () => void,
+  savedAnswers: Array<SavedAnswer>,
+  onToggleSavedAnswer: (savedAnswerId: string) => void,
+  onConfigureType: (paramTypeId: string) => void,
+  onToggleInputHelp: () => void,
+  helpInputVisible: boolean
+}
+
+class UserInputConfiguration extends React.Component<Props> {
+    swapButtons: Array<Option<Button>>;
+    inputs: Array<Option<UserInputDefinition>>;
+
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+      this.swapButtons = [];
+      this.inputs = [];
+    }
+
+    componentDidUpdate(prevProps: Props): void {
       if (this.props.userInputs.length > prevProps.userInputs.length) {
         this.focusIndex(this.props.userInputs.length - 1);
       }
-    },
+    }
 
-    swapButtons: [],
-
-    onChange: function(index, data) {
+    onChange(index: number, data: Input): void {
       this.props.onInputChange(index, data);
-    },
-    onDelete: function(index) {
+    }
+
+    onDelete(index: number): void {
       this.props.onInputDelete(index);
-    },
-    onEnterKey: function(index) {
+    }
+
+    onEnterKey(index: number): void {
       if (index + 1 < this.props.userInputs.length) {
         this.focusIndex(index + 1);
       } else if (this.props.userInputs[index].question) {
         this.addInput();
       }
-    },
+    }
 
-    onNameFocus: function(index) {
+    onNameFocus(index: number): void {
       this.props.onInputNameFocus(index);
-    },
+    }
 
-    onNameBlur: function(index) {
+    onNameBlur(index: number): void {
       this.props.onInputNameBlur(index);
-    },
+    }
 
-    addInput: function() {
+    addInput(): void {
       this.props.onInputAdd();
-    },
+    }
 
-    focusIndex: function(index) {
-      this.refs['input' + index].focus();
-    },
+    focusIndex(index: number): void {
+      const input = this.inputs[index];
+      if (input) {
+        input.focus();
+      }
+    }
 
-    isShared: function(input) {
-      const firstBehaviorWithSameInput = this.props.otherBehaviorsInGroup.find(behavior => {
-        return behavior.inputIds.indexOf(input.inputId) !== -1;
+    isShared(input: Input): boolean {
+      const firstBehaviorWithSameInput = this.props.otherBehaviorsInGroup.find((behavior) => {
+        return Boolean(input.inputId && behavior.inputIds.indexOf(input.inputId) !== -1);
       });
-      return !!firstBehaviorWithSameInput;
-    },
+      return Boolean(firstBehaviorWithSameInput);
+    }
 
-    countLinkedTriggersForInput: function(inputName, inputIndex) {
+    countLinkedTriggersForInput(inputName: string, inputIndex: number): number {
       return this.props.triggers.filter((trigger) => trigger.usesInputName(inputName) || trigger.capturesInputIndex(inputIndex)).length;
-    },
+    }
 
-    getSavedAnswersFor: function(inputId) {
-      return this.props.savedAnswers.find((answers) => answers.inputId === inputId);
-    },
+    getSavedAnswersFor(inputId: Option<string>): Option<SavedAnswer> {
+      return inputId ? this.props.savedAnswers.find((answers) => answers.inputId === inputId) : null;
+    }
 
-    renderReuseInput: function(optionalProperties) {
-      var buttonProps = Object.assign({}, optionalProperties);
+    renderReuseInput() {
       if (this.props.hasSharedAnswers) {
         return (
           <Button
-            className={"button-s " + (buttonProps.className || "")}
+            className="button-s mbs"
             onClick={this.props.onToggleSharedAnswer}
           >
             Use a saved answer from another action…
@@ -103,16 +116,17 @@ const UserInputConfiguration = React.createClass({
       } else {
         return null;
       }
-    },
+    }
 
-    moveInputDown: function(index) {
+    moveInputDown(index: number): void {
       this.props.onInputMove(index, index + 1);
-      if (this.swapButtons[index]) {
-        this.swapButtons[index].blur();
+      const button = this.swapButtons[index];
+      if (button) {
+        button.blur();
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <div>
@@ -132,7 +146,7 @@ const UserInputConfiguration = React.createClass({
                       <div key={`userInput${inputIndex}`}>
                         <UserInputDefinition
                           key={'UserInputDefinition' + inputIndex}
-                          ref={'input' + inputIndex}
+                          ref={(el) => this.inputs[inputIndex] = el}
                           input={input}
                           isShared={this.isShared(input)}
                           paramTypes={this.props.paramTypes}
@@ -142,7 +156,7 @@ const UserInputConfiguration = React.createClass({
                           onNameFocus={this.onNameFocus.bind(this, inputIndex)}
                           onNameBlur={this.onNameBlur.bind(this, inputIndex)}
                           numLinkedTriggers={this.countLinkedTriggersForInput(input.name, inputIndex)}
-                          id={inputIndex}
+                          id={`userInput${inputIndex}`}
                           savedAnswers={this.getSavedAnswersFor(input.inputId)}
                           onToggleSavedAnswer={this.props.onToggleSavedAnswer}
                           onConfigureType={this.props.onConfigureType}
@@ -166,7 +180,7 @@ const UserInputConfiguration = React.createClass({
                     <Button className="button-s mrm mbs" onClick={this.addInput}>
                       Add an input
                     </Button>
-                    {this.renderReuseInput({ className: "mbs" })}
+                    {this.renderReuseInput()}
                   </div>
                 </div>
               </div>
@@ -175,7 +189,7 @@ const UserInputConfiguration = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default UserInputConfiguration;
 
