@@ -2,11 +2,12 @@ import * as React from 'react';
 import HelpPanel from '../help/panel';
 import * as Constants from '../lib/constants';
 
-const TriggerHelp = React.createClass({
-  propTypes: {
-    onCollapseClick: React.PropTypes.func.isRequired
-  },
-  render: function() {
+interface Props {
+  onCollapseClick: () => void
+}
+
+class TriggerHelp extends React.PureComponent<Props> {
+  render() {
     return (
       <HelpPanel
         heading="Ellipsis listens for “trigger” phrases to activate skills"
@@ -37,6 +38,6 @@ const TriggerHelp = React.createClass({
       </HelpPanel>
     );
   }
-});
+}
 
 export default TriggerHelp;
