@@ -1,88 +1,103 @@
-import React from 'react';
+import * as React from 'react';
 import DeleteButton from '../shared_ui/delete_button';
 import FormInput from '../form/input';
 import Formatter from '../lib/formatter';
-import Select from '../form/select';
+import Select, {SelectOption} from '../form/select';
 import SVGTip from '../svg/tip';
 import SVGInfo from '../svg/info';
 import Input from '../models/input';
 import ParamType from '../models/param_type';
-import ifPresent from '../lib/if_present';
+import autobind from "../lib/autobind";
 
-  var EACH_TIME = "each_time";
-  var PER_TEAM = "per_team";
-  var PER_USER = "per_user";
+enum InputSaveOption {
+  EACH_TIME = "each_time",
+  PER_TEAM = "per_team",
+  PER_USER = "per_user"
+}
 
-const UserInputDefinition = React.createClass({
-  propTypes: {
-    id: React.PropTypes.oneOfType([
-      React.PropTypes.number,
-      React.PropTypes.string
-    ]).isRequired,
-    input: React.PropTypes.instanceOf(Input).isRequired,
-    isShared: React.PropTypes.bool.isRequired,
-    paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
-    onChange: React.PropTypes.func.isRequired,
-    onDelete: React.PropTypes.func.isRequired,
-    onEnterKey: React.PropTypes.func.isRequired,
-    onNameFocus: React.PropTypes.func.isRequired,
-    onNameBlur: React.PropTypes.func.isRequired,
-    numLinkedTriggers: React.PropTypes.number.isRequired,
-    savedAnswers: React.PropTypes.shape({
-      myValueString: React.PropTypes.string,
-      userAnswerCount: React.PropTypes.number.isRequired
-    }),
-    onToggleSavedAnswer: React.PropTypes.func.isRequired,
-    onConfigureType: React.PropTypes.func.isRequired
-  },
+interface Props {
+  id: string
+  input: Input,
+  isShared: boolean,
+  paramTypes: Array<ParamType>,
+  onChange: (newInput: Input) => void,
+  onDelete: () => void,
+  onEnterKey: () => void,
+  onNameFocus: () => void,
+  onNameBlur: () => void,
+  numLinkedTriggers: number,
+  savedAnswers: {
+    myValueString: string,
+    userAnswerCount: number
+  }
+  onToggleSavedAnswer: (inputId: string) => void,
+  onConfigureType: (paramTypeId: string) => void,
+}
 
-  onNameChange: function(newName) {
+class UserInputDefinition extends React.Component<Props> {
+  nameInput: Option<FormInput>;
+
+  constructor(props) {
+    super(props);
+    autobind(this);
+  }
+
+  onNameChange(newName: string): void {
     this.props.onChange(this.props.input.clone({ name: Formatter.formatNameForCode(newName) }));
-  },
+  }
 
-  onInputTypeChange: function(newTypeId) {
-    var newType = this.props.paramTypes.find(ea => ea.id === newTypeId);
+  onInputTypeChange(newTypeId: string): void {
+    const newType = this.props.paramTypes.find(ea => ea.id === newTypeId);
     this.props.onChange(this.props.input.clone({ paramType: newType }));
-  },
+  }
 
-  onQuestionChange: function(newQuestion) {
+  onQuestionChange(newQuestion: string): void {
     this.props.onChange(this.props.input.clone({ question: newQuestion }));
-  },
+  }
 
-  onSaveOptionChange: function(newOption) {
-    var changedProps = { isSavedForTeam: false, isSavedForUser: false };
-    if (newOption === PER_TEAM) {
+  onSaveOptionChange(newOption: string): void {
+    const changedProps = { isSavedForTeam: false, isSavedForUser: false };
+    if (newOption === InputSaveOption.PER_TEAM) {
       changedProps.isSavedForTeam = true;
-    } else if (newOption === PER_USER) {
+    } else if (newOption === InputSaveOption.PER_USER) {
       changedProps.isSavedForUser = true;
     }
     this.props.onChange(this.props.input.clone(changedProps));
-  },
+  }
 
-  onDeleteClick: function() {
+  onDeleteClick(): void {
     this.props.onDelete();
-  },
+  }
 
-  onConfigureType: function() {
-    this.props.onConfigureType(this.props.input.paramType.id);
-  },
+  getCurrentParamTypeId(): Option<string> {
+    return this.props.input.paramType ? this.props.input.paramType.id : null;
+  }
 
-  isConfigurable: function() {
+  onConfigureType(): void {
+    const paramTypeId = this.getCurrentParamTypeId();
+    if (paramTypeId) {
+      this.props.onConfigureType(paramTypeId);
+    }
+  }
+
+  isConfigurable(): boolean {
     const pt = this.props.input.paramType;
-    return pt.id !== pt.name;
-  },
+    return Boolean(pt && pt.id !== pt.name);
+  }
 
-  focus: function() {
-    this.refs.name.focus();
-    this.refs.name.select();
-  },
+  focus(): void {
+    if (this.nameInput) {
+      this.nameInput.focus();
+      this.nameInput.select();
+    }
+  }
 
-  keyFor: function(paramType) {
+  keyFor(paramType: ParamType): string {
     return 'param-type-' + this.props.id + '-' + paramType.id;
-  },
+  }
 
-  getInputSource: function() {
-    var message;
+  getInputSource() {
+    let message: string;
     if (this.props.numLinkedTriggers === 1) {
       message = "from 1 trigger above, or by asking a question:";
     } else if (this.props.numLinkedTriggers > 1) {
@@ -93,29 +108,37 @@ const UserInputDefinition = React.createClass({
     return (
       <span className="display-inline-block align-m type-s type-weak mrm fade-in">{message}</span>
     );
-  },
+  }
 
-  getSaveOptionValue: function() {
+  getSaveOptionValue(): InputSaveOption {
     if (this.props.input.isSavedForTeam) {
-      return PER_TEAM;
+      return InputSaveOption.PER_TEAM;
     } else if (this.props.input.isSavedForUser) {
-      return PER_USER;
+      return InputSaveOption.PER_USER;
     } else {
-      return EACH_TIME;
+      return InputSaveOption.EACH_TIME;
     }
-  },
+  }
 
-  getSavedAnswerCount: function() {
+  getSavedAnswerCount(): number {
     return this.props.savedAnswers ?
       this.props.savedAnswers.userAnswerCount : 0;
-  },
+  }
 
-  inputSavesAnswers: function() {
+  getParamTypesOptions(): Array<SelectOption> {
+    return this.props.paramTypes.map((ea) => ({
+      key: this.keyFor(ea),
+      value: ea.id || "",
+      label: ea.name
+    })).filter((ea) => Boolean(ea.value));
+  }
+
+  inputSavesAnswers(): boolean {
     return this.props.input.isSavedForTeam ||
         this.props.input.isSavedForUser;
-  },
+  }
 
-  getSavedAnswerSummary: function() {
+  getSavedAnswerSummary(): string {
     var answer = this.props.savedAnswers;
     var count = this.getSavedAnswerCount();
     var userHasAnswered = answer && answer.myValueString;
@@ -140,13 +163,16 @@ const UserInputDefinition = React.createClass({
         return "No answers saved yet";
       }
     }
-  },
+  }
 
-  onToggleSavedAnswer: function() {
-    this.props.onToggleSavedAnswer(this.props.input.inputId);
-  },
+  onToggleSavedAnswer(): void {
+    const inputId = this.props.input.inputId;
+    if (inputId) {
+      this.props.onToggleSavedAnswer(inputId);
+    }
+  }
 
-  renderSavedAnswerInfo: function() {
+  renderSavedAnswerInfo() {
     if (this.inputSavesAnswers()) {
       return (
         <div className="type-s mtxs mrm mbs">
@@ -161,10 +187,12 @@ const UserInputDefinition = React.createClass({
           </button>
         </div>
       );
+    } else {
+      return null;
     }
-  },
+  }
 
-  renderSharingInfo: function() {
+  renderSharingInfo() {
     if (this.props.isShared) {
       return (
         <div className="box-tip mtneg1 mbneg1 phs border-left border-right">
@@ -174,10 +202,13 @@ const UserInputDefinition = React.createClass({
           <span className="type-s mrm">This input is shared with other actions.</span>
         </div>
       );
+    } else {
+      return null;
     }
-  },
+  }
 
-  render: function() {
+  render() {
+    const paramTypeId = this.getCurrentParamTypeId();
     return (
       <div>
         <div className="border border-light bg-white plm pbxs">
@@ -185,7 +216,7 @@ const UserInputDefinition = React.createClass({
             <div className="column column-expand align-form-input">
               <span className="display-inline-block align-m type-s type-weak mrm">Collect</span>
               <FormInput
-                ref="name"
+                ref={(el) => this.nameInput = el}
                 className="form-input-borderless type-monospace type-s width-15 mrm"
                 placeholder="userInput"
                 value={this.props.input.name}
@@ -215,27 +246,25 @@ const UserInputDefinition = React.createClass({
           </div>
           <div className="prsymbol mts">
             <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={this.getSaveOptionValue()} onChange={this.onSaveOptionChange}>
-              <option value={EACH_TIME}>
+              <option value={InputSaveOption.EACH_TIME}>
                 Ask each time action is triggered
               </option>
-              <option value={PER_TEAM}>
+              <option value={InputSaveOption.PER_TEAM}>
                 Ask once for the team, then re-use the answer
               </option>
-              <option value={PER_USER}>
+              <option value={InputSaveOption.PER_USER}>
                 Ask once for each user, then re-use the answer
               </option>
             </Select>
             <span className="display-inline-block align-m type-s type-weak mrm mbs">and allow data type</span>
-            <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={this.props.input.paramType.id} onChange={this.onInputTypeChange}>
-              {this.props.paramTypes.map((paramType) => (
-                <option value={paramType.id} key={this.keyFor(paramType)}>
-                  {paramType.name}
-                </option>
-              ))}
-            </Select>
-            {ifPresent(this.isConfigurable(), () => (
+            {paramTypeId ? (
+              <Select className="form-select-s form-select-light align-m mrm mbs" name="paramType" value={paramTypeId} onChange={this.onInputTypeChange}>
+                {this.getParamTypesOptions().map(Select.optionFor)}
+              </Select>
+            ) : null}
+            {this.isConfigurable() ? (
               <button type="button" className="button-s button-shrink mbs" onClick={this.onConfigureType}>Edit type…</button>
-            ))}
+            ) : null}
           </div>
           {this.renderSavedAnswerInfo()}
         </div>
@@ -243,6 +272,6 @@ const UserInputDefinition = React.createClass({
       </div>
     );
   }
-});
+}
 
 export default UserInputDefinition;

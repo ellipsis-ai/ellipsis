@@ -1,5 +1,6 @@
 import * as React from 'react';
 import autobind from "../lib/autobind";
+import {OptionHTMLAttributes} from "react";
 
 interface Props {
   className?: Option<string>,
@@ -14,6 +15,12 @@ interface Props {
 
 interface State {
   focused: boolean
+}
+
+export interface SelectOption {
+  key: string
+  value: string
+  label: string
 }
 
 class Select extends React.Component<Props, State> {
@@ -113,6 +120,12 @@ class Select extends React.Component<Props, State> {
             {this.props.children}
           </select>
         </div>
+      );
+    }
+
+    static optionFor(option: SelectOption): JSX.Element {
+      return (
+        <option value={option.value} key={option.key}>{option.label}</option>
       );
     }
 }
