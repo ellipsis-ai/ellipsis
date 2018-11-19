@@ -213,7 +213,8 @@ trait ChatPlatformController {
     val choice: String
     val isConversationDone: Boolean
     val isIncorrectUser: Boolean
-    val maybeResultText = Some(s"${info.formattedUserFor(this)} chose $choice")
+    def chooseVerb: String = "chose"
+    val maybeResultText = Some(s"${info.formattedUserFor(this)} $chooseVerb $choice")
     val shouldRemoveActions = true
     val botProfile: BotProfileType
 
@@ -303,6 +304,7 @@ trait ChatPlatformController {
                                     implicit val request: Request[AnyContent]
                                   ) extends InputChoicePermission {
     val isIncorrectUser: Boolean = info.isIncorrectUserTryingYesNo
+    override def chooseVerb: String = "entered"
   }
 
   object TextInputPermission extends ActionPermissionType[TextInputPermission] {

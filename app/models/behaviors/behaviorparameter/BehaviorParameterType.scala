@@ -164,27 +164,7 @@ trait BuiltInType extends BehaviorParameterType {
   def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = DBIO.successful(prepareValue(text, context.behaviorVersion.team))
 }
 
-object TextType extends BuiltInType {
-  val name = "Text"
-
-  val outputName: String = "String"
-
-  val typescriptType: String = "string"
-
-  override val mayRequireTypedAnswer: Boolean = true
-
-  def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = DBIO.successful(true)
-
-  def prepareValue(text: String, team: Team) = JsString(text)
-  def prepareJsValue(value: JsValue, team: Team): JsValue = {
-    value match {
-      case s: JsString => s
-      case JsNull => JsNull
-      case v => JsString(v.toString)
-    }
-  }
-
-  val invalidPromptModifier: String = s"I need a valid answer. $stopInstructions"
+trait BuiltInTextualType extends BuiltInType {
 
   override def promptResultForAction(
                                       maybePreviousCollectedValue: Option[String],
@@ -215,7 +195,31 @@ object TextType extends BuiltInType {
 
 }
 
-object NumberType extends BuiltInType {
+object TextType extends BuiltInTextualType {
+  val name = "Text"
+
+  val outputName: String = "String"
+
+  val typescriptType: String = "string"
+
+  override val mayRequireTypedAnswer: Boolean = true
+
+  def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = DBIO.successful(true)
+
+  def prepareValue(text: String, team: Team) = JsString(text)
+  def prepareJsValue(value: JsValue, team: Team): JsValue = {
+    value match {
+      case s: JsString => s
+      case JsNull => JsNull
+      case v => JsString(v.toString)
+    }
+  }
+
+  val invalidPromptModifier: String = s"I need a valid answer. $stopInstructions"
+
+}
+
+object NumberType extends BuiltInTextualType {
   val name = "Number"
 
   val outputName: String = "Float"
@@ -250,7 +254,7 @@ object NumberType extends BuiltInType {
   val invalidPromptModifier: String = s"I need a number to answer this. $stopInstructions"
 }
 
-object DateTimeType extends BuiltInType {
+object DateTimeType extends BuiltInTextualType {
   val name: String = "Date & Time"
 
   val outputName: String = "String"

@@ -177,6 +177,21 @@ trait MSTeamsApiClient {
     }
   }
 
+  def deleteMessage(serviceUrl: String, conversationId: String, activityId: String): Future[String] = {
+    val updateUrl = s"$serviceUrl/v3/conversations/$conversationId/activities/$activityId/"
+    Logger.info(s"MSTeamsApiClient deleting message at $updateUrl")
+    for {
+      token <- fetchBotFrameworkToken
+      result <- ws.
+        url(updateUrl).
+        withHttpHeaders(headersFor(token): _*).
+        delete()
+    } yield {
+      val json = responseToJson(result, Some("id"))
+      (json \ "id").as[String]
+    }
+  }
+
   private def getResponseFor(endpoint: String, params: Seq[(String, String)]): Future[WSResponse] = {
     Logger.info(s"MSTeamsApiClient query $endpoint with params $params")
     for {
