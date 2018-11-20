@@ -10,6 +10,9 @@ import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
 import {OAuthApplicationRef} from '../../../../app/assets/frontend/models/oauth';
 import {SimpleTokenApiRef} from '../../../../app/assets/frontend/models/simple_token';
 
+jest.mock('../../../../app/assets/frontend/behavior_editor/data_type_editor', () => (() => (
+  <div/>
+)));
 jest.mock('../../../../app/assets/frontend/behavior_editor/code_configuration', () => (() => (
   <div/>
 )));
