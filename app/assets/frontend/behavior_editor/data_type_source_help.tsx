@@ -1,10 +1,19 @@
 import * as React from 'react';
 import * as Constants from '../lib/constants';
 import HelpPanel from '../help/panel';
+import autobind from "../lib/autobind";
 
-class DataTypeSourceHelp extends React.Component {
+interface Props {
+  onCollapseClick: () => void
+}
 
-    render() {
+class DataTypeSourceHelp extends React.PureComponent<Props> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+  }
+
+  render() {
       return (
         <HelpPanel
           heading="Data type source"
@@ -62,9 +71,5 @@ class DataTypeSourceHelp extends React.Component {
       );
     }
 }
-
-DataTypeSourceHelp.propTypes = {
-  onCollapseClick: React.PropTypes.func.isRequired
-};
 
 export default DataTypeSourceHelp;

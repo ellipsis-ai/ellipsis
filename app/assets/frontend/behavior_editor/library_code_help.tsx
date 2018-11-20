@@ -2,34 +2,47 @@ import * as React from 'react';
 import Collapsible from '../shared_ui/collapsible';
 import * as Constants from '../lib/constants';
 import HelpPanel from '../help/panel';
+import autobind from "../lib/autobind";
 
-const LibraryCodeHelp = React.createClass({
-  propTypes: {
-    onCollapseClick: React.PropTypes.func.isRequired,
-    libraryName: React.PropTypes.string
-  },
-  getInitialState: function() {
-    return {
+interface Props {
+  onCollapseClick: () => void
+  libraryName?: Option<string>
+}
+
+interface State {
+  expandedItems: Array<string>
+}
+
+class LibraryCodeHelp extends React.PureComponent<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    autobind(this);
+    this.state = {
       expandedItems: []
     };
-  },
-  getExpandedItems: function() {
+  }
+
+  getExpandedItems(): Array<string> {
     return this.state.expandedItems;
-  },
-  hasExpandedItem: function(itemName) {
+  }
+
+  hasExpandedItem(itemName: string): boolean {
     return this.getExpandedItems().includes(itemName);
-  },
-  toggleExpandedItem: function(itemName) {
+  }
+
+  toggleExpandedItem(itemName: string): void {
     const hasExpanded = this.hasExpandedItem(itemName);
     const newItems = hasExpanded ?
       this.getExpandedItems().filter((ea) => ea !== itemName) :
       this.getExpandedItems().concat(itemName);
     this.setState({ expandedItems: newItems });
-  },
-  toggleLibraryExamples: function() {
+  }
+
+  toggleLibraryExamples(): void {
     this.toggleExpandedItem('libraryExamples');
-  },
-  renderExpandLabelFor: function(labelText, itemName) {
+  }
+
+  renderExpandLabelFor(labelText: string, itemName: string) {
     return (
       <span>
         <span className="display-inline-block" style={{ width: '0.8em' }}>
@@ -38,34 +51,13 @@ const LibraryCodeHelp = React.createClass({
         <span> {labelText}</span>
       </span>
     );
-  },
-  renderForAction: function() {
-    return (
-      <div>
-        <p>
-          <span>The function will automatically receive the <code className="type-bold">ellipsis</code> </span>
-          <span>object, which contains important methods and properties, along with any inputs </span>
-          <span>you’ve defined in the action.</span>
-        </p>
+  }
 
-        <p>
-          <span>Ensure your function calls the <code className="type-bold">success</code> or </span>
-          <span><code className="type-bold">noResponse</code> response method to finish, for example:</span>
-        </p>
+  getRequireExample(): string {
+    return `require("${this.props.libraryName || "library1"}")`;
+  }
 
-        <div className="box-code-example mvl">ellipsis.success("It worked!");</div>
-
-        <div className="box-code-example mvl">ellipsis.noResponse();</div>
-      </div>
-    );
-  },
-
-  getRequireExample: function() {
-    // require.js freaks out if there's a string with a require call in it
-    return "require" + `("${this.props.libraryName || "library1"}")`;
-  },
-
-  render: function() {
+  render() {
     return (
       <HelpPanel
         heading="Library functions"
@@ -92,10 +84,10 @@ const LibraryCodeHelp = React.createClass({
           <h6>Library code</h6>
           <pre className="box-code-example mvl">{
 `return {
-  getData: function(params) {
+  getData(params) {
     return [1, 3, 5, 7, 11];
   },
-  formatText: function(text) {
+  formatText(text) {
     return "You said: " + text;
   },
   version: "1.0"
@@ -147,6 +139,6 @@ const person = new Person("Winston Zeddemore");`
       </HelpPanel>
     );
   }
-});
+}
 
 export default LibraryCodeHelp;
