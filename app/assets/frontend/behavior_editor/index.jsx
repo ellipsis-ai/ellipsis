@@ -25,7 +25,6 @@ import DropdownContainer from '../shared_ui/dropdown_container';
 import DynamicLabelButton from '../form/dynamic_label_button';
 import EnvVariableAdder from '../settings/environment_variables/adder';
 import EnvVariableSetter from '../settings/environment_variables/setter';
-import HiddenJsonInput from './hidden_json_input';
 import Input from '../models/input';
 import Formatter from '../lib/formatter';
 import ID from '../lib/id';
@@ -1869,7 +1868,7 @@ const BehaviorEditor = React.createClass({
     return (
       <div>
         <CsrfTokenHiddenInput value={this.props.csrfToken} />
-        <HiddenJsonInput value={JSON.stringify(this.getBehaviorGroup())} />
+        <input type="hidden" name="dataJson" value={JSON.stringify(this.getBehaviorGroup())} />
       </div>
     );
   },
