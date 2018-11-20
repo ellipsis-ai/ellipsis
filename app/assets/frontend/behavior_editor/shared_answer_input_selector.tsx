@@ -1,19 +1,25 @@
 import * as React from 'react';
 import Input from '../models/input';
+import autobind from "../lib/autobind";
 
-const SharedAnswerInputSelector = React.createClass({
-    propTypes: {
-      onToggle: React.PropTypes.func.isRequired,
-      onSelect: React.PropTypes.func.isRequired,
-      inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input))
-    },
+interface Props {
+  onToggle: () => void,
+  onSelect: (input: Input) => void,
+  inputs: Array<Input>
+}
 
-    onSelectInput: function(input) {
+class SharedAnswerInputSelector extends React.PureComponent<Props> {
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
+
+    onSelectInput(input: Input) {
       this.props.onSelect(input);
       this.props.onToggle();
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <div className="box-action phn">
@@ -58,6 +64,6 @@ const SharedAnswerInputSelector = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default SharedAnswerInputSelector;

@@ -1,47 +1,47 @@
 import * as React from 'react';
 import Input from '../models/input';
+import autobind from "../lib/autobind";
+import {SavedAnswer} from "./user_input_configuration";
 
-const SavedAnswerEditor = React.createClass({
-    propTypes: {
-      onToggle: React.PropTypes.func.isRequired,
-      savedAnswers: React.PropTypes.arrayOf(
-        React.PropTypes.shape({
-          inputId: React.PropTypes.string.isRequired,
-          userAnswerCount: React.PropTypes.number.isRequired,
-          myValueString: React.PropTypes.string
-        })
-      ).isRequired,
-      selectedInput: React.PropTypes.instanceOf(Input),
-      onForgetSavedAnswerForUser: React.PropTypes.func.isRequired,
-      onForgetSavedAnswersForTeam: React.PropTypes.func.isRequired
-    },
+interface Props {
+  onToggle: () => void,
+  savedAnswers: Array<SavedAnswer>
+  selectedInput: Input
+  onForgetSavedAnswerForUser: (inputId: string) => void,
+  onForgetSavedAnswersForTeam: (inputId: string) => void
+}
 
-    getSavedAnswerFor: function(input) {
+class SavedAnswerEditor extends React.Component<Props> {
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
+
+    getSavedAnswerFor(input: Input): Option<SavedAnswer> {
       return this.props.savedAnswers.find((ea) => ea.inputId === input.inputId);
-    },
+    }
 
-    otherUsersAnswersSaved: function(answer) {
-      return answer.userAnswerCount > 1 ||
-        (!answer.myValueString && answer.userAnswerCount > 0);
-    },
+    otherUsersAnswersSaved(answer: SavedAnswer): boolean {
+      return answer.userAnswerCount > 1 || (!answer.myValueString && answer.userAnswerCount > 0);
+    }
 
-    isSavedForTeam: function() {
+    isSavedForTeam(): boolean {
       return this.props.selectedInput && this.props.selectedInput.isSavedForTeam;
-    },
+    }
 
-    isSavedForUser: function() {
+    isSavedForUser(): boolean {
       return this.props.selectedInput && this.props.selectedInput.isSavedForUser;
-    },
+    }
 
-    forgetUserAnswer: function(answer) {
+    forgetUserAnswer(answer: SavedAnswer): void {
       this.props.onForgetSavedAnswerForUser(answer.inputId);
-    },
+    }
 
-    forgetTeamAnswers: function(answer) {
+    forgetTeamAnswers(answer: SavedAnswer): void {
       this.props.onForgetSavedAnswersForTeam(answer.inputId);
-    },
+    }
 
-    renderForgetUserAnswerButton: function(answer) {
+    renderForgetUserAnswerButton(answer: SavedAnswer) {
       return (
         <button type="button" className="mrs mbs"
           onClick={this.forgetUserAnswer.bind(this, answer)}
@@ -50,9 +50,9 @@ const SavedAnswerEditor = React.createClass({
           Forget your answer
         </button>
       );
-    },
+    }
 
-    renderForgetTeamAnswersButton: function(answer) {
+    renderForgetTeamAnswersButton(answer: SavedAnswer) {
       return (
         <button type="button" className="mrs mbs"
           disabled={answer.userAnswerCount === 0}
@@ -61,11 +61,10 @@ const SavedAnswerEditor = React.createClass({
           {this.otherUsersAnswersSaved(answer) ? "Forget all answers" : "Forget this answer"}
         </button>
       );
-    },
+    }
 
-    renderForgetButtons: function(answer) {
-      var includeTeamButton = this.isSavedForTeam() ||
-        this.isSavedForUser() && this.otherUsersAnswersSaved(answer);
+    renderForgetButtons(answer: Option<SavedAnswer>) {
+      const includeTeamButton = this.isSavedForTeam() || this.isSavedForUser() && answer && this.otherUsersAnswersSaved(answer);
       if (answer) {
         return (
           <span>
@@ -73,12 +72,14 @@ const SavedAnswerEditor = React.createClass({
             {includeTeamButton ? this.renderForgetTeamAnswersButton(answer) : null}
           </span>
         );
+      } else {
+        return null;
       }
-    },
+    }
 
-    render: function() {
-      var selectedInput = this.props.selectedInput;
-      var answer = selectedInput && this.getSavedAnswerFor(selectedInput);
+    render() {
+      const selectedInput = this.props.selectedInput;
+      const answer = selectedInput && this.getSavedAnswerFor(selectedInput);
       return (
         <div>
           <div className="box-action phn">
@@ -142,6 +143,6 @@ const SavedAnswerEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default SavedAnswerEditor;
