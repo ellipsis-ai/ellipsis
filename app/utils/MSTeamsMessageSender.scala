@@ -109,12 +109,11 @@ case class MSTeamsMessageSender(
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    val response = ResponseInfo(
-      "message",
+    val response = ResponseInfo.newForMessage(
       info.recipient,
       info.conversation,
       info.from,
-      unformattedText,
+      text,
       "markdown",
       info.id,
       maybeAttachments
