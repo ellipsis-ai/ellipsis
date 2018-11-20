@@ -11,7 +11,7 @@ export interface BehaviorConfigJson {
   dataTypeConfig?: Option<DataTypeConfigJson>;
 }
 
-interface BehaviorConfigInterface extends BehaviorConfigJson {
+export interface BehaviorConfigInterface extends BehaviorConfigJson {
   dataTypeConfig?: Option<DataTypeConfig>;
   responseTypeId: string;
   canBeMemoized: boolean;

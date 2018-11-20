@@ -2,14 +2,14 @@ import * as React from 'react';
 import CodeConfiguration from './code_configuration';
 import Collapsible from '../shared_ui/collapsible';
 import DataTypeDataSummary from './data_type_data_summary';
-import UserInputConfiguration from './user_input_configuration';
+import UserInputConfiguration, {SavedAnswer} from './user_input_configuration';
 import DataTypeSchemaConfig from './data_type_schema_config';
 import DataTypeSourceConfig from './data_type_source_config';
 import ID from '../lib/id';
 import {RequiredAWSConfig} from '../models/aws';
 import {RequiredOAuthApplication} from '../models/oauth';
 import SequentialName from '../lib/sequential_name';
-import BehaviorConfig from '../models/behavior_config';
+import BehaviorConfig, {BehaviorConfigInterface} from '../models/behavior_config';
 import BehaviorGroup from '../models/behavior_group';
 import BehaviorVersion from '../models/behavior_version';
 import DataTypeField from '../models/data_type_field';
@@ -20,78 +20,164 @@ import autobind from '../lib/autobind';
 import SectionHeading from "../shared_ui/section_heading";
 import LibraryVersion from "../models/library_version";
 import NodeModuleVersion from "../models/node_module_version";
+import Editable from "../models/editable";
+import {EditorCursorPosition} from "./code_editor";
+import DataTypeConfig from "../models/data_type_config";
+import Button from "../form/button";
 
-class DataTypeEditor extends React.Component {
-    constructor(props) {
+interface Props {
+  availableHeight: number
+  group: BehaviorGroup
+  behaviorVersion: BehaviorVersion
+  paramTypes: Array<ParamType>
+  builtinParamTypes: Array<ParamType>
+  inputs: Array<Input>
+  onChange: (newConfigProps: Partial<BehaviorConfigInterface>, newCode: string, optionalCallback?: () => void) => void
+  onDeleteInputs: (optionalCallback?: () => void) => void
+  onConfigureType: (paramTypeId: string) => void
+  isModified: (editable: Editable) => boolean
+
+  activePanelName: string
+  activeDropdownName: string
+  onToggleActiveDropdown: (dropdownName: string) => void
+  onToggleActivePanel: (panelName: string, beModal?: Option<boolean>, optionalCallback?: () => void) => void
+  animationIsDisabled: boolean
+
+  behaviorConfig: BehaviorConfig
+
+  systemParams: Array<string>
+  requiredAWSConfigs: Array<RequiredAWSConfig>
+  oauthApiApplications: Array<RequiredOAuthApplication>
+  libraries: Array<LibraryVersion>
+  nodeModules: Array<NodeModuleVersion>
+  envVariableNames: Array<string>
+  userInputs: Array<Input>
+
+  onCursorChange: (newPosition: EditorCursorPosition) => void
+  useLineWrapping: boolean
+  onToggleCodeEditorLineWrapping: () => void
+
+  onInputChange: (inputIndex: number, newInput: Input) => void
+  onInputMove: (oldIndex: number, newIndex: number) => void
+  onInputDelete: (inputIndex: number) => void
+  onInputAdd: (optionalName?: Option<string>, optionalCallback?: () => void) => void
+  onInputNameFocus: (inputIndex: number) => void
+  onInputNameBlur: (inputIndex: number) => void
+  hasSharedAnswers: boolean
+  otherBehaviorsInGroup: Array<BehaviorVersion>
+  onToggleSharedAnswer: () => void
+  savedAnswers: Array<SavedAnswer>
+  onToggleSavedAnswer: (savedAnswerId: string) => void
+  onToggleInputHelp: () => void
+  helpInputVisible: boolean
+}
+
+interface DataTypeEditorSettings {
+  code: string
+  fields: Array<DataTypeField>
+}
+
+interface State {
+  prevSettings: Option<DataTypeEditorSettings>
+}
+
+class DataTypeEditor extends React.Component<Props, State> {
+    schemaConfig: Option<DataTypeSchemaConfig>;
+
+    constructor(props: Props) {
       super(props);
-      this.state = {
-        dataTypeSourceChosen: !this.props.behaviorVersion.isNew
-      };
       autobind(this);
+      this.state = {
+        prevSettings: null
+      };
     }
 
-    componentWillReceiveProps(nextProps) {
-      if (nextProps.behaviorVersion.id !== this.props.behaviorVersion.id) {
-        this.setState({
-          dataTypeSourceChosen: !nextProps.behaviorVersion.isNew
-        });
-      }
+    dataTypeSourceChosen(): boolean {
+      return !this.props.behaviorVersion.hasDefaultDataTypeSettings();
     }
 
-    dataTypeSourceChosen() {
-      return this.state.dataTypeSourceChosen;
-    }
-
-    getSelectedBehavior() {
+    getSelectedBehavior(): BehaviorVersion {
       return this.props.behaviorVersion;
     }
 
-    getBehaviorGroup() {
+    getBehaviorGroup(): BehaviorGroup {
       return this.props.group;
     }
 
-    getDefaultFieldType() {
+    getDefaultFieldType(): Option<ParamType> {
       return this.props.paramTypes.find(ea => ea.id === "Text");
     }
 
-    updateDataTypeSource(usesCode) {
-      const textType = this.getDefaultFieldType();
-      const newConfig = this.getDataTypeConfig().clone({ usesCode: usesCode }).withRequiredFieldsEnsured(textType);
-      this.setDataTypeConfig(newConfig);
-      this.setState({
-        dataTypeSourceChosen: true
-      }, () => {
-        const dataType = this.props.behaviorVersion;
-        if (usesCode && !dataType.getFunctionBody()) {
-          this.props.onChangeCode(BehaviorVersion.defaultDataTypeCode());
-        }
-      });
+    getNewSettingsForSource(usesCode: boolean): DataTypeEditorSettings {
+      const prevSettings = this.state.prevSettings;
+      const fieldsToUse = prevSettings ? prevSettings.fields : [];
+      const codeToUse = prevSettings ? prevSettings.code : "";
+      if (usesCode) {
+        return {
+          code: codeToUse || BehaviorVersion.defaultDataTypeCode(),
+          fields: []
+        };
+      } else {
+        return {
+          code: "",
+          fields: fieldsToUse
+        };
+      }
     }
 
-    getDataTypeConfig() {
+    updateDataTypeSource(usesCode: boolean): void {
+      const textType = this.getDefaultFieldType();
+      const config = this.getDataTypeConfig();
+      if (textType && config) {
+        const settings = this.getNewSettingsForSource(usesCode);
+        const newConfig = config.clone({
+          usesCode: usesCode,
+          fields: settings.fields
+        }).withRequiredFieldsEnsured(textType);
+        this.props.onChange({
+          dataTypeConfig: newConfig
+        }, settings.code);
+      }
+    }
+
+    getDataTypeConfig(): Option<DataTypeConfig> {
       return this.getSelectedBehavior().getDataTypeConfig();
     }
 
-    usesCode() {
-      return this.getDataTypeConfig().usesCode;
+    usesCode(): boolean {
+      const config = this.getDataTypeConfig();
+      return Boolean(config && config.usesCode);
     }
 
-    setDataTypeConfig(newConfig, callback) {
-      this.props.onChangeConfig({
+    setDataTypeConfig(newConfig: DataTypeConfig, callback?: () => void): void {
+      this.props.onChange({
         dataTypeConfig: newConfig
-      }, callback);
+      }, this.getSelectedBehavior().getFunctionBody(), callback);
     }
 
-    getDataTypeFields() {
+    getDataTypeFields(): Array<DataTypeField> {
       return this.getSelectedBehavior().getDataTypeFields();
     }
 
-    setDataTypeFields(newFields, callback) {
-      const newConfig = this.getDataTypeConfig().clone({ fields: newFields });
-      this.setDataTypeConfig(newConfig, callback);
+    onChangeCode(newCode: string): void {
+      this.props.onChange({}, newCode);
     }
 
-    addDataTypeField(field) {
+    onChangeCanBeMemoized(canBeMemoized: boolean) {
+      this.props.onChange({
+        canBeMemoized: canBeMemoized
+      }, this.getSelectedBehavior().getFunctionBody());
+    }
+
+    setDataTypeFields(newFields: Array<DataTypeField>, callback?: () => void): void {
+      const config = this.getDataTypeConfig();
+      const newConfig = config ? config.clone({ fields: newFields }) : null;
+      if (newConfig) {
+        this.setDataTypeConfig(newConfig, callback);
+      }
+    }
+
+    addDataTypeField(field: DataTypeField): void {
       const newFields = this.getDataTypeFields().concat([field]);
       this.setDataTypeFields(newFields, () => {
         if (this.schemaConfig) {
@@ -100,57 +186,67 @@ class DataTypeEditor extends React.Component {
       });
     }
 
-    focusOnFirstBlankField() {
+    focusOnFirstBlankField(): void {
       if (this.schemaConfig) {
         this.schemaConfig.focusOnFirstBlankField();
       }
     }
 
-    focusOnDuplicateField() {
+    focusOnDuplicateField(): void {
       if (this.schemaConfig) {
         this.schemaConfig.focusOnFirstDuplicateField();
       }
     }
 
-    updateDataTypeFieldAtIndexWith(index, newField) {
+    updateDataTypeFieldAtIndexWith(index: number, newField: DataTypeField): void {
       var fields = this.getDataTypeFields();
       var newFields = ImmutableObjectUtils.arrayWithNewElementAtIndex(fields, newField, index);
 
       this.setDataTypeFields(newFields);
     }
 
-    deleteDataTypeFieldAtIndex(index) {
+    deleteDataTypeFieldAtIndex(index: number): void {
       this.setDataTypeFields(ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getDataTypeFields(), index));
     }
 
-    addNewDataTypeField() {
+    addNewDataTypeField(): void {
       const newName = SequentialName.nextFor(this.getDataTypeFields().slice(1), (ea) => ea.name, "field");
-      this.addDataTypeField(DataTypeField.fromProps({
-        fieldId: ID.next(),
-        name: newName,
-        fieldType: this.getDefaultFieldType()
-      }));
+      const defaultType = this.getDefaultFieldType();
+      if (defaultType) {
+        this.addDataTypeField(DataTypeField.fromProps({
+          fieldId: ID.next(),
+          name: newName,
+          fieldType: defaultType
+        }));
+      }
     }
 
-    isModified() {
+    isModified(): boolean {
       return this.props.isModified(this.props.behaviorVersion);
     }
 
-    isValidForDataStorage() {
+    isValidForDataStorage(): boolean {
       return this.getBehaviorGroup().isValidForDataStorage();
     }
 
-    changeSource() {
+    resetSource(): void {
       this.setState({
-        dataTypeSourceChosen: false
+        prevSettings: {
+          code: this.getSelectedBehavior().getFunctionBody(),
+          fields: this.getDataTypeFields()
+        }
+      }, () => {
+        this.props.onChange({
+          dataTypeConfig: DataTypeConfig.defaultConfig()
+        }, "");
       });
     }
 
-    addDataStorageItems() {
+    addDataStorageItems(): void {
       this.props.onToggleActivePanel('addDataStorageItems', true);
     }
 
-    browseDataStorageItems() {
+    browseDataStorageItems(): void {
       this.props.onToggleActivePanel('browseDataStorage', true);
     }
 
@@ -178,14 +274,12 @@ class DataTypeEditor extends React.Component {
             nodeModules={this.props.nodeModules}
 
             functionBody={this.getSelectedBehavior().getFunctionBody()}
-            onChangeFunctionBody={this.props.onChangeCode}
+            onChangeFunctionBody={this.onChangeCode}
             onCursorChange={this.props.onCursorChange}
             useLineWrapping={this.props.useLineWrapping}
             onToggleCodeEditorLineWrapping={this.props.onToggleCodeEditorLineWrapping}
-            canDeleteFunctionBody={false}
-            onDeleteFunctionBody={() => null}
 
-            onChangeCanBeMemoized={this.props.onChangeCanBeMemoized}
+            onChangeCanBeMemoized={this.onChangeCanBeMemoized}
             isMemoizationEnabled={true}
 
             envVariableNames={this.props.envVariableNames}
@@ -214,7 +308,7 @@ class DataTypeEditor extends React.Component {
                   <span>Data source: </span>
                   <span className="type-regular">{this.usesCode() ? "Returned by code" : "Stored on Ellipsis"}</span>
                 </span>
-                <button type="button" className="button-s button-shrink align-m" onClick={this.changeSource}>Modify</button>
+                <Button className="button-s button-shrink align-m" onClick={this.resetSource}>Modify</Button>
               </SectionHeading>
 
               {this.usesCode() ? null : (
@@ -270,68 +364,7 @@ class DataTypeEditor extends React.Component {
         </div>
       );
     }
-  }
-
-  DataTypeEditor.propTypes = {
-    availableHeight: React.PropTypes.number.isRequired,
-    group: React.PropTypes.instanceOf(BehaviorGroup).isRequired,
-    behaviorVersion: React.PropTypes.instanceOf(BehaviorVersion).isRequired,
-    paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
-    builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
-    inputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
-    onChangeConfig: React.PropTypes.func.isRequired,
-    onChangeCode: React.PropTypes.func.isRequired,
-    onChangeCanBeMemoized: React.PropTypes.func.isRequired,
-    onAddNewInput: React.PropTypes.func.isRequired,
-    onDeleteInputs: React.PropTypes.func.isRequired,
-    onConfigureType: React.PropTypes.func.isRequired,
-    isModified: React.PropTypes.func.isRequired,
-
-    activePanelName: React.PropTypes.string,
-    activeDropdownName: React.PropTypes.string,
-    onToggleActiveDropdown: React.PropTypes.func.isRequired,
-    onToggleActivePanel: React.PropTypes.func.isRequired,
-    animationIsDisabled: React.PropTypes.bool,
-
-    behaviorConfig: React.PropTypes.instanceOf(BehaviorConfig).isRequired,
-
-    systemParams: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-
-    requiredAWSConfigs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredAWSConfig)).isRequired,
-
-    oauthApiApplications: React.PropTypes.arrayOf(React.PropTypes.instanceOf(RequiredOAuthApplication)).isRequired,
-
-    libraries: React.PropTypes.arrayOf(React.PropTypes.instanceOf(LibraryVersion)).isRequired,
-    nodeModules: React.PropTypes.arrayOf(React.PropTypes.instanceOf(NodeModuleVersion)).isRequired,
-
-    onCursorChange: React.PropTypes.func.isRequired,
-    useLineWrapping: React.PropTypes.bool.isRequired,
-    onToggleCodeEditorLineWrapping: React.PropTypes.func.isRequired,
-
-    envVariableNames: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-
-    onInputChange: React.PropTypes.func.isRequired,
-    onInputMove: React.PropTypes.func.isRequired,
-    onInputDelete: React.PropTypes.func.isRequired,
-    onInputAdd: React.PropTypes.func.isRequired,
-    onInputNameFocus: React.PropTypes.func.isRequired,
-    onInputNameBlur: React.PropTypes.func.isRequired,
-    userInputs: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Input)).isRequired,
-    hasSharedAnswers: React.PropTypes.bool.isRequired,
-    otherBehaviorsInGroup: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorVersion)).isRequired,
-    onToggleSharedAnswer: React.PropTypes.func.isRequired,
-    savedAnswers: React.PropTypes.arrayOf(
-      React.PropTypes.shape({
-        inputId: React.PropTypes.string.isRequired,
-        userAnswerCount: React.PropTypes.number.isRequired,
-        myValueString: React.PropTypes.string
-      })
-    ).isRequired,
-    onToggleSavedAnswer: React.PropTypes.func.isRequired,
-    onToggleInputHelp: React.PropTypes.func.isRequired,
-    helpInputVisible: React.PropTypes.bool.isRequired
-
-};
+}
 
 export default DataTypeEditor;
 

@@ -1,53 +1,68 @@
 import * as React from 'react';
 import SectionHeading from '../shared_ui/section_heading';
 import DataTypeFieldDefinition from './data_type_field_definition';
-import Field from '../models/data_type_field';
 import ParamType from '../models/param_type';
 import autobind from '../lib/autobind';
+import DataTypeField from "../models/data_type_field";
+import Button from "../form/button";
 
-class DataTypeSchemaConfig extends React.Component {
-    constructor(props) {
+interface Props {
+  onChange: (fieldIndex: number, newField: DataTypeField) => void
+  onDelete: (fieldIndex: number) => void
+  onAdd: (callback: () => void) => void
+  behaviorVersionId: Option<string>
+  fields: Array<DataTypeField>
+  paramTypes: Array<ParamType>
+  animationDisabled?: Option<boolean>
+  onConfigureType: (fieldTypeId: string) => void
+}
+
+class DataTypeSchemaConfig extends React.Component<Props> {
+    fieldComponents: Array<Option<DataTypeFieldDefinition>>;
+
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.fieldComponents = [];
     }
 
-    onChange(index, data) {
+    onChange(index: number, data: DataTypeField): void {
       this.props.onChange(index, data);
     }
 
-    onDelete(index) {
+    onDelete(index: number): void {
       this.props.onDelete(index);
     }
 
-    addField() {
+    addField(): void {
       this.props.onAdd(() => this.focusOnLastField());
     }
 
-    focusOnLastField() {
+    focusOnLastField(): void {
       const lastFieldIndex = this.props.fields.length - 1;
       if (lastFieldIndex >= 0) {
         this.focusIndex(lastFieldIndex);
       }
     }
 
-    focusOnFirstBlankField() {
+    focusOnFirstBlankField(): void {
       const index = this.props.fields.findIndex((ea) => !ea.name);
       if (index >= 0) {
         this.focusIndex(index);
       }
     }
 
-    focusOnFirstDuplicateField() {
-      const dupeIndex = this.props.fields.findIndex((current, index) => current.name && this.props.fields.slice(0, index).some((previous) => previous.name === current.name));
+    focusOnFirstDuplicateField(): void {
+      const dupeIndex = this.props.fields.findIndex((current, index) => Boolean(current.name) && this.props.fields.slice(0, index).some((previous) => previous.name === current.name));
       if (dupeIndex >= 0) {
         this.focusIndex(dupeIndex);
       }
     }
 
-    focusIndex(index) {
-      if (this.fieldComponents[index]) {
-        this.fieldComponents[index].focus();
+    focusIndex(index: number): void {
+      const field = this.fieldComponents[index];
+      if (field) {
+        field.focus();
       }
     }
 
@@ -69,7 +84,7 @@ class DataTypeSchemaConfig extends React.Component {
                         paramTypes={this.props.paramTypes}
                         onChange={this.onChange.bind(this, index)}
                         onDelete={this.onDelete.bind(this, index)}
-                        id={index}
+                        id={`dataTypeFieldDefinition${index}`}
                         onConfigureType={this.props.onConfigureType}
                         behaviorVersionId={this.props.behaviorVersionId}
                       />
@@ -77,9 +92,9 @@ class DataTypeSchemaConfig extends React.Component {
                   ))}
                 </div>
                 <div>
-                  <button type="button" className="button-s mrm mbs" onClick={this.addField}>
+                  <Button className="button-s mrm mbs" onClick={this.addField}>
                     Add another field
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -89,16 +104,5 @@ class DataTypeSchemaConfig extends React.Component {
       );
     }
 }
-
-DataTypeSchemaConfig.propTypes = {
-  onChange: React.PropTypes.func.isRequired,
-  onDelete: React.PropTypes.func.isRequired,
-  onAdd: React.PropTypes.func.isRequired,
-  behaviorVersionId: React.PropTypes.string.isRequired,
-  fields: React.PropTypes.arrayOf(React.PropTypes.instanceOf(Field)).isRequired,
-  paramTypes: React.PropTypes.arrayOf(React.PropTypes.instanceOf(ParamType)).isRequired,
-  animationDisabled: React.PropTypes.bool,
-  onConfigureType: React.PropTypes.func.isRequired
-};
 
 export default DataTypeSchemaConfig;

@@ -189,6 +189,10 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return !this.isDataType() || Boolean(config && config.usesCode);
     }
 
+    hasDefaultDataTypeSettings(): boolean {
+      return this.isDataType() && this.usesCode() && !this.functionBody;
+    }
+
     getBehaviorVersionTypeName(): string {
       if (this.isDataType()) {
         return "data type";
@@ -406,10 +410,10 @@ ellipsis.success(\`Hello, \${name}.\`);
       return props;
     }
 
-    static defaultDataTypeCode(usesSearch): string {
+    static defaultDataTypeCode(): string {
       return (
 `// Write a Node.js (${NODE_JS_VERSION}) function that calls ellipsis.success() with an array of items.
-// ${usesSearch ? "Use searchQuery to filter on the user’s input." : ""}
+//
 // Each item should have a "label" and "id" property.
 //
 // Example:

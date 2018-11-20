@@ -1232,6 +1232,13 @@ const BehaviorEditor = React.createClass({
     this.setConfigProperty('canBeMemoized', bool);
   },
 
+  updateDataType: function(newConfig, newCode, callback) {
+    this.setEditableProps({
+      functionBody: newCode,
+      config: this.getBehaviorConfig().clone(newConfig)
+    }, callback);
+  },
+
   addEnvVar: function(envVar) {
     var newEnvVars = this.getEnvVariables().concat(envVar);
     this.updateEnvVariables(newEnvVars, {
@@ -2598,10 +2605,7 @@ const BehaviorEditor = React.createClass({
           paramTypes={this.getParamTypes()}
           builtinParamTypes={this.props.builtinParamTypes}
           inputs={this.getInputs()}
-          onChangeConfig={this.setConfigProps}
-          onChangeCode={this.updateCode}
-          onChangeCanBeMemoized={this.onChangeCanBeMemoized}
-          onAddNewInput={this.addNewInput}
+          onChange={this.updateDataType}
           onDeleteInputs={this.deleteAllInputs}
           onConfigureType={this.onConfigureType}
           isModified={this.editableIsModified}

@@ -203,8 +203,8 @@ declare namespace ellipsis {
   function require(moduleName: string): any
 
   /**
-   * End the action successfully and deliver \`successResult\` to the response template.
-   * @param successResult - Any value that can be processed by the template.
+   * End the action successfully and deliver \`successResult\`.
+   * @param successResult - The output, either processed by the template for actions, or presented as choices for data types
    * @param options - Attach files to the result or set actions to run next, if any
    */    
   function success(successResult: any, options?: {

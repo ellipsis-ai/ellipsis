@@ -1,12 +1,25 @@
 import * as React from 'react';
 import Button from '../form/button';
+import autobind from "../lib/autobind";
 
-class DataTypeDataSummary extends React.Component {
-    isInvalid() {
+interface Props {
+  isModified: boolean,
+  isValid: boolean,
+  onAddItems: () => void,
+  onBrowse: () => void
+}
+
+class DataTypeDataSummary extends React.PureComponent<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    isInvalid(): boolean {
       return this.props.isModified || !this.props.isValid;
     }
 
-    getErrorText() {
+    getErrorText(): Option<string> {
       if (this.props.isModified && !this.props.isValid) {
         return "Save changes and correct errors to add data";
       } else if (this.props.isModified) {
@@ -51,12 +64,5 @@ class DataTypeDataSummary extends React.Component {
       );
     }
 }
-
-DataTypeDataSummary.propTypes = {
-    isModified: React.PropTypes.bool.isRequired,
-    isValid: React.PropTypes.bool.isRequired,
-    onAddItems: React.PropTypes.func.isRequired,
-    onBrowse: React.PropTypes.func.isRequired
-};
 
 export default DataTypeDataSummary;
