@@ -44,6 +44,8 @@ sealed trait EventContext {
   val userIdForContext: String
   val teamIdForContext: String
 
+  def shouldForceRequireMention: Boolean = false
+
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]]
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
@@ -407,12 +409,14 @@ case class MSTeamsEventContext(
     info.conversation.conversationType == "personal"
   }
   val isPublicChannel: Boolean = {
-    info.conversation.conversationType == "team"
+    info.conversation.conversationType == "channel"
   }
   val channel: String = info.conversation.id
   val maybeChannel: Option[String] = Some(channel)
 
   val fallbackBotPrefix: String = "EllipsisAi"
+
+  override def shouldForceRequireMention: Boolean = isPublicChannel
 
   def maybeBotUserIdForContext: Option[String] = Some(botUserIdForContext)
 

@@ -16,7 +16,7 @@ trait HelpResult {
   def description: String
 
   private def triggerStringFor(trigger: BehaviorTriggerData): String = {
-    val prefix = if (trigger.requiresMention)
+    val prefix = if (trigger.requiresMention || event.eventContext.shouldForceRequireMention)
       botPrefix
     else
       ""
