@@ -20,6 +20,7 @@ import play.api.Logger
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
 import sangria.schema.Schema
+import services.ms_teams.apiModels.Application
 import services.slack.SlackEventService
 import services.slack.apiModels.{SlackUser, SlackUserProfile}
 
@@ -69,6 +70,7 @@ class CacheServiceImpl @Inject() (
   }
 
   val slackApiCallExpiry: Duration = 10.seconds
+  val msTeamsApiCallExpiry: Duration = 10.seconds
   val defaultStorageSchemaExpiry: Duration = 10.seconds
   val dataTypeBotResultsExpiry: Duration = 24.hours
 
@@ -239,6 +241,12 @@ class CacheServiceImpl @Inject() (
         }
       }
     }
+  }
+
+  private val msTeamsApplicationDataCache: Cache[String, Option[Application]] = LfuCache(cacheSettingsWithTimeToLive(msTeamsApiCallExpiry))
+
+  def getMSTeamsApplicationData(teamIdForContext: String, dataFn: String => Future[Option[Application]]): Future[Option[Application]] = {
+    msTeamsApplicationDataCache.getOrLoad(teamIdForContext, dataFn)
   }
 
   private def groupVersionDataKey(versionId: String): String = {

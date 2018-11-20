@@ -9,6 +9,7 @@ import play.api.Logger
 import play.api.i18n.MessagesApi
 import services.DataService
 import services.caching.CacheService
+import services.ms_teams.apiModels.Application
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,5 +43,9 @@ class MSTeamsEventServiceImpl @Inject()(
   }
 
   def clientFor(botProfile: MSTeamsBotProfile): MSTeamsApiClient = apiService.profileClientFor(botProfile)
+
+  def maybeApplicationDataFor(botProfile: MSTeamsBotProfile): Future[Option[Application]] = {
+    cacheService.getMSTeamsApplicationData(botProfile.teamIdForContext, _ => clientFor(botProfile).getApplicationInfo)
+  }
 
 }

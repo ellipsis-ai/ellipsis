@@ -9,6 +9,7 @@ import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.slack.SlackMessageEvent
 import models.behaviors.events.{Event, MessageUserData}
 import sangria.schema.Schema
+import services.ms_teams.apiModels.Application
 import services.slack.apiModels.SlackUser
 
 import scala.concurrent.Future
@@ -57,6 +58,8 @@ trait CacheService {
   def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Unit
 
   def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Option[SlackUser]
+
+  def getMSTeamsApplicationData(teamIdForContext: String, dataFn: String => Future[Option[Application]]): Future[Option[Application]]
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
 

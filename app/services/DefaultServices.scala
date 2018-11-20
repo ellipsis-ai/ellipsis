@@ -8,7 +8,7 @@ import models.behaviors.events.EventHandler
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services.caching.CacheService
-import services.ms_teams.MSTeamsApiService
+import services.ms_teams.{MSTeamsApiService, MSTeamsEventService}
 import services.slack.{SlackApiService, SlackEventService}
 import utils.SlackFileMap
 
@@ -25,6 +25,7 @@ class DefaultServices @Inject() (
                                   slackFileMapProvider: Provider[SlackFileMap],
                                   slackApiServiceProvider: Provider[SlackApiService],
                                   msTeamsApiServiceProvider: Provider[MSTeamsApiService],
+                                  msTeamsEventServiceProvider: Provider[MSTeamsEventService],
                                   eventHandlerProvider: Provider[EventHandler],
                                   val actorSystem: ActorSystem
                           ) {
@@ -40,5 +41,6 @@ class DefaultServices @Inject() (
   def slackFileMap: SlackFileMap = slackFileMapProvider.get
   def slackApiService: SlackApiService = slackApiServiceProvider.get
   def msTeamsApiService: MSTeamsApiService = msTeamsApiServiceProvider.get
+  def msTeamsEventService: MSTeamsEventService = msTeamsEventServiceProvider.get
   def eventHandler: EventHandler = eventHandlerProvider.get
 }

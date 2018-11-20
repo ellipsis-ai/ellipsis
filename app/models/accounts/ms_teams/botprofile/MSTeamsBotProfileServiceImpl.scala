@@ -9,11 +9,13 @@ import models.accounts.registration.RegistrationService
 import models.behaviors.events.MSTeamsEventContext
 import models.behaviors.{BotResult, BotResultService}
 import models.behaviors.events.ms_teams.MSTeamsMessageEvent
+import play.api.Logger
 import play.api.libs.ws.WSClient
 import services.DataService
 import services.caching.CacheService
-import services.ms_teams.MSTeamsApiService
+import services.ms_teams.{MSTeamsApiService, MSTeamsEventService}
 import services.ms_teams.apiModels.ActivityInfo
+import services.slack.InvalidResponseException
 import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,6 +38,7 @@ class MSTeamsBotProfileServiceImpl @Inject() (
                                              cacheServiceProvider: Provider[CacheService],
                                              wsProvider: Provider[WSClient],
                                              apiServiceProvider: Provider[MSTeamsApiService],
+                                             eventServiceProvider: Provider[MSTeamsEventService],
                                              implicit val actorSystem: ActorSystem,
                                              implicit val ec: ExecutionContext
                                            ) extends MSTeamsBotProfileService {
@@ -44,6 +47,7 @@ class MSTeamsBotProfileServiceImpl @Inject() (
   def botResultService = botResultServiceProvider.get
   def registrationService = registrationServiceProvider.get
   def cacheService = cacheServiceProvider.get
+  def eventService = eventServiceProvider.get
 
   val all = TableQuery[MSTeamsBotProfileTable]
 
@@ -122,6 +126,26 @@ class MSTeamsBotProfileServiceImpl @Inject() (
       beQuiet
     )
     sendResult(getEventualMaybeResult(event))
+  }
+
+  def maybeNameFor(botProfile: MSTeamsBotProfile): Future[Option[String]] = {
+    val teamId = botProfile.teamId
+    val botDebugInfo = s"MS Teams bot for team ID ${botProfile.teamIdForContext} for Ellipsis team ID ${teamId}"
+    eventService.maybeApplicationDataFor(botProfile).map { maybeAppData =>
+      maybeAppData.map { appData =>
+        val name = appData.displayName
+        cacheService.cacheBotName(name, teamId)
+        name
+      }.orElse {
+        Logger.error(s"No bot user data returned from MS Teams API for ${botDebugInfo}; using fallback cache")
+        cacheService.getBotName(teamId)
+      }
+    }.recover {
+      case e: InvalidResponseException => {
+        Logger.warn(s"Couldn’t retrieve bot user data from MS Teams API for ${botDebugInfo} because of an invalid/error response; using fallback cache", e)
+        cacheService.getBotName(teamId)
+      }
+    }
   }
 
 }

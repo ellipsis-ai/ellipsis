@@ -412,6 +412,8 @@ case class MSTeamsEventContext(
   val channel: String = info.conversation.id
   val maybeChannel: Option[String] = Some(channel)
 
+  val fallbackBotPrefix: String = "EllipsisAi"
+
   def maybeBotUserIdForContext: Option[String] = Some(botUserIdForContext)
 
   def maybeUserIdForContext: Option[String] = Some(userIdForContext)
@@ -425,7 +427,9 @@ case class MSTeamsEventContext(
   def messageRecipientPrefix(isUninterruptedConversation: Boolean): String = ""
 
   def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    Future.successful("Ellipsis")
+    services.dataService.msTeamsBotProfiles.maybeNameFor(profile).map { maybeName =>
+      maybeName.getOrElse(fallbackBotPrefix)
+    }
   }
 
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
