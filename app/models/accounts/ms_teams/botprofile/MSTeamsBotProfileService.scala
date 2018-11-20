@@ -25,4 +25,5 @@ trait MSTeamsBotProfileService {
                               beQuiet: Boolean
                             ): Future[Option[String]]
 
+  def maybeNameFor(botProfile: MSTeamsBotProfile): Future[Option[String]]
 }

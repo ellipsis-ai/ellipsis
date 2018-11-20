@@ -80,4 +80,6 @@ object Formatting {
   lazy implicit val linkAttachmentFormat: Format[LinkAttachment] = Jsonx.formatCaseClass[LinkAttachment]
   lazy implicit val attachmentFormat: Format[Attachment] = Jsonx.formatSealed[Attachment]
 
+  lazy implicit val applicationFormat: Format[Application] = Json.format[Application]
+
 }

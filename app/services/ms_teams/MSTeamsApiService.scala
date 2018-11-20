@@ -224,6 +224,26 @@ trait MSTeamsApiClient {
       }
   }
 
+  def getApplicationInfo: Future[Option[Application]] = {
+    val params = Seq(
+      "$filter" -> s"appId eq '$clientId'"
+    )
+    getResponseFor(s"applications", params).
+      map(r => extract[Seq[Application]](r).headOption).
+      recover {
+        case MSTeamsApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve application info: $err
+               |
+               |Application ID: $clientId
+               |Tenant ID: ${tenantId}
+             """.stripMargin)
+          None
+        }
+      }
+  }
+
   val userIdForContext = services.configuration.get[String]("silhouette.ms_teams.clientID")
 
   def botDMDeepLink: String = s"https://teams.microsoft.com/l/chat/0/0?users=28:${userIdForContext}"
