@@ -9,7 +9,7 @@ import ID from '../lib/id';
 import {RequiredAWSConfig} from '../models/aws';
 import {RequiredOAuthApplication} from '../models/oauth';
 import SequentialName from '../lib/sequential_name';
-import BehaviorConfig, {BehaviorConfigInterface} from '../models/behavior_config';
+import {BehaviorConfigInterface} from '../models/behavior_config';
 import BehaviorGroup from '../models/behavior_group';
 import BehaviorVersion from '../models/behavior_version';
 import DataTypeField from '../models/data_type_field';
@@ -32,8 +32,7 @@ interface Props {
   paramTypes: Array<ParamType>
   builtinParamTypes: Array<ParamType>
   inputs: Array<Input>
-  onChange: (newConfigProps: Partial<BehaviorConfigInterface>, newCode: string, optionalCallback?: () => void) => void
-  onDeleteInputs: (optionalCallback?: () => void) => void
+  onChange: (newConfigProps: Option<Partial<BehaviorConfigInterface>>, newCode: Option<string>, optionalCallback?: () => void) => void
   onConfigureType: (paramTypeId: string) => void
   isModified: (editable: Editable) => boolean
 
@@ -42,8 +41,6 @@ interface Props {
   onToggleActiveDropdown: (dropdownName: string) => void
   onToggleActivePanel: (panelName: string, beModal?: Option<boolean>, optionalCallback?: () => void) => void
   animationIsDisabled: boolean
-
-  behaviorConfig: BehaviorConfig
 
   systemParams: Array<string>
   requiredAWSConfigs: Array<RequiredAWSConfig>
@@ -134,9 +131,7 @@ class DataTypeEditor extends React.Component<Props, State> {
           usesCode: usesCode,
           fields: settings.fields
         }).withRequiredFieldsEnsured(textType);
-        this.props.onChange({
-          dataTypeConfig: newConfig
-        }, settings.code);
+        this.props.onChange({ dataTypeConfig: newConfig }, settings.code);
       }
     }
 
@@ -149,31 +144,23 @@ class DataTypeEditor extends React.Component<Props, State> {
       return Boolean(config && config.usesCode);
     }
 
-    setDataTypeConfig(newConfig: DataTypeConfig, callback?: () => void): void {
-      this.props.onChange({
-        dataTypeConfig: newConfig
-      }, this.getSelectedBehavior().getFunctionBody(), callback);
-    }
-
     getDataTypeFields(): Array<DataTypeField> {
       return this.getSelectedBehavior().getDataTypeFields();
     }
 
     onChangeCode(newCode: string): void {
-      this.props.onChange({}, newCode);
+      this.props.onChange(null, newCode);
     }
 
     onChangeCanBeMemoized(canBeMemoized: boolean) {
-      this.props.onChange({
-        canBeMemoized: canBeMemoized
-      }, this.getSelectedBehavior().getFunctionBody());
+      this.props.onChange({ canBeMemoized: canBeMemoized }, null);
     }
 
     setDataTypeFields(newFields: Array<DataTypeField>, callback?: () => void): void {
       const config = this.getDataTypeConfig();
       const newConfig = config ? config.clone({ fields: newFields }) : null;
       if (newConfig) {
-        this.setDataTypeConfig(newConfig, callback);
+        this.props.onChange({ dataTypeConfig: newConfig }, null, callback);
       }
     }
 
@@ -236,9 +223,7 @@ class DataTypeEditor extends React.Component<Props, State> {
           fields: this.getDataTypeFields()
         }
       }, () => {
-        this.props.onChange({
-          dataTypeConfig: DataTypeConfig.defaultConfig()
-        }, "");
+        this.props.onChange({ dataTypeConfig: DataTypeConfig.defaultConfig() }, "");
       });
     }
 
@@ -264,7 +249,7 @@ class DataTypeEditor extends React.Component<Props, State> {
             onToggleActivePanel={this.props.onToggleActivePanel}
             animationIsDisabled={this.props.animationIsDisabled}
 
-            behaviorConfig={this.props.behaviorConfig}
+            behaviorConfig={this.getSelectedBehavior().config}
 
             inputs={this.props.inputs}
             systemParams={this.props.systemParams}

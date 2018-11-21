@@ -1232,11 +1232,11 @@ const BehaviorEditor = React.createClass({
     this.setConfigProperty('canBeMemoized', bool);
   },
 
-  updateDataType: function(newConfig, newCode, callback) {
-    this.setEditableProps({
-      functionBody: newCode,
-      config: this.getBehaviorConfig().clone(newConfig)
-    }, callback);
+  updateDataType: function(optionalNewConfig, optionalNewCode, optionalCallback) {
+    const withConfig = optionalNewConfig ? { config: this.getBehaviorConfig().clone(optionalNewConfig) } : null;
+    const withCode = typeof optionalNewCode === "string" ? { functionBody: optionalNewCode } : null;
+    const props = Object.assign({}, withConfig, withCode);
+    this.setEditableProps(props, optionalCallback);
   },
 
   addEnvVar: function(envVar) {
@@ -2606,7 +2606,6 @@ const BehaviorEditor = React.createClass({
           builtinParamTypes={this.props.builtinParamTypes}
           inputs={this.getInputs()}
           onChange={this.updateDataType}
-          onDeleteInputs={this.deleteAllInputs}
           onConfigureType={this.onConfigureType}
           isModified={this.editableIsModified}
 
@@ -2615,8 +2614,6 @@ const BehaviorEditor = React.createClass({
           onToggleActiveDropdown={this.toggleActiveDropdown}
           onToggleActivePanel={this.toggleActivePanel}
           animationIsDisabled={this.animationIsDisabled()}
-
-          behaviorConfig={this.getBehaviorConfig()}
 
           systemParams={this.getSystemParams()}
           requiredAWSConfigs={this.getRequiredAWSConfigs()}
