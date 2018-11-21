@@ -1,31 +1,46 @@
 import * as React from 'react';
-import FormInput from '../form/input';
+import FormInput, {FocusableTextInputInterface} from '../form/input';
 import ParamType from '../models/param_type';
 import Select from '../form/select';
 import autobind from '../lib/autobind';
 
-class DefaultStorageAdderField extends React.Component {
-    constructor(props) {
+interface Props {
+  name: Option<string>
+  value: string
+  fieldType?: Option<ParamType>
+  onChange?: Option<(newValue: string) => void>
+  onEnterKey?: Option<() => void>
+  readOnly?: boolean
+}
+
+class DefaultStorageAdderField extends React.Component<Props> {
+    input: Option<FocusableTextInputInterface>;
+
+    constructor(props: Props) {
       super(props);
-      this.input = null;
       autobind(this);
     }
 
-    onChange(value) {
+    onChange(value: string): void {
       if (this.props.onChange) {
         const newValue = this.props.fieldType ? this.props.fieldType.formatValue(value) : value;
         this.props.onChange(newValue);
       }
     }
 
-    focus() {
+    focus(): void {
       if (this.input) {
         this.input.focus();
       }
     }
 
-    getPlaceholder() {
-      return this.props.fieldType ? this.props.fieldType.getInputPlaceholder() : null;
+    getPlaceholder(): string | undefined {
+      const placeholder = this.props.fieldType && this.props.fieldType.getInputPlaceholder();
+      if (placeholder) {
+        return placeholder;
+      } else {
+        return;
+      }
     }
 
     renderInput() {
@@ -77,14 +92,5 @@ class DefaultStorageAdderField extends React.Component {
       );
     }
 }
-
-DefaultStorageAdderField.propTypes = {
-  name: React.PropTypes.string,
-  value: React.PropTypes.string.isRequired,
-  fieldType: React.PropTypes.instanceOf(ParamType),
-  onChange: React.PropTypes.func,
-  onEnterKey: React.PropTypes.func,
-  readOnly: React.PropTypes.bool
-};
 
 export default DefaultStorageAdderField;
