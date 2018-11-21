@@ -683,9 +683,10 @@ const BehaviorEditor = React.createClass({
     return this.props.builtinParamTypes.concat(customTypes);
   },
 
-  getParamTypesForDataTypes: function() {
-    // TODO: use getParamTypes instead if we want to support custom data types
-    return this.props.builtinParamTypes;
+  getParamTypesForInput: function() {
+    const selectedBehaviorVersion = this.getSelected();
+    const selectedBehaviorVersionId = selectedBehaviorVersion ? selectedBehaviorVersion.id : null;
+    return this.getParamTypes().filter(ea => ea.id !== selectedBehaviorVersionId);
   },
 
   /* Setters/togglers */
@@ -1230,6 +1231,13 @@ const BehaviorEditor = React.createClass({
 
   onChangeCanBeMemoized: function(bool) {
     this.setConfigProperty('canBeMemoized', bool);
+  },
+
+  updateDataType: function(optionalNewConfig, optionalNewCode, optionalCallback) {
+    const withConfig = optionalNewConfig ? { config: this.getBehaviorConfig().clone(optionalNewConfig) } : null;
+    const withCode = typeof optionalNewCode === "string" ? { functionBody: optionalNewCode } : null;
+    const props = Object.assign({}, withConfig, withCode);
+    this.setEditableProps(props, optionalCallback);
   },
 
   addEnvVar: function(envVar) {
@@ -2505,6 +2513,35 @@ const BehaviorEditor = React.createClass({
     );
   },
 
+  renderUserInputConfiguration: function() {
+    const selected = this.getSelected();
+    if (selected && selected.usesCode()) {
+      return (
+        <UserInputConfiguration
+          onInputChange={this.updateBehaviorInputAtIndexWith}
+          onInputMove={this.moveBehaviorInputAtIndex}
+          onInputDelete={this.deleteInputAtIndex}
+          onInputAdd={this.addNewInput}
+          onInputNameFocus={this.onInputNameFocus}
+          onInputNameBlur={this.onInputNameBlur}
+          onConfigureType={this.onConfigureType}
+          userInputs={this.getInputs()}
+          paramTypes={this.getParamTypesForInput()}
+          triggers={this.getBehaviorTriggers()}
+          hasSharedAnswers={this.getOtherSavedInputsInGroup().length > 0}
+          otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
+          onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
+          savedAnswers={this.props.savedAnswers}
+          onToggleSavedAnswer={this.toggleSavedAnswerEditor}
+          onToggleInputHelp={this.toggleUserInputHelp}
+          helpInputVisible={this.props.activePanelName === 'helpForUserInput'}
+        />
+      );
+    } else {
+      return null;
+    }
+  },
+
   renderNormalBehavior: function() {
     return (
 
@@ -2535,34 +2572,12 @@ const BehaviorEditor = React.createClass({
                   openDropdownName={this.getActiveDropdown()}
                 />
 
-                <UserInputConfiguration
-                  onInputChange={this.updateBehaviorInputAtIndexWith}
-                  onInputMove={this.moveBehaviorInputAtIndex}
-                  onInputDelete={this.deleteInputAtIndex}
-                  onInputAdd={this.addNewInput}
-                  onInputNameFocus={this.onInputNameFocus}
-                  onInputNameBlur={this.onInputNameBlur}
-                  onConfigureType={this.onConfigureType}
-                  userInputs={this.getInputs()}
-                  paramTypes={this.getParamTypes()}
-                  triggers={this.getBehaviorTriggers()}
-                  hasSharedAnswers={this.getOtherSavedInputsInGroup().length > 0}
-                  otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
-                  onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
-                  savedAnswers={this.props.savedAnswers}
-                  onToggleSavedAnswer={this.toggleSavedAnswerEditor}
-                  onToggleInputHelp={this.toggleUserInputHelp}
-                  helpInputVisible={this.props.activePanelName === 'helpForUserInput'}
-                />
+                {this.renderUserInputConfiguration()}
 
                 <hr className="man rule-subtle" />
 
                 <div>
-                  {this.renderCodeEditor({
-                    sectionNumber: "3",
-                    codeHelpPanelName: 'helpForBehaviorCode',
-                    isMemoizationEnabled: true
-                  })}
+                  {this.renderCodeEditorForBehavior()}
 
                   <hr className="man rule-subtle" />
                 </div>
@@ -2592,17 +2607,12 @@ const BehaviorEditor = React.createClass({
 
         <DataTypeEditor
           ref={(el) => this.dataTypeEditor = el}
-          availableHeight={this.getAvailableHeight()}
           group={this.getBehaviorGroup()}
           behaviorVersion={this.getSelectedBehavior()}
           paramTypes={this.getParamTypes()}
           builtinParamTypes={this.props.builtinParamTypes}
           inputs={this.getInputs()}
-          onChangeConfig={this.setConfigProps}
-          onChangeCode={this.updateCode}
-          onChangeCanBeMemoized={this.onChangeCanBeMemoized}
-          onAddNewInput={this.addNewInput}
-          onDeleteInputs={this.deleteAllInputs}
+          onChange={this.updateDataType}
           onConfigureType={this.onConfigureType}
           isModified={this.editableIsModified}
 
@@ -2612,37 +2622,24 @@ const BehaviorEditor = React.createClass({
           onToggleActivePanel={this.toggleActivePanel}
           animationIsDisabled={this.animationIsDisabled()}
 
-          behaviorConfig={this.getBehaviorConfig()}
-
-          systemParams={this.getSystemParams()}
-          requiredAWSConfigs={this.getRequiredAWSConfigs()}
-          oauthApiApplications={this.getOAuthApiApplications()}
-          libraries={this.getLibraries()}
-          nodeModules={this.getNodeModuleVersions()}
-
-          onCursorChange={this.ensureCursorVisible}
-          useLineWrapping={this.state.codeEditorUseLineWrapping}
-          onToggleCodeEditorLineWrapping={this.toggleCodeEditorLineWrapping}
-
-          envVariableNames={this.getEnvVariableNames()}
-
-          onInputChange={this.updateBehaviorInputAtIndexWith}
-          onInputMove={this.moveBehaviorInputAtIndex}
-          onInputDelete={this.deleteInputAtIndex}
-          onInputAdd={this.addNewInput}
-          onInputNameFocus={this.onInputNameFocus}
-          onInputNameBlur={this.onInputNameBlur}
-          userInputs={this.getInputs()}
-          hasSharedAnswers={this.getOtherSavedInputsInGroup().length > 0}
-          otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
-          onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
-          savedAnswers={this.props.savedAnswers}
-          onToggleSavedAnswer={this.toggleSavedAnswerEditor}
-          onToggleInputHelp={this.toggleUserInputHelp}
-          helpInputVisible={this.props.activePanelName === 'helpForUserInput'}
+          userInputConfiguration={this.renderUserInputConfiguration()}
+          codeConfiguration={this.renderCodeEditorForBehavior()}
         />
       </div>
     );
+  },
+
+  renderCodeEditorForBehavior() {
+    const selected = this.getSelectedBehavior();
+    if (selected && selected.usesCode()) {
+      return this.renderCodeEditor({
+        sectionNumber: "3",
+        codeHelpPanelName: 'helpForBehaviorCode',
+        isMemoizationEnabled: true
+      });
+    } else {
+      return null;
+    }
   },
 
   renderForSelected: function(selected) {

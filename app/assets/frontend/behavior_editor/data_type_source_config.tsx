@@ -2,22 +2,29 @@ import * as React from 'react';
 import HelpButton from '../help/help_button';
 import SectionHeading from '../shared_ui/section_heading';
 import autobind from '../lib/autobind';
+import Button from "../form/button";
 
-class DataTypeSourceConfig extends React.Component {
-    constructor(props) {
+interface Props {
+  onChange: (usesCode: boolean) => void,
+  onToggleActivePanel: (panelName: string) => void,
+  activePanelName: string
+}
+
+class DataTypeSourceConfig extends React.PureComponent<Props> {
+    constructor(props: Props) {
       super(props);
       autobind(this);
     }
 
-    onUseDefaultStorage() {
+    onUseDefaultStorage(): void {
       this.props.onChange(false);
     }
 
-    onUseCode() {
+    onUseCode(): void {
       this.props.onChange(true);
     }
 
-    toggleSourceHelp() {
+    toggleSourceHelp(): void {
       this.props.onToggleActivePanel('helpForDataTypeSource');
     }
 
@@ -36,19 +43,13 @@ class DataTypeSourceConfig extends React.Component {
           </SectionHeading>
 
           <div className="mbxl">
-            <button className="mrm mbm" type="button" onClick={this.onUseDefaultStorage}>Data stored by Ellipsis</button>
-            <button className="mrm mbm" type="button" onClick={this.onUseCode}>Data returned by code</button>
+            <Button className="mrm mbm" onClick={this.onUseDefaultStorage}>Data stored by Ellipsis</Button>
+            <Button className="mrm mbm" onClick={this.onUseCode}>Data returned by code</Button>
           </div>
 
         </div>
       );
     }
 }
-
-DataTypeSourceConfig.propTypes = {
-  onChange: React.PropTypes.func.isRequired,
-  onToggleActivePanel: React.PropTypes.func.isRequired,
-  activePanelName: React.PropTypes.string
-};
 
 export default DataTypeSourceConfig;

@@ -254,7 +254,7 @@ ${this.props.nodeModules.map((ea) => this.emptyModuleFor(ea.from)).join("\n")}
               </div>
             </div>
 
-            <div style={{ marginLeft: "56px" }}>
+            <div style={{ marginLeft: "54px" }}>
               <Notifications
                 ref={(el) => this.notificationComponent = el}
                 notifications={this.state.notifications}
