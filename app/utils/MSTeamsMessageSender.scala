@@ -104,10 +104,21 @@ case class MSTeamsMessageSender(
                                     maybeThreadTs: Option[String]
                                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("not a thing yet")
 
+  private def postNewPrivateMessage(
+                                     text: String,
+                                     maybeAttachments: Option[Seq[Attachment]] = None
+                                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    val response = NewPrivateMessageInfo(
+      info.recipient,
+      Seq(DirectoryObject(info.from.id)),
+      ChannelDataInfo(None, info.channelData.tenant, None, None)
+    )
+    client.postToResponseUrl(info.privateMessageUrl, Json.toJson(response)).recover(postErrorRecovery(info, text))
+  }
+
   private def postChatMessage(
                                text: String,
-                               maybeAttachments: Option[Seq[Attachment]] = None,
-                               maybeChannelToForce: Option[String] = None
+                               maybeAttachments: Option[Seq[Attachment]] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     val response = ResponseInfo.newForMessage(
       info.recipient,
@@ -132,9 +143,11 @@ case class MSTeamsMessageSender(
     }
   }
 
+  private def isMovingToPrivate: Boolean = responseType == Private && info.conversation.conversationType != "personal"
+
   private def maybePreambleText: Option[String] = {
-    if (responseType == Private && !maybeDMChannel.contains(originatingChannel)) {
-      Some(s"<@${user}> I’ve sent you a <${client.botDMDeepLink}|private message> :sleuth_or_spy:")
+    if (isMovingToPrivate) {
+      Some(s"<at>${info.from.name}</at> I’ve sent you a [private message](${client.botDMDeepLink}) :sleuth_or_spy:")
     } else {
       None
     }
@@ -146,7 +159,7 @@ case class MSTeamsMessageSender(
         if (beQuiet) {
           postEphemeralMessage(preambleMessage, None, originatingChannel, maybeThreadId)
         } else {
-          postChatMessage(preambleMessage, None, Some(originatingChannel))
+          postChatMessage(preambleMessage, None)
         }
       }.getOrElse(Future.successful(None)).map(_ => ())
     } else {
@@ -175,10 +188,11 @@ case class MSTeamsMessageSender(
           None
         }
 
-        postChatMessage(
-          segment,
-          maybeAttachmentsForSegment
-        )
+        if (isMovingToPrivate) {
+          postNewPrivateMessage(segment, maybeAttachmentsForSegment)
+        } else {
+          postChatMessage(segment, maybeAttachmentsForSegment)
+        }
       }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
     }
   }
