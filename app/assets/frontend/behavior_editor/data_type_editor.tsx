@@ -2,12 +2,10 @@ import * as React from 'react';
 import CodeConfiguration from './code_configuration';
 import Collapsible from '../shared_ui/collapsible';
 import DataTypeDataSummary from './data_type_data_summary';
-import UserInputConfiguration, {SavedAnswer} from './user_input_configuration';
+import UserInputConfiguration from './user_input_configuration';
 import DataTypeSchemaConfig from './data_type_schema_config';
 import DataTypeSourceConfig from './data_type_source_config';
 import ID from '../lib/id';
-import {RequiredAWSConfig} from '../models/aws';
-import {RequiredOAuthApplication} from '../models/oauth';
 import SequentialName from '../lib/sequential_name';
 import {BehaviorConfigInterface} from '../models/behavior_config';
 import BehaviorGroup from '../models/behavior_group';
@@ -18,15 +16,11 @@ import ParamType from '../models/param_type';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import autobind from '../lib/autobind';
 import SectionHeading from "../shared_ui/section_heading";
-import LibraryVersion from "../models/library_version";
-import NodeModuleVersion from "../models/node_module_version";
 import Editable from "../models/editable";
-import {EditorCursorPosition} from "./code_editor";
 import DataTypeConfig from "../models/data_type_config";
 import Button from "../form/button";
 
 interface Props {
-  availableHeight: number
   group: BehaviorGroup
   behaviorVersion: BehaviorVersion
   paramTypes: Array<ParamType>
@@ -42,19 +36,8 @@ interface Props {
   onToggleActivePanel: (panelName: string, beModal?: Option<boolean>, optionalCallback?: () => void) => void
   animationIsDisabled: boolean
 
-  systemParams: Array<string>
-  requiredAWSConfigs: Array<RequiredAWSConfig>
-  oauthApiApplications: Array<RequiredOAuthApplication>
-  libraries: Array<LibraryVersion>
-  nodeModules: Array<NodeModuleVersion>
-  envVariableNames: Array<string>
-  userInputs: Array<Input>
-
-  onCursorChange: (newPosition: EditorCursorPosition) => void
-  useLineWrapping: boolean
-  onToggleCodeEditorLineWrapping: () => void
-
   userInputConfiguration: Option<UserInputConfiguration>
+  codeConfiguration: Option<CodeConfiguration>
 }
 
 interface DataTypeEditorSettings {
@@ -136,14 +119,6 @@ class DataTypeEditor extends React.Component<Props, State> {
       return this.getSelectedBehavior().getDataTypeFields();
     }
 
-    onChangeCode(newCode: string): void {
-      this.props.onChange(null, newCode);
-    }
-
-    onChangeCanBeMemoized(canBeMemoized: boolean) {
-      this.props.onChange({ canBeMemoized: canBeMemoized }, null);
-    }
-
     setDataTypeFields(newFields: Array<DataTypeField>, callback?: () => void): void {
       const config = this.getDataTypeConfig();
       const newConfig = config ? config.clone({ fields: newFields }) : null;
@@ -223,44 +198,6 @@ class DataTypeEditor extends React.Component<Props, State> {
       this.props.onToggleActivePanel('browseDataStorage', true);
     }
 
-    renderCodeEditor() {
-      return (
-        <div>
-          <CodeConfiguration
-            availableHeight={this.props.availableHeight}
-            sectionNumber={"3"}
-            codeHelpPanelName='helpForBehaviorCode'
-
-            activePanelName={this.props.activePanelName}
-            activeDropdownName={this.props.activeDropdownName}
-            onToggleActiveDropdown={this.props.onToggleActiveDropdown}
-            onToggleActivePanel={this.props.onToggleActivePanel}
-            animationIsDisabled={this.props.animationIsDisabled}
-
-            behaviorConfig={this.getSelectedBehavior().config}
-
-            inputs={this.props.inputs}
-            systemParams={this.props.systemParams}
-            requiredAWSConfigs={this.props.requiredAWSConfigs}
-            oauthApiApplications={this.props.oauthApiApplications}
-            libraries={this.props.libraries}
-            nodeModules={this.props.nodeModules}
-
-            functionBody={this.getSelectedBehavior().getFunctionBody()}
-            onChangeFunctionBody={this.onChangeCode}
-            onCursorChange={this.props.onCursorChange}
-            useLineWrapping={this.props.useLineWrapping}
-            onToggleCodeEditorLineWrapping={this.props.onToggleCodeEditorLineWrapping}
-
-            onChangeCanBeMemoized={this.onChangeCanBeMemoized}
-            isMemoizationEnabled={true}
-
-            envVariableNames={this.props.envVariableNames}
-          />
-        </div>
-      );
-    }
-
     render() {
       return (
         <div>
@@ -312,7 +249,7 @@ class DataTypeEditor extends React.Component<Props, State> {
 
             <hr className="man rule-subtle" />
 
-            {this.usesCode() ? this.renderCodeEditor() : null}
+            {this.props.codeConfiguration}
           </Collapsible>
         </div>
       );
