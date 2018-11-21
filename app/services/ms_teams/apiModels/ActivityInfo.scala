@@ -4,7 +4,7 @@ case class ActivityInfo(
                          id: String,
                          serviceUrl: String,
                          from: MessageParticipantInfo,
-                         conversation: ConversationInfo,
+                         conversation: ConversationAccount,
                          recipient: MessageParticipantInfo,
                          text: Option[String],
                          channelData: ChannelDataInfo

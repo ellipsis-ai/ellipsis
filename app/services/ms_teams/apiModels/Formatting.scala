@@ -8,7 +8,7 @@ object Formatting {
 
   lazy implicit val msTeamsOrganizationFormat: Format[MSTeamsOrganization] = Json.format[MSTeamsOrganization]
   lazy implicit val messageParticipantFormat = Json.format[MessageParticipantInfo]
-  lazy implicit val conversationFormat = Json.format[ConversationInfo]
+  lazy implicit val conversationAccountFormat = Json.format[ConversationAccount]
   lazy implicit val tenantFormat = Json.format[TenantInfo]
   lazy implicit val channelDataFormat = Json.format[ChannelDataInfo]
   lazy implicit val activityFormat = Json.format[ActivityInfo]
@@ -81,5 +81,10 @@ object Formatting {
   lazy implicit val attachmentFormat: Format[Attachment] = Jsonx.formatSealed[Attachment]
 
   lazy implicit val applicationFormat: Format[Application] = Json.format[Application]
+
+  lazy implicit val channelFormat: Format[Channel] = Json.format[Channel]
+  lazy implicit val teamFormat: Format[Team] = Json.format[Team]
+  lazy implicit val channelDataChannelFormat: Format[ChannelDataChannel] = Json.format[ChannelDataChannel]
+  lazy implicit val channelDataTeamFormat: Format[ChannelDataTeam] = Json.format[ChannelDataTeam]
 
 }

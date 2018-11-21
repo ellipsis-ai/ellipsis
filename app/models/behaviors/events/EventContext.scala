@@ -64,7 +64,17 @@ sealed trait EventContext {
 
   def messageRecipientPrefix(isUninterruptedConversation: Boolean): String
 
-  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
+  def channelDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject]
+  def maybeUserDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[JsObject]]
+
+  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+    for {
+      channelDetails <- channelDetailsFor(services)
+      maybeUserDetails <- maybeUserDetailsFor(services)
+    } yield {
+      Seq(Some(channelDetails), maybeUserDetails).flatten.reduce(_ ++ _)
+    }
+  }
 
   def maybeThreadId: Option[String]
 
@@ -229,30 +239,31 @@ case class SlackEventContext(
     )
   }
 
-  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+  def channelDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     val client = services.slackApiService.clientFor(profile)
     val slackChannels = SlackChannels(client)
     for {
-      maybeUser <- services.slackEventService.maybeSlackUserDataFor(userIdForContext, client, (e) => {
-        Logger.error(
-          s"""Slack API reported user not found while generating details about the user to send to an action:
-             |Slack user ID: ${userIdForContext}
-             |Ellipsis bot Slack team ID: ${profile.slackTeamId}
-             |Ellipsis team ID: ${profile.teamId}
-           """.stripMargin, e)
-        None
-      })
       maybeChannelInfo <- slackChannels.getInfoFor(channel)
       members <- slackChannels.getMembersFor(channel)
-    } yield {
-      val channelDetails = JsObject(Seq(
-        "channelMembers" -> Json.toJson(members),
-        "channelName" -> Json.toJson(maybeChannelInfo.map(_.computedName))
-      ))
+    } yield JsObject(Seq(
+      "channelMembers" -> Json.toJson(members),
+      "channelName" -> Json.toJson(maybeChannelInfo.map(_.computedName))
+    ))
+  }
+
+  def maybeUserDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[JsObject]] = {
+    val client = services.slackApiService.clientFor(profile)
+    services.slackEventService.maybeSlackUserDataFor(userIdForContext, client, (e) => {
+      Logger.error(
+        s"""Slack API reported user not found while generating details about the user to send to an action:
+           |Slack user ID: ${userIdForContext}
+           |Ellipsis bot Slack team ID: ${profile.slackTeamId}
+           |Ellipsis team ID: ${profile.teamId}
+           """.stripMargin, e)
+      None
+    }).map { maybeUser =>
       maybeUser.map { user =>
-        profileDataFor(user) ++ channelDetails
-      }.getOrElse {
-        channelDetails
+        profileDataFor(user)
       }
     }
   }
@@ -492,8 +503,22 @@ case class MSTeamsEventContext(
     } yield maybeResult
   }
 
-  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
-    Future.successful(JsObject(Seq())) // TODO: this
+  def channelDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+    for {
+      maybeChannel <- info.channelData.channel.map { channel =>
+        services.cacheService.getMSTeamsChannelFor(profile, channel.id)
+      }.getOrElse(Future.successful(None))
+      //channelMembers <- TODO: this
+    } yield {
+      Json.obj(
+        "channelName" -> maybeChannel.map(_.channel.displayName)
+//        "channelMembers" -> TODO: this
+      )
+    }
+  }
+
+  def maybeUserDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[JsObject]] = {
+    Future.successful(None) // TODO: this
   }
 
   def newRunEventFor(
@@ -609,8 +634,11 @@ case class TestEventContext(
 
   def messageRecipientPrefix(isUninterruptedConversation: Boolean): String = ""
 
-  def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+  def channelDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
     Future.successful(JsObject(Seq()))
+  }
+  def maybeUserDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[JsObject]] = {
+    Future.successful(None)
   }
 
   val messageBuffer: ArrayBuffer[String] = new ArrayBuffer()

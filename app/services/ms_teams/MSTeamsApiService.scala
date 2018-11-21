@@ -244,6 +244,76 @@ trait MSTeamsApiClient {
       }
   }
 
+  def getAllTeams: Future[Seq[Team]] = {
+    val params = Seq(
+      "$filter" -> s"resourceProvisioningOptions/Any(x:x eq 'Team')"
+    )
+    getResponseFor(s"groups", params).
+      map(r => extract[Seq[Team]](r)).
+      recover {
+        case MSTeamsApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve teams: $err
+               |
+               |Tenant ID: ${tenantId}
+             """.stripMargin)
+          Seq()
+        }
+      }
+  }
+
+  def getAllChannelsFor(team: Team): Future[Seq[Channel]] = {
+    getResponseFor(s"teams/${team.id}/channels", Seq()).
+      map(r => extract[Seq[Channel]](r)).
+      recover {
+        case MSTeamsApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve channels: $err
+               |
+               |Team ID: ${team.id}
+               |Tenant ID: ${tenantId}
+             """.stripMargin)
+          Seq()
+        }
+      }
+  }
+
+  def getChannelMap: Future[Map[String, ChannelWithTeam]] = {
+    for {
+      teams <- getAllTeams
+      channelsByTeam <- Future.sequence(teams.map { team =>
+        getAllChannelsFor(team).map { channels =>
+          (team, channels)
+        }
+      }).map(_.toMap)
+    } yield {
+      channelsByTeam.flatMap { case(team, channels) =>
+        channels.map { channel =>
+          (channel.id, ChannelWithTeam(channel, team))
+        }
+      }
+    }
+  }
+
+  def getChannelInfo(teamId: String, channelId: String): Future[Option[Channel]] = {
+    getResponseFor(s"teams/${encode(teamId)}/channels/${encode(channelId)}", Seq()).
+      map(r => Some(extract[Channel](r))).
+      recover {
+        case MSTeamsApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve channel info: $err
+               |
+               |Channel ID: $channelId
+               |Tenant ID: ${tenantId}
+             """.stripMargin)
+          None
+        }
+      }
+  }
+
   val userIdForContext = services.configuration.get[String]("silhouette.ms_teams.clientID")
 
   def botDMDeepLink: String = s"https://teams.microsoft.com/l/chat/0/0?users=28:${userIdForContext}"

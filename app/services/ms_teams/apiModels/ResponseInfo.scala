@@ -3,7 +3,7 @@ package services.ms_teams.apiModels
 case class ResponseInfo(
                          `type`: String,
                          from: MessageParticipantInfo,
-                         conversation: ConversationInfo,
+                         conversation: ConversationAccount,
                          recipient: MessageParticipantInfo,
                          text: String,
                          textFormat: String,
@@ -16,7 +16,7 @@ object ResponseInfo {
 
   def newForMessage(
                      from: MessageParticipantInfo,
-                     conversation: ConversationInfo,
+                     conversation: ConversationAccount,
                      recipient: MessageParticipantInfo,
                      text: String,
                      textFormat: String,
