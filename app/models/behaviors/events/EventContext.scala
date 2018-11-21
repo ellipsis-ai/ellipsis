@@ -15,7 +15,7 @@ import models.behaviors.events.slack._
 import models.behaviors.testing.TestRunEvent
 import models.team.Team
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import services.caching.SlackMessagePermalinkCacheKey
 import services.ms_teams.apiModels.ActivityInfo
 import services.slack.SlackApiError
@@ -514,7 +514,7 @@ case class MSTeamsEventContext(
       }.getOrElse(Future.successful(Seq()))
     } yield {
       Json.obj(
-        "channelName" -> maybeChannel.map(_.channel.displayName),
+        "channelName" -> JsString(maybeChannel.flatMap(_.channel.displayName).getOrElse("Private chat")),
         "channelMembers" -> channelMembers.map(_.id)
       )
     }
