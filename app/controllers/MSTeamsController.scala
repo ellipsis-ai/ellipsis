@@ -51,7 +51,7 @@ class MSTeamsController @Inject() (
                                           serviceUrl: String,
                                           channelId: String,
                                           from: MessageParticipantInfo,
-                                          conversation: ConversationInfo,
+                                          conversation: ConversationAccount,
                                           recipient: MessageParticipantInfo,
                                           textFormat: Option[String],
                                           text: Option[String],

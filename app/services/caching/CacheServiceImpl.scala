@@ -10,6 +10,7 @@ import javax.inject.{Inject, Provider, Singleton}
 import json.Formatting._
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
 import models.IDs
+import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
@@ -21,11 +22,12 @@ import play.api.cache.SyncCacheApi
 import play.api.libs.json._
 import sangria.schema.Schema
 import services.ms_teams.apiModels.Application
+import services.ms_teams.{ChannelWithTeam, MSTeamsApiService}
 import services.slack.SlackEventService
 import services.slack.apiModels.{SlackUser, SlackUserProfile}
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
 case class SlackMessageEventData(
@@ -53,12 +55,15 @@ case class InvokeResultData(
 class CacheServiceImpl @Inject() (
                                    cache: SyncCacheApi, // TODO: change to async
                                    slackEventServiceProvider: Provider[SlackEventService],
+                                   msTeamsApiServiceProvider: Provider[MSTeamsApiService],
+                                   implicit val ec: ExecutionContext,
                                    implicit val actorSystem: ActorSystem
                                  ) extends CacheService {
 
   val MAX_KEY_LENGTH = 250
 
   def slackEventService = slackEventServiceProvider.get
+  def msTeamsApiService = msTeamsApiServiceProvider.get
 
   def cacheSettingsWithTimeToLive(duration: Duration): CachingSettings = {
     val defaultCachingSettings = CachingSettings(actorSystem)
@@ -247,6 +252,14 @@ class CacheServiceImpl @Inject() (
 
   def getMSTeamsApplicationData(teamIdForContext: String, dataFn: String => Future[Option[Application]]): Future[Option[Application]] = {
     msTeamsApplicationDataCache.getOrLoad(teamIdForContext, dataFn)
+  }
+
+  private val msTeamsChannelDataCache: Cache[String, Map[String, ChannelWithTeam]] = LfuCache(cacheSettingsWithTimeToLive(msTeamsApiCallExpiry))
+
+  def getMSTeamsChannelFor(profile: MSTeamsBotProfile, channelId: String): Future[Option[ChannelWithTeam]] = {
+    for {
+      channelMap <- msTeamsChannelDataCache.getOrLoad(profile.teamIdForContext, _ => msTeamsApiService.profileClientFor(profile).getChannelMap)
+    } yield channelMap.get(channelId)
   }
 
   private def groupVersionDataKey(versionId: String): String = {
