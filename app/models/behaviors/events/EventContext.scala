@@ -504,15 +504,18 @@ case class MSTeamsEventContext(
   }
 
   def channelDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
+    val client = services.msTeamsApiService.profileClientFor(profile)
     for {
       maybeChannel <- info.channelData.channel.map { channel =>
         services.cacheService.getMSTeamsChannelFor(profile, channel.id)
       }.getOrElse(Future.successful(None))
-      //channelMembers <- TODO: this
+      channelMembers <- maybeChannel.map { channel =>
+        client.getTeamMembers(channel.team)
+      }.getOrElse(Future.successful(Seq()))
     } yield {
       Json.obj(
-        "channelName" -> maybeChannel.map(_.channel.displayName)
-//        "channelMembers" -> TODO: this
+        "channelName" -> maybeChannel.map(_.channel.displayName),
+        "channelMembers" -> channelMembers.map(_.id)
       )
     }
   }

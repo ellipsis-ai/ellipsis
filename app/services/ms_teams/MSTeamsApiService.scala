@@ -314,6 +314,23 @@ trait MSTeamsApiClient {
       }
   }
 
+  def getTeamMembers(team: Team): Future[Seq[DirectoryObject]] = {
+    getResponseFor(s"groups/${team.id}/members", Seq()).
+      map(r => extract[Seq[DirectoryObject]](r)).
+      recover {
+        case MSTeamsApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve members: $err
+               |
+               |Team ID: ${team.id}
+               |Tenant ID: ${tenantId}
+             """.stripMargin)
+          Seq()
+        }
+      }
+  }
+
   val userIdForContext = services.configuration.get[String]("silhouette.ms_teams.clientID")
 
   def botDMDeepLink: String = s"https://teams.microsoft.com/l/chat/0/0?users=28:${userIdForContext}"
