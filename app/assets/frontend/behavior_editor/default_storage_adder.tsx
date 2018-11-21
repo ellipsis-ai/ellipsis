@@ -25,7 +25,7 @@ type State = {
 }
 
 class DefaultStorageAdder extends React.Component<Props, State> {
-    inputs: Array<DefaultStorageAdderField>;
+    inputs: Array<Option<DefaultStorageAdderField>>;
     saveButton: Option<DynamicLabelButton>;
 
     constructor(props: Props) {
@@ -136,16 +136,18 @@ class DefaultStorageAdder extends React.Component<Props, State> {
     }
 
     onEnterKey(index: number): void {
-      if (this.inputs[index + 1]) {
-        this.inputs[index + 1].focus();
+      const input = this.inputs[index + 1];
+      if (input) {
+        input.focus();
       } else if (this.saveButton) {
         this.saveButton.focus();
       }
     }
 
     focusFirstInput(): void {
-      if (this.inputs[0]) {
-        this.inputs[0].focus();
+      const input = this.inputs[0];
+      if (input) {
+        input.focus();
       }
     }
 

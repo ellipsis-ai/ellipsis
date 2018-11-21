@@ -1,6 +1,7 @@
 import * as React from 'react';
 import autobind from "../lib/autobind";
 import {OptionHTMLAttributes} from "react";
+import {FocusableTextInputInterface} from "./input";
 
 interface Props {
   className?: Option<string>,
@@ -23,7 +24,7 @@ export interface SelectOption {
   label: string
 }
 
-class Select extends React.Component<Props, State> {
+class Select extends React.Component<Props, State> implements FocusableTextInputInterface {
     selectElement: Option<HTMLSelectElement>;
 
     constructor(props) {
@@ -92,6 +93,22 @@ class Select extends React.Component<Props, State> {
 
     getCurrentIndex(): Option<number> {
       return this.selectElement ? this.selectElement.selectedIndex : null;
+    }
+
+    focus(): void {
+      if (this.selectElement) {
+        this.selectElement.focus();
+      }
+    }
+
+    blur(): void {
+      if (this.selectElement) {
+        this.selectElement.blur();
+      }
+    }
+
+    select(): void {
+      this.focus();
     }
 
     render() {
