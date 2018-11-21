@@ -5,6 +5,7 @@ import ParamType from '../models/param_type';
 import autobind from '../lib/autobind';
 import DataTypeField from "../models/data_type_field";
 import Button from "../form/button";
+import Collapsible from "../shared_ui/collapsible";
 
 interface Props {
   onChange: (fieldIndex: number, newField: DataTypeField) => void
@@ -68,8 +69,10 @@ class DataTypeSchemaConfig extends React.Component<Props> {
 
     render() {
       return (
-        <div className="ptxl">
-          <div className="columns container container-narrow">
+        <div className="mtxl">
+          <hr className="man rule-subtle" />
+
+          <div className="mtxl columns container container-narrow">
             <div className="mbxxl">
               <div>
                 <SectionHeading number="2">Data fields</SectionHeading>

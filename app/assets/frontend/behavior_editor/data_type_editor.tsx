@@ -212,7 +212,7 @@ class DataTypeEditor extends React.Component<Props, State> {
 
           <Collapsible revealWhen={this.dataTypeSourceChosen()} animationDisabled={this.props.animationIsDisabled}>
 
-            <div className="container ptxl pbs">
+            <div className="container ptxl mbxl">
               <SectionHeading number="1">
                 <span className="mrm align-m">
                   <span>Data source: </span>
@@ -230,8 +230,6 @@ class DataTypeEditor extends React.Component<Props, State> {
                 />
               )}
             </div>
-
-            <hr className="man rule-subtle" />
 
             {this.usesCode() ? this.props.userInputConfiguration : (
               <DataTypeSchemaConfig
