@@ -683,9 +683,10 @@ const BehaviorEditor = React.createClass({
     return this.props.builtinParamTypes.concat(customTypes);
   },
 
-  getParamTypesForDataTypes: function() {
-    // TODO: use getParamTypes instead if we want to support custom data types
-    return this.props.builtinParamTypes;
+  getParamTypesForInput: function() {
+    const selectedBehaviorVersion = this.getSelected();
+    const selectedBehaviorVersionId = selectedBehaviorVersion ? selectedBehaviorVersion.id : null;
+    return this.getParamTypes().filter(ea => ea.id !== selectedBehaviorVersionId);
   },
 
   /* Setters/togglers */
@@ -2512,6 +2513,35 @@ const BehaviorEditor = React.createClass({
     );
   },
 
+  renderUserInputConfiguration: function() {
+    const selected = this.getSelected();
+    if (selected && selected.usesCode()) {
+      return (
+        <UserInputConfiguration
+          onInputChange={this.updateBehaviorInputAtIndexWith}
+          onInputMove={this.moveBehaviorInputAtIndex}
+          onInputDelete={this.deleteInputAtIndex}
+          onInputAdd={this.addNewInput}
+          onInputNameFocus={this.onInputNameFocus}
+          onInputNameBlur={this.onInputNameBlur}
+          onConfigureType={this.onConfigureType}
+          userInputs={this.getInputs()}
+          paramTypes={this.getParamTypesForInput()}
+          triggers={this.getBehaviorTriggers()}
+          hasSharedAnswers={this.getOtherSavedInputsInGroup().length > 0}
+          otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
+          onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
+          savedAnswers={this.props.savedAnswers}
+          onToggleSavedAnswer={this.toggleSavedAnswerEditor}
+          onToggleInputHelp={this.toggleUserInputHelp}
+          helpInputVisible={this.props.activePanelName === 'helpForUserInput'}
+        />
+      );
+    } else {
+      return null;
+    }
+  },
+
   renderNormalBehavior: function() {
     return (
 
@@ -2542,25 +2572,7 @@ const BehaviorEditor = React.createClass({
                   openDropdownName={this.getActiveDropdown()}
                 />
 
-                <UserInputConfiguration
-                  onInputChange={this.updateBehaviorInputAtIndexWith}
-                  onInputMove={this.moveBehaviorInputAtIndex}
-                  onInputDelete={this.deleteInputAtIndex}
-                  onInputAdd={this.addNewInput}
-                  onInputNameFocus={this.onInputNameFocus}
-                  onInputNameBlur={this.onInputNameBlur}
-                  onConfigureType={this.onConfigureType}
-                  userInputs={this.getInputs()}
-                  paramTypes={this.getParamTypes()}
-                  triggers={this.getBehaviorTriggers()}
-                  hasSharedAnswers={this.getOtherSavedInputsInGroup().length > 0}
-                  otherBehaviorsInGroup={this.otherBehaviorsInGroup()}
-                  onToggleSharedAnswer={this.toggleSharedAnswerInputSelector}
-                  savedAnswers={this.props.savedAnswers}
-                  onToggleSavedAnswer={this.toggleSavedAnswerEditor}
-                  onToggleInputHelp={this.toggleUserInputHelp}
-                  helpInputVisible={this.props.activePanelName === 'helpForUserInput'}
-                />
+                {this.renderUserInputConfiguration()}
 
                 <hr className="man rule-subtle" />
 
@@ -2641,6 +2653,8 @@ const BehaviorEditor = React.createClass({
           onToggleSavedAnswer={this.toggleSavedAnswerEditor}
           onToggleInputHelp={this.toggleUserInputHelp}
           helpInputVisible={this.props.activePanelName === 'helpForUserInput'}
+
+          userInputConfiguration={this.renderUserInputConfiguration()}
         />
       </div>
     );

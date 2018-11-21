@@ -54,19 +54,7 @@ interface Props {
   useLineWrapping: boolean
   onToggleCodeEditorLineWrapping: () => void
 
-  onInputChange: (inputIndex: number, newInput: Input) => void
-  onInputMove: (oldIndex: number, newIndex: number) => void
-  onInputDelete: (inputIndex: number) => void
-  onInputAdd: (optionalName?: Option<string>, optionalCallback?: () => void) => void
-  onInputNameFocus: (inputIndex: number) => void
-  onInputNameBlur: (inputIndex: number) => void
-  hasSharedAnswers: boolean
-  otherBehaviorsInGroup: Array<BehaviorVersion>
-  onToggleSharedAnswer: () => void
-  savedAnswers: Array<SavedAnswer>
-  onToggleSavedAnswer: (savedAnswerId: string) => void
-  onToggleInputHelp: () => void
-  helpInputVisible: boolean
+  userInputConfiguration: Option<UserInputConfiguration>
 }
 
 interface DataTypeEditorSettings {
@@ -308,27 +296,7 @@ class DataTypeEditor extends React.Component<Props, State> {
 
             <hr className="man rule-subtle" />
 
-            {this.usesCode() ? (
-              <UserInputConfiguration
-                onInputChange={this.props.onInputChange}
-                onInputMove={this.props.onInputMove}
-                onInputDelete={this.props.onInputDelete}
-                onInputAdd={this.props.onInputAdd}
-                onInputNameFocus={this.props.onInputNameFocus}
-                onInputNameBlur={this.props.onInputNameBlur}
-                onConfigureType={this.props.onConfigureType}
-                userInputs={this.props.userInputs}
-                paramTypes={this.props.paramTypes.filter(ea => ea.id !== this.props.behaviorVersion.id)}
-                triggers={[]}
-                hasSharedAnswers={this.props.hasSharedAnswers}
-                otherBehaviorsInGroup={this.props.otherBehaviorsInGroup}
-                onToggleSharedAnswer={this.props.onToggleSharedAnswer}
-                savedAnswers={this.props.savedAnswers}
-                onToggleSavedAnswer={this.props.onToggleSavedAnswer}
-                onToggleInputHelp={this.props.onToggleInputHelp}
-                helpInputVisible={this.props.helpInputVisible}
-              />
-            ) : (
+            {this.usesCode() ? this.props.userInputConfiguration : (
               <DataTypeSchemaConfig
                 ref={(element) => this.schemaConfig = element}
                 onChange={this.updateDataTypeFieldAtIndexWith}
