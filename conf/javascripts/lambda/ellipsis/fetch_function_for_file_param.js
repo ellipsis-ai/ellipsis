@@ -13,10 +13,10 @@ module.exports = function(param, $CONTEXT_PARAM) {
         if (res.statusCode === 200) {
           const contentType = res.headers["content-type"];
           const contentDisposition = res.headers["content-disposition"];
-          const filename =
-            contentDisposition ?
-              contentDisposition.match(/\S+\s+filename="(.+?)"/)[1] :
-              'ellipsis.txt';
+          const filenameMatch = contentDisposition ?
+            contentDisposition.match(/;?\s*filename="(.+?)"/) :
+            undefined;
+          const filename = (filenameMatch && filenameMatch[1]) || 'ellipsis.txt';
           resolve({
             value: request(commonOptions),
             contentType: contentType,

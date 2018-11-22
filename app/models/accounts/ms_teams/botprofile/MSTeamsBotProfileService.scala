@@ -10,6 +10,8 @@ trait MSTeamsBotProfileService {
 
   def find(tenantId: String): Future[Option[MSTeamsBotProfile]]
 
+  def allFor(teamId: String): Future[Seq[MSTeamsBotProfile]]
+
   def ensure(tenantId: String, teamName: String): Future[MSTeamsBotProfile]
 
   def sendResultWithNewEvent(

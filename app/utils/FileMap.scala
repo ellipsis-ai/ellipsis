@@ -1,20 +1,19 @@
 package utils
 
-import javax.inject.Inject
 import com.google.inject.Singleton
+import javax.inject.Inject
 import models.IDs
-import models.behaviors.events.slack.SlackFile
 import services.caching.CacheService
 
 @Singleton
-class SlackFileMap @Inject() (
-                                val cacheService: CacheService
-                              ) {
+class FileMap @Inject()(
+                          val cacheService: CacheService
+                        ) {
 
-  private def keyFor(fileId: String): String = s"slack-file-map-$fileId"
-  private def thumbnailKeyFor(fileId: String): String = s"slack-file-map-thumbnail-$fileId"
+  private def keyFor(fileId: String): String = s"file-map-$fileId"
+  private def thumbnailKeyFor(fileId: String): String = s"file-map-thumbnail-$fileId"
 
-  def save(file: SlackFile): String = {
+  def save(file: FileReference): String = {
     val fileId = IDs.next
     cacheService.set(keyFor(fileId), file.url)
     file.maybeThumbnailUrl.foreach { thumbnailUrl =>

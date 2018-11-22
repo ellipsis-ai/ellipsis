@@ -13,10 +13,13 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
+import play.api.http.HttpEntity
 import play.api.i18n.I18nSupport
 import play.api.libs.json._
+import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc._
 import services.{DataService, DefaultServices}
+import utils.FileMap
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,6 +28,8 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
   val services: DefaultServices
   val botResultService: BotResultService = services.botResultService
   val dataService: DataService = services.dataService
+  val ws: WSClient = services.ws
+  val fileMap: FileMap = services.fileMap
   val eventHandler: EventHandler = services.eventHandler
   val responder: APIResponder
   implicit val ec: ExecutionContext
@@ -145,8 +150,6 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
     Future.successful(responder.badRequest(Some(APIErrorData(message, None)), None, details))
   }
 
-  def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = notSupportedResult("fetching a file", JsNull)
-
   def scheduleByName(
                       actionName: String,
                       info: ScheduleActionInfo
@@ -172,5 +175,61 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                         )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("add message listener", Json.toJson(info))
 
   def printEventCreationError(): Unit
+
+  private def contentDispositionForContentType(contentType: String): String = {
+    val extension = """image/(.*)""".r.findFirstMatchIn(contentType).flatMap { r =>
+      r.subgroups.headOption
+    }.getOrElse("txt")
+    s"""attachment; filename="ellipsis.${extension}""""
+  }
+
+  private def contentDispositionFor(response: WSResponse, contentType: String, httpHeaders: (String, String), maybeOriginalUrl: Option[String]): Future[String] = {
+    val maybeDispositionFromResponse = response.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption)
+    maybeDispositionFromResponse.map(Future.successful).getOrElse {
+      maybeOriginalUrl.map { originalUrl =>
+        ws.url(originalUrl).withHttpHeaders(httpHeaders).head.map { r =>
+          r.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption).getOrElse {
+            contentDispositionForContentType(contentType)
+          }
+        }
+      }.getOrElse {
+        Future.successful(contentDispositionForContentType(contentType))
+      }
+    }
+  }
+
+  def getToken: Future[String]
+
+  def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = {
+    fileMap.maybeUrlFor(fileId).map { originalUrl =>
+      val maybeThumbnailUrl = fileMap.maybeThumbnailUrlFor(fileId)
+      val urlToUse = maybeThumbnailUrl.getOrElse(originalUrl)
+      for {
+        token <- getToken
+        httpHeaders <- Future.successful((AUTHORIZATION, s"Bearer ${token}"))
+        result <- ws.url(urlToUse).withHttpHeaders(httpHeaders).get.flatMap { r =>
+          if (r.status == 200) {
+            val contentType =
+              r.headers.get(CONTENT_TYPE).
+                flatMap(_.headOption).
+                getOrElse("application/octet-stream")
+
+            contentDispositionFor(r, contentType, httpHeaders, maybeThumbnailUrl.map(_ => originalUrl)).map { contentDisposition =>
+              val result = r.headers.get(CONTENT_LENGTH) match {
+                case Some(Seq(length)) =>
+                  Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
+                case _ =>
+                  Ok.chunked(r.bodyAsSource).as(contentType)
+              }
+              result.withHeaders(CONTENT_TYPE -> contentType, CONTENT_DISPOSITION -> contentDisposition)
+            }
+
+          } else {
+            Future.successful(BadGateway)
+          }
+        }
+      } yield result
+    }.getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
+  }
 
 }

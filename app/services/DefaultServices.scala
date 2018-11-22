@@ -10,7 +10,7 @@ import play.api.libs.ws.WSClient
 import services.caching.CacheService
 import services.ms_teams.{MSTeamsApiService, MSTeamsEventService}
 import services.slack.{SlackApiService, SlackEventService}
-import utils.SlackFileMap
+import utils.FileMap
 
 @Singleton
 class DefaultServices @Inject() (
@@ -22,7 +22,7 @@ class DefaultServices @Inject() (
                                   configurationProvider: Provider[Configuration],
                                   botResultServiceProvider: Provider[BotResultService],
                                   slackEventServiceProvider: Provider[SlackEventService],
-                                  slackFileMapProvider: Provider[SlackFileMap],
+                                  fileMapProvider: Provider[FileMap],
                                   slackApiServiceProvider: Provider[SlackApiService],
                                   msTeamsApiServiceProvider: Provider[MSTeamsApiService],
                                   msTeamsEventServiceProvider: Provider[MSTeamsEventService],
@@ -38,7 +38,7 @@ class DefaultServices @Inject() (
   def ws: WSClient = wsProvider.get
   def botResultService: BotResultService = botResultServiceProvider.get
   def slackEventService: SlackEventService = slackEventServiceProvider.get
-  def slackFileMap: SlackFileMap = slackFileMapProvider.get
+  def fileMap: FileMap = fileMapProvider.get
   def slackApiService: SlackApiService = slackApiServiceProvider.get
   def msTeamsApiService: MSTeamsApiService = msTeamsApiServiceProvider.get
   def msTeamsEventService: MSTeamsEventService = msTeamsEventServiceProvider.get

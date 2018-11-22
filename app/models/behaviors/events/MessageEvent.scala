@@ -2,9 +2,9 @@ package models.behaviors.events
 
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
-import models.behaviors.conversations.conversation.Conversation
 import models.team.Team
-import services.{DataService, DefaultServices}
+import services.DefaultServices
+import utils.FileReference
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
@@ -12,6 +12,13 @@ import scala.util.matching.Regex
 trait MessageEvent extends Event {
 
   lazy val invocationLogText: String = relevantMessageText
+
+  val maybeFile: Option[FileReference]
+  override def hasFile: Boolean = maybeFile.isDefined
+
+  def maybeNewFileId(services: DefaultServices): Option[String] = maybeFile.map { file =>
+    services.fileMap.save(file)
+  }
 
   def allBehaviorResponsesFor(
                               maybeTeam: Option[Team],

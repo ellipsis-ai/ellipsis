@@ -30,6 +30,8 @@ case class NoMediumApiMethodContext(
   val maybeTeam: Option[Team] = Some(team)
   val mediumText: String = "requests with no target medium"
 
+  def getToken: Future[String] = Future.successful("no medium, no token")
+
   def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[TestMessageEvent]] = {
     Future.successful(Some(TestMessageEvent(TestEventContext(user, team), message, includesBotMention = true)))
   }

@@ -99,7 +99,7 @@ class BehaviorParameterTypeSpec extends DBSpec {
       val context = mock[BehaviorParameterContext]
       when(context.event).thenReturn(event)
       when(context.services).thenReturn(services)
-      when(slackFileMap.maybeUrlFor(anyString)).thenReturn(None)
+      when(fileMap.maybeUrlFor(anyString)).thenReturn(None)
       runNow(FileType.isValidAction("none", context)) mustBe true
       runNow(FileType.isValidAction("wtfbbq", context)) mustBe false
     }
@@ -110,7 +110,7 @@ class BehaviorParameterTypeSpec extends DBSpec {
       val context = mock[BehaviorParameterContext]
       when(context.event).thenReturn(event)
       when(context.services).thenReturn(services)
-      when(slackFileMap.maybeUrlFor(anyString)).thenReturn(None)
+      when(fileMap.maybeUrlFor(anyString)).thenReturn(None)
       runNow(FileType.isValidAction("none", context)) mustBe true
       runNow(FileType.isValidAction("wtfbbq", context)) mustBe true
     }
@@ -122,7 +122,7 @@ class BehaviorParameterTypeSpec extends DBSpec {
       when(context.event).thenReturn(event)
       when(context.services).thenReturn(services)
       val fileId = IDs.next
-      when(slackFileMap.maybeUrlFor(fileId)).thenReturn(Some("https://fake-url.fake"))
+      when(fileMap.maybeUrlFor(fileId)).thenReturn(Some("https://fake-url.fake"))
       runNow(FileType.isValidAction(fileId, context)) mustBe true
     }
   }

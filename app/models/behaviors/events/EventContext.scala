@@ -32,6 +32,7 @@ sealed trait EventContext {
   type MessageActionType <: MessageAction
   type MenuType <: MessageMenu
   type MenuItemType <: MessageMenuItem
+  type MessageEventType <: MessageEvent
 
   val isPublicChannel: Boolean
   val isDirectMessage: Boolean
@@ -147,6 +148,7 @@ case class SlackEventContext(
   override type MessageActionType = SlackMessageAction
   override type MenuType = SlackMessageMenu
   override type MenuItemType = SlackMessageMenuItem
+  override type MessageEventType = SlackMessageEvent
 
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     botName(services).map { botName =>
@@ -407,6 +409,7 @@ case class MSTeamsEventContext(
   override type MessageActionType = MSTeamsMessageAction
   override type MenuType = MSTeamsMessageMenu
   override type MenuItemType = MSTeamsMessageMenuItem
+  override type MessageEventType = MSTeamsMessageEvent
 
   val name: String = Conversation.MS_TEAMS_CONTEXT
   val userIdForContext: String = info.from.id
@@ -604,6 +607,7 @@ case class TestEventContext(
   override type MessageActionType = SlackMessageAction
   override type MenuType = SlackMessageMenu
   override type MenuItemType = SlackMessageMenuItem
+  override type MessageEventType = SlackMessageEvent
 
   val name = "test"
   val isPublicChannel: Boolean = false
@@ -621,6 +625,8 @@ case class TestEventContext(
     Future.successful(None)
   }
   val isBotMessage: Boolean = false
+
+  def eventHasFile(event: MessageEventType): Boolean = event.maybeFile.nonEmpty
 
   override def ensureUserAction(dataService: DataService): DBIO[User] = DBIO.successful(user)
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)

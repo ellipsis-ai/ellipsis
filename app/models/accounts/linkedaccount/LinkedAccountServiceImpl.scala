@@ -1,12 +1,13 @@
 package models.accounts.linkedaccount
 
 import java.time.OffsetDateTime
-import javax.inject._
 
+import javax.inject._
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
 import models.accounts.github.GithubProvider
+import models.accounts.ms_teams.MSTeamsProvider
 import models.accounts.slack.SlackProvider
 import models.accounts.user.User
 import services.DataService
@@ -89,6 +90,13 @@ class LinkedAccountServiceImpl @Inject() (
 
   def maybeForSlackFor(user: User): Future[Option[LinkedAccount]] = {
     dataService.run(maybeForSlackForAction(user))
+  }
+
+  def maybeForMSTeamsFor(user: User): Future[Option[LinkedAccount]] = {
+    val action = forProviderForQuery(user.id, MSTeamsProvider.ID).result.map { r =>
+      r.headOption.map(tuple2LinkedAccount)
+    }
+    dataService.run(action)
   }
 
   def maybeForGithubFor(user: User): Future[Option[LinkedAccount]] = {

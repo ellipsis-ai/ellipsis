@@ -1,3 +1,5 @@
 package models.behaviors.events.slack
 
-case class SlackFile(url: String, maybeThumbnailUrl: Option[String])
+import utils.FileReference
+
+case class SlackFile(url: String, maybeThumbnailUrl: Option[String]) extends FileReference

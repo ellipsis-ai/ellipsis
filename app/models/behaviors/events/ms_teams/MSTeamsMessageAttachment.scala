@@ -18,6 +18,8 @@ case class MSTeamsMessageAttachment(
 
   val underlying = ContentAttachment(
     "application/vnd.microsoft.card.adaptive",
-    AdaptiveCard(bodyElements, actionElements)
+    AdaptiveCard(bodyElements, actionElements),
+    contentUrl = None,
+    name = None
   )
 }

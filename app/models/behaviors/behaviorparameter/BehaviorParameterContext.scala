@@ -5,7 +5,7 @@ import models.behaviors.SimpleTextResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, EventContext}
 import models.behaviors.events.MessageActionConstants._
 import services.caching.CacheService
 import services.{DataService, DefaultServices}
@@ -23,6 +23,8 @@ case class BehaviorParameterContext(
   val behaviorVersion: BehaviorVersion = parameter.behaviorVersion
   val dataService: DataService = services.dataService
   val cacheService: CacheService = services.cacheService
+
+  val eventContext: EventContext = event.eventContext
 
   def isFirstParamAction: DBIO[Boolean] = {
     services.dataService.behaviorParameters.isFirstForBehaviorVersionAction(parameter)

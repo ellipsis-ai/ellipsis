@@ -18,8 +18,7 @@ import models.behaviors.conversations.parentconversation.{NewParentConversation,
 import models.behaviors.datatypeconfig.DataTypeConfig
 import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.events.MessageActionConstants._
-import models.behaviors.events.slack._
-import models.behaviors.events.{Event, MessageAttachment}
+import models.behaviors.events.{Event, MessageAttachment, MessageEvent}
 import models.team.Team
 import play.api.libs.json._
 import services.AWSLambdaConstants._
@@ -399,20 +398,13 @@ object FileType extends BuiltInType {
     super.questionTextFor(context, paramCount, maybeRoot) ++ """ (or type "none" if you don't have one)"""
   }
 
-  private def eventHasFile(context: BehaviorParameterContext): Boolean = {
-    context.event match {
-      case e: SlackMessageEvent => e.maybeFile.nonEmpty
-      case _ => false
-    }
-  }
-
   private def alreadyHasFile(text: String, context: BehaviorParameterContext): Boolean = {
-    context.services.slackFileMap.maybeUrlFor(text).nonEmpty
+    context.services.fileMap.maybeUrlFor(text).nonEmpty
   }
 
   def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean] = {
     DBIO.successful {
-      alreadyHasFile(text, context) || eventHasFile(context) || isIntentionallyEmpty(text)
+      alreadyHasFile(text, context) || context.event.hasFile || isIntentionallyEmpty(text)
     }
   }
 
@@ -433,9 +425,7 @@ object FileType extends BuiltInType {
 
   override def potentialValueFor(event: Event, context: BehaviorParameterContext): String = {
     event match {
-      case e: SlackMessageEvent => e.maybeFile.map { file =>
-        context.services.slackFileMap.save(file)
-      }.getOrElse(super.potentialValueFor(event, context))
+      case e: MessageEvent => e.maybeNewFileId(context.services).getOrElse(super.potentialValueFor(event, context))
       case _ => super.potentialValueFor(event, context)
     }
   }

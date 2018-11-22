@@ -40,9 +40,6 @@ case class SlackApiMethodContext(
                                   implicit val actorSystem: ActorSystem
                                 ) extends ApiMethodContext {
 
-  val slackFileMap = services.slackFileMap
-  val ws = services.ws
-
   val mediumText: String = "Slack"
 
   def maybeSlackChannelIdFor(channel: String): Future[Option[String]] = {
@@ -153,56 +150,7 @@ case class SlackApiMethodContext(
     }
   }
 
-  private def contentDispositionForContentType(contentType: String): String = {
-    val extension = """image/(.*)""".r.findFirstMatchIn(contentType).flatMap { r =>
-      r.subgroups.headOption
-    }.getOrElse("txt")
-    s"""attachment; filename="ellipsis.${extension}""""
-  }
-
-  private def contentDispositionFor(response: WSResponse, contentType: String, httpHeaders: (String, String), maybeOriginalUrl: Option[String]): Future[String] = {
-    val maybeDispositionFromResponse = response.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption)
-    maybeDispositionFromResponse.map(Future.successful).getOrElse {
-      maybeOriginalUrl.map { originalUrl =>
-        ws.url(originalUrl).withHttpHeaders(httpHeaders).head.map { r =>
-          r.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption).getOrElse {
-            contentDispositionForContentType(contentType)
-          }
-        }
-      }.getOrElse {
-        Future.successful(contentDispositionForContentType(contentType))
-      }
-    }
-  }
-
-  override def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = {
-    slackFileMap.maybeUrlFor(fileId).map { originalUrl =>
-      val maybeThumbnailUrl = slackFileMap.maybeThumbnailUrlFor(fileId)
-      val urlToUse = maybeThumbnailUrl.getOrElse(originalUrl)
-      val httpHeaders = (AUTHORIZATION, s"Bearer ${botProfile.token}")
-      ws.url(urlToUse).withHttpHeaders(httpHeaders).get.flatMap { r =>
-        if (r.status == 200) {
-          val contentType =
-            r.headers.get(CONTENT_TYPE).
-              flatMap(_.headOption).
-              getOrElse("application/octet-stream")
-
-          contentDispositionFor(r, contentType, httpHeaders, maybeThumbnailUrl.map(_ => originalUrl)).map { contentDisposition =>
-            val result = r.headers.get(CONTENT_LENGTH) match {
-              case Some(Seq(length)) =>
-                Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
-              case _ =>
-                Ok.chunked(r.bodyAsSource).as(contentType)
-            }
-            result.withHeaders(CONTENT_TYPE -> contentType, CONTENT_DISPOSITION -> contentDisposition)
-          }
-
-        } else {
-          Future.successful(BadGateway)
-        }
-      }
-    }.getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
-  }
+  def getToken: Future[String] = Future.successful(botProfile.token)
 
   override def scheduleByName(
                                actionName: String,

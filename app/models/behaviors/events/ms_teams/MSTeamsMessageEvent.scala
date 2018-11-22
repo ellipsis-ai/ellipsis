@@ -4,13 +4,16 @@ import akka.actor.ActorSystem
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
+import services.ms_teams.apiModels.{Attachment, ContentAttachment, File}
 import services.{DataService, DefaultServices}
+import utils.FileReference
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class MSTeamsMessageEvent(
                                 eventContext: MSTeamsEventContext,
                                 message: String,
+                                attachments: Seq[Attachment],
                                 maybeOriginalEventType: Option[EventType],
                                 override val isUninterruptedConversation: Boolean,
                                 override val isEphemeral: Boolean,
@@ -25,6 +28,13 @@ case class MSTeamsMessageEvent(
   val user: String = eventContext.userIdForContext
 
   val eventType: EventType = EventType.chat
+
+  val maybeFile: Option[FileReference] = attachments.flatMap {
+    case ContentAttachment(_, f: File, _, _) => Some(f)
+    case _ => None
+  }.headOption
+
+  override val hasFile: Boolean = maybeFile.isDefined
 
   val maybeMessageIdForReaction: Option[String] = None // TODO: populate this
 

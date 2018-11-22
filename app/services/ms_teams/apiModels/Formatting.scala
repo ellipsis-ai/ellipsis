@@ -24,6 +24,8 @@ object Formatting {
     ) (a => (a.body, a.actions, a.`type`, a.`$schema`, a.version))
   lazy implicit val adaptiveCardFormat: Format[AdaptiveCard] = Format(adaptiveCardReads, adaptiveCardWrites)
 
+  lazy implicit val fileFormat: Format[File] = Jsonx.formatCaseClass[File]
+
   lazy implicit val actionSubmitReads: Reads[ActionSubmit] = Json.reads[ActionSubmit]
   lazy implicit val actionSubmitWrites: Writes[ActionSubmit] = (
     (JsPath \ "title").write[String] and

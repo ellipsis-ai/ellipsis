@@ -19,6 +19,7 @@ import play.api.libs.json.Json
 import services.DefaultServices
 import services.slack.SlackApiClient
 import json.Formatting._
+import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.slack.SlackUserTeamIds
 import models.behaviors.events.slack.SlackMessageEvent
 
@@ -261,6 +262,18 @@ class UserServiceImpl @Inject() (
         linkedAccount <- maybeLinkedAccount
         slackTeamIds <- maybeSlackUserData.map(_.accountTeamIds)
       } yield SlackProfile(slackTeamIds, linkedAccount.loginInfo, maybeSlackUserData.flatMap(_.accountEnterpriseId))
+    }
+  }
+
+  def maybeMSTeamsProfileFor(user: User): Future[Option[MSTeamsProfile]] = {
+    for {
+      maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSTeamsFor(user)
+      maybeBotProfile <- dataService.msTeamsBotProfiles.allFor(user.teamId).map(_.headOption)
+    } yield {
+      for {
+        linkedAccount <- maybeLinkedAccount
+        botProfile <- maybeBotProfile
+      } yield MSTeamsProfile(botProfile.teamIdForContext, linkedAccount.loginInfo)
     }
   }
 

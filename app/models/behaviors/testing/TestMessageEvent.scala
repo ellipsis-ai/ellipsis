@@ -3,6 +3,7 @@ package models.behaviors.testing
 import models.accounts.user.User
 import models.behaviors.events._
 import models.team.Team
+import utils.FileReference
 
 case class TestMessageEvent(
                             eventContext: TestEventContext,
@@ -20,5 +21,7 @@ case class TestMessageEvent(
   val isResponseExpected = true
 
   val maybeMessageIdForReaction: Option[String] = None
+
+  val maybeFile: Option[FileReference] = None
 
 }
