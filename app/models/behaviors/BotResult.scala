@@ -281,7 +281,8 @@ case class SuccessResult(
 
   override def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = {
     event.ensureUserAction(dataService).map { user =>
-      (payloadJson \ "choices").asOpt[Seq[SkillCodeActionChoice]].map { choices =>
+      val maybeChoices = (payloadJson \ "choices").asOpt[Seq[SkillCodeActionChoice]]
+      maybeChoices.map { choices =>
         choices.map(_.toActionChoiceWith(user, behaviorVersion))
       }
     }

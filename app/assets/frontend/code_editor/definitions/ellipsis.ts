@@ -127,8 +127,11 @@ declare namespace ellipsis {
     /** The text of the message that preceded this action */
     text: string
     
-    /** The name of the message medium, e.g. "slack" */
+    /** The name of the message medium, e.g. "slack" or "msTeams" */
     medium: string
+
+    /** The human-readable description of the message medium, e.g. "Slack" or "Microsoft Teams" */
+    mediumDescription: string
     
     /** The channel ID for where this message originated, if applicable */
     channel?: string

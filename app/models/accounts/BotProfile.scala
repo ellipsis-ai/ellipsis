@@ -16,12 +16,19 @@ object BotContext extends Enum[BotContext] {
   val values = List(SlackContext, MSTeamsContext)
 }
 
-sealed trait BotContext extends BotContext.Value
+sealed trait BotContext extends BotContext.Value {
+  val name: String
+  val description: String
+}
 
 case object SlackContext extends BotContext {
-  override def toString: String = "slack"
+  override val name: String = "slack"
+  override val description: String = "Slack"
+  override def toString: String = name
 }
 
 case object MSTeamsContext extends BotContext {
-  override def toString: String = "ms_teams"
+  override val name: String = "ms_teams"
+  override val description: String = "Microsoft Teams"
+  override def toString: String = name
 }
