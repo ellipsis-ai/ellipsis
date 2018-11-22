@@ -51,7 +51,7 @@ trait Event {
 
   def withOriginalEventType(originalEventType: EventType, isUninterruptedConversation: Boolean): Event
 
-  def logTextForResultSource: String = "in response to slack message"
+  def logTextForResultSource: String = s"in response to ${eventContext.name} message"
 
   def logTextFor(result: BotResult, maybeSource: Option[String]): String = {
     val channelText = maybeChannel.map { channel =>

@@ -157,6 +157,7 @@ trait MSTeamsApiClient {
         withHttpHeaders(headersFor(token): _*).
         post(value)
     } yield {
+      Logger.info(s"Response to message post: ${Json.prettyPrint(result.json)}")
       val json = responseToJson(result, Some("id"))
       (json \ "id").as[String]
     }

@@ -7,7 +7,7 @@ case class ResponseInfo(
                          recipient: MessageParticipantInfo,
                          text: String,
                          textFormat: String,
-                         replyToId: String,
+                         replyToId: Option[String],
                          attachments: Option[Seq[Attachment]],
                          entities: Option[Seq[MentionEntity]]
                        )
@@ -20,7 +20,7 @@ object ResponseInfo {
                      recipient: MessageParticipantInfo,
                      text: String,
                      textFormat: String,
-                     replyToId: String,
+                     maybeReplyToId: Option[String],
                      attachments: Option[Seq[Attachment]]
                    ): ResponseInfo = {
     val entities = Seq(from.toMentionEntity, recipient.toMentionEntity).flatMap{ ea =>
@@ -37,7 +37,7 @@ object ResponseInfo {
       recipient,
       text,
       textFormat,
-      replyToId,
+      maybeReplyToId,
       attachments,
       Some(entities)
     )

@@ -87,5 +87,6 @@ object Formatting {
   lazy implicit val channelDataChannelFormat: Format[ChannelDataChannel] = Json.format[ChannelDataChannel]
   lazy implicit val channelDataTeamFormat: Format[ChannelDataTeam] = Json.format[ChannelDataTeam]
   lazy implicit val directoryObjectFormat: Format[DirectoryObject] = Json.format[DirectoryObject]
+  lazy implicit val getPrivateConversationInfoFormat: Format[GetPrivateConversationInfo] = Json.format[GetPrivateConversationInfo]
 
 }

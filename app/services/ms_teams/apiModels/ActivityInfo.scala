@@ -9,7 +9,18 @@ case class ActivityInfo(
                          text: Option[String],
                          channelData: ChannelDataInfo
                        ) {
-  val responseUrl: String = s"$serviceUrl/v3/conversations/${conversation.id}/activities/${id}"
+
+  private val responseUrlBase = s"$serviceUrl/v3/conversations"
+
+  def responseUrlFor(conversationId: String, maybeActivityId: Option[String]): String = {
+    s"$responseUrlBase/${conversationId}/activities/${maybeActivityId.getOrElse("")}"
+  }
+
+  val responseUrl: String = responseUrlFor(conversation.id, Some(id))
+
+
+  val getPrivateConversationIdUrl: String = responseUrlBase
 
   val maybeTenantId: Option[String] = channelData.tenant.map(_.id)
+
 }

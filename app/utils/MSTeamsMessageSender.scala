@@ -26,6 +26,15 @@ case class MSTeamsMessageSenderException(underlying: Throwable, channel: String,
      """.stripMargin, underlying) {
 }
 
+case class MSTeamsGetConversationIdException(underlying: Throwable, channel: String, teamIdForContext: String, userId: String)
+  extends Exception(
+    s"""Bad response from MS Teams while creating a conversation with user $userId in channel $channel on team $teamIdForContext
+       |
+       |Underlying cause:
+       |${underlying.toString}
+     """.stripMargin, underlying) {
+}
+
 case class MSTeamsMessageSender(
                                  client: MSTeamsApiClient,
                                  user: String,
@@ -104,21 +113,33 @@ case class MSTeamsMessageSender(
                                     maybeThreadTs: Option[String]
                                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("not a thing yet")
 
+  private def getPrivateConversationId(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    val response = GetPrivateConversationInfo(
+      info.recipient,
+      Seq(DirectoryObject(info.from.id)),
+      ChannelDataInfo(None, info.channelData.tenant, None, None)
+    )
+    client.postToResponseUrl(info.getPrivateConversationIdUrl, Json.toJson(response)).recover {
+      case t: Throwable => throw MSTeamsGetConversationIdException(t, info.conversation.id, teamIdForContext, user)
+    }
+  }
+
   private def postChatMessage(
+                               conversationToUse: ConversationAccount,
+                               maybeReplyToId: Option[String],
                                text: String,
-                               maybeAttachments: Option[Seq[Attachment]] = None,
-                               maybeChannelToForce: Option[String] = None
+                               maybeAttachments: Option[Seq[Attachment]] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     val response = ResponseInfo.newForMessage(
       info.recipient,
-      info.conversation,
+      conversationToUse,
       info.from,
       text,
       "markdown",
-      info.id,
+      maybeReplyToId,
       maybeAttachments
     )
-    client.postToResponseUrl(info.responseUrl, Json.toJson(response)).recover(postErrorRecovery(info, text))
+    client.postToResponseUrl(info.responseUrlFor(conversationToUse.id, maybeReplyToId), Json.toJson(response)).recover(postErrorRecovery(info, text))
   }
 
   private def messageSegmentsFor(formattedText: String): List[String] = {
@@ -132,9 +153,11 @@ case class MSTeamsMessageSender(
     }
   }
 
+  private def isMovingToPrivate: Boolean = responseType == Private && info.conversation.conversationType != "personal"
+
   private def maybePreambleText: Option[String] = {
-    if (responseType == Private && !maybeDMChannel.contains(originatingChannel)) {
-      Some(s"<@${user}> I’ve sent you a <${client.botDMDeepLink}|private message> :sleuth_or_spy:")
+    if (isMovingToPrivate) {
+      Some(s"<at>${info.from.name}</at> I’ve sent you a [private message](${client.botDMDeepLink}) :sleuth_or_spy:")
     } else {
       None
     }
@@ -146,7 +169,7 @@ case class MSTeamsMessageSender(
         if (beQuiet) {
           postEphemeralMessage(preambleMessage, None, originatingChannel, maybeThreadId)
         } else {
-          postChatMessage(preambleMessage, None, Some(originatingChannel))
+          postChatMessage(info.conversation, Some(info.id), preambleMessage, None)
         }
       }.getOrElse(Future.successful(None)).map(_ => ())
     } else {
@@ -175,10 +198,13 @@ case class MSTeamsMessageSender(
           None
         }
 
-        postChatMessage(
-          segment,
-          maybeAttachmentsForSegment
-        )
+        if (isMovingToPrivate) {
+          getPrivateConversationId.flatMap { convoId =>
+            postChatMessage(ConversationAccount(convoId, None, None, "personal"), None, segment, maybeAttachmentsForSegment)
+          }
+        } else {
+          postChatMessage(info.conversation, Some(info.id), segment, maybeAttachmentsForSegment)
+        }
       }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
     }
   }
