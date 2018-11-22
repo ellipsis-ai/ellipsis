@@ -262,7 +262,7 @@ class MSTeamsController @Inject() (
             recipient = from,
             maybeResultText.getOrElse("updated"),
             "markdown",
-            rtid,
+            Some(rtid),
             Some(Seq())
           )
           client.updateMessage(serviceUrl, conversation.id, rtid, Json.toJson(updated)).map(_ => {})

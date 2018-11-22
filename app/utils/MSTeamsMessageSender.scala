@@ -26,6 +26,15 @@ case class MSTeamsMessageSenderException(underlying: Throwable, channel: String,
      """.stripMargin, underlying) {
 }
 
+case class MSTeamsGetConversationIdException(underlying: Throwable, channel: String, teamIdForContext: String, userId: String)
+  extends Exception(
+    s"""Bad response from MS Teams while creating a conversation with user $userId in channel $channel on team $teamIdForContext
+       |
+       |Underlying cause:
+       |${underlying.toString}
+     """.stripMargin, underlying) {
+}
+
 case class MSTeamsMessageSender(
                                  client: MSTeamsApiClient,
                                  user: String,
@@ -104,32 +113,33 @@ case class MSTeamsMessageSender(
                                     maybeThreadTs: Option[String]
                                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = Future.successful("not a thing yet")
 
-  private def postNewPrivateMessage(
-                                     text: String,
-                                     maybeAttachments: Option[Seq[Attachment]] = None
-                                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    val response = NewPrivateMessageInfo(
+  private def getPrivateConversationId(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+    val response = GetPrivateConversationInfo(
       info.recipient,
       Seq(DirectoryObject(info.from.id)),
       ChannelDataInfo(None, info.channelData.tenant, None, None)
     )
-    client.postToResponseUrl(info.privateMessageUrl, Json.toJson(response)).recover(postErrorRecovery(info, text))
+    client.postToResponseUrl(info.getPrivateConversationIdUrl, Json.toJson(response)).recover {
+      case t: Throwable => throw MSTeamsGetConversationIdException(t, info.conversation.id, teamIdForContext, user)
+    }
   }
 
   private def postChatMessage(
+                               conversationToUse: ConversationAccount,
+                               maybeReplyToId: Option[String],
                                text: String,
                                maybeAttachments: Option[Seq[Attachment]] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     val response = ResponseInfo.newForMessage(
       info.recipient,
-      info.conversation,
+      conversationToUse,
       info.from,
       text,
       "markdown",
-      info.id,
+      maybeReplyToId,
       maybeAttachments
     )
-    client.postToResponseUrl(info.responseUrl, Json.toJson(response)).recover(postErrorRecovery(info, text))
+    client.postToResponseUrl(info.responseUrlFor(conversationToUse.id, maybeReplyToId), Json.toJson(response)).recover(postErrorRecovery(info, text))
   }
 
   private def messageSegmentsFor(formattedText: String): List[String] = {
@@ -159,7 +169,7 @@ case class MSTeamsMessageSender(
         if (beQuiet) {
           postEphemeralMessage(preambleMessage, None, originatingChannel, maybeThreadId)
         } else {
-          postChatMessage(preambleMessage, None)
+          postChatMessage(info.conversation, Some(info.id), preambleMessage, None)
         }
       }.getOrElse(Future.successful(None)).map(_ => ())
     } else {
@@ -189,9 +199,11 @@ case class MSTeamsMessageSender(
         }
 
         if (isMovingToPrivate) {
-          postNewPrivateMessage(segment, maybeAttachmentsForSegment)
+          getPrivateConversationId.flatMap { convoId =>
+            postChatMessage(ConversationAccount(convoId, None, None, "personal"), None, segment, maybeAttachmentsForSegment)
+          }
         } else {
-          postChatMessage(segment, maybeAttachmentsForSegment)
+          postChatMessage(info.conversation, Some(info.id), segment, maybeAttachmentsForSegment)
         }
       }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
     }
