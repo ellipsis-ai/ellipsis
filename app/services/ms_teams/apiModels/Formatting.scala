@@ -26,6 +26,8 @@ object Formatting {
 
   lazy implicit val fileFormat: Format[File] = Jsonx.formatCaseClass[File]
 
+  lazy implicit val unknownAttachmentContentFormat: Format[UnknownAttachmentContent] = Jsonx.formatInline[UnknownAttachmentContent]
+
   lazy implicit val actionSubmitReads: Reads[ActionSubmit] = Json.reads[ActionSubmit]
   lazy implicit val actionSubmitWrites: Writes[ActionSubmit] = (
     (JsPath \ "title").write[String] and
@@ -75,7 +77,7 @@ object Formatting {
     ) (m => (m.mentioned, m.text, m.`type`))
   lazy implicit val mentionEntityFormat: Format[MentionEntity] = Format(mentionEntityReads, mentionEntityWrites)
 
-  lazy implicit val attachmentContentFormat: Format[AttachmentContent] = Jsonx.formatSealed[AttachmentContent]
+  lazy implicit val attachmentContentFormat: Format[AttachmentContent] = Jsonx.formatSealedWithFallback[AttachmentContent, UnknownAttachmentContent]
   lazy implicit val cardElementFormat: Format[CardElement] = Jsonx.formatSealed[CardElement]
   lazy implicit val contentAttachmentFormat: Format[ContentAttachment] = Jsonx.formatCaseClass[ContentAttachment]
 

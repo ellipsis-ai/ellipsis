@@ -1,5 +1,6 @@
 package services.ms_teams.apiModels
 
+import play.api.libs.json.JsValue
 import utils.FileReference
 
 sealed trait AttachmentContent {
@@ -16,3 +17,5 @@ case class File(downloadUrl: String, uniqueId: String, fileType: String) extends
   val url: String = downloadUrl
   val maybeThumbnailUrl: Option[String] = None
 }
+
+case class UnknownAttachmentContent(value: JsValue) extends AttachmentContent

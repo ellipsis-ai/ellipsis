@@ -34,8 +34,6 @@ case class MSTeamsMessageEvent(
     case _ => None
   }.headOption
 
-  override val hasFile: Boolean = maybeFile.isDefined
-
   val maybeMessageIdForReaction: Option[String] = None // TODO: populate this
 
   override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {

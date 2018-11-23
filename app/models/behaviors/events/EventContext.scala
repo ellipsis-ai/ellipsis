@@ -626,8 +626,6 @@ case class TestEventContext(
   }
   val isBotMessage: Boolean = false
 
-  def eventHasFile(event: MessageEventType): Boolean = event.maybeFile.nonEmpty
-
   override def ensureUserAction(dataService: DataService): DBIO[User] = DBIO.successful(user)
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)
 
