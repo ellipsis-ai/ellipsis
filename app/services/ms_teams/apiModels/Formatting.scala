@@ -79,10 +79,8 @@ object Formatting {
 
   lazy implicit val attachmentContentFormat: Format[AttachmentContent] = Jsonx.formatSealedWithFallback[AttachmentContent, UnknownAttachmentContent]
   lazy implicit val cardElementFormat: Format[CardElement] = Jsonx.formatSealed[CardElement]
-  lazy implicit val contentAttachmentFormat: Format[ContentAttachment] = Jsonx.formatCaseClass[ContentAttachment]
 
-  lazy implicit val linkAttachmentFormat: Format[LinkAttachment] = Jsonx.formatCaseClass[LinkAttachment]
-  lazy implicit val attachmentFormat: Format[Attachment] = Jsonx.formatSealed[Attachment]
+  lazy implicit val attachmentFormat: Format[Attachment] = Json.format[Attachment]
 
   lazy implicit val applicationFormat: Format[Application] = Json.format[Application]
 
