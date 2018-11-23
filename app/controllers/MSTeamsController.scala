@@ -337,9 +337,7 @@ class MSTeamsController @Inject() (
   }
 
   def event = Action { implicit request =>
-    if (environment.mode == Mode.Dev) {
-      Logger.info(s"MS Teams event received:\n${Json.prettyPrint(request.body.asJson.get)}")
-    }
+    Logger.info(s"MS Teams event received:\n${Json.prettyPrint(request.body.asJson.get)}")
 
     maybeMessageResult.getOrElse {
       Ok("I don't know what to do with this request but I'm not concerned")
