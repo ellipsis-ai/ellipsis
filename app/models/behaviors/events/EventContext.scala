@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import json.SlackUserData
+import models.accounts.{MSTeamsContext, SlackContext}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
@@ -38,6 +39,7 @@ sealed trait EventContext {
   val isDirectMessage: Boolean
   val maybeChannel: Option[String]
   val name: String
+  val description: String
 
   val usesTextInputs: Boolean = false
 
@@ -157,7 +159,8 @@ case class SlackEventContext(
   }
 
   val ellipsisTeamId: String = profile.teamId
-  lazy val name: String = Conversation.SLACK_CONTEXT
+  val name: String = SlackContext.name
+  val description: String = SlackContext.description
   val maybeChannel: Option[String] = Some(channel)
   val teamIdForContext: String = profile.slackTeamId
   val botUserId: String = profile.userId
@@ -411,7 +414,8 @@ case class MSTeamsEventContext(
   override type MenuItemType = MSTeamsMessageMenuItem
   override type MessageEventType = MSTeamsMessageEvent
 
-  val name: String = Conversation.MS_TEAMS_CONTEXT
+  val name: String = MSTeamsContext.name
+  val description: String = MSTeamsContext.description
   val userIdForContext: String = info.from.id
   val teamIdForContext: String = profile.teamIdForContext
   val ellipsisTeamId: String = profile.teamId
@@ -610,6 +614,7 @@ case class TestEventContext(
   override type MessageEventType = SlackMessageEvent
 
   val name = "test"
+  val description = "Test"
   val isPublicChannel: Boolean = false
   val isDirectMessage: Boolean = false
   val maybeChannel: Option[String] = None

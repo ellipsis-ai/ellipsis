@@ -33,4 +33,10 @@ case class SlackRunEvent(
     eventContext.reactionHandler(eventualResults, maybeTriggeringMessageTs, services)
   }
 
+  override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    maybeTriggeringMessageTs.map { ts =>
+      eventContext.maybePermalinkFor(ts, services)
+    }.getOrElse(Future.successful(None))
+  }
+
 }
