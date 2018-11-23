@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
-import services.ms_teams.apiModels.{Attachment, ContentAttachment, File}
+import services.ms_teams.apiModels.{Attachment, File}
 import services.{DataService, DefaultServices}
 import utils.FileReference
 
@@ -30,7 +30,7 @@ case class MSTeamsMessageEvent(
   val eventType: EventType = EventType.chat
 
   val maybeFile: Option[FileReference] = attachments.flatMap {
-    case ContentAttachment(_, f: File, _, _) => Some(f)
+    case Attachment(_, Some(f: File), _, _) => Some(f)
     case _ => None
   }.headOption
 
