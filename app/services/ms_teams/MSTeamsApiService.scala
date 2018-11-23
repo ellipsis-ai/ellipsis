@@ -40,7 +40,7 @@ trait MSTeamsApiClient {
   private val clientId = configuration.get[String](s"${configPath}clientID")
   private val clientSecret = configuration.get[String](s"${configPath}clientSecret")
 
-  private def fetchGraphApiToken: Future[String] = {
+  def fetchGraphApiToken: Future[String] = {
     val params = preparePostParams(Map(
       "client_id" -> clientId,
       "scope" -> "https://graph.microsoft.com/.default",

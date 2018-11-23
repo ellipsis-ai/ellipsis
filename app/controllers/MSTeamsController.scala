@@ -55,6 +55,7 @@ class MSTeamsController @Inject() (
                                           recipient: MessageParticipantInfo,
                                           textFormat: Option[String],
                                           text: Option[String],
+                                          attachments: Option[Seq[Attachment]],
                                           value: Option[JsObject],
                                           replyToId: Option[String],
                                           channelData: ChannelDataInfo,
@@ -108,6 +109,7 @@ class MSTeamsController @Inject() (
               this.toActivityInfo
             ),
             value,
+            Seq(),
             None,
             isUninterruptedConversation = false,
             isEphemeral = false,
@@ -294,6 +296,7 @@ class MSTeamsController @Inject() (
               info.toActivityInfo
             ),
             info.text.getOrElse(""), // TODO: formatting
+            info.attachments.getOrElse(Seq()),
             None,
             isUninterruptedConversation = false,
             isEphemeral = false,

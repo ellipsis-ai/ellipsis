@@ -68,6 +68,16 @@ class MSTeamsBotProfileServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledAllForTeamIdQuery(teamId: Rep[String]) = {
+    all.filter(_.teamId === teamId)
+  }
+  val allForTeamIdQuery = Compiled(uncompiledAllForTeamIdQuery _)
+
+  def allFor(teamId: String): Future[Seq[MSTeamsBotProfile]] ={
+    val action = allForTeamIdQuery(teamId).result
+    dataService.run(action)
+  }
+
   def ensure(tenantId: String, teamName: String): Future[MSTeamsBotProfile] = {
     val query = findQuery(tenantId)
     val action = query.result.headOption.flatMap {
@@ -119,6 +129,7 @@ class MSTeamsBotProfileServiceImpl @Inject() (
         info
       ),
       "",
+      Seq(),
       None,
       isUninterruptedConversation = false,
       isEphemeral,

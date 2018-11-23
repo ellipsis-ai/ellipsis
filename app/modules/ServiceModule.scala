@@ -71,7 +71,7 @@ import services.caching.{CacheService, CacheServiceImpl}
 import services.ms_teams.{MSTeamsApiService, MSTeamsEventService, MSTeamsEventServiceImpl}
 import services.slack.{SlackApiService, SlackEventService, SlackEventServiceImpl}
 import services.stats.{StatsService, StatsServiceImpl}
-import utils.SlackFileMap
+import utils.FileMap
 
 class ServiceModule extends AbstractModule with ScalaModule {
 
@@ -157,7 +157,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[PlanService].to[PlanServiceImpl]
     bind[EventHandler].asEagerSingleton()
     bind[GithubService].asEagerSingleton()
-    bind[SlackFileMap].asEagerSingleton()
+    bind[FileMap].asEagerSingleton()
     bind[SlackApiService].asEagerSingleton()
     bind[MSTeamsApiService].asEagerSingleton()
   }

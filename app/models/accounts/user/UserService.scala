@@ -3,6 +3,7 @@ package models.accounts.user
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import json.UserData
+import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.profile.SlackProfile
 import models.behaviors.behavior.Behavior
@@ -41,6 +42,8 @@ trait UserService extends IdentityService[User] {
   def maybeSlackTeamIdsFor(user: User): Future[Option[SlackUserTeamIds]]
 
   def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]]
+
+  def maybeMSTeamsProfileFor(user: User): Future[Option[MSTeamsProfile]]
 
   def findForInvocationToken(tokenId: String): Future[Option[User]]
 

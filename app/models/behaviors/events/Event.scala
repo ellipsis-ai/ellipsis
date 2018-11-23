@@ -45,6 +45,8 @@ trait Event {
   val beQuiet: Boolean = false
   val maybeReactionAdded: Option[String] = None
 
+  def hasFile: Boolean = false
+
   def originalEventType: EventType = {
     maybeOriginalEventType.getOrElse(eventType)
   }
