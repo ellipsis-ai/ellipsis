@@ -7,4 +7,5 @@ case class Attachment(
                        name: Option[String]
                      ) {
   val isFile: Boolean = contentType == "application/vnd.microsoft.teams.file.download.info"
+  val isHtml: Boolean = contentType == "text/html"
 }
