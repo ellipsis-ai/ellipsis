@@ -67,13 +67,7 @@ case class MSTeamsMessageSender(
       Seq()
     } else {
       val actionList = choices.zipWithIndex.map { case(ea, i) =>
-        val value = Json.obj(ACTION_CHOICE -> Json.toJson(ea)).toString()
-        val valueToUse = if (value.length > MSTeamsMessageSender.MAX_ACTION_VALUE_CHARS) {
-          services.cacheService.cacheSlackActionValue(value)
-        } else {
-          value
-        }
-        MSTeamsMessageActionButton(ea.label, valueToUse)
+        MSTeamsMessageActionButton(ea.label, ACTION_CHOICE, Json.obj(ACTION_CHOICE -> Json.toJson(ea)))
       }
       Seq(MSTeamsMessageAttachment(
         maybeColor = Some(Color.BLUE_LIGHTER),
