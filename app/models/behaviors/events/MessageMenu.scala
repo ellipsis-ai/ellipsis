@@ -5,5 +5,5 @@ trait MessageMenu {
 }
 
 trait MessageMenuItem {
-
+  val text: String
 }

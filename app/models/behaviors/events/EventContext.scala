@@ -564,7 +564,7 @@ case class MSTeamsEventContext(
                               value: String,
                               maybeStyle: Option[String] = None
                             ) = {
-    MSTeamsMessageActionButton(label, Json.obj(callbackId -> value).toString())
+    MSTeamsMessageActionButton(label, callbackId, Json.obj(callbackId -> value))
   }
 
   def messageActionMenuItemFor(

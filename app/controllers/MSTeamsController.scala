@@ -83,7 +83,13 @@ class MSTeamsController @Inject() (
       for {
         v <- value
         k <- maybeKeyMatching(keyPrefix)
-      } yield (v \ k)
+        actionName <- (v \ "actionName").asOpt[String]
+        r <- if (actionName == k) {
+          Some(v \ k)
+        } else {
+          None
+        }
+      } yield r
     }
     val contextName: String = Conversation.MS_TEAMS_CONTEXT
     def findButtonLabelForNameAndValue(name: String,value: String): Option[String] = None
@@ -176,7 +182,7 @@ class MSTeamsController @Inject() (
     def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
       maybeValueResultMatching(SHOW_BEHAVIOR_GROUP_HELP).flatMap(_.asOpt[String]).map(HelpGroupSearchValue.fromString)
     }
-    def maybeHelpIndexAt: Option[Int] = maybeValueResultMatching(SHOW_BEHAVIOR_GROUP_HELP).flatMap(_.asOpt[Int])
+    def maybeHelpIndexAt: Option[Int] = maybeValueResultMatching(SHOW_HELP_INDEX).map(_.asOpt[Int].getOrElse(0))
     def maybeHelpRunBehaviorVersionId: Option[String] = maybeValueResultMatching(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION).flatMap(_.asOpt[String])
     def maybeSelectedActionChoice: Option[ActionChoice] = maybeValueResultMatching(ACTION_CHOICE).flatMap(_.asOpt[ActionChoice])
     val maybeStopConversationResponse: Option[StopConversationResponse] = None
