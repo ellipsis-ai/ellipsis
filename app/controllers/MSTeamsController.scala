@@ -16,13 +16,14 @@ import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
-import play.api.{Environment, Logger, Mode}
+import play.api.{Environment, Logger}
 import services._
-import services.ms_teams.apiModels._
 import services.ms_teams.apiModels.Formatting._
+import services.ms_teams.apiModels._
 import services.ms_teams.{MSTeamsApiService, MSTeamsEventService}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.matching.Regex
 
 class MSTeamsController @Inject() (
                                   val silhouette: Silhouette[EllipsisEnv],
@@ -62,6 +63,23 @@ class MSTeamsController @Inject() (
                                           entities: Option[JsValue]
                                          ) extends ActionsTriggeredInfo {
 
+    val imgRegex = new Regex("""<img alt=\"(.+?)\".+?>""", "altText")
+
+    private def contentFromHtml(str: String): String = {
+      val withoutDivs = """<div>|</div>""".r.replaceAllIn(str, "")
+      val withImgAltTxt = imgRegex.replaceAllIn(withoutDivs, m => m.group("altText"))
+      withImgAltTxt
+    }
+
+    val maybeHtmlText: Option[String] = attachments.flatMap { att =>
+      att.find(_.isHtml).flatMap(_.content match {
+        case Some(UnknownAttachmentContent(str: JsString)) => Some(contentFromHtml(str.value.trim))
+        case _ => None
+      })
+    }
+
+    val maybeTextToUse: Option[String] = maybeHtmlText.orElse(text)
+
     val maybeTenantId: Option[String] = channelData.tenant.map(_.id)
 
     def toActivityInfo: ActivityInfo = ActivityInfo(
@@ -70,7 +88,7 @@ class MSTeamsController @Inject() (
       from,
       conversation,
       recipient,
-      text,
+      maybeTextToUse,
       channelData
     )
 
@@ -301,7 +319,7 @@ class MSTeamsController @Inject() (
               botProfile,
               info.toActivityInfo
             ),
-            info.text.getOrElse(""), // TODO: formatting
+            info.maybeTextToUse.getOrElse(""), // TODO: formatting
             info.attachments.getOrElse(Seq()),
             None,
             isUninterruptedConversation = false,
