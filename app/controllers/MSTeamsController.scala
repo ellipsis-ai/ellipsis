@@ -63,12 +63,12 @@ class MSTeamsController @Inject() (
                                           entities: Option[JsValue]
                                          ) extends ActionsTriggeredInfo {
 
-    val imgRegex = new Regex("""<img alt=\"(.+?)\".+?>""", "altText")
+    val emojiRegex = new Regex("""<img alt=\"(.+?)\" class=\"emojione\".+?>""", "altText")
 
     private def contentFromHtml(str: String): String = {
       val withoutDivs = """<div>|</div>""".r.replaceAllIn(str, "")
-      val withImgAltTxt = imgRegex.replaceAllIn(withoutDivs, m => m.group("altText"))
-      withImgAltTxt
+      val withEmojiAltText = emojiRegex.replaceAllIn(withoutDivs, m => m.group("altText"))
+      withEmojiAltText
     }
 
     val maybeHtmlText: Option[String] = attachments.flatMap { att =>
