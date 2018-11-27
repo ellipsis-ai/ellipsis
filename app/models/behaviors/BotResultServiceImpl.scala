@@ -90,7 +90,14 @@ class BotResultServiceImpl @Inject() (
           sendInAction(SimpleTextResult(event, maybeConversation, e.responseText, botResult.responseType), None).map(_ => Seq())
         }
       }
-      maybeChoices <- botResult.maybeChoicesAction(dataService)
+      maybeChoices <- botResult.maybeChoicesAction(dataService).cleanUp {
+        maybeException: Option[Throwable] => maybeException.map {
+          case e: InvalidChoicesException => {
+            sendInAction(SimpleTextResult(event, maybeConversation, e.responseText, botResult.responseType), None).map(_ => DBIO.successful(None))
+          }
+          case t => throw t
+        }.getOrElse(DBIO.successful(None))
+      }
       sendResult <- DBIO.from(
         event.sendMessage(
           botResult.fullText,

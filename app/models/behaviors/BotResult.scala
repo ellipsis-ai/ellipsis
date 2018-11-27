@@ -231,7 +231,11 @@ case class InvalidFilesException(message: String) extends Exception {
   def responseText: String =
     s"""Invalid files passed to `ellipsis.success()`
        |
-       |Errors: $message
+       |Errors:
+       |
+       |```
+       |$message
+       |```
        |
        |The value for the `files` property should be an array like:
        |
@@ -245,6 +249,39 @@ case class InvalidFilesException(message: String) extends Exception {
        |]
        |```
      """.stripMargin
+}
+
+case class InvalidChoicesException(message: String) extends Exception {
+  def responseText: String = s"""Invalid choices passed to `ellipsis.success()`
+     |
+     |Errors:
+     |
+     |```
+     |$message
+     |```
+     |
+     |The value for the `choices` property should be an array like:
+     |
+     |```
+     |[
+     |  {
+     |    actionName: "someActionName",
+     |    label: "Button label",
+     |
+     |    // Optional properties:
+     |    args: [
+     |      {
+     |        name: "argName",
+     |        value: "argValue"
+     |      }, ...
+     |    ],
+     |    allowOthers: true,
+     |    allowMultipleSelections: true,
+     |    quiet: true
+     |  }
+     |]
+     |```
+   """.stripMargin
 }
 
 case class SuccessResult(
@@ -265,12 +302,16 @@ case class SuccessResult(
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
+  def jsonErrorsToMessage(errs: Seq[(JsPath, Seq[JsonValidationError])]): String = {
+    errs.map { error =>
+      s"- ${error._1.toJsonString}: ${error._2.flatMap(_.messages).mkString(", ")}"
+    }.mkString("\n")
+  }
+
   override def files: Seq[UploadFileSpec] = {
     val authoredFiles = (payloadJson \ "files").validateOpt[Seq[UploadFileSpec]] match {
       case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
-      case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
-        validationErrors.map(_.message).mkString(", ")
-      }.mkString(", "))
+      case JsError(errs) => throw InvalidFilesException(jsonErrorsToMessage(errs))
     }
     authoredFiles ++ super.files
   }
@@ -281,9 +322,11 @@ case class SuccessResult(
 
   override def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = {
     event.ensureUserAction(dataService).map { user =>
-      val maybeChoices = (payloadJson \ "choices").asOpt[Seq[SkillCodeActionChoice]]
-      maybeChoices.map { choices =>
-        choices.map(_.toActionChoiceWith(user, behaviorVersion))
+      (payloadJson \ "choices").validateOpt[Seq[SkillCodeActionChoice]] match {
+        case JsSuccess(maybeChoices, _) => maybeChoices.map { choices =>
+          choices.map(_.toActionChoiceWith(user, behaviorVersion))
+        }
+        case JsError(errs) => throw InvalidChoicesException(jsonErrorsToMessage(errs))
       }
     }
   }
