@@ -40,7 +40,8 @@ class MockAWSLambdaService @Inject() (
       maybeResponseTemplate = None,
       maybeLogResult = None,
       responseType = Normal,
-      DeveloperContext.default
+      DeveloperContext.default,
+      dataService
     )
   }
 

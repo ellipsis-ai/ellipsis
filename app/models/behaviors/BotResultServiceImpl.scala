@@ -83,14 +83,7 @@ class BotResultServiceImpl @Inject() (
       } else {
         DBIO.successful(false)
       }
-      files <- try {
-        DBIO.successful(botResult.files)
-      } catch {
-        case e: InvalidFilesException => {
-          sendInAction(SimpleTextResult(event, maybeConversation, e.responseText, botResult.responseType), None).map(_ => Seq())
-        }
-      }
-      maybeChoices <- botResult.maybeChoicesAction(dataService)
+      user <- event.ensureUserAction(dataService)
       sendResult <- DBIO.from(
         event.sendMessage(
           botResult.fullText,
@@ -98,8 +91,8 @@ class BotResultServiceImpl @Inject() (
           maybeShouldUnfurl,
           maybeConversation,
           botResult.attachments,
-          files,
-          maybeChoices.getOrElse(Seq()),
+          botResult.files,
+          botResult.actionChoicesFor(user),
           botResult.developerContext,
           services
         )

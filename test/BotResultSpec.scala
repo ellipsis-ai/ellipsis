@@ -107,7 +107,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
             responseType = Normal,
-            developerContext = DeveloperContext.default
+            developerContext = DeveloperContext.default,
+            dataService
           )
         val resultTs: String = SlackTimestamp.now
 
@@ -140,7 +141,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
             responseType = Normal,
-            developerContext = DeveloperContext.default
+            developerContext = DeveloperContext.default,
+            dataService
           )
         val resultTs: String = SlackTimestamp.now
 
@@ -217,7 +219,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
             responseType = Normal,
-            developerContext = DeveloperContext.default
+            developerContext = DeveloperContext.default,
+            dataService
           )
 
         mockPostChatMessage(responseText, event, client, resultTs, None)
@@ -265,7 +268,8 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
             responseType = Normal,
-            developerContext = DeveloperContext.default
+            developerContext = DeveloperContext.default,
+            dataService
           )
 
         val otherConversation = newConversationFor(team, user, profile, event)

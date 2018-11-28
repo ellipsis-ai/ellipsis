@@ -8,6 +8,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsObject, JsString}
+import services.DataService
 
 class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
   val originatingChannel = "CHANNEL"
@@ -20,7 +21,8 @@ class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
 
   def botResultFor(event: Event, maybeConversation: Option[Conversation]): BotResult = {
     val behaviorVersion = mock[BehaviorVersion]
-    SuccessResult(event, behaviorVersion, maybeConversation, JsString("Success!"), JsObject.empty, Seq.empty, JsObject.empty, None, None, Threaded, DeveloperContext.default)
+    val mockDataService = mock[DataService]
+    SuccessResult(event, behaviorVersion, maybeConversation, JsString("Success!"), JsObject.empty, Seq.empty, JsObject.empty, None, None, Threaded, DeveloperContext.default, mockDataService)
   }
 
 

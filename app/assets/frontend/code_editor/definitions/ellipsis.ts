@@ -22,7 +22,7 @@ declare namespace ellipsis {
     name: string
     
     /** The value of a parameter to set */
-    value: any
+    value: string
     
   }
 

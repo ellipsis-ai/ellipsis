@@ -113,7 +113,8 @@ case class BehaviorVersion(
         maybeResponseTemplate,
         logResultOption,
         responseType,
-        developerContext
+        developerContext,
+        dataService
       )
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
