@@ -342,14 +342,14 @@ case class SuccessResult(
 
   val resultType = ResultType.Success
 
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+
   override def executionInfo: ExecutionInfo = {
     ExecutionInfo.empty.
       withChoicesFrom(payloadJson).
       withNextActionFrom(payloadJson).
       withUserFilesFrom(payloadJson)
   }
-
-  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
   override def actionChoicesFor(user: User): Seq[ActionChoice] = {
     executionInfo.choices.map(_.toActionChoiceWith(user, behaviorVersion))
@@ -361,10 +361,10 @@ case class SuccessResult(
   }
 
   override def shouldNotifyAdmins(implicit ec: ExecutionContext): Future[Boolean] = {
-    for {
-      isManaged <- isForManagedGroup(dataService)
-    } yield {
-      isManaged && executionInfo.errors.nonEmpty
+    if (executionInfo.errors.nonEmpty) {
+      isForManagedGroup(dataService)
+    } else {
+      Future.successful(false)
     }
   }
 }
