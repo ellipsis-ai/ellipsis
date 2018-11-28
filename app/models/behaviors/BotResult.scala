@@ -154,7 +154,7 @@ case class ExecutionInfo(
   def withNextActionFrom(payloadJson: JsValue): ExecutionInfo = {
     val nextJson = (payloadJson \ "next")
     nextJson.validateOpt[NextAction] match {
-      case JsSuccess(maybeNextAction, _) => this.copy(maybeNextAction = maybeNextAction)
+      case JsSuccess(maybeNextActionFromJs, _) => this.copy(maybeNextAction = maybeNextActionFromJs)
       case e: JsError => this.copy(errors = errors :+ NextActionError(nextJson, e))
     }
   }
