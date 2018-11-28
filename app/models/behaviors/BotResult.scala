@@ -109,7 +109,7 @@ trait ExecutionInfoError {
     UploadFileSpec(
       Some(ExecutionInfo.errorFor(jsonLookup, jsError, paramName)),
       Some("text"),
-      None
+      Some(s"Error log for $paramName")
     )
   }
 }
@@ -203,7 +203,7 @@ sealed trait BotResult {
   val developerContext: DeveloperContext
   def maybeLog: Option[String] = None
   def maybeLogFile: Option[UploadFileSpec] = None
-  def executionInfo: ExecutionInfo = ExecutionInfo.empty
+  lazy val executionInfo: ExecutionInfo = ExecutionInfo.empty
 
   def shouldIncludeLogs: Boolean = {
     developerContext.isInDevMode || developerContext.isInInvocationTester
@@ -344,7 +344,7 @@ case class SuccessResult(
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
-  override def executionInfo: ExecutionInfo = {
+  override lazy val executionInfo: ExecutionInfo = {
     ExecutionInfo.empty.
       withChoicesFrom(payloadJson).
       withNextActionFrom(payloadJson).
@@ -627,7 +627,7 @@ case class AdminSkillErrorNotificationResult(
   lazy val maybeConversation: Option[Conversation] = None
   lazy val maybeBehaviorVersion: Option[BehaviorVersion] = originalResult.maybeBehaviorVersion
   override def maybeLogFile: Option[UploadFileSpec] = originalResult.maybeLogFile
-  override def executionInfo: ExecutionInfo = originalResult.executionInfo
+  override lazy val executionInfo: ExecutionInfo = originalResult.executionInfo
   override def attachments: Seq[MessageAttachment] = originalResult.attachments
 }
 
