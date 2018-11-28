@@ -274,7 +274,8 @@ class AWSLambdaServiceImpl @Inject() (
             behaviorVersion.maybeResponseTemplate,
             None,
             behaviorVersion.responseType,
-            developerContext
+            developerContext,
+            dataService
           ))
         } else {
           invokeFunctionAction(

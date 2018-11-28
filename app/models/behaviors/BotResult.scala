@@ -23,7 +23,7 @@ import services.AWSLambdaConstants._
 import services.caching.CacheService
 import services.{AWSLambdaLogResult, DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.UploadFileSpec
+import utils.{Color, UploadFileSpec}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -99,14 +99,103 @@ case class ActionChoice(
 
 }
 
+trait ExecutionInfoError {
+  val jsonLookup: JsLookupResult
+  val jsError: JsError
+  val paramName: String
+  val userWarning: String
+
+  def devLog: UploadFileSpec = {
+    UploadFileSpec(
+      Some(ExecutionInfo.errorFor(jsonLookup, jsError, paramName)),
+      Some("text"),
+      None
+    )
+  }
+}
+
+case class UserFilesError(jsonLookup: JsLookupResult, jsError: JsError) extends ExecutionInfoError {
+  val paramName: String = "files"
+  val userWarning: String = "An unexpected error occurred while trying to provide a file."
+}
+
+case class ChoicesError(jsonLookup: JsLookupResult, jsError: JsError) extends ExecutionInfoError {
+  val paramName: String = "choices"
+  val userWarning: String = "An unexpected error occurred while trying to provide follow-up actions to choose."
+}
+
+case class NextActionError(jsonLookup: JsLookupResult, jsError: JsError) extends ExecutionInfoError {
+  val paramName: String = "next"
+  val userWarning: String = "An unexpected error occurred while trying to run a follow-up action."
+}
+
+case class ExecutionInfo(
+                          userFiles: Seq[UploadFileSpec],
+                          choices: Seq[SkillCodeActionChoice],
+                          maybeNextAction: Option[NextAction],
+                          errors: Seq[ExecutionInfoError]
+                        ) {
+  def withUserFilesFrom(payloadJson: JsValue): ExecutionInfo = {
+    val fileJson = (payloadJson \ "files")
+    fileJson.validateOpt[Seq[UploadFileSpec]] match {
+      case JsSuccess(maybeFiles, _) => this.copy(userFiles = maybeFiles.getOrElse(Seq()))
+      case e: JsError => this.copy(errors = errors :+ UserFilesError(fileJson, e))
+    }
+  }
+
+  def withChoicesFrom(payloadJson: JsValue): ExecutionInfo = {
+    val choicesJson = (payloadJson \ "choices")
+    choicesJson.validateOpt[Seq[SkillCodeActionChoice]] match {
+      case JsSuccess(maybeChoices, _) => this.copy(choices = choices ++ maybeChoices.getOrElse(Seq()))
+      case e: JsError => this.copy(errors = errors :+ ChoicesError(choicesJson, e))
+    }
+  }
+
+  def withNextActionFrom(payloadJson: JsValue): ExecutionInfo = {
+    val nextJson = (payloadJson \ "next")
+    nextJson.validateOpt[NextAction] match {
+      case JsSuccess(maybeNextAction, _) => this.copy(maybeNextAction = maybeNextAction)
+      case e: JsError => this.copy(errors = errors :+ NextActionError(nextJson, e))
+    }
+  }
+}
+
+object ExecutionInfo {
+  def empty: ExecutionInfo = {
+    ExecutionInfo(Seq(), Seq(), None, Seq())
+  }
+
+  def jsonErrorsToMessage(errs: Seq[(JsPath, Seq[JsonValidationError])], paramName: String): String = {
+    errs.map { error =>
+      val path = error._1.toJsonString.replaceFirst("^obj", paramName)
+      val message = error._2.flatMap(_.messages).map { message =>
+        // Convert Play's unfriendly validation errors like "error.invalid.jsstring" to something more legible
+        message.split('.').filterNot(_ == "error").map(_.replaceFirst("^js", "")).mkString(" ")
+      }.mkString(", ")
+      s"- ${path}: ${message}"
+    }.mkString("\n")
+  }
+
+  def errorFor(originalJson: JsLookupResult, jsError: JsError, paramName: String): String = {
+    s"""Error: invalid `${paramName}` value provided to ellipsis.success()
+       |
+       |Value received:
+       |
+       |${paramName}: ${Json.prettyPrint(originalJson.getOrElse(JsNull))}
+       |
+       |Errors:
+       |
+       |${ExecutionInfo.jsonErrorsToMessage(jsError.errors, paramName)}
+       |""".stripMargin
+  }
+}
+
 sealed trait BotResult {
   val resultType: ResultType.Value
   val responseType: BehaviorResponseType
   val event: Event
   val maybeConversation: Option[Conversation]
   val maybeBehaviorVersion: Option[BehaviorVersion]
-  def maybeNextAction: Option[NextAction] = None
-  def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = DBIO.successful(None)
   val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
@@ -114,17 +203,22 @@ sealed trait BotResult {
   val developerContext: DeveloperContext
   def maybeLog: Option[String] = None
   def maybeLogFile: Option[UploadFileSpec] = None
+  def executionInfo: ExecutionInfo = ExecutionInfo.empty
 
   def shouldIncludeLogs: Boolean = {
-    maybeLog.isDefined && (developerContext.isInDevMode || developerContext.isInInvocationTester)
+    developerContext.isInDevMode || developerContext.isInInvocationTester
   }
 
+  def maybeNextAction: Option[NextAction] = executionInfo.maybeNextAction
+  def actionChoicesFor(user: User): Seq[ActionChoice] = Seq()
+
   def files: Seq[UploadFileSpec] = {
-    if (shouldIncludeLogs) {
-      Seq(maybeLogFile).flatten
+    val logs = if (shouldIncludeLogs) {
+      Seq(maybeLogFile).flatten ++ executionInfo.errors.map(_.devLog)
     } else {
       Seq()
     }
+    executionInfo.userFiles ++ logs
   }
 
   def filesAsLogText: String = {
@@ -186,7 +280,11 @@ sealed trait BotResult {
 
   val shouldSend: Boolean = true
 
-  def attachments: Seq[MessageAttachment] = Seq()
+  def attachments: Seq[MessageAttachment] = {
+    executionInfo.errors.map { error =>
+      event.eventContext.messageAttachmentFor(maybeText = Some(error.userWarning), maybeColor = Some(Color.PINK))
+    }
+  }
 
   def isForManagedGroup(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     maybeBehaviorVersion.map { behaviorVersion =>
@@ -227,63 +325,6 @@ trait BotResultWithLogResult extends BotResult {
 
 }
 
-case class InvalidFilesException(message: String) extends Exception {
-  def responseText: String =
-    s"""Invalid files passed to `ellipsis.success()`
-       |
-       |Errors:
-       |
-       |```
-       |$message
-       |```
-       |
-       |The value for the `files` property should be an array like:
-       |
-       |```
-       |[
-       |  {
-       |    content: "The content…",
-       |    filetype: "text",
-       |    filename: "filname.txt"
-       |  }, ...
-       |]
-       |```
-     """.stripMargin
-}
-
-case class InvalidChoicesException(message: String) extends Exception {
-  def responseText: String = s"""Invalid choices passed to `ellipsis.success()`
-     |
-     |Errors:
-     |
-     |```
-     |$message
-     |```
-     |
-     |The value for the `choices` property should be an array like:
-     |
-     |```
-     |[
-     |  {
-     |    actionName: "someActionName",
-     |    label: "Button label",
-     |
-     |    // Optional properties:
-     |    args: [
-     |      {
-     |        name: "argName",
-     |        value: "argValue"
-     |      }, ...
-     |    ],
-     |    allowOthers: true,
-     |    allowMultipleSelections: true,
-     |    quiet: true
-     |  }
-     |]
-     |```
-   """.stripMargin
-}
-
 case class SuccessResult(
                           event: Event,
                           behaviorVersion: BehaviorVersion,
@@ -295,45 +336,36 @@ case class SuccessResult(
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
                           override val responseType: BehaviorResponseType,
-                          developerContext: DeveloperContext
+                          developerContext: DeveloperContext,
+                          dataService: DataService
                         ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
 
+  override def executionInfo: ExecutionInfo = {
+    ExecutionInfo.empty.
+      withChoicesFrom(payloadJson).
+      withNextActionFrom(payloadJson).
+      withUserFilesFrom(payloadJson)
+  }
+
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
-  def jsonErrorsToMessage(errs: Seq[(JsPath, Seq[JsonValidationError])]): String = {
-    errs.map { error =>
-      s"- ${error._1.toJsonString}: ${error._2.flatMap(_.messages).mkString(", ")}"
-    }.mkString("\n")
-  }
-
-  override def files: Seq[UploadFileSpec] = {
-    val authoredFiles = (payloadJson \ "files").validateOpt[Seq[UploadFileSpec]] match {
-      case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
-      case JsError(errs) => throw InvalidFilesException(jsonErrorsToMessage(errs))
-    }
-    authoredFiles ++ super.files
-  }
-
-  override def maybeNextAction: Option[NextAction] = {
-    (payloadJson \ "next").asOpt[NextAction]
-  }
-
-  override def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = {
-    event.ensureUserAction(dataService).map { user =>
-      (payloadJson \ "choices").validateOpt[Seq[SkillCodeActionChoice]] match {
-        case JsSuccess(maybeChoices, _) => maybeChoices.map { choices =>
-          choices.map(_.toActionChoiceWith(user, behaviorVersion))
-        }
-        case JsError(errs) => throw InvalidChoicesException(jsonErrorsToMessage(errs))
-      }
-    }
+  override def actionChoicesFor(user: User): Seq[ActionChoice] = {
+    executionInfo.choices.map(_.toActionChoiceWith(user, behaviorVersion))
   }
 
   def text: String = {
     val inputs = invocationJson.fields ++ parametersWithValues.map { ea => (ea.parameter.name, ea.preparedValue) }
     TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply
+  }
+
+  override def shouldNotifyAdmins(implicit ec: ExecutionContext): Future[Boolean] = {
+    for {
+      isManaged <- isForManagedGroup(dataService)
+    } yield {
+      isManaged && executionInfo.errors.nonEmpty
+    }
   }
 }
 
@@ -360,7 +392,7 @@ case class TextWithAttachmentsResult(
                                       maybeConversation: Option[Conversation],
                                       simpleText: String,
                                       override val responseType: BehaviorResponseType,
-                                      override val attachments: Seq[MessageAttachment]
+                                      otherAttachments: Seq[MessageAttachment]
                                     ) extends BotResult {
   val resultType = ResultType.TextWithActions
 
@@ -369,6 +401,10 @@ case class TextWithAttachmentsResult(
   val developerContext: DeveloperContext = DeveloperContext.default
 
   def text: String = simpleText
+
+  override def attachments: Seq[MessageAttachment] = {
+    otherAttachments ++ super.attachments
+  }
 }
 
 case class NoResponseResult(
@@ -573,19 +609,26 @@ case class AdminSkillErrorNotificationResult(
   lazy val text: String = {
     val userIdForContext = originalResult.event.eventContext.userIdForContext
     val contextUserText = s"Context User ID: <@${userIdForContext}> (ID #${userIdForContext})"
+
     s"""Error$description
        |
        |Team: $teamLink
        |$contextUserText
        |Result type: ${originalResult.resultType}
        |
+       |Result text delivered:
+       |
+       |---
+       |
+       |${originalResult.text}
      """.stripMargin
   }
 
   lazy val maybeConversation: Option[Conversation] = None
   lazy val maybeBehaviorVersion: Option[BehaviorVersion] = originalResult.maybeBehaviorVersion
   override def maybeLogFile: Option[UploadFileSpec] = originalResult.maybeLogFile
-
+  override def executionInfo: ExecutionInfo = originalResult.executionInfo
+  override def attachments: Seq[MessageAttachment] = originalResult.attachments
 }
 
 case class MissingTeamEnvVarsResult(
