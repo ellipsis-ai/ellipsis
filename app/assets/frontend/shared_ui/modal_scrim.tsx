@@ -7,8 +7,6 @@ interface Props {
 }
 
 class ModalScrim extends React.PureComponent<Props> {
-  scrim: Option<HTMLDivElement>;
-
   constructor(props: Props) {
     super(props);
     autobind(this);
@@ -27,7 +25,6 @@ class ModalScrim extends React.PureComponent<Props> {
   render() {
     return (
       <div
-        ref={(el) => this.scrim = el}
         className={
           "bg-scrim position-z-scrim position-fixed-full " +
           (this.props.isActive ? "fade-in" : "display-none")
