@@ -4,14 +4,16 @@ import BehaviorGroupDetailsEditor from './behavior_group_details_editor';
 import Button from '../form/button';
 import autobind from '../lib/autobind';
 
-type Props = {
-    group: BehaviorGroup,
-    onBehaviorGroupIconChange: (string) => void,
-    onBehaviorGroupNameChange: (string) => void,
-    onBehaviorGroupDescriptionChange: (string) => void,
-    onDone: () => void,
+interface Props {
+    group: BehaviorGroup
+    onBehaviorGroupIconChange: (string) => void
+    onBehaviorGroupNameChange: (string) => void
+    onBehaviorGroupDescriptionChange: (string) => void
+    onDone: () => void
     visible: boolean
-};
+    iconPickerVisible: boolean
+    onToggleIconPicker: () => void
+}
 
 class BehaviorGroupDetailsPanel extends React.Component<Props> {
     props: Props;
@@ -65,6 +67,8 @@ class BehaviorGroupDetailsPanel extends React.Component<Props> {
                   onBehaviorGroupNameChange={this.props.onBehaviorGroupNameChange}
                   onBehaviorGroupDescriptionChange={this.props.onBehaviorGroupDescriptionChange}
                   onBehaviorGroupIconChange={this.props.onBehaviorGroupIconChange}
+                  iconPickerVisible={this.props.iconPickerVisible}
+                  onToggleIconPicker={this.props.onToggleIconPicker}
                 />
 
                 <div className="mtxl">
