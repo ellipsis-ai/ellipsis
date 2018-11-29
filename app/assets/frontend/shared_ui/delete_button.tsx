@@ -1,14 +1,16 @@
 import * as React from 'react';
 import SVGXIcon from '../svg/x';
 import autobind from "../lib/autobind";
+import Button from "../form/button";
 
 interface Props {
   onClick: () => void
   title?: Option<string>
+  className?: Option<string>
 }
 
 class DeleteButton extends React.PureComponent<Props> {
-  button: Option<HTMLButtonElement>;
+  button: Option<Button>;
 
   constructor(props) {
     super(props);
@@ -24,16 +26,14 @@ class DeleteButton extends React.PureComponent<Props> {
 
   render() {
     return (
-      <span className="type-weak">
-        <button type="button"
-          ref={(el) => this.button = el}
-          className="button-subtle button-symbol"
-          onClick={this.onClick}
-          title={this.props.title || "Delete"}
-        >
-          <SVGXIcon label="Delete" />
-        </button>
-      </span>
+      <Button
+        ref={(el) => this.button = el}
+        className={`button-subtle button-symbol ${this.props.className || ""}`}
+        onClick={this.onClick}
+        title={this.props.title || "Delete"}
+      >
+        <span className="type-weak"><SVGXIcon label="Delete" /></span>
+      </Button>
     );
   }
 }

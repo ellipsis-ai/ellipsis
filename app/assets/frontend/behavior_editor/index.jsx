@@ -1144,6 +1144,10 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  toggleIconPicker: function() {
+    this.toggleActiveDropdown("behaviorGroupIconPicker");
+  },
+
   toggleActivePanel: function(name, beModal, optionalCallback) {
     this.props.onToggleActivePanel(name, beModal, optionalCallback);
   },
@@ -2737,6 +2741,8 @@ const BehaviorEditor = React.createClass({
           onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
           onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
           onDeleteClick={this.confirmDeleteBehaviorGroup}
+          iconPickerVisible={this.getActiveDropdown() === "behaviorGroupIconPicker"}
+          onToggleIconPicker={this.toggleIconPicker}
         />
       );
     }

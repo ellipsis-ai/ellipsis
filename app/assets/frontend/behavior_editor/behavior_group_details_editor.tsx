@@ -3,13 +3,17 @@ import BehaviorGroup from '../models/behavior_group';
 import FormInput from '../form/input';
 import Textarea from '../form/textarea';
 import autobind from '../lib/autobind';
+import EmojiInput, {EmojiInterface} from "../form/emoji_input";
+import DeleteButton from "../shared_ui/delete_button";
 
-type Props = {
+interface Props {
   group: BehaviorGroup,
-  onBehaviorGroupIconChange: (string) => void,
-  onBehaviorGroupNameChange: (string) => void,
-  onBehaviorGroupDescriptionChange: (string) => void
-};
+  onBehaviorGroupIconChange: (icon: Option<string>) => void,
+  onBehaviorGroupNameChange: (name: string) => void,
+  onBehaviorGroupDescriptionChange: (description: string) => void
+  iconPickerVisible: boolean
+  onToggleIconPicker: () => void
+}
 
 class BehaviorGroupDetailsEditor extends React.PureComponent<Props> {
     props: Props;
@@ -31,18 +35,29 @@ class BehaviorGroupDetailsEditor extends React.PureComponent<Props> {
       }
     }
 
+    onChangeEmoji(emoji: EmojiInterface): void {
+      this.props.onBehaviorGroupIconChange(emoji.native);
+      this.props.onToggleIconPicker();
+    }
+
+    onDeleteEmoji(): void {
+      this.props.onBehaviorGroupIconChange("");
+    }
+
     render() {
       return (
         <div>
           <div className="columns columns-elastic">
             <div className="column column-shrink">
               <h5>Emoji</h5>
-              <FormInput
-                className="form-input-borderless form-input-l type-l mbn width-2"
-                placeholder="☺"
-                onChange={this.props.onBehaviorGroupIconChange}
-                value={this.props.group.icon || ""}
-              />
+              <div className="display-nowrap pts">
+                <div className="display-inline-block">
+                  <EmojiInput raw={this.props.group.icon} pickerVisible={this.props.iconPickerVisible} onTogglePicker={this.props.onToggleIconPicker} onClickEmoji={this.onChangeEmoji} />
+                </div>
+                <div className="display-inline-block align-t pts">
+                  <DeleteButton className="button-s" onClick={this.onDeleteEmoji} title="Remove icon" />
+                </div>
+              </div>
             </div>
             <div className="column column-expand">
               <h5>Title</h5>
