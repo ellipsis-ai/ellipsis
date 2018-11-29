@@ -1144,6 +1144,14 @@ const BehaviorEditor = React.createClass({
     });
   },
 
+  toggleGroupEditorIconPicker: function() {
+    this.toggleActiveDropdown("behaviorGroupEditorIconPicker");
+  },
+
+  toggleDetailsPanelIconPicker: function() {
+    this.toggleActiveDropdown("behaviorGroupDetailsPanelIconPicker");
+  },
+
   toggleActivePanel: function(name, beModal, optionalCallback) {
     this.props.onToggleActivePanel(name, beModal, optionalCallback);
   },
@@ -1997,6 +2005,8 @@ const BehaviorEditor = React.createClass({
               onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
               onDone={this.props.onClearActivePanel}
               visible={this.props.activePanelName === 'requestBehaviorGroupDetails'}
+              iconPickerVisible={this.getActiveDropdown() === 'behaviorGroupDetailsPanelIconPicker'}
+              onToggleIconPicker={this.toggleDetailsPanelIconPicker}
             />
           </Collapsible>
 
@@ -2737,6 +2747,8 @@ const BehaviorEditor = React.createClass({
           onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
           onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
           onDeleteClick={this.confirmDeleteBehaviorGroup}
+          iconPickerVisible={this.getActiveDropdown() === "behaviorGroupEditorIconPicker"}
+          onToggleIconPicker={this.toggleGroupEditorIconPicker}
         />
       );
     }

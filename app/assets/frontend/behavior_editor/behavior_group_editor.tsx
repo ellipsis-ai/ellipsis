@@ -11,6 +11,8 @@ type Props = {
     onBehaviorGroupDescriptionChange: (string) => void,
     onBehaviorGroupIconChange: (string) => void,
     onDeleteClick: () => void
+    iconPickerVisible: boolean
+    onToggleIconPicker: () => void
 }
 
 class BehaviorGroupEditor extends React.PureComponent<Props> {
@@ -43,6 +45,8 @@ class BehaviorGroupEditor extends React.PureComponent<Props> {
               onBehaviorGroupNameChange={this.props.onBehaviorGroupNameChange}
               onBehaviorGroupDescriptionChange={this.props.onBehaviorGroupDescriptionChange}
               onBehaviorGroupIconChange={this.props.onBehaviorGroupIconChange}
+              iconPickerVisible={this.props.iconPickerVisible}
+              onToggleIconPicker={this.props.onToggleIconPicker}
             />
           </div>
 

@@ -89,7 +89,7 @@ class ReactionTriggerInput extends React.Component<Props> {
           <div className="column column-expand pvs plm prn">
             <EmojiInput
               onClickEmoji={this.onClickEmoji}
-              value={this.props.trigger.text}
+              id={this.props.trigger.text}
               filterEmoji={this.filterExistingEmoji}
               emojiAsText={this.renderEmojiText()}
               pickerVisible={this.props.isShowingEmojiPicker}

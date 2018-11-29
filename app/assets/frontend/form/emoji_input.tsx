@@ -22,7 +22,8 @@ export interface EmojiInterface {
 }
 
 interface Props {
-  value: string
+  id?: Option<string>
+  raw?: Option<string>
   pickerVisible: boolean
   onTogglePicker: () => void
   onClickEmoji: (emoji: EmojiInterface) => void
@@ -37,17 +38,21 @@ class EmojiInput extends React.Component<Props> {
   }
 
   renderSelectedEmoji() {
-    const text = this.props.value;
-    if (text) {
+    const emoji = this.props.id ? { id: this.props.id, skin: 3 } : null;
+    if (emoji) {
       return (
         <Emoji
           native={true}
-          emoji={{ id: text, skin: 3 }}
+          emoji={emoji}
           size={EMOJI_SIZE}
           sheetSize={EMOJI_SHEET_SIZE}
           set={EMOJI_SET}
         />
       );
+    } else if (this.props.raw) {
+      return (
+        <span className="type-l">{this.props.raw}</span>
+      )
     } else {
       return (
         <span className="type-icon type-disabled">?</span>
@@ -69,8 +74,8 @@ class EmojiInput extends React.Component<Props> {
                 sheetSize={EMOJI_SHEET_SIZE}
                 emojiSize={24}
                 autoFocus={true}
-                title={this.props.value || "Pick your emoji…"}
-                emoji={this.props.value}
+                title={this.props.id || "Pick your emoji…"}
+                emoji={this.props.id}
                 showPreview={false}
                 perLine={8}
                 emojisToShowFilter={this.props.filterEmoji}
