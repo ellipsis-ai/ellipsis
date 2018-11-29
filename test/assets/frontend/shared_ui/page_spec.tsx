@@ -1,15 +1,17 @@
 import * as React from 'react';
-import TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-addons-test-utils';
 
-// TODO: remove `any` when we're using ES6 modules
 import Page from '../../../../app/assets/frontend/shared_ui/page';
 import PageFooterRenderingError from '../../../../app/assets/frontend/shared_ui/page_footer_rendering_error';
 import FixedFooter from '../../../../app/assets/frontend/shared_ui/fixed_footer';
 
-class FooterRenderingComponent extends React.Component {
+class FooterRenderingComponent extends React.Component<{
+  onRenderFooter: (content: any) => void
+}> {
   render() {
     return (
       <div>
+        <span/>
         {this.props.onRenderFooter(null)}
       </div>
     );
@@ -37,7 +39,7 @@ class NoFooterComponent extends React.Component {
 }
 
 describe('Page', () => {
-  function createPage(override) {
+  function createPage(override?: any): Page {
     const feedbackContainer = document.createElement('span');
     return TestUtils.renderIntoDocument((
       <Page feedbackContainer={feedbackContainer} csrfToken={"1"}
@@ -45,23 +47,25 @@ describe('Page', () => {
           <FooterRenderingComponent {...FooterRenderingComponentDefaultProps} {...pageProps} />
         ))}
       />
-    ));
+    )) as Page;
   }
 
   function createMockedPage() {
-    const page = createPage();
-    page.setState = jest.fn((newState, providedCallback) => {
+    return createPage();
+  }
+
+  function setStateMockFactory() {
+    return jest.fn((newState, providedCallback) => {
       if (providedCallback) {
         providedCallback();
       }
     });
-    return page;
   }
 
   describe('render', () => {
     it('renders an augmented inner component', () => {
       var page = createPage();
-      var child = TestUtils.findRenderedComponentWithType(page, FooterRenderingComponent);
+      var child = TestUtils.findRenderedComponentWithType(page, FooterRenderingComponent as React.ComponentClass<any>);
       expect(child).toBeDefined();
       expect(child && child.props.onToggleActivePanel).toBe(page.toggleActivePanel);
     });
@@ -70,7 +74,7 @@ describe('Page', () => {
   describe('onRenderFooter', () => {
     it('when called by the child component, it renders a FixedFooter', () => {
       const page = createPage();
-      const footer = TestUtils.findRenderedComponentWithType(page, FixedFooter);
+      const footer = TestUtils.findRenderedComponentWithType(page, FixedFooter as React.ComponentClass<any>);
       expect(footer).toBeDefined();
     });
 
@@ -88,16 +92,20 @@ describe('Page', () => {
     it('passes a callback to setState if a valid function is passed', () => {
       const page = createMockedPage();
       const callback = jest.fn();
+      const setStateMock = setStateMockFactory();
+      page.setState = setStateMock;
       page.toggleActivePanel('foo', false, callback);
-      expect(page.setState.mock.calls[0][1]).toBe(callback);
+      expect(setStateMock.mock.calls[0][1]).toBe(callback);
       expect(callback).toBeCalled();
     });
 
     it('doesn’t pass the callback to setState if it’s not a function', () => {
       const page = createMockedPage();
-      const notACallback = {};
+      const notACallback = undefined;
+      const setStateMock = setStateMockFactory();
+      page.setState = setStateMock;
       page.toggleActivePanel('foo', false, notACallback);
-      expect(page.setState.mock.calls[0][1]).not.toBe(notACallback);
+      expect(setStateMock.mock.calls[0][1]).not.toBe(notACallback);
     });
 
     it('finds the active modal if a panel is toggled on modally', () => {
@@ -114,8 +122,10 @@ describe('Page', () => {
     it('passes a callback to setState if a valid function is passed', () => {
       const page = createMockedPage();
       const callback = jest.fn();
+      const setStateMock = setStateMockFactory();
+      page.setState = setStateMock;
       page.clearActivePanel(callback);
-      expect(page.setState.mock.calls[0][1]).toBe(callback);
+      expect(setStateMock.mock.calls[0][1]).toBe(callback);
       expect(callback).toBeCalled();
     });
   });

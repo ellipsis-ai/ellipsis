@@ -1,36 +1,43 @@
 import * as React from 'react';
-import DynamicLabelButton from '../form/dynamic_label_button';
+import DynamicLabelButton, {DynamicLabelButtonLabel} from '../form/dynamic_label_button';
+import autobind from "../lib/autobind";
+import Button from "../form/button";
 
-const ConfirmActionPanel = React.createClass({
-    propTypes: {
-      children: React.PropTypes.node.isRequired,
-      confirmText: React.PropTypes.node,
-      confirmingText: React.PropTypes.node,
-      cancelText: React.PropTypes.node,
-      onCancelClick: React.PropTypes.func.isRequired,
-      onConfirmClick: React.PropTypes.func.isRequired,
-      isConfirming: React.PropTypes.bool
-    },
+interface Props {
+  children: React.ReactNode
+  confirmText?: Option<string>
+  confirmingText?: Option<string>
+  cancelText?: Option<string>
+  onCancelClick: () => void
+  onConfirmClick: () => void
+  isConfirming?: Option<boolean>
+}
 
-    getConfirmButtonLabels: function() {
-      var labels = [{
+class ConfirmActionPanel extends React.Component<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    getConfirmButtonLabels(): Array<DynamicLabelButtonLabel> {
+      const labels: Array<DynamicLabelButtonLabel> = [{
         text: this.props.confirmText || "OK",
         displayWhen: !this.props.isConfirming
       }];
       if (this.props.confirmingText) {
         labels.push({
           text: this.props.confirmingText,
-          displayWhen: this.props.isConfirming
+          displayWhen: Boolean(this.props.isConfirming)
         });
       }
       return labels;
-    },
+    }
 
-    onCancelClick: function() {
+    onCancelClick(): void {
       this.props.onCancelClick();
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div className="box-action">
           <div className="container phn">
@@ -43,17 +50,17 @@ const ConfirmActionPanel = React.createClass({
                 onClick={this.props.onConfirmClick}
                 labels={this.getConfirmButtonLabels()}
               />
-              <button type="button"
+              <Button
                 className="button-primary mbs"
                 onClick={this.onCancelClick}
-                disabled={this.props.isConfirming}>
+                disabled={Boolean(this.props.isConfirming)}>
                 {this.props.cancelText || "Cancel"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       );
     }
-});
+}
 
 export default ConfirmActionPanel;
