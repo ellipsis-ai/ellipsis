@@ -3,7 +3,7 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
-import models.accounts.{MSTeamsContext, SlackContext}
+import models.accounts.{MSAzureActiveDirectoryContext, MSTeamsContext, SlackContext}
 import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
@@ -168,6 +168,7 @@ object Conversation {
 
   val SLACK_CONTEXT = SlackContext.toString
   val MS_TEAMS_CONTEXT = MSTeamsContext.toString
+  val MS_AAD_CONTEXT = MSAzureActiveDirectoryContext.toString
   val API_CONTEXT = "api"
 
   val LEARN_BEHAVIOR = "learn_behavior"

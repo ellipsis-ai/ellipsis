@@ -4,6 +4,7 @@ import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.exceptions.UnexpectedResponseException
 import com.mohiva.play.silhouette.impl.providers.OAuth2Provider._
 import com.mohiva.play.silhouette.impl.providers._
+import models.accounts.MSAzureActiveDirectoryContext
 import models.accounts.ms_teams.profile.{MSTeamsProfile, MSTeamsProfileBuilder, MSTeamsProfileParser}
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
@@ -68,7 +69,7 @@ class MSTeamsProvider(
 
 object MSTeamsProvider {
 
-  val ID = "ms_teams"
+  val ID = MSAzureActiveDirectoryContext.toString
   val ORGANIZATION_API = "https://graph.microsoft.com/beta/organization"
   val IDENTITY_API = "https://graph.microsoft.com/beta/me"
 

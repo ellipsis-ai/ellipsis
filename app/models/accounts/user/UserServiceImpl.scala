@@ -97,7 +97,7 @@ class UserServiceImpl @Inject() (
     }
   }
 
-  def ensureUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
+  private def ensureUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[User] = {
     maybeExistingUserForAction(loginInfo, teamId).flatMap { maybeExisting =>
       maybeExisting.map(DBIO.successful).getOrElse {
         createNewUserAction(loginInfo, teamId)
@@ -105,8 +105,27 @@ class UserServiceImpl @Inject() (
     }
   }
 
-  def ensureUserFor(loginInfo: LoginInfo, teamId: String): Future[User] = {
+  private def ensureUserFor(loginInfo: LoginInfo, teamId: String): Future[User] = {
     dataService.run(ensureUserForAction(loginInfo, teamId))
+  }
+
+  def ensureUserForAction(loginInfo: LoginInfo, otherLoginInfos: Seq[LoginInfo], teamId: String): DBIO[User] = {
+    val loginInfos = Seq(loginInfo) ++ otherLoginInfos
+    for {
+      maybeExisting <- DBIO.sequence(loginInfos.map { loginInfo =>
+        maybeExistingUserForAction(loginInfo, teamId)
+      }).map(_.flatten.headOption)
+      user <- maybeExisting.map(DBIO.successful).getOrElse {
+        createNewUserAction(loginInfo, teamId)
+      }
+      _ <- DBIO.sequence(otherLoginInfos.map { ea =>
+        dataService.linkedAccounts.saveAction(LinkedAccount(user, ea, OffsetDateTime.now))
+      })
+    } yield user
+  }
+
+  def ensureUserFor(loginInfo: LoginInfo, otherLoginInfos: Seq[LoginInfo], teamId: String): Future[User] = {
+    dataService.run(ensureUserForAction(loginInfo, otherLoginInfos, teamId))
   }
 
   def teamAccessForAction(user: User, maybeTargetTeamId: Option[String]): DBIO[UserTeamAccess] = {

@@ -52,9 +52,10 @@ sealed trait EventContext {
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]]
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
 
-  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+  def loginInfo: LoginInfo
+  def otherLoginInfos: Seq[LoginInfo]
   def ensureUserAction(dataService: DataService): DBIO[User] = {
-    dataService.users.ensureUserForAction(loginInfo, ellipsisTeamId)
+    dataService.users.ensureUserForAction(loginInfo, otherLoginInfos, ellipsisTeamId)
   }
 
   def maybeChannelForSendAction(
@@ -165,6 +166,9 @@ case class SlackEventContext(
   val teamIdForContext: String = profile.slackTeamId
   val botUserId: String = profile.userId
   val isBotMessage: Boolean = botUserId == userIdForContext
+
+  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+  def otherLoginInfos: Seq[LoginInfo] = Seq()
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     if (isBotMessage) {
@@ -421,6 +425,9 @@ case class MSTeamsEventContext(
   val ellipsisTeamId: String = profile.teamId
   val botUserIdForContext: String = info.recipient.id
 
+  def loginInfo: LoginInfo = LoginInfo(Conversation.MS_TEAMS_CONTEXT, info.from.id)
+  def otherLoginInfos: Seq[LoginInfo] = info.from.aadObjectId.map(id => LoginInfo(Conversation.MS_AAD_CONTEXT, id)).toSeq
+
   override val usesTextInputs: Boolean = true
 
   val isDirectMessage: Boolean = {
@@ -630,6 +637,9 @@ case class TestEventContext(
     Future.successful(None)
   }
   val isBotMessage: Boolean = false
+
+  def loginInfo: LoginInfo = LoginInfo(name, userIdForContext)
+  def otherLoginInfos: Seq[LoginInfo] = Seq()
 
   override def ensureUserAction(dataService: DataService): DBIO[User] = DBIO.successful(user)
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext) = Future.successful(None)

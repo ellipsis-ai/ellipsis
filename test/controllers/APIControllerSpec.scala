@@ -409,7 +409,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviors.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
         when(dataService.behaviorVersions.findWithoutAccessCheck(originatingBehaviorVersion.id)).thenReturn(Future.successful(Some(originatingBehaviorVersion)))
         when(dataService.behaviorVersions.findByName(actionName, groupVersion)).thenReturn(Future.successful(Some(targetBehaviorVersion)))
-        when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
+        when(dataService.users.ensureUserFor(any[LoginInfo], any[Seq[LoginInfo]], anyString)).thenReturn(Future.successful(user))
         when(dataService.behaviors.maybeCurrentVersionFor(behavior)).thenReturn(Future.successful(Some(targetBehaviorVersion)))
         when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).thenReturn(Future.successful(Some(groupVersion)))
         when(dataService.scheduledBehaviors.maybeCreateWithRecurrenceText(behavior, Map(), recurrenceString, user, team, Some(defaultChannel), false)).thenReturn {
@@ -447,7 +447,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val trigger = "foo"
         val recurrenceString = "every day at noon"
-        when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
+        when(dataService.users.ensureUserFor(any[LoginInfo], any[Seq[LoginInfo]], anyString)).thenReturn(Future.successful(user))
         when(dataService.scheduledMessages.maybeCreateWithRecurrenceText(trigger, recurrenceString, user, team, Some(defaultChannel), false)).thenReturn {
           Future.successful(
             Some(
@@ -573,7 +573,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       when(dataService.behaviorVersions.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
       when(dataService.behaviorVersions.findWithoutAccessCheck(originatingBehaviorVersion.id)).thenReturn(Future.successful(Some(originatingBehaviorVersion)))
       when(dataService.behaviorVersions.findByName(actionName, groupVersion)).thenReturn(Future.successful(None))
-      when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
+      when(dataService.users.ensureUserFor(any[LoginInfo], any[Seq[LoginInfo]], anyString)).thenReturn(Future.successful(user))
       val body = unscheduleActionBodyFor(Some(actionName), None, None, Some(defaultChannel), token)
       val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
       val result = route(app, request).get
@@ -595,7 +595,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviorVersions.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
         when(dataService.behaviorVersions.findWithoutAccessCheck(originatingBehaviorVersion.id)).thenReturn(Future.successful(Some(originatingBehaviorVersion)))
         when(dataService.behaviorVersions.findByName(actionName, groupVersion)).thenReturn(Future.successful(Some(targetBehaviorVersion)))
-        when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
+        when(dataService.users.ensureUserFor(any[LoginInfo], any[Seq[LoginInfo]], anyString)).thenReturn(Future.successful(user))
         when(dataService.behaviorGroups.maybeCurrentVersionFor(group)).thenReturn(Future.successful(Some(groupVersion)))
         val scheduledBehavior = ScheduledBehavior(
           IDs.next,
@@ -634,7 +634,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.behaviorVersions.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
         when(dataService.behaviorVersions.findWithoutAccessCheck(originatingBehaviorVersion.id)).thenReturn(Future.successful(Some(originatingBehaviorVersion)))
         when(dataService.behaviorVersions.findByName(actionName, groupVersion)).thenReturn(Future.successful(Some(targetBehaviorVersion)))
-        when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
+        when(dataService.users.ensureUserFor(any[LoginInfo], any[Seq[LoginInfo]], anyString)).thenReturn(Future.successful(user))
         when(dataService.scheduledBehaviors.allForBehavior(behavior, None, Some(defaultChannel))).thenReturn(Future.successful(Seq()))
         when(dataService.scheduledBehaviors.delete(any[ScheduledBehavior])).thenReturn(Future.successful(None))
 
@@ -653,7 +653,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val trigger = "foo"
-        when(dataService.users.ensureUserFor(any[LoginInfo], anyString)).thenReturn(Future.successful(user))
+        when(dataService.users.ensureUserFor(any[LoginInfo], any[Seq[LoginInfo]], anyString)).thenReturn(Future.successful(user))
         val scheduledMessage = ScheduledMessage(
           IDs.next,
           trigger,
