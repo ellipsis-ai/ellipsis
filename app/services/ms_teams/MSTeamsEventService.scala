@@ -17,12 +17,4 @@ trait MSTeamsEventService {
 
   def maybeApplicationDataFor(botProfile: MSTeamsBotProfile): Future[Option[Application]]
 
-//  def slackUserDataList(slackUserIds: Set[String], botProfile: SlackBotProfile): Future[Set[SlackUserData]]
-//
-//  def maybeSlackUserDataFor(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]]
-//
-//  def maybeSlackUserDataForEmail(email: String, client: SlackApiClient): Future[Option[SlackUserData]]
-//
-//  def isUserValidForBot(slackUserId: String, botProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Future[Boolean]
-
 }
