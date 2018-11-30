@@ -4,14 +4,25 @@ import {DataRequest} from '../lib/data_request';
 import Button from '../form/button';
 import Textarea from '../form/textarea';
 
-class FeedbackPanel extends React.Component {
-    constructor(props) {
+interface Props {
+  csrfToken: string
+  onDone: () => void
+}
+
+interface State {
+  feedback: string
+  error: Option<string>
+  lastSent: Option<string>
+}
+
+class FeedbackPanel extends React.Component<Props, State> {
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.state = this.defaultState();
     }
 
-    defaultState() {
+    defaultState(): State {
       return {
         feedback: "",
         error: null,
@@ -19,13 +30,13 @@ class FeedbackPanel extends React.Component {
       };
     }
 
-    onChange(newValue) {
+    onChange(newValue: string): void {
       this.setState({
         feedback: newValue
       });
     }
 
-    sendFeedback() {
+    sendFeedback(): void {
       this.setState({
         error: null
       }, () => {
@@ -46,12 +57,12 @@ class FeedbackPanel extends React.Component {
       });
     }
 
-    done() {
+    done(): void {
       this.props.onDone();
       this.setState(this.defaultState());
     }
 
-    hasNoFeedback() {
+    hasNoFeedback(): boolean {
       return !this.state.feedback.trim();
     }
 
@@ -64,6 +75,8 @@ class FeedbackPanel extends React.Component {
         return (
           <span className="type-green fade-in align-button mbs">— Your comments have been sent. Thank you.</span>
         );
+      } else {
+        return null;
       }
     }
 
@@ -80,7 +93,7 @@ class FeedbackPanel extends React.Component {
 
                 <Textarea
                   className={"form-input-height-auto"}
-                  rows={"3"}
+                  rows={3}
                   placeholder={""}
                   value={this.state.feedback}
                   onChange={this.onChange}
@@ -97,10 +110,5 @@ class FeedbackPanel extends React.Component {
       );
     }
 }
-
-FeedbackPanel.propTypes = {
-  csrfToken: React.PropTypes.string.isRequired,
-  onDone: React.PropTypes.func.isRequired
-};
 
 export default FeedbackPanel;
