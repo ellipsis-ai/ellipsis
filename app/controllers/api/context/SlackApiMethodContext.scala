@@ -164,7 +164,7 @@ case class SlackApiMethodContext(
         behaviorVersion <- maybeBehaviorVersion
       } yield {
         for {
-          user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behaviorVersion.team.id)
+          user <- dataService.users.ensureUserFor(slackProfile.loginInfo, Seq(), behaviorVersion.team.id)
           maybeScheduled <- dataService.scheduledBehaviors.maybeCreateWithRecurrenceText(
             behaviorVersion.behavior,
             info.argumentsMap,
@@ -329,7 +329,7 @@ case class SlackApiMethodContext(
         team <- maybeTeam
       } yield {
         for {
-          user <- dataService.users.ensureUserFor(slackProfile.loginInfo, behaviorVersion.team.id)
+          user <- dataService.users.ensureUserFor(slackProfile.loginInfo, Seq(), behaviorVersion.team.id)
           listener <- dataService.messageListeners.createFor(
             behaviorVersion.behavior,
             info.argumentsMap,

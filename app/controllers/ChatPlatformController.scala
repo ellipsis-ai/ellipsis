@@ -24,12 +24,13 @@ trait ChatPlatformController {
   trait ActionsTriggeredInfo {
 
     val channelId: String
-    val userIdForContext: String
     val teamIdForContext: String
     val teamIdForUserForContext: String
     val maybeUserIdForDataTypeChoice: Option[String]
     val contextName: String
-    def loginInfo: LoginInfo = LoginInfo(contextName, userIdForContext)
+    def loginInfo: LoginInfo
+    def otherLoginInfos: Seq[LoginInfo]
+    def loginInfos: Seq[LoginInfo] = Seq(loginInfo) ++ otherLoginInfos
 
     def isIncorrectTeam(botProfile: BotProfileType): Future[Boolean]
 
@@ -192,7 +193,7 @@ trait ChatPlatformController {
           }
         }).getOrElse(Future.successful(false))
         canBeTriggered <- for {
-          maybeUser <- dataService.users.ensureUserFor(info.loginInfo, botProfile.teamId).map(Some(_))
+          maybeUser <- dataService.users.ensureUserFor(info.loginInfo, info.otherLoginInfos, botProfile.teamId).map(Some(_))
           canBeTriggered <- maybeUser.map { user =>
             actionChoice.canBeTriggeredBy(user, info.teamIdForUserForContext, botProfile.teamIdForContext, dataService)
           }.getOrElse(Future.successful(false))
@@ -511,7 +512,7 @@ trait ChatPlatformController {
 
   trait ConversationActionPermission extends ActionPermission {
     val correctUserId: String
-    lazy val isCorrectUser: Boolean = correctUserId == info.userIdForContext
+    lazy val isCorrectUser: Boolean = info.loginInfos.map(_.providerKey).contains(correctUserId)
     lazy val correctUser: String = s"<@$correctUserId>"
     lazy val shouldRemoveActions: Boolean = isCorrectUser
 
@@ -711,7 +712,7 @@ trait ChatPlatformController {
     private def canBeTriggered(maybeBehaviorVersion: Option[BehaviorVersion], info: ActionsTriggeredInfoType, botProfile: BotProfileType): Future[Boolean] = {
       if (botProfile.supportsSharedChannels) {
         for {
-          maybeUser <- dataService.users.ensureUserFor(info.loginInfo, botProfile.teamId).map(Some(_))
+          maybeUser <- dataService.users.ensureUserFor(info.loginInfo, info.otherLoginInfos, botProfile.teamId).map(Some(_))
           canBeTriggered <- (for {
             behaviorVersion <- maybeBehaviorVersion
             user <- maybeUser

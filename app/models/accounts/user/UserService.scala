@@ -19,8 +19,8 @@ trait UserService extends IdentityService[User] {
   def findFromEvent(event: Event, team: Team): Future[Option[User]]
   def createFor(teamId: String): Future[User]
   def save(user: User): Future[User]
-  def ensureUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[User]
-  def ensureUserFor(loginInfo: LoginInfo, teamId: String): Future[User]
+  def ensureUserForAction(loginInfo: LoginInfo, otherLoginInfos: Seq[LoginInfo], teamId: String): DBIO[User]
+  def ensureUserFor(loginInfo: LoginInfo, otherLoginInfos: Seq[LoginInfo], teamId: String): Future[User]
   def teamAccessForAction(user: User, maybeTargetTeamId: Option[String]): DBIO[UserTeamAccess]
   def teamAccessFor(user: User, maybeTargetTeamId: Option[String]): Future[UserTeamAccess]
   def canAccess(user: User, group: BehaviorGroup)(implicit ec: ExecutionContext): Future[Boolean] = canAccess(user, group.team)

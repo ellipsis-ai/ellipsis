@@ -1,7 +1,7 @@
 package controllers
 
 import com.google.inject.Provider
-import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import javax.inject.Inject
 import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -612,9 +612,11 @@ class SlackController @Inject() (
     val channelId: String = channel.id
     val teamIdForContext: String = slackTeamIdForBot
     val teamIdForUserForContext: String = slackTeamIdForUser
-    val userIdForContext: String = user.id
 
     val contextName: String = Conversation.SLACK_CONTEXT
+
+    def loginInfo: LoginInfo = LoginInfo(contextName, user.id)
+    def otherLoginInfos: Seq[LoginInfo] = Seq()
 
     def onEvent(event: Event): Future[Unit] = slackEventService.onEvent(event)
 
@@ -1029,7 +1031,7 @@ class SlackController @Inject() (
 
     def isIncorrectTeam(botProfile: BotProfileType): Future[Boolean] = {
       for {
-        maybeUser <- dataService.users.ensureUserFor(loginInfo, botProfile.teamId).map(Some(_))
+        maybeUser <- dataService.users.ensureUserFor(loginInfo, otherLoginInfos, botProfile.teamId).map(Some(_))
         isAdmin <- maybeUser.map { user =>
           dataService.users.isAdmin(user)
         }.getOrElse(Future.successful(false))
