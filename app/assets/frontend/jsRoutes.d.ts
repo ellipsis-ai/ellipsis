@@ -46,6 +46,9 @@ declare var jsRoutes: {
       doImport: () => JsRoute,
       "export": (string) => JsRoute
     },
+    FeedbackController: {
+      send: () => JsRoute
+    },
     GithubConfigController: {
       index: (teamId?: Option<string>) => JsRoute,
       reset: () => JsRoute

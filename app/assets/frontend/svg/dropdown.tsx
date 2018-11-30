@@ -1,13 +1,14 @@
 import * as React from 'react';
 
-const SVGDropdown = React.createClass({
-  propTypes: {
-    label: React.PropTypes.string
-  },
-  label: function() {
+interface Props {
+  label?: Option<string>
+}
+
+class SVGDropdown extends React.PureComponent<Props> {
+  label(): string {
     return this.props.label || '▾';
-  },
-  render: function() {
+  }
+  render() {
     return (
       <svg aria-label={this.label()} height="100%" viewBox="0 0 8 16">
         <title>{this.label()}</title>
@@ -21,6 +22,6 @@ const SVGDropdown = React.createClass({
       </svg>
     );
   }
-});
+}
 
 export default SVGDropdown;

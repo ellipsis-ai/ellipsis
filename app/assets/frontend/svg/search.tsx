@@ -1,13 +1,14 @@
 import * as React from 'react';
 
-const SVGSearch = React.createClass({
-    propTypes: {
-      label: React.PropTypes.string
-    },
-    label: function() {
+interface Props {
+  label?: Option<string>
+}
+
+class SVGSearch extends React.PureComponent<Props> {
+    label(): string {
       return this.props.label || 'Search';
-    },
-    render: function() {
+    }
+    render() {
       return (
         <svg height="100%" viewBox="0 0 18 24">
           <title>{this.label()}</title>
@@ -20,6 +21,6 @@ const SVGSearch = React.createClass({
         </svg>
       );
     }
-});
+}
 
 export default SVGSearch;
