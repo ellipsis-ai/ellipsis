@@ -1,19 +1,25 @@
 import * as React from 'react';
 import Collapsible from './collapsible';
+import autobind from "../lib/autobind";
 
-const PageNotification = React.createClass({
-    propTypes: {
-      name: React.PropTypes.string.isRequired,
-      content: React.PropTypes.node.isRequired,
-      onDismiss: React.PropTypes.func.isRequired,
-      isDismissed: React.PropTypes.bool
-    },
+interface Props {
+  name: string
+  content: React.ReactNode
+  onDismiss: (name: string) => void
+  isDismissed?: Option<boolean>
+}
 
-    dismiss: function() {
+class PageNotification extends React.Component<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    dismiss(): void {
       this.props.onDismiss(this.props.name);
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <Collapsible revealWhen={!this.props.isDismissed} animateInitialRender={true}>
@@ -36,6 +42,6 @@ const PageNotification = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default PageNotification;

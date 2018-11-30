@@ -1,13 +1,14 @@
 import * as React from 'react';
 
-const SVGHamburger = React.createClass({
-    propTypes: {
-      label: React.PropTypes.string
-    },
-    label: function() {
+interface Props {
+  label?: Option<string>
+}
+
+class SVGHamburger extends React.PureComponent<Props> {
+    label(): string {
       return this.props.label || '≡';
-    },
-    render: function() {
+    }
+    render() {
       return (
         <svg role="img" aria-label={this.label()} height="100%" viewBox="0 0 16 24">
           <title>{this.label()}</title>
@@ -19,6 +20,6 @@ const SVGHamburger = React.createClass({
         </svg>
       );
     }
-});
+}
 
 export default SVGHamburger;

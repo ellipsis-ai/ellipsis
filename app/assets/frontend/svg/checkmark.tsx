@@ -1,13 +1,14 @@
 import * as React from 'react';
 
-const SVGCheckmark = React.createClass({
-    propTypes: {
-      label: React.PropTypes.string
-    },
-    label: function() {
+interface Props {
+  label?: Option<string>
+}
+
+class SVGCheckmark extends React.PureComponent<Props> {
+    label(): string {
       return this.props.label || '✓';
-    },
-    render: function() {
+    }
+    render() {
       return (
         <svg role="img" aria-label={this.label()} height="100%" viewBox="0 0 22 24">
           <title>{this.label()}</title>
@@ -22,6 +23,6 @@ const SVGCheckmark = React.createClass({
         </svg>
       );
     }
-});
+}
 
 export default SVGCheckmark;

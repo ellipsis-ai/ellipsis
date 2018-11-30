@@ -1,7 +1,7 @@
 package controllers
 
 import com.google.inject.Provider
-import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import javax.inject.Inject
 import json.Formatting._
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
@@ -305,7 +305,8 @@ class MSTeamsController @Inject() (
       }.getOrElse(Future.successful({}))
     }
 
-    val userIdForContext: String = from.id
+    def loginInfo: LoginInfo = LoginInfo(Conversation.MS_TEAMS_CONTEXT, from.id)
+    def otherLoginInfos: Seq[LoginInfo] = from.aadObjectId.map { id => LoginInfo(Conversation.MS_AAD_CONTEXT, id) }.toSeq
 
   }
 

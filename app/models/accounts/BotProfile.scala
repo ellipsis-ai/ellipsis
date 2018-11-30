@@ -32,3 +32,9 @@ case object MSTeamsContext extends BotContext {
   override val description: String = "Microsoft Teams"
   override def toString: String = name
 }
+
+case object MSAzureActiveDirectoryContext extends BotContext {
+  override val name: String = "ms_aad"
+  override val description: String = "Microsoft AAD"
+  override def toString: String = name
+}

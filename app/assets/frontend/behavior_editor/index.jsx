@@ -23,7 +23,6 @@ import DefaultStorageBrowser from './default_storage_browser';
 import DevModeChannelsHelp from './dev_mode_channels_help';
 import DropdownContainer from '../shared_ui/dropdown_container';
 import DynamicLabelButton from '../form/dynamic_label_button';
-import EnvVariableAdder from '../settings/environment_variables/adder';
 import EnvVariableSetter from '../settings/environment_variables/setter';
 import Input from '../models/input';
 import Formatter from '../lib/formatter';
@@ -1102,14 +1101,6 @@ const BehaviorEditor = React.createClass({
     this.setEditableProp('config', newConfig, callback);
   },
 
-  showEnvVariableAdder: function(prompt) {
-    this.setState({
-      envVariableAdderPrompt: prompt
-    }, function () {
-      this.toggleActivePanel('envVariableAdder', true);
-    });
-  },
-
   showEnvVariableSetter: function(nameToFocus) {
     this.toggleActivePanel('envVariableSetter', true, () => {
       if (nameToFocus && this.envVariableSetterPanel) {
@@ -1142,6 +1133,14 @@ const BehaviorEditor = React.createClass({
     this.setState({
       activeDropdown: alreadyOpen ? null : { name: name }
     });
+  },
+
+  toggleGroupEditorIconPicker: function() {
+    this.toggleActiveDropdown("behaviorGroupEditorIconPicker");
+  },
+
+  toggleDetailsPanelIconPicker: function() {
+    this.toggleActiveDropdown("behaviorGroupDetailsPanelIconPicker");
   },
 
   toggleActivePanel: function(name, beModal, optionalCallback) {
@@ -1240,22 +1239,6 @@ const BehaviorEditor = React.createClass({
     this.setEditableProps(props, optionalCallback);
   },
 
-  addEnvVar: function(envVar) {
-    var newEnvVars = this.getEnvVariables().concat(envVar);
-    this.updateEnvVariables(newEnvVars, {
-      saveCallback: () => {
-        if (this.state.onNextNewEnvVar) {
-          this.state.onNextNewEnvVar(envVar);
-        }
-      },
-      errorCallback: () => {
-        if (this.envVariableAdderPanel) {
-          this.envVariableAdderPanel.onSaveError();
-        }
-      }
-    });
-  },
-
   updateDescription: function(newDescription) {
     this.setEditableProp('description', newDescription);
   },
@@ -1275,9 +1258,6 @@ const BehaviorEditor = React.createClass({
       .then((response) => response.json())
       .then((json) => {
         this.props.onClearActivePanel();
-        if (this.envVariableAdderPanel) {
-          this.envVariableAdderPanel.reset();
-        }
         this.setState({
           envVariables: json.variables
         }, () => {
@@ -1523,10 +1503,6 @@ const BehaviorEditor = React.createClass({
       return;
     }
     BrowserUtils.ensureYPosInView(newPosition.bottom, height);
-  },
-
-  onAddNewEnvVariable: function() {
-    this.showEnvVariableAdder();
   },
 
   onAddAWSConfig: function(toAdd, callback) {
@@ -1823,8 +1799,6 @@ const BehaviorEditor = React.createClass({
       notifications: this.buildNotifications(),
       versions: [],
       versionsLoadStatus: null,
-      onNextNewEnvVar: null,
-      envVariableAdderPrompt: null,
       redirectValue: "",
       requiredAWSConfig: null,
       shouldRedirectToAddNewAWSConfig: false,
@@ -1997,6 +1971,8 @@ const BehaviorEditor = React.createClass({
               onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
               onDone={this.props.onClearActivePanel}
               visible={this.props.activePanelName === 'requestBehaviorGroupDetails'}
+              iconPickerVisible={this.getActiveDropdown() === 'behaviorGroupDetailsPanelIconPicker'}
+              onToggleIconPicker={this.toggleDetailsPanelIconPicker}
             />
           </Collapsible>
 
@@ -2109,25 +2085,6 @@ const BehaviorEditor = React.createClass({
                       onAdminLoadedValue={this.loadAdminEnvVariableValue}
                       onToggleActivePanel={this.props.onToggleActivePanel}
                       onClearActivePanel={this.props.onClearActivePanel}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Collapsible>
-
-          <Collapsible ref={(el) => this.props.onRenderPanel("envVariableAdder", el)} revealWhen={this.props.activePanelName === 'envVariableAdder'} onChange={this.layoutDidUpdate}>
-            <div className="box-action phn">
-              <div className="container">
-                <div className="columns">
-                  <div className="column column-page-sidebar" />
-                  <div className="column column-page-main">
-                    <EnvVariableAdder
-                      ref={(el) => this.envVariableAdderPanel = el}
-                      onCancelClick={this.props.onClearActivePanel}
-                      onSave={this.addEnvVar}
-                      prompt={this.state.envVariableAdderPrompt}
-                      existingNames={this.getEnvVariableNames()}
                     />
                   </div>
                 </div>
@@ -2737,6 +2694,8 @@ const BehaviorEditor = React.createClass({
           onBehaviorGroupDescriptionChange={this.onBehaviorGroupDescriptionChange}
           onBehaviorGroupIconChange={this.onBehaviorGroupIconChange}
           onDeleteClick={this.confirmDeleteBehaviorGroup}
+          iconPickerVisible={this.getActiveDropdown() === "behaviorGroupEditorIconPicker"}
+          onToggleIconPicker={this.toggleGroupEditorIconPicker}
         />
       );
     }
