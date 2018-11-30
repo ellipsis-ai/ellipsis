@@ -101,9 +101,10 @@ trait MSTeamsApiClient {
     }
   }
 
-  private def extract[T](response: WSResponse)(implicit fmt: Format[T]): T = {
+  private def extract[T](response: WSResponse, fields: Seq[String])(implicit fmt: Format[T]): T = {
     val json = responseToJson(response, None)
-    (json \ "value").validate[T] match {
+    val resolved = fields.foldLeft(json)((j, f) => (j \ f).get)
+    resolved.validate[T] match {
       case JsSuccess(v, _) => v
       case JsError(_) => {
         (json \ "error").validate[String] match {
@@ -211,7 +212,7 @@ trait MSTeamsApiClient {
 
   def getOrgInfo: Future[Option[MSTeamsOrganization]] = {
     getResponseFor("organization", Seq()).
-      map(r => extract[Seq[MSTeamsOrganization]](r).headOption).
+      map(r => extract[Seq[MSTeamsOrganization]](r, Seq("value")).headOption).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -230,7 +231,7 @@ trait MSTeamsApiClient {
       "$filter" -> s"appId eq '$clientId'"
     )
     getResponseFor(s"applications", params).
-      map(r => extract[Seq[Application]](r).headOption).
+      map(r => extract[Seq[Application]](r, Seq("value")).headOption).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -250,7 +251,7 @@ trait MSTeamsApiClient {
       "$filter" -> s"resourceProvisioningOptions/Any(x:x eq 'Team')"
     )
     getResponseFor(s"groups", params).
-      map(r => extract[Seq[Team]](r)).
+      map(r => extract[Seq[Team]](r, Seq("value"))).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -266,7 +267,7 @@ trait MSTeamsApiClient {
 
   def getAllChannelsFor(team: Team): Future[Seq[Channel]] = {
     getResponseFor(s"teams/${team.id}/channels", Seq()).
-      map(r => extract[Seq[Channel]](r)).
+      map(r => extract[Seq[Channel]](r, Seq("value"))).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -300,7 +301,7 @@ trait MSTeamsApiClient {
 
   def getChannelInfo(teamId: String, channelId: String): Future[Option[Channel]] = {
     getResponseFor(s"teams/${encode(teamId)}/channels/${encode(channelId)}", Seq()).
-      map(r => Some(extract[Channel](r))).
+      map(r => Some(extract[Channel](r, Seq("value")))).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -317,7 +318,7 @@ trait MSTeamsApiClient {
 
   def getTeamMembers(team: Team): Future[Seq[DirectoryObject]] = {
     getResponseFor(s"groups/${team.id}/members", Seq()).
-      map(r => extract[Seq[DirectoryObject]](r)).
+      map(r => extract[Seq[DirectoryObject]](r, Seq("value"))).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -334,7 +335,10 @@ trait MSTeamsApiClient {
 
   def getUser(userId: String): Future[Option[MSTeamsUser]] = {
     getResponseFor(s"users/${encode(userId)}", Seq()).
-      map(r => Some(extract[MSTeamsUser](r))).
+      map(r => {
+        Logger.info(Json.prettyPrint(r.json))
+        Some(extract[MSTeamsUser](r, Seq()))
+      }).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(

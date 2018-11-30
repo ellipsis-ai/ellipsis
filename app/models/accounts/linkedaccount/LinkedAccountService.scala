@@ -32,6 +32,8 @@ trait LinkedAccountService {
 
   def maybeForMSTeamsFor(user: User): Future[Option[LinkedAccount]]
 
+  def maybeForMSAzureActiveDirectoryFor(user: User): Future[Option[LinkedAccount]]
+
   def maybeForGithubFor(user: User): Future[Option[LinkedAccount]]
 
   def deleteGithubFor(user: User): Future[Boolean]

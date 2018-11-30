@@ -2,14 +2,14 @@ package models.accounts.linkedaccount
 
 import java.time.OffsetDateTime
 
-import javax.inject._
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
+import javax.inject._
 import models.accounts.github.GithubProvider
-import models.accounts.ms_teams.MSTeamsProvider
 import models.accounts.slack.SlackProvider
 import models.accounts.user.User
+import models.accounts.{MSAzureActiveDirectoryContext, MSTeamsContext}
 import services.DataService
 import services.caching.CacheService
 
@@ -93,7 +93,14 @@ class LinkedAccountServiceImpl @Inject() (
   }
 
   def maybeForMSTeamsFor(user: User): Future[Option[LinkedAccount]] = {
-    val action = forProviderForQuery(user.id, MSTeamsProvider.ID).result.map { r =>
+    val action = forProviderForQuery(user.id, MSTeamsContext.toString).result.map { r =>
+      r.headOption.map(tuple2LinkedAccount)
+    }
+    dataService.run(action)
+  }
+
+  def maybeForMSAzureActiveDirectoryFor(user: User): Future[Option[LinkedAccount]] = {
+    val action = forProviderForQuery(user.id, MSAzureActiveDirectoryContext.toString).result.map { r =>
       r.headOption.map(tuple2LinkedAccount)
     }
     dataService.run(action)

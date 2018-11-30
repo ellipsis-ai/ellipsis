@@ -260,7 +260,7 @@ class UserServiceImpl @Inject() (
   private def maybeMSTeamsUserDataFor(user: User, team: Team): Future[Option[MSTeamsUser]] = {
     for {
       botProfiles <- dataService.msTeamsBotProfiles.allFor(team.id)
-      maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSTeamsFor(user)
+      maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSAzureActiveDirectoryFor(user)
       maybeUserData <- maybeLinkedAccount.map { linked =>
         val msTeamsUserId = linked.loginInfo.providerKey
         val maybeClient = botProfiles.headOption.map(msTeamsApiService.profileClientFor)
@@ -316,7 +316,7 @@ class UserServiceImpl @Inject() (
 
   def maybeMSTeamsProfileFor(user: User): Future[Option[MSTeamsProfile]] = {
     for {
-      maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSTeamsFor(user)
+      maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSAzureActiveDirectoryFor(user)
       maybeBotProfile <- dataService.msTeamsBotProfiles.allFor(user.teamId).map(_.headOption)
     } yield {
       for {
