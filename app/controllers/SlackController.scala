@@ -612,11 +612,10 @@ class SlackController @Inject() (
     val channelId: String = channel.id
     val teamIdForContext: String = slackTeamIdForBot
     val teamIdForUserForContext: String = slackTeamIdForUser
-    val userIdForContext: String = user.id
 
     val contextName: String = Conversation.SLACK_CONTEXT
 
-    def loginInfo: LoginInfo = LoginInfo(contextName, userIdForContext)
+    def loginInfo: LoginInfo = LoginInfo(contextName, user.id)
     def otherLoginInfos: Seq[LoginInfo] = Seq()
 
     def onEvent(event: Event): Future[Unit] = slackEventService.onEvent(event)
