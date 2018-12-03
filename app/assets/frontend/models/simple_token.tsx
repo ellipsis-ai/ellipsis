@@ -1,6 +1,6 @@
 import {Diffable, DiffableProp} from "./diffs";
 
-import ApiConfigRef from './api_config_ref';
+import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
 import RequiredApiConfig, {RequiredApiConfigJson} from './required_api_config';
 import ID from '../lib/id';
 
@@ -83,10 +83,16 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, Requ
     }
   }
 
-  class SimpleTokenApiRef extends ApiConfigRef {
-    logoImageUrl: string;
+  export interface SimpleTokenApiRefJson extends ApiConfigRefJson {
+    logoImageUrl: string
+  }
 
-    constructor(id: string, displayName: string, logoImageUrl: string) {
+  class SimpleTokenApiRef extends ApiConfigRef implements SimpleTokenApiRefJson {
+    constructor(
+      readonly id: string,
+      readonly displayName: string,
+      readonly logoImageUrl: string
+    ) {
       super(id, displayName);
       Object.defineProperties(this, {
         logoImageUrl: { value: logoImageUrl, enumerable: true }
@@ -114,7 +120,7 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, Requ
       );
     }
 
-    static fromJson(props: {} & SimpleTokenApiRef) {
+    static fromJson(props: SimpleTokenApiRefJson) {
       return new SimpleTokenApiRef(props.id, props.displayName, props.logoImageUrl);
     }
 
