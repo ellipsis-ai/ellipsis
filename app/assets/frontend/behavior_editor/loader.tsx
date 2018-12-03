@@ -8,7 +8,7 @@ import BehaviorGroupDeployment, {BehaviorGroupDeploymentJson} from '../models/be
 import BehaviorResponseType, {BehaviorResponseTypeJson} from '../models/behavior_response_type';
 import ParamType, {ParamTypeJson} from '../models/param_type';
 import {AWSConfigRef, AWSConfigRefJson} from '../models/aws';
-import {OAuthApplicationRef, OAuthApplicationRefJson} from '../models/oauth';
+import {OAuthApiJson, OAuthApplicationRef, OAuthApplicationRefJson} from '../models/oauth';
 import {SimpleTokenApiRef, SimpleTokenApiRefJson} from '../models/simple_token';
 import LinkedGithubRepo, {LinkedGitHubRepoJson} from '../models/linked_github_repo';
 import autobind from '../lib/autobind';
@@ -16,7 +16,6 @@ import Page from '../shared_ui/page';
 import {DataRequest} from '../lib/data_request';
 import {SavedAnswer} from "./user_input_configuration";
 import {EnvironmentVariableData} from "../settings/environment_variables/loader";
-import {ApiConfigRefJson} from "../models/api_config_ref";
 import {Timestamp} from "../lib/formatter";
 import {GithubFetchError} from "../models/github/github_fetch_error";
 
@@ -30,7 +29,7 @@ interface Props {
   savedAnswers: Array<SavedAnswer>
   awsConfigs: Array<AWSConfigRefJson>
   oauthApplications: Array<OAuthApplicationRefJson>
-  oauthApis: Array<ApiConfigRefJson>
+  oauthApis: Array<OAuthApiJson>
   simpleTokenApis: Array<SimpleTokenApiRefJson>
   linkedOAuthApplicationIds: Array<string>
   userId: string
@@ -62,7 +61,7 @@ interface LinkToGithubData {
   currentBranch?: Option<string>
 }
 
-interface UpdateFromGithubSuccessData {
+export interface UpdateFromGithubSuccessData {
   data: BehaviorGroupJson
   errors: undefined
 }
@@ -158,7 +157,7 @@ class BehaviorEditorLoader extends React.Component<Props, State> {
           });
         }
 
-        onDeploy(deploymentProps: BehaviorGroupDeploymentJson, callback?: () => void) {
+        onDeploy(deploymentProps: BehaviorGroupDeploymentJson, callback?: () => void): void {
           this.setState({
             group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromJson(deploymentProps) }),
             onLoad: null
