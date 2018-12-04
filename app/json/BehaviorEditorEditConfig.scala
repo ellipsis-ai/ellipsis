@@ -5,7 +5,6 @@ import java.time.OffsetDateTime
 case class BehaviorEditorEditConfig(
   containerId: String,
   csrfToken: Option[String],
-  teamId: String,
   group: BehaviorGroupData,
   selectedId: Option[String],
   builtinParamTypes: Seq[BehaviorParameterTypeData],
