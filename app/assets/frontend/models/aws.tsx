@@ -2,14 +2,16 @@ import {Diffable, DiffableProp} from "./diffs";
 import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
 import RequiredApiConfigWithConfig from './required_api_config_with_config';
 import ID from '../lib/id';
-import {RequiredApiConfigJson} from "./required_api_config";
-type callback = () => void
+import RequiredApiConfig, {
+  RequiredApiConfigJson,
+  RequiredApiConfigEditor
+} from "./required_api_config";
 
-type AWSEditor = {
-  onAddAWSConfig: (r: RequiredAWSConfig, c?: Option<callback>) => void,
-  addNewAWSConfig: (r?: RequiredAWSConfig) => void,
-  onRemoveAWSConfig: (r: RequiredAWSConfig, c?: Option<callback>) => void,
-  onUpdateAWSConfig: (r: RequiredAWSConfig, c?: Option<callback>) => void,
+interface AWSEditor extends RequiredApiConfigEditor {
+  onAddAWSConfig: (required: RequiredApiConfig, c?: () => void) => void,
+  addNewAWSConfig: (required?: RequiredApiConfig) => void,
+  onRemoveAWSConfig: (required: RequiredApiConfig, c?: () => void) => void,
+  onUpdateAWSConfig: (required: RequiredApiConfig, c?: () => void) => void,
   getAllAWSConfigs: () => Array<AWSConfigRef>
 }
 
@@ -23,7 +25,10 @@ interface RequiredAWSConfigInterface extends RequiredAWSConfigJson {
 
 const logoUrl = "/assets/images/logos/aws_logo_web_300px.png";
 
-class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredAWSConfigInterface, Diffable {
+class RequiredAWSConfig
+  extends RequiredApiConfigWithConfig
+  implements RequiredAWSConfigInterface, Diffable {
+
   readonly config: Option<AWSConfigRef>;
 
   constructor(
@@ -72,7 +77,7 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredA
       return "AWS";
     }
 
-    getAllConfigsFrom(editor: AWSEditor) {
+    getAllConfigsFrom(editor: AWSEditor): Array<AWSConfigRef> {
       return editor.getAllAWSConfigs();
     }
 
@@ -92,8 +97,10 @@ class RequiredAWSConfig extends RequiredApiConfigWithConfig implements RequiredA
       return Boolean(this.config);
     }
 
-    clone(props: Partial<RequiredAWSConfigInterface>): RequiredAWSConfig {
-      return RequiredAWSConfig.fromProps(Object.assign({}, this, props));
+    clone(props: Partial<RequiredAWSConfig>): RequiredAWSConfig {
+      const oldOne: RequiredAWSConfigInterface = Object.assign({}, this);
+      const newOne: RequiredAWSConfigInterface = Object.assign(oldOne, props);
+      return RequiredAWSConfig.fromProps(newOne);
     }
 
     static fromProps(props: RequiredAWSConfigInterface) {

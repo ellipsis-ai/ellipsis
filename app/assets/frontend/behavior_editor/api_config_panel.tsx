@@ -13,7 +13,7 @@ import RequiredApiConfigWithConfig from "../models/required_api_config_with_conf
 
 interface Props {
   openWhen: boolean,
-  requiredConfig: RequiredApiConfigWithConfig,
+  requiredConfig: RequiredApiConfig,
   allConfigs: Array<ApiConfigRef>,
   onAddConfig: (config: RequiredApiConfig) => void,
   onAddNewConfig: (config: RequiredApiConfig) => void,
@@ -154,9 +154,11 @@ class ApiConfigPanel extends React.Component<Props> {
         this.props.onAddNewConfig(this.props.requiredConfig);
       } else {
         const newConfig = this.getAllConfigs().find(ea => ea.id === newConfigId);
-        this.props.onUpdateConfig(this.props.requiredConfig.clone({
-          config: newConfig
-        }));
+        if (newConfig) {
+          this.props.onUpdateConfig(this.props.requiredConfig.clone({
+            config: newConfig
+          }));
+        }
       }
     }
 
@@ -193,6 +195,7 @@ class ApiConfigPanel extends React.Component<Props> {
     renderConfig() {
       const hasConfig = Boolean(this.props.requiredConfig);
       const imageUrl = hasConfig ? this.getApiLogoUrlForConfig(this.props.requiredConfig) : null;
+      const name = this.props.getApiNameForConfig(this.props.requiredConfig);
       return (
         <div>
           <Collapsible revealWhen={hasConfig} animationDisabled={this.props.animationDisabled}>
@@ -200,8 +203,10 @@ class ApiConfigPanel extends React.Component<Props> {
             {hasConfig ? (
               <div>
                 <div className="mbxl">
-                  {imageUrl ? <img className="mrs align-m" src={imageUrl} height="24"/> : null}
-                  <span>{this.props.getApiNameForConfig(this.props.requiredConfig)}</span>
+                  {imageUrl ? (
+                    <img className="mrs align-m" src={imageUrl} height="24" alt={`Logo for ${name}`} />
+                  ) : null}
+                  <span>{name}</span>
                 </div>
 
                 <div className="mvxl">

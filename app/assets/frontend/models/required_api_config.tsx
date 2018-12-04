@@ -1,3 +1,5 @@
+import ApiConfigRef from "./api_config_ref";
+
 export interface RequiredApiConfigJson {
   id?: Option<string>,
   exportId?: Option<string>,
@@ -6,6 +8,8 @@ export interface RequiredApiConfigJson {
 }
 
 abstract class RequiredApiConfig implements RequiredApiConfigJson {
+  readonly config?: Option<ApiConfigRef>;
+
   constructor(
     readonly id: Option<string>,
     readonly exportId: Option<string>,
@@ -47,7 +51,20 @@ abstract class RequiredApiConfig implements RequiredApiConfigJson {
     abstract codePathPrefix(): string
 
     abstract isConfigured(): boolean
-  }
+
+    abstract configName(): Option<string>
+
+    abstract onAddConfigFor(editor: RequiredApiConfigEditor): (required: RequiredApiConfig, callback?: () => void) => void
+    abstract onAddNewConfigFor(editor: RequiredApiConfigEditor): (required?: RequiredApiConfig, callback?: () => void) => void
+    abstract onRemoveConfigFor(editor: RequiredApiConfigEditor): (required: RequiredApiConfig, callback?: () => void) => void
+    abstract onUpdateConfigFor(editor: RequiredApiConfigEditor): (required: RequiredApiConfig, callback?: () => void) => void
+    abstract getApiLogoUrl(editor: RequiredApiConfigEditor): string
+    abstract getApiName(editor: RequiredApiConfigEditor): string
+    abstract getAllConfigsFrom(editor: RequiredApiConfigEditor): Array<ApiConfigRef>
+
+    abstract clone(props: Partial<RequiredApiConfig>): RequiredApiConfig
+}
 
 export default RequiredApiConfig;
 
+export interface RequiredApiConfigEditor {}

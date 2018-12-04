@@ -1,23 +1,26 @@
 import {Diffable, DiffableProp} from "./diffs";
 
 import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
-import RequiredApiConfig, {RequiredApiConfigJson} from './required_api_config';
+import RequiredApiConfig, {
+  RequiredApiConfigEditor,
+  RequiredApiConfigJson
+} from './required_api_config';
 import ID from '../lib/id';
 
-type callback = () => void
-
-type SimpleTokenEditor = {
-  onAddSimpleTokenApi: (r: RequiredSimpleTokenApi) => void,
-  onRemoveSimpleTokenApi: (r: RequiredSimpleTokenApi) => void,
-  onUpdateSimpleTokenApi: (r: RequiredSimpleTokenApi, c?: Option<callback>) => void,
-  getSimpleTokenLogoUrlForConfig: (r: RequiredSimpleTokenApi) => string,
-  getSimpleTokenNameForConfig: (r: RequiredSimpleTokenApi) => string,
-  getAllSimpleTokenApis: () => Array<RequiredSimpleTokenApi>
+interface SimpleTokenEditor extends RequiredApiConfigEditor {
+  onAddSimpleTokenApi: (r: RequiredApiConfig) => void,
+  onRemoveSimpleTokenApi: (r: RequiredApiConfig) => void,
+  onUpdateSimpleTokenApi: (r: RequiredApiConfig, c?: () => void) => void,
+  getSimpleTokenLogoUrlForConfig: (r: RequiredApiConfig) => string,
+  getSimpleTokenNameForConfig: (r: RequiredApiConfig) => string,
+  getAllSimpleTokenApis: () => Array<SimpleTokenApiRef>
 }
 
 export interface RequiredSimpleTokenApiJson extends RequiredApiConfigJson {}
 
-class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, RequiredSimpleTokenApiJson {
+class RequiredSimpleTokenApi
+  extends RequiredApiConfig
+  implements Diffable, RequiredSimpleTokenApiJson {
 
     diffProps(): Array<DiffableProp> {
       return [{
@@ -31,7 +34,7 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, Requ
     }
 
     onAddNewConfigFor() {
-      return undefined; // N/A
+      return () => {}; // N/A
     }
 
     onRemoveConfigFor(editor: SimpleTokenEditor) {
@@ -50,7 +53,7 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, Requ
       return editor.getSimpleTokenNameForConfig(this);
     }
 
-    getAllConfigsFrom(editor: SimpleTokenEditor) {
+    getAllConfigsFrom(editor: SimpleTokenEditor): Array<SimpleTokenApiRef> {
       return editor.getAllSimpleTokenApis().filter(ea => ea.id === this.apiId);
     }
 

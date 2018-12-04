@@ -39,6 +39,7 @@ describe('BehaviorEditor', () => {
   const normalResponseTypeJson = { id: normalResponseType, displayString: "Response normally" };
   const privateResponseType = "Private";
   const groupJson: BehaviorGroupJson = {
+    teamId: "1",
     id: '1',
     actionInputs: [],
     behaviorVersions: [
@@ -295,30 +296,35 @@ describe('BehaviorEditor', () => {
     it('returns the template when it’s non-empty', () => {
       firstBehavior.responseTemplate = 'clowncar';
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTemplate().toString()).toEqual('clowncar');
+      const template = editor.getBehaviorTemplate();
+      expect(template && template.toString()).toEqual('clowncar');
     });
 
     it('returns a default template when no template is defined', () => {
       delete firstBehavior.responseTemplate;
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTemplate().toString()).toEqual('');
+      const template = editor.getBehaviorTemplate();
+      expect(template && template.toString()).toEqual('');
    });
 
     it('returns a default template when the template is blank', () => {
       firstBehavior.responseTemplate = '';
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTemplate().toString()).toEqual('');
+      const template = editor.getBehaviorTemplate();
+      expect(template && template.toString()).toEqual('');
     });
 
     it('returns the template when it’s empty on an existing skill', () => {
       firstBehavior.responseTemplate = '';
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTemplate().toString()).toEqual('');
+      const template = editor.getBehaviorTemplate();
+      expect(template && template.toString()).toEqual('');
     });
 
     it('returns the default template on a new, empty skill', () => {
       let editor = createEditor(newSkillConfig);
-      expect(editor.getBehaviorTemplate().toString()).toEqual(BehaviorVersion.defaultActionProps().responseTemplate.toString());
+      const template = editor.getBehaviorTemplate();
+      expect(template && template.toString()).toEqual(BehaviorVersion.defaultActionProps().responseTemplate.toString());
     });
   });
 
@@ -437,16 +443,17 @@ describe('BehaviorEditor', () => {
     });
   });
 
-  describe('setConfigProperty', () => {
+  describe('setBehaviorConfigProps', () => {
     it("clones the existing behavior config with updated properties", () => {
       editorConfig.group.behaviorVersions[0].config.responseTypeId = normalResponseType;
       let editor = createEditor(editorConfig);
-      editor.setEditableProp = jest.fn();
-      expect(editor.getBehaviorConfig().responseTypeId).toBe(normalResponseType);
-      editor.setConfigProperty('responseTypeId', privateResponseType);
-      const newConfig = editor.setEditableProp.mock.calls[0][1];
-      expect(newConfig.constructor.name).toBe("BehaviorConfig");
-      expect(newConfig.responseTypeId).toBe(privateResponseType);
+      const config = editor.getBehaviorConfig();
+      expect(config && config.responseTypeId).toBe(normalResponseType);
+      editor.setBehaviorConfigProps({
+        responseTypeId: privateResponseType
+      });
+      const config2 = editor.getBehaviorConfig();
+      expect(config2 && config2.responseTypeId).toEqual(privateResponseType);
     });
   });
 

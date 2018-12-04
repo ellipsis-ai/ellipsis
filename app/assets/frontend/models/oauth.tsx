@@ -3,18 +3,19 @@ import {Diffable, DiffableProp} from "./diffs";
 import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
 import RequiredApiConfigWithConfig from './required_api_config_with_config';
 import ID from '../lib/id';
-import {RequiredApiConfigJson} from "./required_api_config";
+import RequiredApiConfig, {
+  RequiredApiConfigJson,
+  RequiredApiConfigEditor
+} from "./required_api_config";
 
-type callback = () => void
-
-export interface RequiredOAuthEditor {
-  onAddOAuthApplication: (r: RequiredOAuthApplication, c?: Option<callback>) => void,
-  addNewOAuthApplication: (r?: Option<RequiredOAuthApplication>) => void,
-  onRemoveOAuthApplication: (r: RequiredOAuthApplication, c?: Option<callback>) => void,
-  onUpdateOAuthApplication: (r: RequiredOAuthApplication, c?: Option<callback>) => void,
-  getOAuthLogoUrlForConfig: (r: RequiredOAuthApplication) => string,
-  getOAuthApiNameForConfig: (r: RequiredOAuthApplication) => string,
-  getAllOAuthApplications: () => Array<RequiredOAuthApplication>
+export interface RequiredOAuthEditor extends RequiredApiConfigEditor {
+  onAddOAuthApplication: (r: RequiredApiConfig, c?: () => void) => void,
+  addNewOAuthApplication: (r?: Option<RequiredApiConfig>) => void,
+  onRemoveOAuthApplication: (r: RequiredApiConfig, c?: () => void) => void,
+  onUpdateOAuthApplication: (r: RequiredApiConfig, c?: () => void) => void,
+  getOAuthLogoUrlForConfig: (r: RequiredApiConfig) => string,
+  getOAuthApiNameForConfig: (r: RequiredApiConfig) => string,
+  getAllOAuthApplications: () => Array<OAuthApplicationRef>
 }
 
 type OAuthApplicationRefEditor = {
@@ -31,7 +32,10 @@ interface RequiredOAuthApplicationInterface extends RequiredOAuthApplicationJson
   config?: Option<OAuthApplicationRef>
 }
 
-export class RequiredOAuthApplication extends RequiredApiConfigWithConfig implements Diffable, RequiredOAuthApplicationInterface {
+export class RequiredOAuthApplication
+  extends RequiredApiConfigWithConfig
+  implements Diffable, RequiredOAuthApplicationInterface {
+
   readonly config: Option<OAuthApplicationRef>;
   readonly recommendedScope: string;
 
@@ -81,7 +85,7 @@ export class RequiredOAuthApplication extends RequiredApiConfigWithConfig implem
     return editor.getOAuthApiNameForConfig(this);
   }
 
-  getAllConfigsFrom(editor: RequiredOAuthEditor) {
+  getAllConfigsFrom(editor: RequiredOAuthEditor): Array<OAuthApplicationRef> {
     return editor.getAllOAuthApplications().filter(ea => ea.apiId === this.apiId);
   }
 
@@ -93,7 +97,7 @@ export class RequiredOAuthApplication extends RequiredApiConfigWithConfig implem
     return `${this.codePathPrefix()}${this.nameInCode}`;
   }
 
-  configName() {
+  configName(): string {
     return this.config ? this.config.displayName : "";
   }
 
@@ -139,7 +143,7 @@ export class OAuthApplicationRef extends ApiConfigRef implements OAuthApplicatio
     });
   }
 
-  getApiLogoUrl(editor: OAuthApplicationRefEditor) {
+  getApiLogoUrl(editor: OAuthApplicationRefEditor): string {
     return editor.getOAuthLogoUrlForConfig(this);
   }
 

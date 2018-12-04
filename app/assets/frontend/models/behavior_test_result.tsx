@@ -5,6 +5,11 @@ export interface BehaviorTestResultJson {
   runAt: number
 }
 
+export interface BehaviorTestResultsJson {
+  results: Array<BehaviorTestResultJson>,
+  shouldRetry: boolean
+}
+
 interface BehaviorTestResultInterface extends BehaviorTestResultJson {}
 
 class BehaviorTestResult implements BehaviorTestResultInterface {

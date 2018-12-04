@@ -17,8 +17,9 @@ import {ReactNode} from "react";
 import SVGCheckmark from '../svg/checkmark';
 import SVGWarning from '../svg/warning';
 import NodeModuleList from "./node_module_list";
+import ApiConfigRef from '../models/api_config_ref';
 
-export type BehaviorSelectCallback = (optionalGroupId: Option<string>, editableId?: Option<string>, optionalCallback?: Option<() => void>) => void;
+export type BehaviorSelectCallback = (optionalGroupId: Option<string>, editableId?: Option<string>, optionalCallback?: () => void) => void;
 
 interface Props {
   actionBehaviors: Array<BehaviorVersion>,
@@ -40,7 +41,7 @@ interface Props {
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
   onApiConfigClick: (config: RequiredApiConfig) => void,
   onAddApiConfigClick: () => void,
-  getApiConfigName: (config: RequiredApiConfig) => string,
+  getApiConfigName: (config: RequiredApiConfig | ApiConfigRef) => string,
   updatingNodeModules: boolean,
   runningTests: boolean,
   testResults: Array<BehaviorTestResult>

@@ -19,7 +19,7 @@ const ONE_MINUTE = 60000;
 
 export interface BehaviorGroupJson {
   id?: Option<string>;
-  teamId?: Option<string>;
+  teamId: string;
   name?: Option<string>;
   icon?: Option<string>;
   description?: Option<string>;
@@ -60,7 +60,7 @@ interface BehaviorGroupInterface extends BehaviorGroupJson {
 class BehaviorGroup implements Diffable, BehaviorGroupInterface {
   constructor(
     readonly id: Option<string>,
-    readonly teamId: Option<string>,
+    readonly teamId: string,
     readonly name: Option<string>,
     readonly icon: Option<string>,
     readonly description: Option<string>,

@@ -152,7 +152,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return `Cancel new ${this.kindLabel()}`;
     }
 
-    buildUpdatedGroupFor(group: BehaviorGroup, props: {}): BehaviorGroup {
+    buildUpdatedGroupFor(group: BehaviorGroup, props: Partial<BehaviorVersionInterface>): BehaviorGroup {
       const timestampedBehavior = this.clone(props).copyWithNewTimestamp();
       const updatedVersions = group.behaviorVersions.
         filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).

@@ -122,6 +122,7 @@ describe('BehaviorList', () => {
     "createdAt": 1511816895686
   }
   const group1 = BehaviorGroup.fromJson({
+    teamId: "1",
     id: "a",
     name: "A",
     description: "",
@@ -136,6 +137,7 @@ describe('BehaviorList', () => {
     isManaged: false
   });
   const group2 = BehaviorGroup.fromJson({
+    teamId: "1",
     id: "b",
     name: "B",
     description: "",
@@ -150,6 +152,7 @@ describe('BehaviorList', () => {
     isManaged: false
   });
   const group3 = BehaviorGroup.fromJson({
+    teamId: "1",
     id: "c",
     name: "",
     description: "",
