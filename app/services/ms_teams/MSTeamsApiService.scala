@@ -163,6 +163,21 @@ trait MSTeamsApiClient {
     }
   }
 
+  def indicateTyping(info: ActivityInfo): Future[Unit] = {
+    val value = Json.toJson(ResponseInfo.newForTyping(
+      info.recipient,
+      info.conversation,
+      info.from
+    ))
+    for {
+      token <- fetchBotFrameworkToken
+      _ <- ws.
+        url(info.responseUrl).
+        withHttpHeaders(headersFor(token): _*).
+        post(value)
+    } yield {}
+  }
+
   private def messageUrlFor(serviceUrl: String, conversationId: String, activityId: String): String = {
     s"$serviceUrl/v3/conversations/$conversationId/activities/$activityId/"
   }

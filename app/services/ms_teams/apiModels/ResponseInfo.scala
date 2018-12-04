@@ -4,9 +4,9 @@ case class ResponseInfo(
                          `type`: String,
                          from: MessageParticipantInfo,
                          conversation: ConversationAccount,
-                         recipient: MessageParticipantInfo,
-                         text: String,
-                         textFormat: String,
+                         recipient: Option[MessageParticipantInfo],
+                         text: Option[String],
+                         textFormat: Option[String],
                          replyToId: Option[String],
                          attachments: Option[Seq[Attachment]],
                          entities: Option[Seq[MentionEntity]]
@@ -34,12 +34,30 @@ object ResponseInfo {
       "message",
       from,
       conversation,
-      recipient,
-      text,
-      textFormat,
+      Some(recipient),
+      Some(text),
+      Some(textFormat),
       maybeReplyToId,
       attachments,
       Some(entities)
+    )
+  }
+
+  def newForTyping(
+                    from: MessageParticipantInfo,
+                    conversation: ConversationAccount,
+                    recipient: MessageParticipantInfo
+                  ): ResponseInfo = {
+    ResponseInfo(
+      "typing",
+      from,
+      conversation,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None
     )
   }
 

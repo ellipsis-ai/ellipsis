@@ -562,7 +562,8 @@ case class MSTeamsEventContext(
 
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
                      (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
-    eventualResults // TODO: this
+    MSTeamsMessageReactionHandler.handle(services.msTeamsApiService.profileClientFor(profile), eventualResults, info)
+    eventualResults
   }
 
   def messageActionButtonFor(
