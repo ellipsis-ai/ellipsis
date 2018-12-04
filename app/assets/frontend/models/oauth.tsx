@@ -31,7 +31,7 @@ interface RequiredOAuthApplicationInterface extends RequiredOAuthApplicationJson
   config?: Option<OAuthApplicationRef>
 }
 
-class RequiredOAuthApplication extends RequiredApiConfigWithConfig implements Diffable, RequiredOAuthApplicationInterface {
+export class RequiredOAuthApplication extends RequiredApiConfigWithConfig implements Diffable, RequiredOAuthApplicationInterface {
   readonly config: Option<OAuthApplicationRef>;
   readonly recommendedScope: string;
 
@@ -127,7 +127,7 @@ export interface OAuthApplicationRefJson extends ApiConfigRefJson {
   scope: string;
 }
 
-class OAuthApplicationRef extends ApiConfigRef implements OAuthApplicationRefJson {
+export class OAuthApplicationRef extends ApiConfigRef implements OAuthApplicationRefJson {
   readonly apiId: string;
   readonly scope: string;
 
@@ -167,4 +167,13 @@ class OAuthApplicationRef extends ApiConfigRef implements OAuthApplicationRefJso
   }
 }
 
-export {OAuthApplicationRef, RequiredOAuthApplication};
+export interface OAuthApiJson {
+  apiId: string
+  name: string
+  requiresAuth: boolean
+  newApplicationUrl?: Option<string>
+  scopeDocumentationUrl?: Option<string>
+  iconImageUrl?: Option<string>
+  logoImageUrl?: Option<string>
+  isOAuth1: boolean
+}

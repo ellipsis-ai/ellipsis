@@ -1,24 +1,82 @@
-/* global BehaviorEditorConfiguration:false */
 import 'core-js';
-import 'whatwg-fetch';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import BrowserUtils from '../lib/browser_utils';
 import BehaviorEditor from './index';
-import BehaviorGroup from '../models/behavior_group';
-import BehaviorGroupDeployment from '../models/behavior_group_deployment';
-import BehaviorResponseType from '../models/behavior_response_type';
-import ParamType from '../models/param_type';
-import {AWSConfigRef} from '../models/aws';
-import {OAuthApplicationRef} from '../models/oauth';
-import {SimpleTokenApiRef} from '../models/simple_token';
-import LinkedGithubRepo from '../models/linked_github_repo';
+import BehaviorGroup, {BehaviorGroupJson} from '../models/behavior_group';
+import BehaviorGroupDeployment, {BehaviorGroupDeploymentJson} from '../models/behavior_group_deployment';
+import BehaviorResponseType, {BehaviorResponseTypeJson} from '../models/behavior_response_type';
+import ParamType, {ParamTypeJson} from '../models/param_type';
+import {AWSConfigRef, AWSConfigRefJson} from '../models/aws';
+import {OAuthApiJson, OAuthApplicationRef, OAuthApplicationRefJson} from '../models/oauth';
+import {SimpleTokenApiRef, SimpleTokenApiRefJson} from '../models/simple_token';
+import LinkedGithubRepo, {LinkedGitHubRepoJson} from '../models/linked_github_repo';
 import autobind from '../lib/autobind';
 import Page from '../shared_ui/page';
 import {DataRequest} from '../lib/data_request';
+import {SavedAnswer} from "./user_input_configuration";
+import {EnvironmentVariableData} from "../settings/environment_variables/loader";
+import {Timestamp} from "../lib/formatter";
+import {GithubFetchError} from "../models/github/github_fetch_error";
 
-class BehaviorEditorLoader extends React.Component {
-        constructor(props) {
+interface Props {
+  containerId: string
+  csrfToken: string
+  group: BehaviorGroupJson
+  selectedId?: Option<string>
+  builtinParamTypes: Array<ParamTypeJson>
+  envVariables: Array<EnvironmentVariableData>
+  savedAnswers: Array<SavedAnswer>
+  awsConfigs: Array<AWSConfigRefJson>
+  oauthApplications: Array<OAuthApplicationRefJson>
+  oauthApis: Array<OAuthApiJson>
+  simpleTokenApis: Array<SimpleTokenApiRefJson>
+  linkedOAuthApplicationIds: Array<string>
+  userId: string
+  isAdmin: boolean
+  isLinkedToGithub: boolean
+  showVersions?: boolean
+  lastDeployTimestamp?: Option<Timestamp>
+  slackTeamId?: Option<string>
+  botName: string
+  possibleResponseTypes: Array<BehaviorResponseTypeJson>
+}
+
+interface State {
+  awsConfigs: Array<AWSConfigRef>
+  oauthApplications: Array<OAuthApplicationRef>
+  simpleTokenApis: Array<SimpleTokenApiRef>
+  linkedGithubRepo: Option<LinkedGithubRepo>
+  group: BehaviorGroup,
+  builtinParamTypes: Array<ParamType>
+  selectedId: Option<string>
+  savedAnswers: Array<SavedAnswer>
+  onLoad: Option<() => void>
+}
+
+interface LinkToGithubData {
+  behaviorGroupId: string
+  owner: string
+  repo: string
+  currentBranch?: Option<string>
+}
+
+export interface UpdateFromGithubSuccessData {
+  data: BehaviorGroupJson
+  errors: undefined
+}
+
+interface UpdateFromGithubErrorData {
+  data: undefined
+  errors: GithubFetchError
+}
+
+type UpdateFromGithubResponseData = UpdateFromGithubSuccessData | UpdateFromGithubErrorData
+
+declare var BehaviorEditorConfiguration: Props;
+
+class BehaviorEditorLoader extends React.Component<Props, State> {
+        constructor(props: Props) {
           super(props);
           autobind(this);
           const group = BehaviorGroup.fromJson(this.props.group);
@@ -35,27 +93,40 @@ class BehaviorEditorLoader extends React.Component {
             onLoad: null
           };
           if (group.id && selectedId) {
-            BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedId, this.props.showVersions || null).url);
+            BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(group.id, selectedId, this.props.showVersions).url);
           }
         }
 
-        onLinkGithubRepo(owner, repo, branch, callback) {
+        onLinkGithubRepo(owner: string, repo: string, branch: Option<string>, callback?: () => void): void {
           const url = jsRoutes.controllers.BehaviorEditorController.linkToGithubRepo().url;
-          const params = {};
-          params.behaviorGroupId = this.state.group.id;
-          params.owner = owner;
-          params.repo = repo;
-          if (branch) {
-            params.currentBranch = branch;
+          const groupId = this.state.group.id;
+          if (groupId) {
+            const params: LinkToGithubData = {
+              behaviorGroupId: groupId,
+              owner: owner,
+              repo: repo
+            };
+            if (branch) {
+              params.currentBranch = branch;
+            }
+            DataRequest.jsonPost(url, params, this.props.csrfToken)
+              .then((linkedData: LinkedGitHubRepoJson) => {
+                this.setState({ linkedGithubRepo: LinkedGithubRepo.fromJson(linkedData) }, callback);
+              });
           }
-          DataRequest.jsonPost(url, params, this.props.csrfToken)
-            .then(() => {
-              const linked = new LinkedGithubRepo(owner, repo, branch);
-              this.setState({ linkedGithubRepo: linked }, callback);
-            });
         }
 
-        onUpdateFromGithub(owner, repo, branch, callback, onError) {
+        isUpdateFromGithubErrorData(json: UpdateFromGithubResponseData): json is UpdateFromGithubErrorData {
+          return typeof json === 'object' && typeof json.errors !== 'undefined';
+        }
+
+        onUpdateFromGithub(
+          owner: string,
+          repo: string,
+          branch: string,
+          callback: (json: UpdateFromGithubSuccessData) => void,
+          onError: (branch: string, error?: Option<GithubFetchError>) => void
+        ): void {
           DataRequest.jsonPost(
             jsRoutes.controllers.BehaviorEditorController.updateFromGithub().url, {
               behaviorGroupId: this.state.group.id,
@@ -64,11 +135,11 @@ class BehaviorEditorLoader extends React.Component {
               branch: branch
             },
             this.props.csrfToken
-          ).then((json) => {
+          ).then((json: UpdateFromGithubResponseData) => {
             this.setState({
               linkedGithubRepo: new LinkedGithubRepo(owner, repo, branch)
             }, () => {
-              if (json.errors) {
+              if (this.isUpdateFromGithubErrorData(json)) {
                 onError(branch, json.errors);
               } else {
                 callback(json);
@@ -79,23 +150,22 @@ class BehaviorEditorLoader extends React.Component {
           });
         }
 
-        onSave(newProps) {
-          const newState = {
+        onSave(newProps: { group: BehaviorGroup, onLoad?: Option<() => void> }): void {
+          this.setState({
             group: newProps.group,
             onLoad: newProps.onLoad
-          };
-          this.setState(newState);
+          });
         }
 
-        onDeploy(deploymentProps, callback) {
+        onDeploy(deploymentProps: BehaviorGroupDeploymentJson, callback?: () => void): void {
           this.setState({
             group: this.state.group.clone({ deployment: BehaviorGroupDeployment.fromJson(deploymentProps) }),
             onLoad: null
           }, callback);
         }
 
-        fallbackSelectedIdFor(group) {
-          var isSimpleBehaviorGroup = !group.name && !group.description && group.behaviorVersions.length === 1;
+        fallbackSelectedIdFor(group: BehaviorGroup): Option<string> {
+          const isSimpleBehaviorGroup = !group.name && !group.description && group.behaviorVersions.length === 1;
           if (isSimpleBehaviorGroup) {
             return group.behaviorVersions[0].behaviorId;
           } else {
@@ -103,11 +173,11 @@ class BehaviorEditorLoader extends React.Component {
           }
         }
 
-        getSavedAnswers() {
+        getSavedAnswers(): Array<SavedAnswer> {
           return (this.state && this.state.savedAnswers) ? this.state.savedAnswers : [];
         }
 
-        resetSavedAnswerForInput(inputId, numAnswersDeleted) {
+        resetSavedAnswerForInput(inputId: string, numAnswersDeleted: number): void {
           const newSavedAnswers = this.getSavedAnswers().map((ea) => {
             if (ea.inputId === inputId) {
               return Object.assign({}, ea, {
@@ -162,30 +232,9 @@ class BehaviorEditorLoader extends React.Component {
         }
 }
 
-BehaviorEditorLoader.propTypes = {
-  containerId: React.PropTypes.string.isRequired,
-  csrfToken: React.PropTypes.string.isRequired,
-  group: React.PropTypes.object.isRequired,
-  selectedId: React.PropTypes.string,
-  builtinParamTypes: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-  envVariables: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-  savedAnswers: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-  awsConfigs: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-  oauthApplications: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-  oauthApis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-  simpleTokenApis: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-  linkedOAuthApplicationIds: React.PropTypes.arrayOf(React.PropTypes.string).isRequired,
-  userId: React.PropTypes.string.isRequired,
-  isAdmin: React.PropTypes.bool.isRequired,
-  isLinkedToGithub: React.PropTypes.bool.isRequired,
-  showVersions: React.PropTypes.bool,
-  lastDeployTimestamp: React.PropTypes.string,
-  slackTeamId: React.PropTypes.string,
-  botName: React.PropTypes.string.isRequired,
-  possibleResponseTypes: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
-};
-
-ReactDOM.render(
-  React.createElement(BehaviorEditorLoader, BehaviorEditorConfiguration),
-  document.getElementById(BehaviorEditorConfiguration.containerId)
-);
+const container = document.getElementById(BehaviorEditorConfiguration.containerId);
+if (container) {
+  ReactDOM.render((
+    <BehaviorEditorLoader {...BehaviorEditorConfiguration} />
+  ), container);
+}
