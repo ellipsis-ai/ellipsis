@@ -91,10 +91,9 @@ import Editable, {EditableInterface} from "../models/editable";
 import Trigger from "../models/trigger";
 import BehaviorConfig, {BehaviorConfigInterface} from "../models/behavior_config";
 import {EditorCursorPosition} from "./code_editor";
-import NavItem from "../shared_ui/nav_item";
 import RequiredApiConfigWithConfig from "../models/required_api_config_with_config";
 
-interface BehaviorEditorProps {
+export interface BehaviorEditorProps {
   group: BehaviorGroup
   selectedId: Option<string>
   csrfToken: string
