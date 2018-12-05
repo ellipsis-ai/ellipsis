@@ -41,7 +41,7 @@ interface Props {
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
   onApiConfigClick: (config: RequiredApiConfig) => void,
   onAddApiConfigClick: () => void,
-  getApiConfigName: (config: RequiredApiConfig | ApiConfigRef) => string,
+  getApiConfigName: (config: RequiredApiConfig) => string,
   updatingNodeModules: boolean,
   runningTests: boolean,
   testResults: Array<BehaviorTestResult>

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import APIConfigPanel from './api_config_panel';
+import APIConfigPanel, {ApiConfigEditor} from './api_config_panel';
 import {AWSConfigRef} from '../models/aws';
 import BehaviorGroup, {BehaviorGroupJson} from '../models/behavior_group';
 import BehaviorGroupVersionMetaData from '../models/behavior_group_version_meta_data';
@@ -9,7 +9,7 @@ import BehaviorVersion, {BehaviorVersionInterface, BehaviorVersionJson} from '..
 import BehaviorSwitcher from './behavior_switcher';
 import BehaviorTester from './behavior_tester';
 import DataTypeTester from './data_type_tester';
-import BehaviorTestResult, {BehaviorTestResultJson, BehaviorTestResultsJson} from '../models/behavior_test_result';
+import BehaviorTestResult, {BehaviorTestResultsJson} from '../models/behavior_test_result';
 import BehaviorCodeHelp from './behavior_code_help';
 import Button from '../form/button';
 import CodeConfiguration from './code_configuration';
@@ -85,8 +85,8 @@ import {GithubFetchError} from "../models/github/github_fetch_error";
 import {UpdateFromGithubSuccessData} from "./loader";
 import {BehaviorGroupDeploymentJson} from "../models/behavior_group_deployment";
 import BehaviorResponseType from "../models/behavior_response_type";
-import ApiConfigRef from "../models/api_config_ref";
-import RequiredApiConfig from "../models/required_api_config";
+import ApiConfigRef, {ApiJson} from "../models/api_config_ref";
+import RequiredApiConfig, {RequiredApiConfigEditor} from "../models/required_api_config";
 import Editable, {EditableInterface} from "../models/editable";
 import Trigger from "../models/trigger";
 import BehaviorConfig, {BehaviorConfigInterface} from "../models/behavior_config";
@@ -280,6 +280,10 @@ class BehaviorEditor extends React.Component<Props, State> {
     return this.getRequiredApiConfigWithId(selectedId);
   }
 
+  getEditorFor<R extends RequiredApiConfig>(config: R): ApiConfigEditor<R> {
+    return config.editorFor(this);
+  }
+
   getAllConfigs(): Array<ApiConfigRef> {
     const configs: Array<ApiConfigRef> = [];
     return configs
@@ -300,66 +304,22 @@ class BehaviorEditor extends React.Component<Props, State> {
     return this.getAllRequiredApiConfigs().find(ea => ea.id === id);
   }
 
-  getApiConfigsForSelected(selected: RequiredApiConfig): Array<ApiConfigRef> {
-    return selected.getAllConfigsFrom(this);
-  }
-
-  onAddNewConfig(required: RequiredApiConfig, callback?: () => void): void {
-    required.onAddConfigFor(this)(required, callback);
-    this.selectRequiredApiConfig(required);
-  }
-
-  onAddConfigForSelected(selected: RequiredApiConfig): (required: RequiredApiConfig, callback?: () => void) => void {
-    return selected.onAddConfigFor(this);
-  }
-
-  onAddNewConfigForSelected(selected: RequiredApiConfig): (required: RequiredApiConfig) => void {
-    return selected.onAddNewConfigFor(this);
-  }
-
-  onRemoveNewConfig(required: RequiredApiConfig, callback?: () => void) {
-    required.onRemoveConfigFor(this)(required, callback);
-  }
-
-  onRemoveConfigForSelected(selected: RequiredApiConfig): (required: RequiredApiConfig, callback?: () => void) => void {
-    return selected.onRemoveConfigFor(this);
-  }
-
-  onUpdateNewConfig(required: RequiredApiConfig, callback?: () => void) {
-    required.onUpdateConfigFor(this)(required, callback);
-  }
-
-  onUpdateConfigForSelected(selected: RequiredApiConfig): (required: RequiredApiConfig, callback?: () => void) => void {
-    return selected.onUpdateConfigFor(this);
-  }
-
-  getApiLogoUrlForApi(api: Option<{
-    logoImageUrl?: Option<string>,
-    iconImageUrl?: Option<string>
-  }>): Option<string> {
+  getApiLogoUrlForApi(api: Option<ApiJson>): Option<string> {
     return api ? (api.logoImageUrl || api.iconImageUrl) : null;
   }
 
-  getOAuthLogoUrlForConfig(config: RequiredOAuthApplication): Option<string> {
-    const api = this.getOAuthApiWithId(config.apiId);
-    return this.getApiLogoUrlForApi(api);
+  getOAuthLogoUrlForConfig(apiId: string): string {
+    const api = this.getOAuthApiWithId(apiId);
+    return this.getApiLogoUrlForApi(api) || "";
   }
 
-  getSimpleTokenLogoUrlForConfig(config: RequiredSimpleTokenApi): Option<string> {
-    const api = this.getSimpleTokenApiWithId(config.apiId);
-    return this.getApiLogoUrlForApi(api);
+  getSimpleTokenLogoUrlForConfig(apiId: string): string {
+    const api = this.getSimpleTokenApiWithId(apiId);
+    return this.getApiLogoUrlForApi(api) || "";
   }
 
-  getApiLogoUrlForConfig(config: RequiredApiConfigWithConfig | ApiConfigRef): string {
-    return config.getApiLogoUrl(this);
-  }
-
-  getApiNameForConfig(config: RequiredApiConfig | ApiConfigRef): string {
-    return config.getApiName(this);
-  }
-
-  getApiConfigName(config: RequiredApiConfig | ApiConfigRef): string {
-    const apiName = this.getApiNameForConfig(config);
+  getApiConfigName(config: RequiredApiConfig): string {
+    const apiName = config.editorFor(this).onGetApiName(config.apiId);
     const configName = config.configName();
     if (configName && configName.toLowerCase().includes(apiName.toLowerCase())) {
       return configName;
@@ -370,13 +330,13 @@ class BehaviorEditor extends React.Component<Props, State> {
     }
   }
 
-  getOAuthApiNameForConfig(config: RequiredOAuthApplication): string {
-    const api = this.getOAuthApiWithId(config.apiId);
+  getOAuthApiNameForConfig(apiId: string): string {
+    const api = this.getOAuthApiWithId(apiId);
     return api ? api.name : "";
   }
 
-  getSimpleTokenNameForConfig(config: RequiredSimpleTokenApi): string {
-    const api = this.getSimpleTokenApiWithId(config.apiId);
+  getSimpleTokenNameForConfig(apiId: string): string {
+    const api = this.getSimpleTokenApiWithId(apiId);
     return api ? api.displayName : "";
   }
 
@@ -449,11 +409,6 @@ class BehaviorEditor extends React.Component<Props, State> {
 
   getSelected(): Option<Editable> {
     return this.getSelectedFor(this.getBehaviorGroup(), this.getSelectedId());
-  }
-
-  getEditableProp(key: keyof Editable) {
-    const selected = this.getSelected();
-    return selected ? selected[key] : null;
   }
 
   getBehaviorTemplate(): Option<ResponseTemplate> {
@@ -1132,12 +1087,6 @@ class BehaviorEditor extends React.Component<Props, State> {
     this.setState(newState, this.onSaveBehaviorGroup);
   }
 
-  setEditableProp(key, value, callback) {
-    var newProps = {};
-    newProps[key] = value;
-    this.setEditableProps(newProps, callback);
-  }
-
   setEditableProps<T extends EditableInterface>(props: Partial<T>, callback?: () => void) {
     const existingGroup = this.getBehaviorGroup();
     const existingSelected = this.getSelectedFor(existingGroup, this.getSelectedId());
@@ -1637,6 +1586,10 @@ class BehaviorEditor extends React.Component<Props, State> {
     this.updateGroupStateWith(this.getBehaviorGroup().clone({ requiredOAuthApiConfigs: configs }), callback);
   }
 
+  onAddNewRequiredConfig(required: RequiredApiConfig): void {
+    this.selectRequiredApiConfig(required);
+  }
+
   addNewOAuthApplication(required?: RequiredOAuthApplication): void {
     const requiredToUse = required || RequiredOAuthApplication.fromProps({
       id: ID.next(),
@@ -1997,25 +1950,18 @@ class BehaviorEditor extends React.Component<Props, State> {
             onChange={this.layoutDidUpdate}
             animationDisabled={this.state.animationDisabled}
           >
-            {selectedApiConfig ? (
-              <APIConfigPanel
-                openWhen={this.getActiveDropdown() === 'apiConfigAdderDropdown'}
-                toggle={this.toggleApiAdderDropdown}
-                requiredConfig={selectedApiConfig}
-                getApiLogoUrlForConfig={this.getApiLogoUrlForConfig}
-                getApiNameForConfig={this.getApiNameForConfig}
-                getApiConfigName={this.getApiConfigName}
-                allConfigs={this.getApiConfigsForSelected(selectedApiConfig)}
-                onAddConfig={this.onAddConfigForSelected(selectedApiConfig)}
-                onAddNewConfig={this.onAddNewConfigForSelected(selectedApiConfig)}
-                onRemoveConfig={this.onRemoveConfigForSelected(selectedApiConfig)}
-                onUpdateConfig={this.onUpdateConfigForSelected(selectedApiConfig)}
-                onDoneClick={this.props.onClearActivePanel}
-                addNewAWSConfig={this.addNewAWSConfig}
-                addNewOAuthApplication={this.addNewOAuthApplication}
-                animationDisabled={this.state.animationDisabled}
-              />
-            ) : null}
+            <APIConfigPanel
+              openWhen={this.getActiveDropdown() === 'apiConfigAdderDropdown'}
+              toggle={this.toggleApiAdderDropdown}
+              requiredConfig={selectedApiConfig}
+              onDoneClick={this.props.onClearActivePanel}
+              addNewAWSConfig={this.addNewAWSConfig}
+              addNewOAuthApplication={this.addNewOAuthApplication}
+              animationDisabled={this.state.animationDisabled}
+              allConfigs={this.getAllConfigs()}
+              editor={this}
+              onAddNewConfig={this.onAddNewRequiredConfig}
+            />
           </Collapsible>
 
           <Collapsible ref={(el) => this.props.onRenderPanel("confirmUndo", el)} revealWhen={this.props.activePanelName === 'confirmUndo'} onChange={this.layoutDidUpdate}>

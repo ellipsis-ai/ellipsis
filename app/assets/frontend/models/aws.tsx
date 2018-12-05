@@ -2,18 +2,9 @@ import {Diffable, DiffableProp} from "./diffs";
 import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
 import RequiredApiConfigWithConfig from './required_api_config_with_config';
 import ID from '../lib/id';
-import RequiredApiConfig, {
-  RequiredApiConfigJson,
-  RequiredApiConfigEditor
-} from "./required_api_config";
-
-interface AWSEditor extends RequiredApiConfigEditor {
-  onAddAWSConfig: (required: RequiredApiConfig, c?: () => void) => void,
-  addNewAWSConfig: (required?: RequiredApiConfig) => void,
-  onRemoveAWSConfig: (required: RequiredApiConfig, c?: () => void) => void,
-  onUpdateAWSConfig: (required: RequiredApiConfig, c?: () => void) => void,
-  getAllAWSConfigs: () => Array<AWSConfigRef>
-}
+import RequiredApiConfig, {RequiredApiConfigJson} from "./required_api_config";
+import BehaviorEditor from "../behavior_editor";
+import {ApiConfigEditor} from "../behavior_editor/api_config_panel";
 
 export interface RequiredAWSConfigJson extends RequiredApiConfigJson {
   config?: Option<AWSConfigRefJson>
@@ -48,37 +39,9 @@ class RequiredAWSConfig
         ignoreForPublished: true
       }, {
         name: "Configuration to use",
-        value: this.configName(),
+        value: this.configName() || "",
         ignoreForPublished: true
       }];
-    }
-
-    onAddConfigFor(editor: AWSEditor) {
-      return editor.onAddAWSConfig;
-    }
-
-    onAddNewConfigFor(editor: AWSEditor) {
-      return editor.addNewAWSConfig;
-    }
-
-    onRemoveConfigFor(editor: AWSEditor) {
-      return editor.onRemoveAWSConfig;
-    }
-
-    onUpdateConfigFor(editor: AWSEditor) {
-      return editor.onUpdateAWSConfig;
-    }
-
-    getApiLogoUrl(): string {
-      return logoUrl;
-    }
-
-    getApiName(): string {
-      return "AWS";
-    }
-
-    getAllConfigsFrom(editor: AWSEditor): Array<AWSConfigRef> {
-      return editor.getAllAWSConfigs();
     }
 
     codePathPrefix(): string {
@@ -89,7 +52,7 @@ class RequiredAWSConfig
       return `${this.codePathPrefix()}${this.nameInCode}`;
     }
 
-    configName(): string {
+    configName(): Option<string> {
       return this.config ? this.config.displayName : "";
     }
 
@@ -97,13 +60,21 @@ class RequiredAWSConfig
       return Boolean(this.config);
     }
 
-    clone(props: Partial<RequiredAWSConfig>): RequiredAWSConfig {
+    clone(props: Partial<RequiredAWSConfig>) {
       const oldOne: RequiredAWSConfigInterface = Object.assign({}, this);
       const newOne: RequiredAWSConfigInterface = Object.assign(oldOne, props);
-      return RequiredAWSConfig.fromProps(newOne);
+      return new RequiredAWSConfig(newOne.id, newOne.exportId, newOne.apiId, newOne.nameInCode, newOne.config) as this;
     }
 
-    static fromProps(props: RequiredAWSConfigInterface) {
+    static getApiName(): string {
+      return "AWS";
+    }
+
+    static getApiLogo(): string {
+      return logoUrl;
+    }
+
+    static fromProps(props: RequiredAWSConfigInterface): RequiredAWSConfig {
       return new RequiredAWSConfig(props.id, props.exportId, props.apiId, props.nameInCode, props.config);
     }
 
@@ -118,11 +89,34 @@ class RequiredAWSConfig
       });
     }
 
+    editorFor(editor: BehaviorEditor) {
+      return RequiredAWSConfig.editorFor(editor);
+    }
+
+    static editorFor(editor: BehaviorEditor): ApiConfigEditor<RequiredAWSConfig> {
+      return {
+        allApiConfigsFor: editor.getAllAWSConfigs(),
+        onGetApiLogoUrl: RequiredAWSConfig.getApiLogo,
+        onGetApiName: RequiredAWSConfig.getApiName,
+        onAddConfig: editor.onAddAWSConfig,
+        onAddNewConfig: editor.addNewAWSConfig,
+        onRemoveConfig: editor.onRemoveAWSConfig,
+        onUpdateConfig: editor.onUpdateAWSConfig,
+      }
+    }
+
 }
 
   export interface AWSConfigRefJson extends ApiConfigRefJson {}
 
   class AWSConfigRef extends ApiConfigRef implements AWSConfigRefJson {
+    constructor(
+      readonly id: string,
+      readonly displayName: string
+    ) {
+      super(id, displayName);
+      this.apiId = id;
+    }
 
     newRequired(): RequiredAWSConfig {
       return new RequiredAWSConfig(
@@ -138,12 +132,16 @@ class RequiredAWSConfig
       return logoUrl;
     }
 
-    getApiName(editor: AWSEditor): string {
+    getApiName(): string {
       return "AWS";
     }
 
     configName(): string {
       return this.displayName;
+    }
+
+    editorFor(editor: BehaviorEditor) {
+      return RequiredAWSConfig.editorFor(editor);
     }
 
     static fromJson(props: AWSConfigRefJson): AWSConfigRef {

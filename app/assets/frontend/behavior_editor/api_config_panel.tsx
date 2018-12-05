@@ -1,5 +1,4 @@
 import * as React from 'react';
-import ifPresent from '../lib/if_present';
 import ApiConfigRef from '../models/api_config_ref';
 import DropdownMenu from '../shared_ui/dropdown_menu';
 import Collapsible from '../shared_ui/collapsible';
@@ -9,66 +8,75 @@ import RequiredApiConfig from '../models/required_api_config';
 import Select from '../form/select';
 import Sort from '../lib/sort';
 import autobind from "../lib/autobind";
-import RequiredApiConfigWithConfig from "../models/required_api_config_with_config";
+import BehaviorEditor from "./index";
 
-interface Props {
+export interface ApiConfigEditor<R extends RequiredApiConfig> {
+  allApiConfigsFor: Array<ApiConfigRef>,
+  onGetApiLogoUrl: (apiId: string) => string,
+  onGetApiName: (apiId: string) => string,
+  onAddConfig: (required: R, callback?: () => void) => void,
+  onAddNewConfig: (required?: R, callback?: () => void) => void,
+  onRemoveConfig: (required: R, callback?: () => void) => void,
+  onUpdateConfig: (required: R, callback?: () => void) => void
+}
+
+interface Props<R extends RequiredApiConfig> {
   openWhen: boolean,
-  requiredConfig: RequiredApiConfig,
+  requiredConfig: Option<R>,
   allConfigs: Array<ApiConfigRef>,
-  onAddConfig: (config: RequiredApiConfig) => void,
-  onAddNewConfig: (config: RequiredApiConfig) => void,
-  onRemoveConfig: (config: RequiredApiConfig) => void,
-  onUpdateConfig: (config: RequiredApiConfig) => void,
-  getApiLogoUrlForConfig: (config: RequiredApiConfigWithConfig | ApiConfigRef) => string,
-  getApiNameForConfig: (config: RequiredApiConfigWithConfig) => string,
-  getApiConfigName: (config: ApiConfigRef) => string,
   toggle: () => void,
   onDoneClick: () => void,
   addNewAWSConfig: () => void,
   addNewOAuthApplication: () => void,
-  animationDisabled?: boolean
+  animationDisabled?: boolean,
+  editor: BehaviorEditor,
+  onAddNewConfig: (required: RequiredApiConfig) => void
 }
 
 const ADD_NEW_CONFIG_KEY = "add_new_config";
 
-class ApiConfigPanel extends React.Component<Props> {
-    constructor(props: Props) {
+class ApiConfigPanel<R extends RequiredApiConfig> extends React.Component<Props<R>> {
+    constructor(props: Props<R>) {
       super(props);
       autobind(this);
     }
 
     getAllConfigs(): Array<ApiConfigRef> {
-      return Sort.arrayAlphabeticalBy(this.props.allConfigs, (ea) => ea.displayName);
-    }
-
-    getApiLogoUrlForConfig(config: RequiredApiConfigWithConfig | ApiConfigRef): string {
-      return this.props.getApiLogoUrlForConfig(config);
+      const configs = this.props.requiredConfig ?
+        this.props.requiredConfig.editorFor(this.props.editor).allApiConfigsFor : this.props.allConfigs;
+      return Sort.arrayAlphabeticalBy(configs, (ea) => ea.displayName);
     }
 
     getSelectorLabelForConfig(config: ApiConfigRef) {
+      const editor = config.editorFor(this.props.editor);
+      const url = editor.onGetApiLogoUrl(config.apiId);
+      const name = config.configName();
       return (
         <div className="columns columns-elastic">
-          {ifPresent(this.getApiLogoUrlForConfig(config), url => {
-            return (
-              <div className="column column-shrink prs align-m">
-                <img src={url} height="24"/>
-              </div>
-            );
-          })}
+          {url ? (
+            <div className="column column-shrink prs align-m">
+              <img src={url} height="24" alt={`Logo for ${name}`} />
+            </div>
+          ) : null}
           <div className="column column-expand align-m">
-            {this.props.getApiConfigName(config)}
+            {name}
           </div>
         </div>
       );
     }
 
     onAddNewRequiredFor(config: ApiConfigRef): void {
-      this.props.onAddConfig(config.newRequired());
+      const newRequired = config.newRequired() as R;
+      config.editorFor(this.props.editor).onAddConfig(newRequired);
+      this.props.onAddNewConfig(newRequired);
     }
 
     onDeleteRequired(): void {
-      this.props.onRemoveConfig(this.props.requiredConfig);
-      this.props.onDoneClick();
+      const required = this.props.requiredConfig;
+      if (required) {
+        required.editorFor(this.props.editor).onRemoveConfig(required);
+        this.props.onDoneClick();
+      }
     }
 
     render() {
@@ -119,8 +127,7 @@ class ApiConfigPanel extends React.Component<Props> {
       );
     }
 
-    renderConfigChoice() {
-      const required = this.props.requiredConfig;
+    renderConfigChoice(required: R) {
       if (required.canHaveConfig()) {
         return (
           <div>
@@ -150,25 +157,34 @@ class ApiConfigPanel extends React.Component<Props> {
     }
 
     onConfigChange(newConfigId: string): void {
-      if (newConfigId === ADD_NEW_CONFIG_KEY) {
-        this.props.onAddNewConfig(this.props.requiredConfig);
-      } else {
-        const newConfig = this.getAllConfigs().find(ea => ea.id === newConfigId);
-        if (newConfig) {
-          this.props.onUpdateConfig(this.props.requiredConfig.clone({
-            config: newConfig
-          }));
+      const existingRequired = this.props.requiredConfig;
+      if (existingRequired) {
+        const editor = existingRequired.editorFor(this.props.editor);
+        if (newConfigId === ADD_NEW_CONFIG_KEY) {
+          editor.onAddNewConfig();
+        } else {
+          const newConfig = this.getAllConfigs().find(ea => ea.id === newConfigId);
+          if (existingRequired && newConfig) {
+            const newRequired = existingRequired.clone({
+              config: newConfig
+            });
+            editor.onUpdateConfig(newRequired);
+          }
         }
       }
     }
 
     onNameInCodeChange(newNameInCode: string): void {
-      this.props.onUpdateConfig(this.props.requiredConfig.clone({
-        nameInCode: newNameInCode
-      }));
+      const existing = this.props.requiredConfig;
+      if (existing) {
+        const requiredConfig = existing.clone({
+          nameInCode: newNameInCode
+        });
+        existing.editorFor(this.props.editor).onUpdateConfig(requiredConfig);
+      }
     }
 
-    renderNameInCode() {
+    renderNameInCode(required: R) {
       return (
         <div className="type-s">
           <h5 className="mtn position-relative"><span>Set code path</span></h5>
@@ -177,12 +193,12 @@ class ApiConfigPanel extends React.Component<Props> {
 
           <div>
             <div className="align-form-input display-inline-block">
-              <span className="type-monospace">{this.props.requiredConfig.codePathPrefix()}</span>
+              <span className="type-monospace">{required.codePathPrefix()}</span>
             </div>
             <div className="align-form-input display-inline-block width-20">
               <FormInput
                 className="form-input-borderless type-monospace"
-                value={this.props.requiredConfig.nameInCode}
+                value={required.nameInCode}
                 placeholder="nameInCode"
                 onChange={this.onNameInCodeChange}
               />
@@ -193,14 +209,15 @@ class ApiConfigPanel extends React.Component<Props> {
     }
 
     renderConfig() {
-      const hasConfig = Boolean(this.props.requiredConfig);
-      const imageUrl = hasConfig ? this.getApiLogoUrlForConfig(this.props.requiredConfig) : null;
-      const name = this.props.getApiNameForConfig(this.props.requiredConfig);
+      const required = this.props.requiredConfig;
+      const editor = required ? required.editorFor(this.props.editor) : null;
+      const imageUrl = required && editor ? editor.onGetApiLogoUrl(required.apiId) : null;
+      const name = required && editor ? editor.onGetApiName(required.apiId) : null;
       return (
         <div>
-          <Collapsible revealWhen={hasConfig} animationDisabled={this.props.animationDisabled}>
+          <Collapsible revealWhen={Boolean(required)} animationDisabled={this.props.animationDisabled}>
 
-            {hasConfig ? (
+            {required ? (
               <div>
                 <div className="mbxl">
                   {imageUrl ? (
@@ -210,11 +227,11 @@ class ApiConfigPanel extends React.Component<Props> {
                 </div>
 
                 <div className="mvxl">
-                  {this.renderNameInCode()}
+                  {this.renderNameInCode(required)}
                 </div>
 
                 <div className="mvxl">
-                  {this.renderConfigChoice()}
+                  {this.renderConfigChoice(required)}
                 </div>
               </div>
             ) : (

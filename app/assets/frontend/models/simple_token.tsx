@@ -6,6 +6,8 @@ import RequiredApiConfig, {
   RequiredApiConfigJson
 } from './required_api_config';
 import ID from '../lib/id';
+import BehaviorEditor from "../behavior_editor";
+import {ApiConfigEditor} from "../behavior_editor/api_config_panel";
 
 interface SimpleTokenEditor extends RequiredApiConfigEditor {
   onAddSimpleTokenApi: (r: RequiredApiConfig) => void,
@@ -21,40 +23,18 @@ export interface RequiredSimpleTokenApiJson extends RequiredApiConfigJson {}
 class RequiredSimpleTokenApi
   extends RequiredApiConfig
   implements Diffable, RequiredSimpleTokenApiJson {
+    constructor(readonly id: Option<string>,
+                readonly exportId: Option<string>,
+                readonly apiId: string,
+                readonly nameInCode: string) {
+      super(id, exportId, apiId, nameInCode);
+    }
 
     diffProps(): Array<DiffableProp> {
       return [{
         name: "Name used in code",
         value: this.nameInCode || ""
       }];
-    }
-
-    onAddConfigFor(editor: SimpleTokenEditor) {
-      return editor.onAddSimpleTokenApi;
-    }
-
-    onAddNewConfigFor() {
-      return () => {}; // N/A
-    }
-
-    onRemoveConfigFor(editor: SimpleTokenEditor) {
-      return editor.onRemoveSimpleTokenApi;
-    }
-
-    onUpdateConfigFor(editor: SimpleTokenEditor) {
-      return editor.onUpdateSimpleTokenApi;
-    }
-
-    getApiLogoUrl(editor: SimpleTokenEditor) {
-      return editor.getSimpleTokenLogoUrlForConfig(this);
-    }
-
-    getApiName(editor: SimpleTokenEditor) {
-      return editor.getSimpleTokenNameForConfig(this);
-    }
-
-    getAllConfigsFrom(editor: SimpleTokenEditor): Array<SimpleTokenApiRef> {
-      return editor.getAllSimpleTokenApis().filter(ea => ea.id === this.apiId);
     }
 
     codePathPrefix() {
@@ -73,8 +53,8 @@ class RequiredSimpleTokenApi
       return true;
     }
 
-    clone(props: {}): RequiredSimpleTokenApi {
-      return RequiredSimpleTokenApi.fromProps(Object.assign({}, this, props));
+    clone(props: Partial<RequiredSimpleTokenApi>) {
+      return RequiredSimpleTokenApi.fromProps(Object.assign({}, this, props)) as this;
     }
 
     static fromProps(props): RequiredSimpleTokenApi {
@@ -83,6 +63,22 @@ class RequiredSimpleTokenApi
 
     static fromJson(props: RequiredSimpleTokenApiJson): RequiredSimpleTokenApi {
       return RequiredSimpleTokenApi.fromProps(props);
+    }
+
+    editorFor(editor: BehaviorEditor): ApiConfigEditor<RequiredSimpleTokenApi> {
+      return RequiredSimpleTokenApi.editorFor(editor);
+    }
+
+    static editorFor(editor: BehaviorEditor): ApiConfigEditor<RequiredSimpleTokenApi> {
+      return {
+        allApiConfigsFor: editor.getAllSimpleTokenApis(),
+        onGetApiLogoUrl: editor.getSimpleTokenLogoUrlForConfig,
+        onGetApiName: editor.getSimpleTokenNameForConfig,
+        onAddConfig: editor.onAddSimpleTokenApi,
+        onAddNewConfig: () => {},
+        onRemoveConfig: editor.onRemoveSimpleTokenApi,
+        onUpdateConfig: editor.onUpdateSimpleTokenApi
+      };
     }
   }
 
@@ -98,16 +94,9 @@ class RequiredSimpleTokenApi
     ) {
       super(id, displayName);
       Object.defineProperties(this, {
+        apiId: { value: id, enumerable: true },
         logoImageUrl: { value: logoImageUrl, enumerable: true }
       });
-    }
-
-    getApiLogoUrl() {
-      return this.logoImageUrl;
-    }
-
-    getApiName() {
-      return this.displayName;
     }
 
     configName() {
@@ -121,6 +110,10 @@ class RequiredSimpleTokenApi
         this.id,
         this.defaultNameInCode()
       );
+    }
+
+    editorFor(editor: BehaviorEditor): ApiConfigEditor<RequiredSimpleTokenApi> {
+      return RequiredSimpleTokenApi.editorFor(editor);
     }
 
     static fromJson(props: SimpleTokenApiRefJson) {

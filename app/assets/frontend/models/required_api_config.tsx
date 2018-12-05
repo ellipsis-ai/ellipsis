@@ -1,4 +1,6 @@
 import ApiConfigRef from "./api_config_ref";
+import BehaviorEditor from "../behavior_editor";
+import {ApiConfigEditor} from "../behavior_editor/api_config_panel";
 
 export interface RequiredApiConfigJson {
   id?: Option<string>,
@@ -54,15 +56,9 @@ abstract class RequiredApiConfig implements RequiredApiConfigJson {
 
     abstract configName(): Option<string>
 
-    abstract onAddConfigFor(editor: RequiredApiConfigEditor): (required: RequiredApiConfig, callback?: () => void) => void
-    abstract onAddNewConfigFor(editor: RequiredApiConfigEditor): (required?: RequiredApiConfig, callback?: () => void) => void
-    abstract onRemoveConfigFor(editor: RequiredApiConfigEditor): (required: RequiredApiConfig, callback?: () => void) => void
-    abstract onUpdateConfigFor(editor: RequiredApiConfigEditor): (required: RequiredApiConfig, callback?: () => void) => void
-    abstract getApiLogoUrl(editor: RequiredApiConfigEditor): string
-    abstract getApiName(editor: RequiredApiConfigEditor): string
-    abstract getAllConfigsFrom(editor: RequiredApiConfigEditor): Array<ApiConfigRef>
+    abstract clone(props: Partial<RequiredApiConfig>): this
 
-    abstract clone(props: Partial<RequiredApiConfig>): RequiredApiConfig
+    abstract editorFor(editor: BehaviorEditor): ApiConfigEditor<any>
 }
 
 export default RequiredApiConfig;

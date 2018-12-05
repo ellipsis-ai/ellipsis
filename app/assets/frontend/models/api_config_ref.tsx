@@ -1,16 +1,22 @@
 import Formatter from '../lib/formatter';
-import RequiredApiConfig, {RequiredApiConfigEditor} from "./required_api_config";
+import RequiredApiConfig from "./required_api_config";
+import BehaviorEditor from "../behavior_editor";
+import {ApiConfigEditor} from "../behavior_editor/api_config_panel";
 
-export interface ApiConfigRefJson {
-  id: string;
-  displayName: string;
+export interface ApiJson {
   logoImageUrl?: Option<string>;
   iconImageUrl?: Option<string>;
+}
+
+export interface ApiConfigRefJson extends ApiJson {
+  id: string;
+  displayName: string;
 }
 
 abstract class ApiConfigRef implements ApiConfigRefJson {
   readonly logoImageUrl: Option<string>;
   readonly iconImageUrl: Option<string>;
+  apiId: string;
 
   constructor(
     readonly id: string,
@@ -28,10 +34,9 @@ abstract class ApiConfigRef implements ApiConfigRefJson {
 
   abstract newRequired(): RequiredApiConfig
 
-  abstract getApiName(editor: RequiredApiConfigEditor): string
-  abstract getApiLogoUrl(editor: RequiredApiConfigEditor): string
-
   abstract configName(): string
+
+  abstract editorFor(editor: BehaviorEditor): ApiConfigEditor<any>
 }
 
 export default ApiConfigRef;
