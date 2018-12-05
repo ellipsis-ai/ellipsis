@@ -10,13 +10,6 @@ export interface RequiredSimpleTokenApiJson extends RequiredApiConfigJson {}
 class RequiredSimpleTokenApi
   extends RequiredApiConfig
   implements Diffable, RequiredSimpleTokenApiJson {
-    constructor(readonly id: Option<string>,
-                readonly exportId: Option<string>,
-                readonly apiId: string,
-                readonly nameInCode: string) {
-      super(id, exportId, apiId, nameInCode);
-    }
-
     diffProps(): Array<DiffableProp> {
       return [{
         name: "Name used in code",
@@ -81,7 +74,6 @@ class RequiredSimpleTokenApi
     ) {
       super(id, displayName);
       Object.defineProperties(this, {
-        apiId: { value: id, enumerable: true },
         logoImageUrl: { value: logoImageUrl, enumerable: true }
       });
     }

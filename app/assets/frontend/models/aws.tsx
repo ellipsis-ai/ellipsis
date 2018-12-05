@@ -20,14 +20,12 @@ class RequiredAWSConfig
   extends RequiredApiConfigWithConfig
   implements RequiredAWSConfigInterface, Diffable {
 
-  readonly config: Option<AWSConfigRef>;
-
   constructor(
-    id: Option<string>,
-    exportId: Option<string>,
-    apiId: string,
-    nameInCode: string,
-    config: Option<AWSConfigRef>
+    readonly id: Option<string>,
+    readonly exportId: Option<string>,
+    readonly apiId: string,
+    readonly nameInCode: string,
+    readonly config: Option<AWSConfigRef>
   ) {
     super(id, exportId, apiId, nameInCode, config);
   }
@@ -110,14 +108,6 @@ class RequiredAWSConfig
   export interface AWSConfigRefJson extends ApiConfigRefJson {}
 
   class AWSConfigRef extends ApiConfigRef implements AWSConfigRefJson {
-    constructor(
-      readonly id: string,
-      readonly displayName: string
-    ) {
-      super(id, displayName);
-      this.apiId = id;
-    }
-
     newRequired(): RequiredAWSConfig {
       return new RequiredAWSConfig(
         ID.next(),

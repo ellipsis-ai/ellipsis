@@ -16,7 +16,6 @@ export interface ApiConfigRefJson extends ApiJson {
 abstract class ApiConfigRef implements ApiConfigRefJson {
   readonly logoImageUrl: Option<string>;
   readonly iconImageUrl: Option<string>;
-  apiId: string;
 
   constructor(
     readonly id: string,
@@ -30,6 +29,10 @@ abstract class ApiConfigRef implements ApiConfigRefJson {
 
   defaultNameInCode(): string {
     return Formatter.formatCamelCaseIdentifier(this.displayName);
+  }
+
+  getApiId(): string {
+    return this.id;
   }
 
   abstract newRequired(): RequiredApiConfig

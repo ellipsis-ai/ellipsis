@@ -20,10 +20,14 @@ export class RequiredOAuthApplication
   extends RequiredApiConfigWithConfig
   implements Diffable, RequiredOAuthApplicationInterface {
 
-  readonly config: Option<OAuthApplicationRef>;
-  readonly recommendedScope: string;
-
-  constructor(id: Option<string>, exportId: Option<string>, apiId: string, nameInCode: string, config: Option<OAuthApplicationRef>, recommendedScope: string) {
+  constructor(
+    readonly id: Option<string>,
+    readonly exportId: Option<string>,
+    readonly apiId: string,
+    readonly nameInCode: string,
+    readonly config: Option<OAuthApplicationRef>,
+    readonly recommendedScope: string
+  ) {
     super(id, exportId, apiId, nameInCode, config);
     Object.defineProperties(this, {
       recommendedScope: { value: recommendedScope, enumerable: true }
@@ -106,14 +110,21 @@ export interface OAuthApplicationRefJson extends ApiConfigRefJson {
 }
 
 export class OAuthApplicationRef extends ApiConfigRef implements OAuthApplicationRefJson {
-  readonly scope: string;
-
-  constructor(id: string, displayName: string, apiId: string, scope: string) {
+  constructor(
+    readonly id: string,
+    readonly displayName: string,
+    readonly apiId: string,
+    readonly scope: string
+  ) {
     super(id, displayName);
     Object.defineProperties(this, {
       apiId: { value: apiId, enumerable: true },
       scope: { value: scope, enumerable: true }
     });
+  }
+
+  getApiId(): string {
+    return this.apiId;
   }
 
   configName() {

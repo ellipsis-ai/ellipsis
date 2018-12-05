@@ -49,7 +49,7 @@ class ApiConfigPanel<R extends RequiredApiConfig> extends React.Component<Props<
 
     getSelectorLabelForConfig(config: ApiConfigRef) {
       const editor = config.editorFor(this.props.editor);
-      const url = editor.onGetApiLogoUrl(config.apiId);
+      const url = editor.onGetApiLogoUrl(config.getApiId());
       const name = config.configName();
       return (
         <div className="columns columns-elastic">
