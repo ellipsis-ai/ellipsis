@@ -17,7 +17,6 @@ import {ReactNode} from "react";
 import SVGCheckmark from '../svg/checkmark';
 import SVGWarning from '../svg/warning';
 import NodeModuleList from "./node_module_list";
-import ApiConfigRef from '../models/api_config_ref';
 
 export type BehaviorSelectCallback = (optionalGroupId: Option<string>, editableId?: Option<string>, optionalCallback?: () => void) => void;
 

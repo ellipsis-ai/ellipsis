@@ -1,22 +1,9 @@
 import {Diffable, DiffableProp} from "./diffs";
-
 import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
-import RequiredApiConfig, {
-  RequiredApiConfigEditor,
-  RequiredApiConfigJson
-} from './required_api_config';
+import RequiredApiConfig, {RequiredApiConfigJson} from './required_api_config';
 import ID from '../lib/id';
 import BehaviorEditor from "../behavior_editor";
 import {ApiConfigEditor} from "../behavior_editor/api_config_panel";
-
-interface SimpleTokenEditor extends RequiredApiConfigEditor {
-  onAddSimpleTokenApi: (r: RequiredApiConfig) => void,
-  onRemoveSimpleTokenApi: (r: RequiredApiConfig) => void,
-  onUpdateSimpleTokenApi: (r: RequiredApiConfig, c?: () => void) => void,
-  getSimpleTokenLogoUrlForConfig: (r: RequiredApiConfig) => string,
-  getSimpleTokenNameForConfig: (r: RequiredApiConfig) => string,
-  getAllSimpleTokenApis: () => Array<SimpleTokenApiRef>
-}
 
 export interface RequiredSimpleTokenApiJson extends RequiredApiConfigJson {}
 

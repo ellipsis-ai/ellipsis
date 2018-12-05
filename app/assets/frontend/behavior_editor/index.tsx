@@ -1,5 +1,5 @@
 import * as React from 'react';
-import APIConfigPanel, {ApiConfigEditor} from './api_config_panel';
+import APIConfigPanel from './api_config_panel';
 import {AWSConfigRef} from '../models/aws';
 import BehaviorGroup, {BehaviorGroupJson} from '../models/behavior_group';
 import BehaviorGroupVersionMetaData from '../models/behavior_group_version_meta_data';
@@ -86,12 +86,11 @@ import {UpdateFromGithubSuccessData} from "./loader";
 import {BehaviorGroupDeploymentJson} from "../models/behavior_group_deployment";
 import BehaviorResponseType from "../models/behavior_response_type";
 import ApiConfigRef, {ApiJson} from "../models/api_config_ref";
-import RequiredApiConfig, {RequiredApiConfigEditor} from "../models/required_api_config";
+import RequiredApiConfig from "../models/required_api_config";
 import Editable, {EditableInterface} from "../models/editable";
 import Trigger from "../models/trigger";
 import BehaviorConfig, {BehaviorConfigInterface} from "../models/behavior_config";
 import {EditorCursorPosition} from "./code_editor";
-import RequiredApiConfigWithConfig from "../models/required_api_config_with_config";
 
 export interface BehaviorEditorProps {
   group: BehaviorGroup
@@ -280,10 +279,6 @@ class BehaviorEditor extends React.Component<Props, State> {
     return this.getRequiredApiConfigWithId(selectedId);
   }
 
-  getEditorFor<R extends RequiredApiConfig>(config: R): ApiConfigEditor<R> {
-    return config.editorFor(this);
-  }
-
   getAllConfigs(): Array<ApiConfigRef> {
     const configs: Array<ApiConfigRef> = [];
     return configs
@@ -390,10 +385,6 @@ class BehaviorEditor extends React.Component<Props, State> {
     } else {
       return this.props.group;
     }
-  }
-
-  getOriginalSelected(): Option<Editable> {
-    return this.getSelectedFor(this.props.group, this.getSelectedId());
   }
 
   getSelectedBehavior(): Option<BehaviorVersion> {
@@ -1126,7 +1117,7 @@ class BehaviorEditor extends React.Component<Props, State> {
     });
   }
 
-  setBehaviorConfigProps(props: Partial<BehaviorConfigInterface>, callback?: () => void): void {
+  setBehaviorConfigProps(props: Partial<BehaviorConfigInterface>): void {
     const config = this.getBehaviorConfig();
     if (config) {
       this.setEditableProps<BehaviorVersionInterface>({

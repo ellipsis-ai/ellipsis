@@ -2,7 +2,7 @@ import {Diffable, DiffableProp} from "./diffs";
 import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
 import RequiredApiConfigWithConfig from './required_api_config_with_config';
 import ID from '../lib/id';
-import RequiredApiConfig, {RequiredApiConfigJson} from "./required_api_config";
+import {RequiredApiConfigJson} from "./required_api_config";
 import BehaviorEditor from "../behavior_editor";
 import {ApiConfigEditor} from "../behavior_editor/api_config_panel";
 
@@ -126,14 +126,6 @@ class RequiredAWSConfig
         this.defaultNameInCode(),
         this
       );
-    }
-
-    getApiLogoUrl(): string {
-      return logoUrl;
-    }
-
-    getApiName(): string {
-      return "AWS";
     }
 
     configName(): string {

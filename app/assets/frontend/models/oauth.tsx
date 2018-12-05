@@ -3,17 +3,9 @@ import {Diffable, DiffableProp} from "./diffs";
 import ApiConfigRef, {ApiConfigRefJson, ApiJson} from './api_config_ref';
 import RequiredApiConfigWithConfig from './required_api_config_with_config';
 import ID from '../lib/id';
-import RequiredApiConfig, {
-  RequiredApiConfigJson,
-  RequiredApiConfigEditor
-} from "./required_api_config";
+import {RequiredApiConfigJson} from "./required_api_config";
 import {ApiConfigEditor} from "../behavior_editor/api_config_panel";
 import BehaviorEditor from "../behavior_editor";
-
-type OAuthApplicationRefEditor = {
-  getOAuthLogoUrlForConfig: (OAuthApplicationRef) => string,
-  getOAuthApiNameForConfig: (OAuthApplicationRef) => string,
-}
 
 export interface RequiredOAuthApplicationJson extends RequiredApiConfigJson {
   config?: Option<OAuthApplicationRefJson>,
