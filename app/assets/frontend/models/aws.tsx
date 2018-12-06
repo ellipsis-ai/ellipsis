@@ -59,9 +59,7 @@ class RequiredAWSConfig
     }
 
     clone(props: Partial<RequiredAWSConfig>) {
-      const oldOne: RequiredAWSConfigInterface = Object.assign({}, this);
-      const newOne: RequiredAWSConfigInterface = Object.assign(oldOne, props);
-      return new RequiredAWSConfig(newOne.id, newOne.exportId, newOne.apiId, newOne.nameInCode, newOne.config) as this;
+      return RequiredAWSConfig.fromProps(Object.assign({}, this, props)) as this;
     }
 
     static getApiName(): string {

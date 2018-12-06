@@ -66,9 +66,7 @@ export class RequiredOAuthApplication
   }
 
   clone(props: Partial<RequiredOAuthApplication>) {
-    const oldOne: RequiredOAuthApplicationInterface = Object.assign({}, this);
-    const newOne: RequiredOAuthApplicationInterface = Object.assign(oldOne, props);
-    return RequiredOAuthApplication.fromProps(Object.assign({}, oldOne, newOne)) as this;
+    return RequiredOAuthApplication.fromProps(Object.assign({}, this, props)) as this;
   }
 
   editorFor(editor: BehaviorEditor) {
