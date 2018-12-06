@@ -270,15 +270,16 @@ class Page extends React.Component<Props, State> {
     }
 
     static requiredPropDefaults(): PageRequiredProps {
+      const renderPlaceholder = (ea) => ea;
       return {
         activePanelName: "",
         activePanelIsModal: false,
         onToggleActivePanel: Page.placeholderCallback,
         onClearActivePanel: Page.placeholderCallback,
-        onRenderFooter: Page.placeholderCallback,
-        onRenderPanel: Page.placeholderCallback,
-        onRenderNavItems: Page.placeholderCallback,
-        onRenderNavActions: Page.placeholderCallback,
+        onRenderFooter: renderPlaceholder,
+        onRenderPanel: renderPlaceholder,
+        onRenderNavItems: renderPlaceholder,
+        onRenderNavActions: renderPlaceholder,
         headerHeight: 0,
         footerHeight: 0
       };

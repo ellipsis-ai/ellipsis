@@ -1,57 +1,20 @@
 import {Diffable, DiffableProp} from "./diffs";
-
 import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
 import RequiredApiConfig, {RequiredApiConfigJson} from './required_api_config';
 import ID from '../lib/id';
-
-type callback = () => void
-
-type SimpleTokenEditor = {
-  onAddSimpleTokenApi: (r: RequiredSimpleTokenApi) => void,
-  onRemoveSimpleTokenApi: (r: RequiredSimpleTokenApi) => void,
-  onUpdateSimpleTokenApi: (r: RequiredSimpleTokenApi, c?: Option<callback>) => void,
-  getSimpleTokenLogoUrlForConfig: (r: RequiredSimpleTokenApi) => string,
-  getSimpleTokenNameForConfig: (r: RequiredSimpleTokenApi) => string,
-  getAllSimpleTokenApis: () => Array<RequiredSimpleTokenApi>
-}
+import BehaviorEditor from "../behavior_editor";
+import {ApiConfigEditor} from "../behavior_editor/api_config_panel";
 
 export interface RequiredSimpleTokenApiJson extends RequiredApiConfigJson {}
 
-class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, RequiredSimpleTokenApiJson {
-
+class RequiredSimpleTokenApi
+  extends RequiredApiConfig
+  implements Diffable, RequiredSimpleTokenApiJson {
     diffProps(): Array<DiffableProp> {
       return [{
         name: "Name used in code",
         value: this.nameInCode || ""
       }];
-    }
-
-    onAddConfigFor(editor: SimpleTokenEditor) {
-      return editor.onAddSimpleTokenApi;
-    }
-
-    onAddNewConfigFor() {
-      return undefined; // N/A
-    }
-
-    onRemoveConfigFor(editor: SimpleTokenEditor) {
-      return editor.onRemoveSimpleTokenApi;
-    }
-
-    onUpdateConfigFor(editor: SimpleTokenEditor) {
-      return editor.onUpdateSimpleTokenApi;
-    }
-
-    getApiLogoUrl(editor: SimpleTokenEditor) {
-      return editor.getSimpleTokenLogoUrlForConfig(this);
-    }
-
-    getApiName(editor: SimpleTokenEditor) {
-      return editor.getSimpleTokenNameForConfig(this);
-    }
-
-    getAllConfigsFrom(editor: SimpleTokenEditor) {
-      return editor.getAllSimpleTokenApis().filter(ea => ea.id === this.apiId);
     }
 
     codePathPrefix() {
@@ -70,8 +33,8 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, Requ
       return true;
     }
 
-    clone(props: {}): RequiredSimpleTokenApi {
-      return RequiredSimpleTokenApi.fromProps(Object.assign({}, this, props));
+    clone(props: Partial<RequiredSimpleTokenApi>) {
+      return RequiredSimpleTokenApi.fromProps(Object.assign({}, this, props)) as this;
     }
 
     static fromProps(props): RequiredSimpleTokenApi {
@@ -80,6 +43,22 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, Requ
 
     static fromJson(props: RequiredSimpleTokenApiJson): RequiredSimpleTokenApi {
       return RequiredSimpleTokenApi.fromProps(props);
+    }
+
+    editorFor(editor: BehaviorEditor): ApiConfigEditor<RequiredSimpleTokenApi> {
+      return RequiredSimpleTokenApi.editorFor(editor);
+    }
+
+    static editorFor(editor: BehaviorEditor): ApiConfigEditor<RequiredSimpleTokenApi> {
+      return {
+        allApiConfigsFor: editor.getAllSimpleTokenApis(),
+        onGetApiLogoUrl: editor.getSimpleTokenLogoUrlForConfig,
+        onGetApiName: editor.getSimpleTokenNameForConfig,
+        onAddConfig: editor.onAddSimpleTokenApi,
+        onAddNewConfig: () => {},
+        onRemoveConfig: editor.onRemoveSimpleTokenApi,
+        onUpdateConfig: editor.onUpdateSimpleTokenApi
+      };
     }
   }
 
@@ -99,14 +78,6 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, Requ
       });
     }
 
-    getApiLogoUrl() {
-      return this.logoImageUrl;
-    }
-
-    getApiName() {
-      return this.displayName;
-    }
-
     configName() {
       return this.displayName;
     }
@@ -118,6 +89,10 @@ class RequiredSimpleTokenApi extends RequiredApiConfig implements Diffable, Requ
         this.id,
         this.defaultNameInCode()
       );
+    }
+
+    editorFor(editor: BehaviorEditor): ApiConfigEditor<RequiredSimpleTokenApi> {
+      return RequiredSimpleTokenApi.editorFor(editor);
     }
 
     static fromJson(props: SimpleTokenApiRefJson) {

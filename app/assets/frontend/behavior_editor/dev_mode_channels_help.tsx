@@ -4,7 +4,7 @@ import URLCreator from '../lib/url_creator';
 
 type Props = {
   onCollapseClick: () => void,
-  slackTeamId?: string,
+  slackTeamId?: Option<string>,
   botName: string
 }
 
@@ -16,9 +16,11 @@ class DevModeChannelsHelp extends React.PureComponent<Props> {
         <div>
           <h4 className="mtn type-weak">Deployment and dev mode</h4>
 
-          <p>
-            <a className="button button-shrink button-s" href={URLCreator.forSlack(this.props.slackTeamId)}>Open Slack</a>
-          </p>
+          {this.props.slackTeamId ? (
+            <p>
+              <a className="button button-shrink button-s" href={URLCreator.forSlack(this.props.slackTeamId)}>Open Slack</a>
+            </p>
+          ) : null}
         </div>
       );
     }

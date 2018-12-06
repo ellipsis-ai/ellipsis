@@ -1,7 +1,7 @@
 import * as MockDataRequest from '../../../mocks/mock_data_request';
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
-import BehaviorEditor from '../../../../app/assets/frontend/behavior_editor/index';
+import BehaviorEditor, {BehaviorEditorProps} from '../../../../app/assets/frontend/behavior_editor/index';
 import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
 import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
 import ParamType from '../../../../app/assets/frontend/models/param_type';
@@ -9,13 +9,23 @@ import {TriggerType} from "../../../../app/assets/frontend/models/trigger";
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
 import {OAuthApplicationRef} from '../../../../app/assets/frontend/models/oauth';
 import {SimpleTokenApiRef} from '../../../../app/assets/frontend/models/simple_token';
+import Page, {PageRequiredProps} from "../../../../app/assets/frontend/shared_ui/page";
+import BehaviorResponseType from "../../../../app/assets/frontend/models/behavior_response_type";
 
-jest.mock('../../../../app/assets/frontend/behavior_editor/code_configuration', () => (() => (
-  <div/>
-)));
-jest.mock('../../../../app/assets/frontend/behavior_editor/response_template_configuration', () => (() => (
-  <div/>
-)));
+jest.mock('../../../../app/assets/frontend/behavior_editor/code_configuration', () => {
+  return {
+    default: () => (
+      <div/>
+    )
+  }
+});
+jest.mock('../../../../app/assets/frontend/behavior_editor/response_template_configuration', () => {
+  return {
+    default: () => (
+      <div/>
+    )
+  }
+});
 jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
 jest.mock('emoji-mart/css/emoji-mart.css', () => '');
 
@@ -36,9 +46,10 @@ jsRoutes.controllers.BehaviorEditorController.versionInfoFor = jest.fn(() => ({ 
 
 describe('BehaviorEditor', () => {
   const normalResponseType = "Normal";
-  const normalResponseTypeJson = { id: normalResponseType, displayString: "Response normally" };
+  const normalResponseTypeJson = { id: normalResponseType, displayString: "Respond normally" };
   const privateResponseType = "Private";
   const groupJson: BehaviorGroupJson = {
+    teamId: "1",
     id: '1',
     actionInputs: [],
     behaviorVersions: [
@@ -166,18 +177,31 @@ describe('BehaviorEditor', () => {
     isManaged: false
   };
 
-  const newSkillConfig = Object.freeze({
+  const newSkillConfig: BehaviorEditorProps = Object.freeze({
     "containerId": "editorContainer",
     "csrfToken": "1234",
     "isAdmin": false,
     "isLinkedToGithub": false,
-    "group": newGroupJson,
-    "builtinParamTypes": [{ "id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false }, {
+    "group": BehaviorGroup.fromJson(newGroupJson),
+    "builtinParamTypes": [{
+      "id": "Text",
+      "exportId": "Text",
+      "name": "Text",
+      "needsConfig": false,
+      typescriptType: "string"
+    }, {
       "id": "Number",
       "exportId": "Number",
       "name": "Number",
-      "needsConfig": false
-    }, { "id": "Yes/No", "exportId": "Yes/No", "name": "Yes/No", "needsConfig": false }],
+      "needsConfig": false,
+      typescriptType: "number"
+    }, {
+      "id": "Yes/No",
+      "exportId": "Yes/No",
+      "name": "Yes/No",
+      "needsConfig": false,
+      typescriptType: "boolean"
+    }].map(ParamType.fromJson),
     "envVariables": [{
       "name": "OH_REALLY",
       "isAlreadySavedWithValue": false
@@ -189,24 +213,27 @@ describe('BehaviorEditor', () => {
       "accessKeyId": "a",
       "secretAccessKey": "b",
       "region": "c"
-    }],
+    }].map(AWSConfigRef.fromJson),
     "oauthApplications": [{
+      id: "1",
       "apiId": "7gK5ysNxSjSa9BzfB44yAg",
       "applicationId": "R1-v9CKHTEmaUvgei-GmIg",
       "scope": "read",
       "displayName": "Trello"
     }, {
+      id: "2",
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "applicationId": "Yy1QcMTcT96tZZmUoYLroQ",
       "scope": "https://www.googleapis.com/auth/calendar",
       "displayName": "Google Calendar"
-    }],
+    }].map(OAuthApplicationRef.fromJson),
     "oauthApis": [{
       "apiId": "7gK5ysNxSjSa9BzfB44yAg",
       "name": "Trello",
       "newApplicationUrl": "https://trello.com/app-key",
       "scopeDocumentationUrl": "",
-      "isOAuth1": true
+      "isOAuth1": true,
+      requiresAuth: false
     }, {
       "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
       "name": "Google",
@@ -216,18 +243,27 @@ describe('BehaviorEditor', () => {
       "isOAuth1": false
     }],
     "simpleTokenApis": [{
+      id: "1",
       "apiId": "pivotal-tracker",
       "displayName": "Pivotal Tracker",
       "tokenUrl": "https://www.pivotaltracker.com/profile",
-      "logoImageUrl": "/assets/images/logos/pivotal_tracker.png"
-    }],
+      "logoImageUrl": "/assets/images/logos/pivotal_tracker.png",
+      requiresAuth: false
+    }].map(SimpleTokenApiRef.fromJson),
     "linkedOAuthApplicationIds": ["R1-v9CKHTEmaUvgei-GmIg", "Yy1QcMTcT96tZZmUoYLroQ"],
     "userId": "3",
     selectedId: "2",
     onSave: jest.fn(),
     onForgetSavedAnswerForInput: jest.fn(),
     onLinkGithubRepo: jest.fn(),
-    onUpdateFromGithub: jest.fn()
+    onUpdateFromGithub: jest.fn(),
+    onLoad: null,
+    onDeploy: jest.fn(),
+    showVersions: false,
+    lastDeployTimestamp: null,
+    slackTeamId: "T1",
+    botName: "TestBot",
+    possibleResponseTypes: [normalResponseTypeJson].map(BehaviorResponseType.fromProps)
   });
 
   let editorConfig;
@@ -238,8 +274,8 @@ describe('BehaviorEditor', () => {
     firstBehavior = editorConfig.group.behaviorVersions[0];
   });
 
-  function createEditor(config): BehaviorEditor {
-    const props = Object.assign({}, config, {
+  function createEditor(config: BehaviorEditorProps): BehaviorEditor {
+    const props: BehaviorEditorProps & PageRequiredProps = Object.assign({}, Page.requiredPropDefaults(), config, {
       group: BehaviorGroup.fromJson(config.group),
       awsConfigs: config.awsConfigs.map(AWSConfigRef.fromJson),
       oauthApplications: config.oauthApplications.map(OAuthApplicationRef.fromJson),
@@ -295,30 +331,35 @@ describe('BehaviorEditor', () => {
     it('returns the template when it’s non-empty', () => {
       firstBehavior.responseTemplate = 'clowncar';
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTemplate().toString()).toEqual('clowncar');
+      const template = editor.getBehaviorTemplate();
+      expect(template && template.toString()).toEqual('clowncar');
     });
 
     it('returns a default template when no template is defined', () => {
       delete firstBehavior.responseTemplate;
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTemplate().toString()).toEqual('');
+      const template = editor.getBehaviorTemplate();
+      expect(template && template.toString()).toEqual('');
    });
 
     it('returns a default template when the template is blank', () => {
       firstBehavior.responseTemplate = '';
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTemplate().toString()).toEqual('');
+      const template = editor.getBehaviorTemplate();
+      expect(template && template.toString()).toEqual('');
     });
 
     it('returns the template when it’s empty on an existing skill', () => {
       firstBehavior.responseTemplate = '';
       let editor = createEditor(editorConfig);
-      expect(editor.getBehaviorTemplate().toString()).toEqual('');
+      const template = editor.getBehaviorTemplate();
+      expect(template && template.toString()).toEqual('');
     });
 
     it('returns the default template on a new, empty skill', () => {
       let editor = createEditor(newSkillConfig);
-      expect(editor.getBehaviorTemplate().toString()).toEqual(BehaviorVersion.defaultActionProps().responseTemplate.toString());
+      const template = editor.getBehaviorTemplate();
+      expect(template && template.toString()).toEqual(BehaviorVersion.defaultActionProps().responseTemplate.toString());
     });
   });
 
@@ -437,16 +478,17 @@ describe('BehaviorEditor', () => {
     });
   });
 
-  describe('setConfigProperty', () => {
+  describe('setBehaviorConfigProps', () => {
     it("clones the existing behavior config with updated properties", () => {
       editorConfig.group.behaviorVersions[0].config.responseTypeId = normalResponseType;
       let editor = createEditor(editorConfig);
-      editor.setEditableProp = jest.fn();
-      expect(editor.getBehaviorConfig().responseTypeId).toBe(normalResponseType);
-      editor.setConfigProperty('responseTypeId', privateResponseType);
-      const newConfig = editor.setEditableProp.mock.calls[0][1];
-      expect(newConfig.constructor.name).toBe("BehaviorConfig");
-      expect(newConfig.responseTypeId).toBe(privateResponseType);
+      const config = editor.getBehaviorConfig();
+      expect(config && config.responseTypeId).toBe(normalResponseType);
+      editor.setBehaviorConfigProps({
+        responseTypeId: privateResponseType
+      });
+      const config2 = editor.getBehaviorConfig();
+      expect(config2 && config2.responseTypeId).toEqual(privateResponseType);
     });
   });
 

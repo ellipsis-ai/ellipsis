@@ -33,11 +33,11 @@ interface Props {
   activePanelName: string
   activeDropdownName: string
   onToggleActiveDropdown: (dropdownName: string) => void
-  onToggleActivePanel: (panelName: string, beModal?: Option<boolean>, optionalCallback?: () => void) => void
+  onToggleActivePanel: (panelName: string, beModal?: boolean, optionalCallback?: () => void) => void
   animationIsDisabled: boolean
 
-  userInputConfiguration: Option<UserInputConfiguration>
-  codeConfiguration: Option<CodeConfiguration>
+  userInputConfiguration: React.ReactNode
+  codeConfiguration: React.ReactNode
 }
 
 interface DataTypeEditorSettings {

@@ -9,7 +9,7 @@ export interface LibraryVersionJson extends EditableJson {
   libraryId: string;
 }
 
-interface LibraryVersionInterface extends LibraryVersionJson, EditableInterface {}
+export interface LibraryVersionInterface extends LibraryVersionJson, EditableInterface {}
 
 class LibraryVersion extends Editable implements Diffable, LibraryVersionInterface {
   constructor(
@@ -108,7 +108,7 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
       return "Cancel new library";
     }
 
-    buildUpdatedGroupFor(group: BehaviorGroup, props: {}): BehaviorGroup {
+    buildUpdatedGroupFor(group: BehaviorGroup, props: Partial<LibraryVersionInterface>): BehaviorGroup {
       const updated = this.clone(props);
       const updatedVersions = group.libraryVersions.
         filter(ea => ea.libraryId !== updated.libraryId ).
@@ -146,6 +146,10 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
         props.editorScrollPosition,
         props.createdAt
       );
+    }
+
+    static fromJson(json: LibraryVersionJson): LibraryVersion {
+      return LibraryVersion.fromProps(json);
     }
 
     static defaultLibraryCode(): string {

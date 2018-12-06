@@ -15,7 +15,7 @@ declare var jsRoutes: {
     ApplicationController: {
       deleteBehaviorGroups: () => JsRoute,
       findBehaviorGroupsMatching: (queryString: string, branch: Option<string>, teamId: string) => JsRoute,
-      index: (teamId?: string) => JsRoute,
+      index: (teamId?: Option<string>) => JsRoute,
       possibleCitiesFor: (search: string) => JsRoute,
       setTeamTimeZone: () => JsRoute,
       fetchPublishedBehaviorInfo: (teamId: string, branchName?: Option<string>) => JsRoute,
@@ -24,12 +24,13 @@ declare var jsRoutes: {
     BehaviorEditorController: {
       deleteDefaultStorageItems: () => JsRoute,
       deploy: () => JsRoute,
-      edit: (groupId: string, selectedId?: string, showVersions?: boolean) => JsRoute,
+      edit: (groupId: string, selectedId?: Option<string>, showVersions?: boolean) => JsRoute,
       linkToGithubRepo: () => JsRoute,
+      metaData: (groupId: string) => JsRoute,
       newFromGithub: () => JsRoute,
       newGroup: (teamId: string) => JsRoute,
-      newUnsavedBehavior: (isDataType: boolean, isTest: boolean, teamId: string, behaviorIdToClone: string, newName: Option<string>) => JsRoute,
-      newUnsavedLibrary: (teamId: string, libraryIdToClone: string) => JsRoute,
+      newUnsavedBehavior: (isDataType: boolean, isTest: boolean, teamId: string, behaviorIdToClone: Option<string>, newName: Option<string>) => JsRoute,
+      newUnsavedLibrary: (teamId: string, libraryIdToClone: Option<string>) => JsRoute,
       nodeModuleVersionsFor: (groupId: string) => JsRoute,
       testResults: (groupId: string) => JsRoute,
       pushToGithub: () => JsRoute,
@@ -73,6 +74,9 @@ declare var jsRoutes: {
 
     web: {
       settings: {
+        AWSConfigController: {
+          add: (teamId: Option<string>, groupId: Option<string>, selectedId: Option<string>, nameInCode: Option<string>) => JsRoute
+        },
         EnvironmentVariablesController: {
           list: (teamId?: Option<string>) => JsRoute,
           submit: () => JsRoute,
@@ -80,6 +84,7 @@ declare var jsRoutes: {
           adminLoadValue: (teamId: string, name: string) => JsRoute
         },
         IntegrationsController: {
+          add: (teamId: Option<string>, groupId: Option<string>, selectedId: Option<string>, nameInCode: Option<string>) => JsRoute,
           list: (teamId?: Option<string>) => JsRoute
         }
         RegionalSettingsController: {

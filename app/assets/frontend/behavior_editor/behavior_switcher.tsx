@@ -18,7 +18,7 @@ import SVGCheckmark from '../svg/checkmark';
 import SVGWarning from '../svg/warning';
 import NodeModuleList from "./node_module_list";
 
-export type BehaviorSelectCallback = (optionalGroupId: Option<string>, editableId?: Option<string>, optionalCallback?: Option<() => void>) => void;
+export type BehaviorSelectCallback = (optionalGroupId: Option<string>, editableId?: Option<string>, optionalCallback?: () => void) => void;
 
 interface Props {
   actionBehaviors: Array<BehaviorVersion>,
