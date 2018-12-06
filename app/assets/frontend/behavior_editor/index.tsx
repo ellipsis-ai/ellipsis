@@ -1479,7 +1479,7 @@ class BehaviorEditor extends React.Component<Props, State> {
 
   isExistingEditable(): boolean {
     const selected = this.getSelected();
-    return Boolean(selected && selected.isNew);
+    return Boolean(selected && !selected.isNew);
   }
 
   isExistingGroup(): boolean {
