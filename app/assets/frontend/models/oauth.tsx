@@ -144,7 +144,7 @@ export class OAuthApplicationRef extends ApiConfigRef implements OAuthApplicatio
     return RequiredOAuthApplication.editorFor(editor);
   }
 
-  static fromJson(props: { id: string, displayName: string, apiId: string, scope: string }): OAuthApplicationRef {
+  static fromJson(props: OAuthApplicationRefJson): OAuthApplicationRef {
     return new OAuthApplicationRef(props.id, props.displayName, props.apiId, props.scope);
   }
 }
