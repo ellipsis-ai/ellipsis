@@ -263,8 +263,8 @@ object DateTimeType extends BuiltInTextualType {
   override val mayRequireTypedAnswer: Boolean = true
 
   override def questionTextFor(context: BehaviorParameterContext, paramCount: Int, maybeRoot: Option[ParentConversation]): String = {
-    val tz = context.behaviorVersion.team.timeZone.getDisplayName(TextStyle.SHORT, Locale.getDefault(Locale.Category.DISPLAY))
-    super.questionTextFor(context, paramCount, maybeRoot) ++ s""" (using $tz)"""
+    val tz = context.behaviorVersion.team.timeZone.getDisplayName(TextStyle.FULL, Locale.getDefault(Locale.Category.DISPLAY))
+    super.questionTextFor(context, paramCount, maybeRoot) ++ s""" ($tz)"""
   }
 
   private def maybeDateFrom(text: String, defaultTimeZone: ZoneId): Option[Date] = {
