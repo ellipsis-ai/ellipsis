@@ -357,9 +357,15 @@ class BehaviorEditor extends React.Component<Props, State> {
 
   getInputs(): Array<Input> {
     const inputIds = this.getInputIds();
-    return this.getBehaviorGroup().getInputs().filter((input) => {
-      return input.inputId ? inputIds.includes(input.inputId) : false;
+    const allInputs = this.getBehaviorGroup().getInputs();
+    const inputs: Array<Input> = [];
+    inputIds.forEach((inputId) => {
+      const input = allInputs.find((input) => input.inputId === inputId);
+      if (input) {
+        inputs.push(input);
+      }
     });
+    return inputs;
   }
 
   getFirstBehaviorInputName(): string {
