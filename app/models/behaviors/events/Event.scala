@@ -83,9 +83,9 @@ trait Event {
     MessageInfo.buildFor(this, maybeConversation, services)
   }
 
-  def messageUserDataList: Set[MessageUserData]
+  def messageUserDataList: Set[EventUserData]
 
-  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices): Set[MessageUserData] = {
+  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices): Set[EventUserData] = {
     messageUserDataList ++ maybeConversation.flatMap { conversation =>
       services.cacheService.getMessageUserDataList(conversation.id)
     }.getOrElse(Seq.empty)

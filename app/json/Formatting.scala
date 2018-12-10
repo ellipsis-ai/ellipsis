@@ -7,7 +7,7 @@ import models.behaviors._
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.behaviortestresult.BehaviorTestResult
 import models.behaviors.ellipsisobject.MessageInfo
-import models.behaviors.events.MessageUserData
+import models.behaviors.events.EventUserData
 import models.behaviors.events.slack.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
@@ -218,7 +218,7 @@ object Formatting {
 
   lazy implicit val adminTeamDataWrites = Json.writes[AdminTeamData]
 
-  implicit val messageUserDataWrites = Json.format[MessageUserData]
+  implicit val messageUserDataWrites = Json.format[EventUserData]
   implicit val messageInfoWrites = Json.format[MessageInfo]
 
 }
