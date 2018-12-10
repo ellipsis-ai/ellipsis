@@ -147,7 +147,7 @@ case class BehaviorResponse(
         Future.successful(Some(tid))
       }
     }.getOrElse {
-      if (behaviorVersion.responseType == Threaded) {
+      if (behaviorVersion.responseType == Threaded && !event.isEphemeral) {
         event.sendMessage(
           "Let's continue this in a thread :speech_balloon:",
           behaviorVersion.responseType,
