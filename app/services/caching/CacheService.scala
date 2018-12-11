@@ -8,7 +8,7 @@ import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.slack.SlackMessageEvent
-import models.behaviors.events.{Event, MessageUserData}
+import models.behaviors.events.{Event, EventUserData}
 import sangria.schema.Schema
 import services.ms_teams.ChannelWithTeam
 import services.ms_teams.apiModels.Application
@@ -91,9 +91,9 @@ trait CacheService {
     }
   }
 
-  def cacheMessageUserDataList(messageUserDataList: Seq[MessageUserData], conversationId: String): Unit
+  def cacheMessageUserDataList(messageUserDataList: Seq[EventUserData], conversationId: String): Unit
 
-  def getMessageUserDataList(conversationId: String): Option[Seq[MessageUserData]]
+  def getMessageUserDataList(conversationId: String): Option[Seq[EventUserData]]
 
   def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit
 

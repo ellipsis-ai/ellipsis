@@ -7,6 +7,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.ellipsisobject.{BotInfo, MessageInfo, UserInfo}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.triggers.Trigger
 import models.team.Team
@@ -82,9 +83,9 @@ trait Event {
     MessageInfo.buildFor(this, maybeConversation, services)
   }
 
-  def messageUserDataList: Set[MessageUserData]
+  def messageUserDataList: Set[EventUserData]
 
-  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices): Set[MessageUserData] = {
+  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices): Set[EventUserData] = {
     messageUserDataList ++ maybeConversation.flatMap { conversation =>
       services.cacheService.getMessageUserDataList(conversation.id)
     }.getOrElse(Seq.empty)

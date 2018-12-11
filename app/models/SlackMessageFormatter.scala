@@ -3,7 +3,7 @@ package models
 import java.util
 import java.util.regex.Matcher
 
-import models.behaviors.events.MessageUserData
+import models.behaviors.events.EventUserData
 import models.behaviors.templates.SlackRenderer
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
@@ -30,7 +30,7 @@ object SlackMessageFormatter {
     node
   }
 
-  def convertUsernamesToLinks(formattedText: String, userList: Set[MessageUserData]): String = {
+  def convertUsernamesToLinks(formattedText: String, userList: Set[EventUserData]): String = {
     userList.toSeq.foldLeft(formattedText) { (text, user) =>
       val userNameLinkRegex = raw"""(^|\s|\W)<?@\Q${user.userName}\E>?($$|\s|\W)""".r
       val replacement = user.userIdForContext.map { userId =>
@@ -42,7 +42,7 @@ object SlackMessageFormatter {
     }
   }
 
-  def bodyTextFor(text: String, userList: Set[MessageUserData]): String = {
+  def bodyTextFor(text: String, userList: Set[EventUserData]): String = {
     val builder = StringBuilder.newBuilder
     val slack = new SlackRenderer(builder)
     commonmarkNodeFor(text).accept(slack)

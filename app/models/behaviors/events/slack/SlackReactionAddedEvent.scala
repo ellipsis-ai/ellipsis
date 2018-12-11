@@ -2,7 +2,7 @@ package models.behaviors.events.slack
 
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.{Event, EventType, MessageUserData, SlackEventContext}
+import models.behaviors.events.{Event, EventType, EventUserData, SlackEventContext}
 import models.team.Team
 import services.DefaultServices
 
@@ -59,9 +59,9 @@ case class SlackReactionAddedEvent(
   }
 
 
-  def messageUserDataList: Set[MessageUserData] = {
+  def messageUserDataList: Set[EventUserData] = {
     maybeMessage.map { message =>
-      message.userList.map(MessageUserData.fromSlackUserData)
+      message.userList.map(EventUserData.fromSlackUserData)
     }.getOrElse(Set())
   }
 

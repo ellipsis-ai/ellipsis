@@ -16,7 +16,7 @@ case class TestMessageEvent(
   val user: User = eventContext.user
   val team: Team = eventContext.team
 
-  def messageUserDataList: Set[MessageUserData] = Set.empty
+  def messageUserDataList: Set[EventUserData] = Set.empty
 
   val isResponseExpected = true
 

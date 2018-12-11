@@ -11,6 +11,7 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.ellipsisobject.BotInfo
 import models.behaviors.events.ms_teams._
 import models.behaviors.events.slack._
 import models.behaviors.testing.TestRunEvent
@@ -130,7 +131,7 @@ sealed trait EventContext {
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeUserDataList: Option[Set[EventUserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -395,7 +396,7 @@ case class SlackEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeUserDataList: Option[Set[EventUserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -608,7 +609,7 @@ case class MSTeamsEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeUserDataList: Option[Set[EventUserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -742,7 +743,7 @@ case class TestEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeUserDataList: Option[Set[EventUserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,

@@ -66,8 +66,8 @@ case class SlackMessageEvent(
 
   lazy val includesBotMention: Boolean = eventContext.isDirectMessage || profile.includesBotMention(message)
 
-  def messageUserDataList: Set[MessageUserData] = {
-    message.userList.map(MessageUserData.fromSlackUserData)
+  def messageUserDataList: Set[EventUserData] = {
+    message.userList.map(EventUserData.fromSlackUserData)
   }
 
   override val isResponseExpected: Boolean = includesBotMention

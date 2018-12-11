@@ -3,7 +3,7 @@ package models.behaviors.events.slack
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.{Event, EventType, MessageUserData, SlackEventContext}
+import models.behaviors.events.{Event, EventType, EventUserData, SlackEventContext}
 import models.team.Team
 import services.DefaultServices
 
@@ -64,8 +64,8 @@ case class SlashCommandEvent(
   }
 
 
-  def messageUserDataList: Set[MessageUserData] = {
-    message.userList.map(MessageUserData.fromSlackUserData)
+  def messageUserDataList: Set[EventUserData] = {
+    message.userList.map(EventUserData.fromSlackUserData)
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
