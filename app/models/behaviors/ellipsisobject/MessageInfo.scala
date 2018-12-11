@@ -2,7 +2,7 @@ package models.behaviors.ellipsisobject
 
 import akka.actor.ActorSystem
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, MessageUserData}
+import models.behaviors.events.{Event, EventUserData}
 import play.api.libs.json._
 import services.DefaultServices
 
@@ -16,7 +16,7 @@ case class MessageInfo(
                         thread: Option[String],
                         userId: String,
                         details: JsObject,
-                        usersMentioned: Set[MessageUserData],
+                        usersMentioned: Set[EventUserData],
                         permalink: Option[String],
                         reactionAdded: Option[String]
                       )

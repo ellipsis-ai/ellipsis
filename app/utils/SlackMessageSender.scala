@@ -84,7 +84,7 @@ case class SlackMessageSender(
                                choices: Seq[ActionChoice],
                                configuration: Configuration,
                                botName: String,
-                               userDataList: Set[MessageUserData],
+                               userDataList: Set[EventUserData],
                                services: DefaultServices,
                                isEphemeral: Boolean,
                                maybeResponseUrl: Option[String],

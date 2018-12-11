@@ -69,7 +69,7 @@ case class MSTeamsMessageEvent(
 
   lazy val includesBotMention: Boolean = true
 
-  def messageUserDataList: Set[MessageUserData] = {
+  def messageUserDataList: Set[EventUserData] = {
     Set()
     // TODO: look at this
 //    message.userList.map(MessageUserData.fromSlackUserData)

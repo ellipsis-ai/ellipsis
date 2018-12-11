@@ -52,7 +52,7 @@ case class MSTeamsMessageSender(
                                  files: Seq[UploadFileSpec] = Seq(),
                                  choices: Seq[ActionChoice],
                                  botName: String,
-                                 userDataList: Set[MessageUserData],
+                                 userDataList: Set[EventUserData],
                                  services: DefaultServices,
                                  isEphemeral: Boolean,
                                  beQuiet: Boolean

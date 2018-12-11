@@ -3,7 +3,7 @@ package models.behaviors.events
 import json.SlackUserData
 import models.behaviors.conversations.conversation.Conversation
 
-case class MessageUserData(
+case class EventUserData(
                             context: String,
                             userName: String,
                             ellipsisUserId: Option[String],
@@ -13,10 +13,10 @@ case class MessageUserData(
                             timeZone: Option[String]
                           )
 
-object MessageUserData {
+object EventUserData {
 
-  def fromSlackUserData(slackUserData: SlackUserData): MessageUserData = {
-    MessageUserData(
+  def fromSlackUserData(slackUserData: SlackUserData): EventUserData = {
+    EventUserData(
       Conversation.SLACK_CONTEXT,
       userName = slackUserData.getDisplayName,
       ellipsisUserId = None,
