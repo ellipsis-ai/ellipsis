@@ -31,6 +31,7 @@ object MessageInfo {
     for {
       details <- event.detailsFor(services)
       maybePermalink <- event.maybePermalinkFor(services)
+      userDataList <- event.messageUserDataList(maybeConversation, services)
     } yield {
       MessageInfo(
         event.messageText,
@@ -40,7 +41,7 @@ object MessageInfo {
         event.maybeThreadId,
         event.eventContext.userIdForContext,
         details,
-        event.messageUserDataList(maybeConversation, services),
+        userDataList,
         maybePermalink,
         event.maybeReactionAdded
       )

@@ -13,6 +13,7 @@ import models.behaviors.{ActionChoice, DeveloperContext}
 import models.team.Team
 import play.api.libs.json.JsObject
 import services.DefaultServices
+import slick.dbio.DBIO
 import utils.UploadFileSpec
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,7 +54,7 @@ sealed trait ScheduledEvent extends Event {
   lazy val invocationLogText: String = underlying.invocationLogText
   lazy val isResponseExpected: Boolean = underlying.isResponseExpected
   override val maybeScheduled: Option[Scheduled] = Some(scheduled)
-  def messageUserDataList: Set[EventUserData] = underlying.messageUserDataList
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[EventUserData]] = underlying.messageUserDataListAction(services)
 
   val maybeMessageIdForReaction: Option[String] = None
 

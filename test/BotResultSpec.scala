@@ -60,7 +60,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
     val groupVersion = newSavedGroupVersionFor(group, user)
     val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
 
-    runNow(InvokeBehaviorConversation.createFor(behaviorVersion, newEventFor(profile), Some(event.channel), None, None, None, dataService, cacheService))
+    runNow(InvokeBehaviorConversation.createFor(behaviorVersion, newEventFor(profile), Some(event.channel), None, None, None, services))
   }
 
   def mockPostChatMessage(text: String, event: SlackMessageEvent, client: SlackApiClient, resultTs: String, maybeThreadId: Option[String]): Unit = {

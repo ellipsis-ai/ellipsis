@@ -293,6 +293,7 @@ case class SlackEventContext(
     for {
       maybeDMChannel <- eventualMaybeDMChannel(services)
       botName <- botName(services)
+      userDataList <- event.messageUserDataList(maybeConversation, services)
       maybeTs <- SlackMessageSender(
         services.slackApiService.clientFor(profile),
         userIdForContext,
@@ -310,7 +311,7 @@ case class SlackEventContext(
         choices,
         services.configuration,
         botName,
-        event.messageUserDataList(maybeConversation, services),
+        userDataList,
         services,
         event.isEphemeral,
         event.maybeResponseUrl,
@@ -493,6 +494,7 @@ case class MSTeamsEventContext(
     for {
       maybeDMChannel <- eventualMaybeDMChannel(services)
       botName <- botName(services)
+      userDataList <- event.messageUserDataList(maybeConversation, services)
       maybeResult <- MSTeamsMessageSender(
         services.msTeamsApiService.profileClientFor(profile),
         userIdForContext,
@@ -510,7 +512,7 @@ case class MSTeamsEventContext(
         files,
         choices,
         botName,
-        event.messageUserDataList(maybeConversation, services),
+        userDataList,
         services,
         event.isEphemeral,
         event.beQuiet

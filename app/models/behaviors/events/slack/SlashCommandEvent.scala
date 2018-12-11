@@ -1,11 +1,14 @@
 package models.behaviors.events.slack
 
+import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{Event, EventType, EventUserData, SlackEventContext}
 import models.team.Team
 import services.DefaultServices
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -64,8 +67,12 @@ case class SlashCommandEvent(
   }
 
 
-  def messageUserDataList: Set[EventUserData] = {
-    message.userList.map(EventUserData.fromSlackUserData)
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[EventUserData]] = {
+    DBIO.sequence(message.userList.toSeq.map { data =>
+      services.dataService.users.ensureUserForAction(LoginInfo(Conversation.SLACK_CONTEXT, data.accountId), Seq(), ellipsisTeamId).map { user =>
+        EventUserData.fromSlackUserData(user, data)
+      }
+    }).map(_.toSet)
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this

@@ -1,7 +1,7 @@
 package controllers.api
 
 import _root_.json.Formatting._
-import _root_.json.{APIErrorData, APITokenData, UserData}
+import _root_.json.{APIErrorData, APITokenData}
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import controllers.api.context.ApiMethodContextBuilder
@@ -331,7 +331,7 @@ class APIController @Inject() (
     }
   }
 
-  case class FindUsersResult(users: Seq[UserData])
+  case class FindUsersResult(users: Seq[EventUserData])
 
   implicit val findUsersResultWrites = Json.writes[FindUsersResult]
 

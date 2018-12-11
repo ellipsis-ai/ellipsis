@@ -2,13 +2,12 @@ package models.accounts.user
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import json.UserData
 import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.profile.SlackProfile
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.events.Event
+import models.behaviors.events.{Event, EventUserData}
 import models.team.Team
 import slick.dbio.DBIO
 
@@ -35,9 +34,9 @@ trait UserService extends IdentityService[User] {
   }
   def isAdmin(user: User): Future[Boolean]
 
-  def userDataFor(user: User, team: Team): Future[UserData]
+  def userDataFor(user: User, team: Team): Future[EventUserData]
 
-  def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]]
+  def maybeUserDataForEmail(email: String, team: Team): Future[Option[EventUserData]]
 
   def maybeSlackTeamIdsFor(user: User): Future[Option[SlackUserTeamIds]]
 

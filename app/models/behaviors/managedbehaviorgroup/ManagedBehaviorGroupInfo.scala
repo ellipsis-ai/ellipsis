@@ -1,5 +1,5 @@
 package models.behaviors.managedbehaviorgroup
 
-import json.UserData
+import models.behaviors.events.EventUserData
 
-case class ManagedBehaviorGroupInfo(isManaged: Boolean, maybeContactData: Option[UserData])
+case class ManagedBehaviorGroupInfo(isManaged: Boolean, maybeContactData: Option[EventUserData])

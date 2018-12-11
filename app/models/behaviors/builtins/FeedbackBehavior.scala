@@ -1,11 +1,10 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
-import json.UserData
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
 import models.behaviors.behaviorversion.{Normal, Private}
-import models.behaviors.events.{Event, EventType}
+import models.behaviors.events.{Event, EventType, EventUserData}
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.{Configuration, Logger}
@@ -97,12 +96,12 @@ object FeedbackBehavior {
     }
   }
 
-  private def userInfo(userId: String, maybeUserData: Option[UserData]): String = {
+  private def userInfo(userId: String, maybeUserData: Option[EventUserData]): String = {
     maybeUserData.map { userData =>
       val fullName = userData.fullName.getOrElse("Unknown user")
       val userName = userData.userName.map(userName => s"@$userName").getOrElse("unknown username")
       val email = userData.email.getOrElse("(unknown)")
-      val tz = userData.tz.getOrElse("(unknown)")
+      val tz = userData.timeZone.getOrElse("(unknown)")
       s"""> Name: ${fullName} (${userName})
          |> Email: ${email}
          |> Time zone: ${tz}

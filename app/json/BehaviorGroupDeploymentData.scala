@@ -3,6 +3,7 @@ package json
 import java.time.OffsetDateTime
 
 import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeployment
+import models.behaviors.events.EventUserData
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -12,7 +13,7 @@ case class BehaviorGroupDeploymentData(
                                        groupId: String,
                                        groupVersionId: String,
                                        comment: Option[String],
-                                       deployer: Option[UserData],
+                                       deployer: Option[EventUserData],
                                        createdAt: OffsetDateTime
                                      )
 

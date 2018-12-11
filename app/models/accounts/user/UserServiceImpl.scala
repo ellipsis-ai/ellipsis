@@ -7,21 +7,19 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
-import json.{SlackUserData, UserData}
+import json.SlackUserData
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
-import models.accounts.slack.profile.SlackProfile
-import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.Event
-import models.team.Team
-import play.api.Logger
-import play.api.libs.json.Json
-import services.DefaultServices
-import services.slack.SlackApiClient
-import json.Formatting._
 import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.slack.SlackUserTeamIds
+import models.accounts.slack.profile.SlackProfile
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.slack.SlackMessageEvent
+import models.behaviors.events.{Event, EventUserData}
+import models.team.Team
+import play.api.Logger
+import services.DefaultServices
+import services.slack.SlackApiClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -170,7 +168,7 @@ class UserServiceImpl @Inject() (
     } yield isAdmin
   }
 
-  def userDataFor(user: User, team: Team): Future[UserData] = {
+  def userDataFor(user: User, team: Team): Future[EventUserData] = {
     if (user.teamId != team.id) {
       for {
         isAdmin <- isAdmin(user)
@@ -179,17 +177,16 @@ class UserServiceImpl @Inject() (
         } else {
           Future.successful(false)
         }
-        maybeTeam <- dataService.teams.find(user.teamId)
       } yield {
         if (isAdmin) {
-          UserData.asAdmin(user.id)
+          EventUserData.asAdmin(user.id)
         } else {
           if (hasNoSlackLinkedAccount) {
             Logger.warn(s"User data requested but no Slack linked account exists for user ID ${user.id} with team ID ${user.teamId}")
           } else {
             Logger.error(s"Non-admin user data requested with mismatched team ID: user ID ${user.id} with team ID ${user.teamId} compared to requested team ID ${team.id}")
           }
-          UserData.withoutProfile(user.id, maybeTeam)
+          EventUserData.withoutProfile(user.id)
         }
       }
     } else {
@@ -201,19 +198,10 @@ class UserServiceImpl @Inject() (
     }
   }
 
-  private def userDataFor(user: User, team: Team, maybeSlackUserData: Option[SlackUserData]): UserData = {
-    val maybeTzString = maybeSlackUserData.flatMap(_.tz).orElse(team.maybeTimeZone.map(_.toString))
-    UserData(
-      id = user.id,
-      userName = maybeSlackUserData.map(_.getDisplayName),
-      fullName = maybeSlackUserData.flatMap(_.maybeRealName),
-      tz = maybeTzString,
-      teamName = Some(team.name),
-      email = maybeSlackUserData.flatMap(_.profile.flatMap(_.email)),
-      context = if (maybeSlackUserData.isDefined) Some(Conversation.SLACK_CONTEXT) else None,
-      userIdForContext = maybeSlackUserData.map(_.accountId),
-      details = maybeSlackUserData.map(Json.toJsObject(_))
-    )
+  private def userDataFor(user: User, team: Team, maybeSlackUserData: Option[SlackUserData]): EventUserData = {
+    maybeSlackUserData.map(d => EventUserData.fromSlackUserData(user, d)).getOrElse {
+      EventUserData.withoutProfile(user.id)
+    }
   }
 
   private def maybeSlackUserDataFor(user: User, team: Team): Future[Option[SlackUserData]] = {
@@ -241,7 +229,7 @@ class UserServiceImpl @Inject() (
     } yield maybeUserData
   }
 
-  def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]] = {
+  def maybeUserDataForEmail(email: String, team: Team): Future[Option[EventUserData]] = {
     // TODO: Slack-specific for now; in future we might want to lookup users from other sources
     for {
       maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
@@ -253,7 +241,7 @@ class UserServiceImpl @Inject() (
         for {
           user <- ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, slackUserData.accountId), team.id)
         } yield {
-          Some(userDataFor(user, team, maybeSlackUserData))
+          maybeSlackUserData.map(d => EventUserData.fromSlackUserData(user, d))
         }
       }.getOrElse(Future.successful(None))
     } yield maybeUserData

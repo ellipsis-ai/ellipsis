@@ -3,7 +3,11 @@ package models.behaviors.testing
 import models.accounts.user.User
 import models.behaviors.events._
 import models.team.Team
+import services.DefaultServices
+import slick.dbio.DBIO
 import utils.FileReference
+
+import scala.concurrent.ExecutionContext
 
 case class TestMessageEvent(
                             eventContext: TestEventContext,
@@ -16,7 +20,7 @@ case class TestMessageEvent(
   val user: User = eventContext.user
   val team: Team = eventContext.team
 
-  def messageUserDataList: Set[EventUserData] = Set.empty
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[EventUserData]] = DBIO.successful(Set.empty)
 
   val isResponseExpected = true
 
