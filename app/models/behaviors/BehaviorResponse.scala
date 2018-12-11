@@ -147,21 +147,29 @@ case class BehaviorResponse(
         Future.successful(Some(tid))
       }
     }.getOrElse {
-      if (behaviorVersion.responseType == Threaded && !event.isEphemeral) {
-        event.sendMessage(
-          "Let's continue this in a thread :speech_balloon:",
-          behaviorVersion.responseType,
-          maybeShouldUnfurl = None,
-          None,
-          attachments = Seq(),
-          files = Seq(),
-          choices = Seq(),
-          DeveloperContext.default,
-          services
-        )
+      if (behaviorVersion.responseType == Threaded) {
+        maybeStartThreadRoot
       } else {
         Future.successful(None)
       }
+    }
+  }
+
+  private def maybeStartThreadRoot(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    if (event.isEphemeral) {
+      Future.successful(None)
+    } else {
+      event.sendMessage(
+        "Let’s continue this in a thread. :speech_balloon:",
+        behaviorVersion.responseType,
+        maybeShouldUnfurl = None,
+        None,
+        attachments = Seq(),
+        files = Seq(),
+        choices = Seq(),
+        DeveloperContext.default,
+        services
+      )
     }
   }
 

@@ -300,7 +300,7 @@ case class SlackEventContext(
         unformattedText,
         responseType,
         developerContext,
-        channel,
+        originatingChannel = channel,
         maybeDMChannel,
         maybeThreadId,
         maybeShouldUnfurl,
@@ -312,7 +312,7 @@ case class SlackEventContext(
         botName,
         event.messageUserDataList(maybeConversation, services),
         services,
-        event.isEphemeral && !SlackEventContext.channelIsDM(channel),
+        event.isEphemeral,
         event.maybeResponseUrl,
         event.beQuiet
       ).send

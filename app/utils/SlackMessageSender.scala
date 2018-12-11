@@ -188,7 +188,7 @@ case class SlackMessageSender(
     maybeResponseUrlToUse(channel).map { responseUrl =>
       client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral)
     }.getOrElse {
-      if (isEphemeral) {
+      if (isEphemeral && !SlackEventContext.channelIsDM(channel)) {
         postEphemeralMessage(text, maybeAttachments, channel, maybeThreadTs)
       } else {
         client.postChatMessage(
@@ -224,7 +224,8 @@ case class SlackMessageSender(
   }
 
   private def maybePreambleText: Option[String] = {
-    if (responseType == Private && !maybeDMChannel.contains(originatingChannel)) {
+    if (responseType == Private && !maybeDMChannel.contains(originatingChannel) ||
+      isEphemeral && originatingChannel != channelToUse()) {
       Some(s"<@${user}> I’ve sent you a <${client.profile.botDMDeepLink}|private message> :sleuth_or_spy:")
     } else {
       None
