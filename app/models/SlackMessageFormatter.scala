@@ -32,11 +32,11 @@ object SlackMessageFormatter {
 
   def convertUsernamesToLinks(formattedText: String, userList: Set[EventUserData]): String = {
     userList.toSeq.foldLeft(formattedText) { (text, user) =>
-      val userNameLinkRegex = raw"""(^|\s|\W)<?@\Q${user.userName}\E>?($$|\s|\W)""".r
+      val userNameLinkRegex = raw"""(^|\s|\W)<?@\Q${user.userNameOrDefault}\E>?($$|\s|\W)""".r
       val replacement = user.userIdForContext.map { userId =>
         s"<@${userId}>"
       }.getOrElse {
-        s"@${user.userName}"
+        s"@${user.userNameOrDefault}"
       }
       userNameLinkRegex.replaceAllIn(text, s"$$1${Matcher.quoteReplacement(replacement)}$$2")
     }

@@ -1,4 +1,5 @@
 import models.SlackMessageFormatter
+import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.EventUserData
 import org.scalatestplus.play.PlaySpec
 
@@ -6,9 +7,9 @@ class SlackMessageFormatterSpec extends PlaySpec {
 
   def messageUserData(userId: String, username: String, displayName: String): EventUserData = {
      EventUserData(
-       context = "slack",
-       userName = displayName,
-       ellipsisUserId = None,
+       ellipsisUserId = userId,
+       context = Some(Conversation.SLACK_CONTEXT),
+       userName = Some(displayName),
        userIdForContext = Some(userId),
        fullName = None,
        email = None,
