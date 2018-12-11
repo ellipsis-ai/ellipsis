@@ -224,9 +224,13 @@ case class SlackMessageSender(
   }
 
   private def maybePreambleText: Option[String] = {
-    if (responseType == Private && !maybeDMChannel.contains(originatingChannel) ||
-      isEphemeral && originatingChannel != channelToUse()) {
+    val responseChannel = channelToUse()
+    val switchingChannels = responseChannel != originatingChannel
+    val switchingToPrivate = switchingChannels && maybeDMChannel.contains(responseChannel)
+    if (switchingToPrivate) {
       Some(s"<@${user}> I’ve sent you a <${client.profile.botDMDeepLink}|private message> :sleuth_or_spy:")
+    } else if (switchingChannels) {
+      Some(s"<@${user}> I’ve sent you a response in another channel.")
     } else {
       None
     }
