@@ -4,6 +4,7 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
 import javax.inject.Inject
+import json.Formatting._
 import models.behaviors.events.EventUserData
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
