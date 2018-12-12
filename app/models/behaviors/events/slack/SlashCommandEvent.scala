@@ -69,11 +69,7 @@ case class SlashCommandEvent(
 
 
   def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
-    DBIO.sequence(message.userList.toSeq.map { data =>
-      services.dataService.users.ensureUserForAction(LoginInfo(Conversation.SLACK_CONTEXT, data.accountId), Seq(), ellipsisTeamId).map { user =>
-        UserData.fromSlackUserData(user, data)
-      }
-    }).map(_.toSet)
+    UserData.allFromSlackUserDataListAction(message.userList, ellipsisTeamId, services)
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this

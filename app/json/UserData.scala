@@ -1,7 +1,12 @@
 package json
 
+import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
+import services.DefaultServices
+import slick.dbio.DBIO
+
+import scala.concurrent.ExecutionContext
 
 case class UserData(
                       ellipsisUserId: String,
@@ -27,6 +32,18 @@ object UserData {
       email = slackUserData.profile.flatMap(_.email),
       timeZone = slackUserData.tz
     )
+  }
+
+  def allFromSlackUserDataListAction(
+                                      userList: Set[SlackUserData],
+                                      ellipsisTeamId: String,
+                                      services: DefaultServices
+                                    )(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
+    DBIO.sequence(userList.toSeq.map { data =>
+      services.dataService.users.ensureUserForAction(LoginInfo(Conversation.SLACK_CONTEXT, data.accountId), Seq(), ellipsisTeamId).map { user =>
+        UserData.fromSlackUserData(user, data)
+      }
+    }).map(_.toSet)
   }
 
   def asAdmin(id: String): UserData = {

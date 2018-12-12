@@ -65,11 +65,7 @@ case class SlackReactionAddedEvent(
 
   def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
     maybeMessage.map { message =>
-      DBIO.sequence(message.userList.toSeq.map { data =>
-        services.dataService.users.ensureUserForAction(LoginInfo(Conversation.SLACK_CONTEXT, data.accountId), Seq(), ellipsisTeamId).map { user =>
-          UserData.fromSlackUserData(user, data)
-        }
-      }).map(_.toSet)
+      UserData.allFromSlackUserDataListAction(message.userList, ellipsisTeamId, services)
     }.getOrElse(DBIO.successful(Set()))
   }
 
