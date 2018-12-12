@@ -220,7 +220,7 @@ class VersionBrowser extends React.Component<Props, State> {
   }
 
   authorForVersion(version: BehaviorGroup): string {
-    const isCurrentUser = version.author && version.author.id === this.props.currentUserId;
+    const isCurrentUser = version.author && version.author.ellipsisUserId === this.props.currentUserId;
     return version.author ? `by ${isCurrentUser ? "you" : version.author.formattedName()}` : "";
   }
 

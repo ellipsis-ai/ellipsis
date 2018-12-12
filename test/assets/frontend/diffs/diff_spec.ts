@@ -658,19 +658,19 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
   "exportId": "9l9tTPMcQliQRua_UmJ8sw",
   "createdAt": "2018-04-16T15:18:27.673-04:00",
   "author": {
-    "id": "NeBjtWPSTBKnjMMt8zgx-g",
+    "ellipsisUserId": "NeBjtWPSTBKnjMMt8zgx-g",
     "userName": "Luke Andrews",
     "fullName": "Luke Andrews",
-    "tz": "America/New_York"
+    "timeZone": "America/New_York"
   },
   "metaData": {
     "groupId": "sxokL6idQ_a6Ks3QOD-Sug",
     "initialCreatedAt": "2018-04-11T15:32:34.921-04:00",
     "initialAuthor": {
-      "id": "NeBjtWPSTBKnjMMt8zgx-g",
+      "ellipsisUserId": "NeBjtWPSTBKnjMMt8zgx-g",
       "userName": "Luke Andrews",
       "fullName": "Luke Andrews",
-      "tz": "America/New_York"
+      "timeZone": "America/New_York"
     }
   },
   "isManaged": false

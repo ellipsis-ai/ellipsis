@@ -183,7 +183,7 @@ describe('BehaviorEditor', () => {
     "requiredOAuthApiConfigs": [],
     "requiredSimpleTokenApis": [],
     "createdAt": "2017-09-15T11:58:07.36-04:00",
-    "author": { "id": "3", userName: "attaboy" },
+    "author": { "ellipsisUserId": "3", userName: "attaboy" },
     isManaged: false
   });
 
