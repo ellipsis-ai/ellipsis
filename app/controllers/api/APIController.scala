@@ -7,9 +7,9 @@ import com.google.inject.Provider
 import controllers.api.context.ApiMethodContextBuilder
 import controllers.api.exceptions.InvalidTokenException
 import controllers.api.json.Formatting._
+import controllers.api.json._
 import controllers.{EllipsisController, RemoteAssets}
 import javax.inject.Inject
-import json._
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
 import models.behaviors.{BotResultService, SimpleTextResult}
