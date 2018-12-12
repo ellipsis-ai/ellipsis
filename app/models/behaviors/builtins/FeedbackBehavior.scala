@@ -1,10 +1,11 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
+import json.UserData
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
 import models.behaviors.behaviorversion.{Normal, Private}
-import models.behaviors.events.{Event, EventType, UserData}
+import models.behaviors.events.{Event, EventType}
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.{Configuration, Logger}

@@ -7,15 +7,15 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
-import json.SlackUserData
+import json.{SlackUserData, UserData}
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.profile.SlackProfile
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.Event
 import models.behaviors.events.slack.SlackMessageEvent
-import models.behaviors.events.{Event, UserData}
 import models.team.Team
 import play.api.Logger
 import services.DefaultServices

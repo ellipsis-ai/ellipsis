@@ -1,6 +1,7 @@
 package models.behaviors.events.ms_teams
 
 import akka.actor.ActorSystem
+import json.UserData
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._

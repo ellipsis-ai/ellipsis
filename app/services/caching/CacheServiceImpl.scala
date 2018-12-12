@@ -8,7 +8,7 @@ import akka.http.caching.scaladsl.{Cache, CachingSettings}
 import com.amazonaws.services.lambda.model.InvokeResult
 import javax.inject.{Inject, Provider, Singleton}
 import json.Formatting._
-import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
+import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.IDs
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile

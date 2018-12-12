@@ -2,12 +2,13 @@ package models.accounts.user
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
+import json.UserData
 import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.profile.SlackProfile
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.events.{Event, UserData}
+import models.behaviors.events.Event
 import models.team.Team
 import slick.dbio.DBIO
 

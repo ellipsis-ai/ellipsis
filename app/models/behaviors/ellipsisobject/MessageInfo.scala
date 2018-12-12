@@ -1,8 +1,9 @@
 package models.behaviors.ellipsisobject
 
 import akka.actor.ActorSystem
+import json.UserData
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, UserData}
+import models.behaviors.events.Event
 import play.api.libs.json._
 import services.DefaultServices
 

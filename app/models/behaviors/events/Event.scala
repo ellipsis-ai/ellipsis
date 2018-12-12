@@ -1,6 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import json.UserData
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior

@@ -5,7 +5,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
 import javax.inject.Inject
 import json.Formatting._
-import models.behaviors.events.UserData
+import json.UserData
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.libs.json.Json

@@ -6,7 +6,6 @@ import models.accounts.{OAuthApi, OAuthApplication}
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.events.UserData
 import models.team.Team
 import services.DataService
 import services.caching.CacheService

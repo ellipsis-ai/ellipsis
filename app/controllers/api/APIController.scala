@@ -1,15 +1,15 @@
 package controllers.api
 
 import _root_.json.Formatting._
-import _root_.json.{APIErrorData, APITokenData}
+import _root_.json._
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import controllers.api.context.ApiMethodContextBuilder
 import controllers.api.exceptions.InvalidTokenException
 import controllers.api.json.Formatting._
-import controllers.api.json._
 import controllers.{EllipsisController, RemoteAssets}
 import javax.inject.Inject
+import json._
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
 import models.behaviors.{BotResultService, SimpleTextResult}

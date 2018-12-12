@@ -2,9 +2,10 @@ package models.behaviors.ellipsisobject
 
 import akka.actor.ActorSystem
 import json.Formatting._
+import json.UserData
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, UserData}
+import models.behaviors.events.Event
 import play.api.libs.json._
 import services.DefaultServices
 import slick.dbio.DBIO

@@ -1,11 +1,12 @@
 package models.behaviors.events.slack
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import json.UserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, EventType, UserData, SlackEventContext}
+import models.behaviors.events.{Event, EventType, SlackEventContext}
 import models.team.Team
 import services.DefaultServices
 import slick.dbio.DBIO

@@ -1,14 +1,14 @@
 package services.caching
 
 import com.amazonaws.services.lambda.model.InvokeResult
-import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
+import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
+import models.behaviors.events.Event
 import models.behaviors.events.slack.SlackMessageEvent
-import models.behaviors.events.{Event, UserData}
 import sangria.schema.Schema
 import services.ms_teams.ChannelWithTeam
 import services.ms_teams.apiModels.Application

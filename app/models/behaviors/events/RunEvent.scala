@@ -1,5 +1,6 @@
 package models.behaviors.events
 
+import json.UserData
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion

@@ -1,5 +1,6 @@
 package models.behaviors.testing
 
+import json.UserData
 import models.accounts.user.User
 import models.behaviors.events._
 import models.team.Team

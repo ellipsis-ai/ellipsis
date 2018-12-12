@@ -1,7 +1,8 @@
 package models.behaviors.events.ms_teams
 
-import models.behaviors.events.{MessageAttachment, UserData}
-import services.ms_teams.apiModels.{AdaptiveCard, CardElement, Attachment, TextBlock}
+import json.UserData
+import models.behaviors.events.MessageAttachment
+import services.ms_teams.apiModels.{AdaptiveCard, Attachment, CardElement, TextBlock}
 
 case class MSTeamsMessageAttachment(
                                      maybeText: Option[String] = None,

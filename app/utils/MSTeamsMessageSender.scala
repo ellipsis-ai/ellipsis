@@ -2,6 +2,7 @@ package utils
 
 import akka.actor.ActorSystem
 import json.Formatting._
+import json.UserData
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._

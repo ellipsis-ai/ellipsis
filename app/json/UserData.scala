@@ -1,6 +1,5 @@
-package models.behaviors.events
+package json
 
-import json.SlackUserData
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 

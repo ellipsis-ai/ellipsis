@@ -7,7 +7,6 @@ import models.behaviors._
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.behaviortestresult.BehaviorTestResult
 import models.behaviors.ellipsisobject.MessageInfo
-import models.behaviors.events.UserData
 import models.behaviors.events.slack.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._

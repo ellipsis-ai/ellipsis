@@ -3,7 +3,6 @@ package json
 import java.time.OffsetDateTime
 
 import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeployment
-import models.behaviors.events.UserData
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
