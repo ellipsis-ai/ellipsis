@@ -144,7 +144,7 @@ case class SlackMessageSender(
                                     maybeAttachments: Option[Seq[Attachment]] = None,
                                     channel: String,
                                     maybeThreadTs: Option[String]
-                                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+                                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     client.postEphemeralMessage(
       text,
       channel,
@@ -182,14 +182,14 @@ case class SlackMessageSender(
                                text: String,
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
-                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val channel = channelToUse(maybeChannelToForce)
     val maybeThreadTs = maybeThreadTsToUse(channel)
     maybeResponseUrlToUse(channel).map { responseUrl =>
-      client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral)
+      client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral).map(_ => None)
     }.getOrElse {
       if (isEphemeral && !SlackEventContext.channelIsDM(channel)) {
-        postEphemeralMessage(text, maybeAttachments, channel, maybeThreadTs)
+        postEphemeralMessage(text, maybeAttachments, channel, maybeThreadTs).map(_ => None)
       } else {
         client.postChatMessage(
           channel,
@@ -207,7 +207,7 @@ case class SlackMessageSender(
           deleteOriginal = None,
           threadTs = maybeThreadTs,
           replyBroadcast = None
-        ).recover(postErrorRecovery(channel, text))
+        ).map(ts => Some(ts)).recover(postErrorRecovery(channel, text))
       }
     }
   }
@@ -276,7 +276,7 @@ case class SlackMessageSender(
           segment,
           maybeAttachmentsForSegment
         )
-      }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
+      }.flatMap { maybeTs => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeTs)}
     }
   }
 
