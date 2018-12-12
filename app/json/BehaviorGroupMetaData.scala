@@ -2,6 +2,6 @@ package json
 
 import java.time.OffsetDateTime
 
-import models.behaviors.events.EventUserData
+import models.behaviors.events.UserData
 
-case class BehaviorGroupMetaData(groupId: String, initialCreatedAt: OffsetDateTime, initialAuthor: Option[EventUserData])
+case class BehaviorGroupMetaData(groupId: String, initialCreatedAt: OffsetDateTime, initialAuthor: Option[UserData])

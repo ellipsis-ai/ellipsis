@@ -6,7 +6,7 @@ import models.accounts.{OAuthApi, OAuthApplication}
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.events.EventUserData
+import models.behaviors.events.UserData
 import models.team.Team
 import services.DataService
 import services.caching.CacheService
@@ -31,11 +31,11 @@ case class BehaviorGroupData(
                               gitSHA: Option[String],
                               exportId: Option[String],
                               createdAt: Option[OffsetDateTime],
-                              author: Option[EventUserData],
+                              author: Option[UserData],
                               deployment: Option[BehaviorGroupDeploymentData],
                               metaData: Option[BehaviorGroupMetaData],
                               isManaged: Boolean,
-                              managedContact: Option[EventUserData],
+                              managedContact: Option[UserData],
                               linkedGithubRepo: Option[LinkedGithubRepoData]
                             ) extends Ordered[BehaviorGroupData] with FuzzyMatchable {
 
@@ -306,7 +306,7 @@ object BehaviorGroupData {
                   requiredSimpleTokenApis: Seq[RequiredSimpleTokenApiData],
                   maybeGitSHA: Option[String],
                   maybeExportId: Option[String],
-                  maybeAuthor: Option[EventUserData],
+                  maybeAuthor: Option[UserData],
                   maybeLinkedGithubRepoData: Option[LinkedGithubRepoData]
                 ): BehaviorGroupData = {
     BehaviorGroupData(

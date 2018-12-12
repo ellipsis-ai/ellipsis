@@ -68,10 +68,10 @@ case class SlackMessageEvent(
 
   lazy val includesBotMention: Boolean = eventContext.isDirectMessage || profile.includesBotMention(message)
 
-  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[EventUserData]] = {
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
     DBIO.sequence(message.userList.toSeq.map { data =>
       services.dataService.users.ensureUserForAction(LoginInfo(Conversation.SLACK_CONTEXT, data.accountId), Seq(), ellipsisTeamId).map { user =>
-        EventUserData.fromSlackUserData(user, data)
+        UserData.fromSlackUserData(user, data)
       }
     }).map(_.toSet)
   }

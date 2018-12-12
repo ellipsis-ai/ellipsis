@@ -311,14 +311,14 @@ class CacheServiceImpl @Inject() (
     s"conversation-${conversationId}-messageUserDataList-v1"
   }
 
-  def cacheMessageUserDataList(messageUserDataList: Seq[EventUserData], conversationId: String): Unit = {
+  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Unit = {
     val maybeExisting = getMessageUserDataList(conversationId)
     set(cacheKeyForMessageUserDataList(conversationId), Json.toJson(maybeExisting.getOrElse(Seq()) ++ messageUserDataList), Duration.Inf)
   }
 
-  def getMessageUserDataList(conversationId: String): Option[Seq[EventUserData]] = {
+  def getMessageUserDataList(conversationId: String): Option[Seq[UserData]] = {
     get[JsValue](cacheKeyForMessageUserDataList(conversationId)).flatMap { json =>
-      json.validate[Seq[EventUserData]] match {
+      json.validate[Seq[UserData]] match {
         case JsSuccess(data, _) => Some(data)
         case JsError(_) => None
       }

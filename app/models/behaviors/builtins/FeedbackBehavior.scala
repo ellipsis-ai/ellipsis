@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
 import models.behaviors.behaviorversion.{Normal, Private}
-import models.behaviors.events.{Event, EventType, EventUserData}
+import models.behaviors.events.{Event, EventType, UserData}
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.{Configuration, Logger}
@@ -96,7 +96,7 @@ object FeedbackBehavior {
     }
   }
 
-  private def userInfo(userId: String, maybeUserData: Option[EventUserData]): String = {
+  private def userInfo(userId: String, maybeUserData: Option[UserData]): String = {
     maybeUserData.map { userData =>
       val fullName = userData.fullName.getOrElse("Unknown user")
       val userName = userData.userName.map(userName => s"@$userName").getOrElse("unknown username")

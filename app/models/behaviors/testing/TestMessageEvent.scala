@@ -20,7 +20,7 @@ case class TestMessageEvent(
   val user: User = eventContext.user
   val team: Team = eventContext.team
 
-  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[EventUserData]] = DBIO.successful(Set.empty)
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = DBIO.successful(Set.empty)
 
   val isResponseExpected = true
 

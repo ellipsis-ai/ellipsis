@@ -5,7 +5,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
 import javax.inject.Inject
 import json.Formatting._
-import models.behaviors.events.EventUserData
+import models.behaviors.events.UserData
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.libs.json.Json
@@ -14,7 +14,7 @@ import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class UserInfoResponse(user: Option[EventUserData], userNotFound: Boolean)
+case class UserInfoResponse(user: Option[UserData], userNotFound: Boolean)
 
 class UserInfoController @Inject() (
                                      val silhouette: Silhouette[EllipsisEnv],
@@ -41,7 +41,7 @@ class UserInfoController @Inject() (
       } yield {
         Ok(Json.toJson(UserInfoResponse(
           maybeUser.map { user =>
-            maybeUserData.getOrElse(EventUserData.withoutProfile(user.id))
+            maybeUserData.getOrElse(UserData.withoutProfile(user.id))
           },
           maybeUser.isEmpty
         )))

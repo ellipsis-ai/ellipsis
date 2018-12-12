@@ -70,7 +70,7 @@ case class MSTeamsMessageEvent(
 
   lazy val includesBotMention: Boolean = true
 
-  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[EventUserData]] = {
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
     DBIO.successful(Set())
     // TODO: look at this
 //    message.userList.map(MessageUserData.fromSlackUserData)

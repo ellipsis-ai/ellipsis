@@ -7,7 +7,7 @@ import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.profile.SlackProfile
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.events.{Event, EventUserData}
+import models.behaviors.events.{Event, UserData}
 import models.team.Team
 import slick.dbio.DBIO
 
@@ -34,9 +34,9 @@ trait UserService extends IdentityService[User] {
   }
   def isAdmin(user: User): Future[Boolean]
 
-  def userDataFor(user: User, team: Team): Future[EventUserData]
+  def userDataFor(user: User, team: Team): Future[UserData]
 
-  def maybeUserDataForEmail(email: String, team: Team): Future[Option[EventUserData]]
+  def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]]
 
   def maybeSlackTeamIdsFor(user: User): Future[Option[SlackUserTeamIds]]
 

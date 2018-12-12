@@ -1,5 +1,5 @@
 @import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroup
-@import models.behaviors.events.EventUserData
+@import models.behaviors.events.UserData
 @import models.team.Team
 @import json.BehaviorGroupData
 @import helper._
@@ -9,7 +9,7 @@
   team: Team,
   managedData: Seq[(ManagedBehaviorGroup, BehaviorGroupData)],
   otherData: Seq[BehaviorGroupData],
-  usersData: Seq[EventUserData]
+  usersData: Seq[UserData]
 )(implicit messages: Messages, r: RequestHeader)
 
 

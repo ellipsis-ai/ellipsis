@@ -9,7 +9,7 @@ import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.slack.SlackMessageEvent
-import models.behaviors.events.{Event, EventUserData}
+import models.behaviors.events.{Event, UserData}
 import org.scalatest.mock.MockitoSugar
 import sangria.schema.Schema
 import services.caching._
@@ -85,9 +85,9 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getLastConversationId(teamId: String, channelId: String): Option[String] = None
 
-  def cacheMessageUserDataList(messageUserDataList: Seq[EventUserData], conversationId: String): Unit = {}
+  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Unit = {}
 
-  def getMessageUserDataList(conversationId: String): Option[Seq[EventUserData]] = None
+  def getMessageUserDataList(conversationId: String): Option[Seq[UserData]] = None
 
   def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit = {}
 

@@ -83,13 +83,13 @@ trait Event {
     MessageInfo.buildFor(this, maybeConversation, services)
   }
 
-  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[EventUserData]]
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]]
 
-  def messageUserDataList(services: DefaultServices)(implicit ec: ExecutionContext): Future[Set[EventUserData]] = {
+  def messageUserDataList(services: DefaultServices)(implicit ec: ExecutionContext): Future[Set[UserData]] = {
     services.dataService.run(messageUserDataListAction(services))
   }
 
-  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext): Future[Set[EventUserData]] = {
+  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext): Future[Set[UserData]] = {
     messageUserDataList(services).map { list =>
       list ++ maybeConversation.flatMap { conversation =>
         services.cacheService.getMessageUserDataList(conversation.id)

@@ -4,14 +4,14 @@ import akka.actor.ActorSystem
 import json.Formatting._
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, EventUserData}
+import models.behaviors.events.{Event, UserData}
 import play.api.libs.json._
 import services.DefaultServices
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
-case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option[MessageInfo], maybeUserData: Option[EventUserData]) {
+case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option[MessageInfo], maybeUserData: Option[UserData]) {
 
   def toJson: JsObject = {
     val linkInfo = JsArray(links.map(_.toJson))

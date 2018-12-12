@@ -15,7 +15,7 @@ import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.profile.SlackProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.slack.SlackMessageEvent
-import models.behaviors.events.{Event, EventUserData}
+import models.behaviors.events.{Event, UserData}
 import models.team.Team
 import play.api.Logger
 import services.DefaultServices
@@ -168,7 +168,7 @@ class UserServiceImpl @Inject() (
     } yield isAdmin
   }
 
-  def userDataFor(user: User, team: Team): Future[EventUserData] = {
+  def userDataFor(user: User, team: Team): Future[UserData] = {
     if (user.teamId != team.id) {
       for {
         isAdmin <- isAdmin(user)
@@ -179,14 +179,14 @@ class UserServiceImpl @Inject() (
         }
       } yield {
         if (isAdmin) {
-          EventUserData.asAdmin(user.id)
+          UserData.asAdmin(user.id)
         } else {
           if (hasNoSlackLinkedAccount) {
             Logger.warn(s"User data requested but no Slack linked account exists for user ID ${user.id} with team ID ${user.teamId}")
           } else {
             Logger.error(s"Non-admin user data requested with mismatched team ID: user ID ${user.id} with team ID ${user.teamId} compared to requested team ID ${team.id}")
           }
-          EventUserData.withoutProfile(user.id)
+          UserData.withoutProfile(user.id)
         }
       }
     } else {
@@ -198,9 +198,9 @@ class UserServiceImpl @Inject() (
     }
   }
 
-  private def userDataFor(user: User, team: Team, maybeSlackUserData: Option[SlackUserData]): EventUserData = {
-    maybeSlackUserData.map(d => EventUserData.fromSlackUserData(user, d)).getOrElse {
-      EventUserData.withoutProfile(user.id)
+  private def userDataFor(user: User, team: Team, maybeSlackUserData: Option[SlackUserData]): UserData = {
+    maybeSlackUserData.map(d => UserData.fromSlackUserData(user, d)).getOrElse {
+      UserData.withoutProfile(user.id)
     }
   }
 
@@ -229,7 +229,7 @@ class UserServiceImpl @Inject() (
     } yield maybeUserData
   }
 
-  def maybeUserDataForEmail(email: String, team: Team): Future[Option[EventUserData]] = {
+  def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]] = {
     // TODO: Slack-specific for now; in future we might want to lookup users from other sources
     for {
       maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
@@ -241,7 +241,7 @@ class UserServiceImpl @Inject() (
         for {
           user <- ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, slackUserData.accountId), team.id)
         } yield {
-          maybeSlackUserData.map(d => EventUserData.fromSlackUserData(user, d))
+          maybeSlackUserData.map(d => UserData.fromSlackUserData(user, d))
         }
       }.getOrElse(Future.successful(None))
     } yield maybeUserData

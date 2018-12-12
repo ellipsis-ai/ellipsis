@@ -16,7 +16,7 @@ trait RunEvent extends Event {
 
   val messageText: String = ""
   val includesBotMention: Boolean = false
-  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[EventUserData]] = DBIO.successful(Set.empty)
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = DBIO.successful(Set.empty)
 
   val isResponseExpected: Boolean = false
   val invocationLogText: String = s"Running behavior ${behaviorVersion.id}"

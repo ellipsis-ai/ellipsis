@@ -331,7 +331,7 @@ class APIController @Inject() (
     }
   }
 
-  case class FindUsersResult(users: Seq[EventUserData])
+  case class FindUsersResult(users: Seq[UserData])
 
   implicit val findUsersResultWrites = Json.writes[FindUsersResult]
 

@@ -131,7 +131,7 @@ sealed trait EventContext {
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[EventUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -397,7 +397,7 @@ case class SlackEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[EventUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -601,7 +601,7 @@ case class MSTeamsEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[EventUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -735,7 +735,7 @@ case class TestEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[EventUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
