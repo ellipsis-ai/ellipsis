@@ -8,7 +8,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.ellipsisobject.{BotInfo, MessageInfo, UserInfo}
+import models.behaviors.ellipsisobject._
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.triggers.Trigger
 import models.team.Team
@@ -76,12 +76,23 @@ trait Event {
     dataService.run(ensureUserAction(dataService))
   }
 
-  def userInfoAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
-    UserInfo.buildForAction(this, maybeConversation, services)
+  def deprecatedUserInfoAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[DeprecatedUserInfo] = {
+    DeprecatedUserInfo.buildForAction(this, maybeConversation, services)
   }
 
-  def messageInfo(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
-    MessageInfo.buildFor(this, maybeConversation, services)
+  def deprecatedMessageInfo(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[DeprecatedMessageInfo] = {
+    DeprecatedMessageInfo.buildFor(this, maybeConversation, services)
+  }
+
+  def eventUserAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[EventUser] = {
+    EventUser.buildForAction(this, maybeConversation, services)
+  }
+
+  def maybeMessageInfoAction(
+                        maybeConversation: Option[Conversation],
+                        services: DefaultServices
+                      )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[Message]] = {
+    DBIO.successful(None)
   }
 
   def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]]
@@ -90,12 +101,16 @@ trait Event {
     services.dataService.run(messageUserDataListAction(services))
   }
 
-  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext): Future[Set[UserData]] = {
-    messageUserDataList(services).map { list =>
+  def messageUserDataListAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
+    messageUserDataListAction(services).map { list =>
       list ++ maybeConversation.flatMap { conversation =>
         services.cacheService.getMessageUserDataList(conversation.id)
       }.getOrElse(Seq.empty)
     }
+  }
+
+  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext): Future[Set[UserData]] = {
+    services.dataService.run(messageUserDataListAction(maybeConversation, services))
   }
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {

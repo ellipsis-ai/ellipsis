@@ -12,27 +12,23 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
-case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option[MessageInfo], maybeUserData: Option[UserData]) {
+case class EventUser(user: User, links: Seq[LinkedInfo], maybeUserData: Option[UserData]) {
 
   def toJson: JsObject = {
-    val linkInfo = JsArray(links.map(_.toJson))
-    val messageInfo = maybeMessageInfo.map(info => Json.toJsObject(info)).getOrElse(Json.obj())
+    val linksPart = Json.obj("links" -> JsArray(links.map(_.toJson)))
     val userDataPart = maybeUserData.map(data => Json.toJsObject(data)).getOrElse(Json.obj())
-    Json.obj(
-      "links" -> linkInfo,
-      "messageInfo" -> messageInfo
-    ) ++ userDataPart
+    linksPart ++ userDataPart
   }
 }
 
-object UserInfo {
+object EventUser {
 
   def buildForAction(
                       user: User,
                       event: Event,
                       maybeConversation: Option[Conversation],
                       services: DefaultServices
-                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[EventUser] = {
     for {
       linkedOAuth1Tokens <- services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)
       linkedOAuth2Tokens <- services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)
@@ -46,13 +42,12 @@ object UserInfo {
           LinkedInfo(ea.api.name, ea.accessToken)
         }
       }
-      messageInfo <- DBIO.from(event.messageInfo(maybeConversation, services))
       maybeTeam <- services.dataService.teams.findAction(user.teamId)
       maybeUserData <- maybeTeam.map { team =>
         DBIO.from(services.dataService.users.userDataFor(user, team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
-      UserInfo(user, links, Some(messageInfo), maybeUserData)
+      EventUser(user, links, maybeUserData)
     }
   }
 
@@ -60,7 +55,7 @@ object UserInfo {
                       event: Event,
                       maybeConversation: Option[Conversation],
                       services: DefaultServices
-                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[EventUser] = {
     for {
       user <- event.ensureUserAction(services.dataService)
       info <- buildForAction(user, event, maybeConversation, services)

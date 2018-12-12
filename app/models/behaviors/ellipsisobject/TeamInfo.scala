@@ -42,7 +42,7 @@ case class TeamInfo(team: Team, links: Seq[LinkedInfo], requiredAWSConfigs: Seq[
 
 object TeamInfo {
 
-  def forConfig(apiConfigInfo: ApiConfigInfo, userInfo: UserInfo, team: Team, maybeBotInfo: Option[BotInfo], ws: WSClient)
+  def forConfig(apiConfigInfo: ApiConfigInfo, userInfo: DeprecatedUserInfo, team: Team, maybeBotInfo: Option[BotInfo], ws: WSClient)
                (implicit ec: ExecutionContext): Future[TeamInfo] = {
     val oauth2ApplicationsNeedingRefresh =
       apiConfigInfo.requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).

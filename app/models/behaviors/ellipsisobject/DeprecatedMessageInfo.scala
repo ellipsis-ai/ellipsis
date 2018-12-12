@@ -9,7 +9,7 @@ import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class MessageInfo(
+case class DeprecatedMessageInfo(
                         text: String,
                         medium: String,
                         mediumDescription: String,
@@ -22,19 +22,19 @@ case class MessageInfo(
                         reactionAdded: Option[String]
                       )
 
-object MessageInfo {
+object DeprecatedMessageInfo {
 
   def buildFor(
                 event: Event,
                 maybeConversation: Option[Conversation],
                 services: DefaultServices
-              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
+              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[DeprecatedMessageInfo] = {
     for {
       details <- event.detailsFor(services)
       maybePermalink <- event.maybePermalinkFor(services)
       userDataList <- event.messageUserDataList(maybeConversation, services)
     } yield {
-      MessageInfo(
+      DeprecatedMessageInfo(
         event.messageText,
         event.eventContext.name,
         event.eventContext.description,
