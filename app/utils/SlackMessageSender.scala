@@ -183,16 +183,16 @@ case class SlackMessageSender(
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val channel = channelToUse(maybeChannelToForce)
-    val maybeThreadTs = maybeThreadTsToUse(channel)
-    maybeResponseUrlToUse(channel).map { responseUrl =>
+    val responseChannel = channelToUse(maybeChannelToForce)
+    val maybeThreadTs = maybeThreadTsToUse(responseChannel)
+    maybeResponseUrlToUse(responseChannel).map { responseUrl =>
       client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral).map(_ => None)
     }.getOrElse {
-      if (isEphemeral && !SlackEventContext.channelIsDM(channel)) {
-        postEphemeralMessage(text, maybeAttachments, channel, maybeThreadTs).map(_ => None)
+      if (isEphemeral && !SlackEventContext.channelIsDM(responseChannel)) {
+        postEphemeralMessage(text, maybeAttachments, responseChannel, maybeThreadTs).map(_ => None)
       } else {
         client.postChatMessage(
-          channel,
+          responseChannel,
           text,
           username = None,
           asUser = Some(true),
@@ -207,7 +207,7 @@ case class SlackMessageSender(
           deleteOriginal = None,
           threadTs = maybeThreadTs,
           replyBroadcast = None
-        ).map(ts => Some(ts)).recover(postErrorRecovery(channel, text))
+        ).map(ts => Some(ts)).recover(postErrorRecovery(responseChannel, text))
       }
     }
   }
