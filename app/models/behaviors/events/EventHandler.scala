@@ -79,7 +79,7 @@ class EventHandler @Inject() (
         cancelConversationResult(event, updatedConvo, s"OK, I’ll stop asking about that.")
       } else {
         if (originalConvo.isStale) {
-          updatedConvo.maybeNextParamToCollect(event, services).map { maybeNextParam =>
+          updatedConvo.maybeNextParamToCollect(event, services).flatMap { maybeNextParam =>
             val maybeLastPrompt = maybeNextParam.map { nextParam =>
               nextParam.input.question
             }
@@ -100,14 +100,16 @@ class EventHandler @Inject() (
               s"It’s been a while since I asked you the question above."
             } + s"\n\nJust so I’m sure, is this an answer?"
 
-            val attachment = eventContext.messageAttachmentFor(
-              maybeText = Some(event.relevantMessageTextWithFormatting),
-              maybeUserDataList = Some(event.messageUserDataList(Some(updatedConvo), services)),
-              maybeColor = Some(Color.PINK),
-              maybeCallbackId = Some(callbackId),
-              actions = actionList
-            )
-            TextWithAttachmentsResult(event, Some(updatedConvo), prompt, responseType = Normal, Seq(attachment))
+            event.messageUserDataList(Some(updatedConvo), services).map { userDataList =>
+              val attachment = eventContext.messageAttachmentFor(
+                maybeText = Some(event.relevantMessageTextWithFormatting),
+                maybeUserDataList = Some(userDataList),
+                maybeColor = Some(Color.PINK),
+                maybeCallbackId = Some(callbackId),
+                actions = actionList
+              )
+              TextWithAttachmentsResult(event, Some(updatedConvo), prompt, responseType = Normal, Seq(attachment))
+            }
           }
         } else {
           val eventualResult = dataService.run(updatedConvo.resultForAction(event, services))
@@ -149,16 +151,19 @@ class EventHandler @Inject() (
 
   def handle(event: Event, maybeConversation: Option[Conversation]): Future[Seq[BotResult]] = {
     (maybeConversation.map { conversation =>
-      cacheService.cacheMessageUserDataList(event.messageUserDataList.toSeq, conversation.id)
-      dataService.run(dataService.parentConversations.rootForAction(conversation)).flatMap { root =>
-        val isUninterrupted = event.maybeThreadId.isDefined || cacheService.eventHasLastConversationId(event, root.id)
-        if (event.maybeThreadId.isEmpty) {
-          cacheService.updateLastConversationIdFor(event, root.id)
+      for {
+        userDataList <- event.messageUserDataList(services)
+        _ <- Future.successful(cacheService.cacheMessageUserDataList(userDataList.toSeq, conversation.id))
+        result <- dataService.run(dataService.parentConversations.rootForAction(conversation)).flatMap { root =>
+          val isUninterrupted = event.maybeThreadId.isDefined || cacheService.eventHasLastConversationId(event, root.id)
+          if (event.maybeThreadId.isEmpty) {
+            cacheService.updateLastConversationIdFor(event, root.id)
+          }
+          handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
+            event.withOriginalEventType(eventType, isUninterrupted)
+          }.getOrElse(event)).map(Seq(_))
         }
-        handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
-          event.withOriginalEventType(eventType, isUninterrupted)
-        }.getOrElse(event)).map(Seq(_))
-      }
+      } yield result
     }.getOrElse {
       event.maybeChannel.foreach { channel =>
         if (event.maybeThreadId.isEmpty) {

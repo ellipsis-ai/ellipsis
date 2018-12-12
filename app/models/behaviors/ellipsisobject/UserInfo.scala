@@ -5,7 +5,7 @@ import json.Formatting._
 import json.UserData
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, EventUserData}
+import models.behaviors.events.Event
 import play.api.libs.json._
 import services.DefaultServices
 import slick.dbio.DBIO
@@ -17,15 +17,7 @@ case class UserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option
   def toJson: JsObject = {
     val linkInfo = JsArray(links.map(_.toJson))
     val messageInfo = maybeMessageInfo.map(info => Json.toJsObject(info)).getOrElse(Json.obj())
-    val userDataPart = Json.toJsObject(EventUserData(
-      maybeUserData.flatMap(_.context).getOrElse("unknown"),
-      maybeUserData.map(_.userNameOrDefault).getOrElse("unknown"),
-      Some(user.id),
-      maybeUserData.flatMap(_.userIdForContext).orElse(maybeMessageInfo.map(_.userId)),
-      maybeUserData.flatMap(_.fullName),
-      maybeUserData.flatMap(_.email),
-      maybeUserData.flatMap(_.tz)
-    ))
+    val userDataPart = maybeUserData.map(data => Json.toJsObject(data)).getOrElse(Json.obj())
     Json.obj(
       "links" -> linkInfo,
       "messageInfo" -> messageInfo

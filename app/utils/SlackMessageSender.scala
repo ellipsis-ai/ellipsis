@@ -2,6 +2,7 @@ package utils
 
 import akka.actor.ActorSystem
 import json.Formatting._
+import json.UserData
 import models.SlackMessageFormatter
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
@@ -84,7 +85,7 @@ case class SlackMessageSender(
                                choices: Seq[ActionChoice],
                                configuration: Configuration,
                                botName: String,
-                               userDataList: Set[EventUserData],
+                               userDataList: Set[UserData],
                                services: DefaultServices,
                                isEphemeral: Boolean,
                                maybeResponseUrl: Option[String],

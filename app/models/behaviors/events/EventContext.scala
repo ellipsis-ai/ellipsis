@@ -3,7 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
-import json.SlackUserData
+import json.{SlackUserData, UserData}
 import models.accounts.{MSTeamsContext, SlackContext}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -131,7 +131,7 @@ sealed trait EventContext {
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[EventUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -293,6 +293,7 @@ case class SlackEventContext(
     for {
       maybeDMChannel <- eventualMaybeDMChannel(services)
       botName <- botName(services)
+      userDataList <- event.messageUserDataList(maybeConversation, services)
       maybeTs <- SlackMessageSender(
         services.slackApiService.clientFor(profile),
         userIdForContext,
@@ -310,7 +311,7 @@ case class SlackEventContext(
         choices,
         services.configuration,
         botName,
-        event.messageUserDataList(maybeConversation, services),
+        userDataList,
         services,
         event.isEphemeral,
         event.maybeResponseUrl,
@@ -396,7 +397,7 @@ case class SlackEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[EventUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -493,6 +494,7 @@ case class MSTeamsEventContext(
     for {
       maybeDMChannel <- eventualMaybeDMChannel(services)
       botName <- botName(services)
+      userDataList <- event.messageUserDataList(maybeConversation, services)
       maybeResult <- MSTeamsMessageSender(
         services.msTeamsApiService.profileClientFor(profile),
         userIdForContext,
@@ -510,7 +512,7 @@ case class MSTeamsEventContext(
         files,
         choices,
         botName,
-        event.messageUserDataList(maybeConversation, services),
+        userDataList,
         services,
         event.isEphemeral,
         event.beQuiet
@@ -599,7 +601,7 @@ case class MSTeamsEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[EventUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -733,7 +735,7 @@ case class TestEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[EventUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,

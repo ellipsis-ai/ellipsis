@@ -1,6 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import json.UserData
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
@@ -83,12 +84,18 @@ trait Event {
     MessageInfo.buildFor(this, maybeConversation, services)
   }
 
-  def messageUserDataList: Set[EventUserData]
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]]
 
-  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices): Set[EventUserData] = {
-    messageUserDataList ++ maybeConversation.flatMap { conversation =>
-      services.cacheService.getMessageUserDataList(conversation.id)
-    }.getOrElse(Seq.empty)
+  def messageUserDataList(services: DefaultServices)(implicit ec: ExecutionContext): Future[Set[UserData]] = {
+    services.dataService.run(messageUserDataListAction(services))
+  }
+
+  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext): Future[Set[UserData]] = {
+    messageUserDataList(services).map { list =>
+      list ++ maybeConversation.flatMap { conversation =>
+        services.cacheService.getMessageUserDataList(conversation.id)
+      }.getOrElse(Seq.empty)
+    }
   }
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {

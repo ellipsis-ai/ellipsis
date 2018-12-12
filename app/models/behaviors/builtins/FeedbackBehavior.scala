@@ -102,7 +102,7 @@ object FeedbackBehavior {
       val fullName = userData.fullName.getOrElse("Unknown user")
       val userName = userData.userName.map(userName => s"@$userName").getOrElse("unknown username")
       val email = userData.email.getOrElse("(unknown)")
-      val tz = userData.tz.getOrElse("(unknown)")
+      val tz = userData.timeZone.getOrElse("(unknown)")
       s"""> Name: ${fullName} (${userName})
          |> Email: ${email}
          |> Time zone: ${tz}

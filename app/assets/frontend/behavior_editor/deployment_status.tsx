@@ -103,7 +103,7 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
   userNameFor(user: Option<User>): string {
     if (!user) {
       return "unknown";
-    } else if (user.id === this.props.currentUserId) {
+    } else if (user.ellipsisUserId === this.props.currentUserId) {
       return "you";
     } else {
       return user.formattedFullNameOrUserName();

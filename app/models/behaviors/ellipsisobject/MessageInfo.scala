@@ -1,8 +1,9 @@
 package models.behaviors.ellipsisobject
 
 import akka.actor.ActorSystem
+import json.UserData
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.{Event, EventUserData}
+import models.behaviors.events.Event
 import play.api.libs.json._
 import services.DefaultServices
 
@@ -16,7 +17,7 @@ case class MessageInfo(
                         thread: Option[String],
                         userId: String,
                         details: JsObject,
-                        usersMentioned: Set[EventUserData],
+                        usersMentioned: Set[UserData],
                         permalink: Option[String],
                         reactionAdded: Option[String]
                       )
@@ -31,6 +32,7 @@ object MessageInfo {
     for {
       details <- event.detailsFor(services)
       maybePermalink <- event.maybePermalinkFor(services)
+      userDataList <- event.messageUserDataList(maybeConversation, services)
     } yield {
       MessageInfo(
         event.messageText,
@@ -40,7 +42,7 @@ object MessageInfo {
         event.maybeThreadId,
         event.eventContext.userIdForContext,
         details,
-        event.messageUserDataList(maybeConversation, services),
+        userDataList,
         maybePermalink,
         event.maybeReactionAdded
       )

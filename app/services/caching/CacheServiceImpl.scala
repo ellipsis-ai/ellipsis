@@ -8,7 +8,7 @@ import akka.http.caching.scaladsl.{Cache, CachingSettings}
 import com.amazonaws.services.lambda.model.InvokeResult
 import javax.inject.{Inject, Provider, Singleton}
 import json.Formatting._
-import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
+import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.IDs
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -311,14 +311,14 @@ class CacheServiceImpl @Inject() (
     s"conversation-${conversationId}-messageUserDataList-v1"
   }
 
-  def cacheMessageUserDataList(messageUserDataList: Seq[EventUserData], conversationId: String): Unit = {
+  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Unit = {
     val maybeExisting = getMessageUserDataList(conversationId)
     set(cacheKeyForMessageUserDataList(conversationId), Json.toJson(maybeExisting.getOrElse(Seq()) ++ messageUserDataList), Duration.Inf)
   }
 
-  def getMessageUserDataList(conversationId: String): Option[Seq[EventUserData]] = {
+  def getMessageUserDataList(conversationId: String): Option[Seq[UserData]] = {
     get[JsValue](cacheKeyForMessageUserDataList(conversationId)).flatMap { json =>
-      json.validate[Seq[EventUserData]] match {
+      json.validate[Seq[UserData]] match {
         case JsSuccess(data, _) => Some(data)
         case JsError(_) => None
       }

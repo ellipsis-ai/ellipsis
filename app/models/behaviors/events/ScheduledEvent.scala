@@ -1,6 +1,7 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import json.UserData
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.conversations.conversation.Conversation
@@ -13,6 +14,7 @@ import models.behaviors.{ActionChoice, DeveloperContext}
 import models.team.Team
 import play.api.libs.json.JsObject
 import services.DefaultServices
+import slick.dbio.DBIO
 import utils.UploadFileSpec
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,7 +55,7 @@ sealed trait ScheduledEvent extends Event {
   lazy val invocationLogText: String = underlying.invocationLogText
   lazy val isResponseExpected: Boolean = underlying.isResponseExpected
   override val maybeScheduled: Option[Scheduled] = Some(scheduled)
-  def messageUserDataList: Set[EventUserData] = underlying.messageUserDataList
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = underlying.messageUserDataListAction(services)
 
   val maybeMessageIdForReaction: Option[String] = None
 

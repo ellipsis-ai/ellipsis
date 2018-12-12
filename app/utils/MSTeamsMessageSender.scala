@@ -2,6 +2,7 @@ package utils
 
 import akka.actor.ActorSystem
 import json.Formatting._
+import json.UserData
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
@@ -52,7 +53,7 @@ case class MSTeamsMessageSender(
                                  files: Seq[UploadFileSpec] = Seq(),
                                  choices: Seq[ActionChoice],
                                  botName: String,
-                                 userDataList: Set[EventUserData],
+                                 userDataList: Set[UserData],
                                  services: DefaultServices,
                                  isEphemeral: Boolean,
                                  beQuiet: Boolean

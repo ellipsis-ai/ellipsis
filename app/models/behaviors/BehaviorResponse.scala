@@ -182,8 +182,7 @@ case class BehaviorResponse(
                 maybeThreadId,
                 maybeActivatedTrigger,
                 maybeNewParent,
-                dataService,
-                cacheService
+                services
               )
               _ <- Future.sequence(parametersWithValues.map { p =>
                 p.maybeValue.map { v =>

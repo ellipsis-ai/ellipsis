@@ -1,10 +1,14 @@
 package models.behaviors.events.slack
 
+import com.mohiva.play.silhouette.api.LoginInfo
+import json.UserData
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
-import models.behaviors.events.{Event, EventType, EventUserData, SlackEventContext}
+import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.{Event, EventType, SlackEventContext}
 import models.team.Team
 import services.DefaultServices
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -59,10 +63,10 @@ case class SlackReactionAddedEvent(
   }
 
 
-  def messageUserDataList: Set[EventUserData] = {
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
     maybeMessage.map { message =>
-      message.userList.map(EventUserData.fromSlackUserData)
-    }.getOrElse(Set())
+      UserData.allFromSlackUserDataListAction(message.userList, ellipsisTeamId, services)
+    }.getOrElse(DBIO.successful(Set()))
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this

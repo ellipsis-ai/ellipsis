@@ -1,10 +1,13 @@
 package models.behaviors.events.slack
 
 import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
+import json.UserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import services.{DataService, DefaultServices}
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
@@ -66,8 +69,8 @@ case class SlackMessageEvent(
 
   lazy val includesBotMention: Boolean = eventContext.isDirectMessage || profile.includesBotMention(message)
 
-  def messageUserDataList: Set[EventUserData] = {
-    message.userList.map(EventUserData.fromSlackUserData)
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
+    UserData.allFromSlackUserDataListAction(message.userList, ellipsisTeamId, services)
   }
 
   override val isResponseExpected: Boolean = includesBotMention
