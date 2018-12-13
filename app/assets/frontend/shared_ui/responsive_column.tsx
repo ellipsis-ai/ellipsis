@@ -1,17 +1,17 @@
 import * as React from 'react';
 
-const ResponsiveColumn = React.createClass({
-    propTypes: {
-      children: React.PropTypes.node.isRequired
-    },
+interface Props {
+  children: React.ReactNode
+}
 
-    render: function() {
+class ResponsiveColumn extends React.Component<Props> {
+    render() {
       return (
         <div className="column column-one-third narrow-column-one-half mobile-column-full phl pbxxl mobile-pbl">
           {this.props.children}
         </div>
       );
     }
-});
+}
 
 export default ResponsiveColumn;

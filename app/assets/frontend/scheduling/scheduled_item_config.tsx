@@ -4,72 +4,91 @@ import Select from '../form/select';
 import FormInput from '../form/input';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import BehaviorGroup from '../models/behavior_group';
-import ScheduledAction from '../models/scheduled_action';
+import ScheduledAction, {ScheduledActionArgument} from '../models/scheduled_action';
 import Sort from '../lib/sort';
+import autobind from "../lib/autobind";
+import Button from "../form/button";
 
-const ScheduledItemTitle = React.createClass({
-    propTypes: {
-      scheduledAction: React.PropTypes.instanceOf(ScheduledAction).isRequired,
-      behaviorGroups: React.PropTypes.arrayOf(React.PropTypes.instanceOf(BehaviorGroup)).isRequired,
-      onChangeTriggerText: React.PropTypes.func.isRequired,
-      onChangeAction: React.PropTypes.func.isRequired
-    },
+interface Props {
+  scheduledAction: ScheduledAction
+  behaviorGroups: Array<BehaviorGroup>
+  onChangeTriggerText: (text: string) => void
+  onChangeAction: (behaviorId: string, newArgs: Array<ScheduledActionArgument>, callback?: () => void) => void
+}
 
-    getActionId: function() {
+class ScheduledItemTitle extends React.PureComponent<Props> {
+    nameInputs: Array<Option<FormInput>>;
+
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+      this.nameInputs = [];
+    }
+
+    getActionId(): Option<string> {
       return this.props.scheduledAction.behaviorId;
-    },
+    }
 
-    getArguments: function() {
+    getArguments(): Array<ScheduledActionArgument> {
       return this.props.scheduledAction.arguments;
-    },
+    }
 
-    getTriggerText: function() {
+    getTriggerText(): string {
       return this.props.scheduledAction.trigger || "";
-    },
+    }
 
-    hasTriggerText: function() {
+    hasTriggerText(): boolean {
       return typeof this.props.scheduledAction.trigger === "string";
-    },
+    }
 
-    onChangeTriggerText: function(newText) {
+    onChangeTriggerText(newText: string): void {
       this.props.onChangeTriggerText(newText);
-    },
+    }
 
-    onChangeAction: function(newId) {
+    onChangeAction(newId: string): void {
       this.props.onChangeAction(newId, this.getArguments());
-    },
+    }
 
-    onChangeArgument: function(index, newArg) {
+    onChangeArgument(index: number, newArg: ScheduledActionArgument): void {
       const newArgs = ImmutableObjectUtils.arrayWithNewElementAtIndex(this.getArguments(), newArg, index);
-      this.props.onChangeAction(this.getActionId(), newArgs);
-    },
+      const id = this.getActionId();
+      if (id) {
+        this.props.onChangeAction(id, newArgs);
+      }
+    }
 
-    onDeleteArgument: function(index) {
+    onDeleteArgument(index: number): void {
       const newArgs = ImmutableObjectUtils.arrayRemoveElementAtIndex(this.getArguments(), index);
-      this.props.onChangeAction(this.getActionId(), newArgs);
-    },
+      const id = this.getActionId();
+      if (id) {
+        this.props.onChangeAction(id, newArgs);
+      }
+    }
 
-    onChangeArgumentName: function(index, newName) {
+    onChangeArgumentName(index: number, newName: string): void {
       const oldArg = this.getArguments()[index];
       this.onChangeArgument(index, { name: newName, value: oldArg.value });
-    },
+    }
 
-    onChangeArgumentValue: function(index, newValue) {
+    onChangeArgumentValue(index: number, newValue: string): void {
       const oldArg = this.getArguments()[index];
       this.onChangeArgument(index, { name: oldArg.name, value: newValue });
-    },
+    }
 
-    addArgument: function() {
-      this.props.onChangeAction(this.getActionId(), this.getArguments().concat({ name: "", value: "" }), () => {
-        const lastIndex = this.getArguments().length - 1;
-        const nameInput = this.refs[`argumentName${lastIndex}`];
-        if (nameInput) {
-          nameInput.focus();
-        }
-      });
-    },
+    addArgument(): void {
+      const id = this.getActionId();
+      if (id) {
+        this.props.onChangeAction(id, this.getArguments().concat({ name: "", value: "" }), () => {
+          const lastIndex = this.getArguments().length - 1;
+          const nameInput = this.nameInputs[lastIndex];
+          if (nameInput) {
+            nameInput.focus();
+          }
+        });
+      }
+    }
 
-    getActionOptions: function() {
+    getActionOptions(): Array<{ name: string, value: string }> {
       const group = this.props.behaviorGroups.find((ea) => ea.id === this.props.scheduledAction.behaviorGroupId);
       if (group) {
         const namedActions = group.getActions().filter((ea) => {
@@ -85,9 +104,9 @@ const ScheduledItemTitle = React.createClass({
       } else {
         return [];
       }
-    },
+    }
 
-    renderTriggerConfig: function() {
+    renderTriggerConfig() {
       return (
         <div>
           <div className="type-s mbxs">Run any action triggered by the message:</div>
@@ -97,9 +116,9 @@ const ScheduledItemTitle = React.createClass({
           />
         </div>
       );
-    },
+    }
 
-    renderActionConfig: function() {
+    renderActionConfig() {
       const actions = this.getActionOptions();
       const skillName = this.props.scheduledAction.getSkillNameFromGroups(this.props.behaviorGroups);
       return (
@@ -109,7 +128,7 @@ const ScheduledItemTitle = React.createClass({
             <span className="align-button mrm height-xl">
               <Select
                 className="form-select-s width-10"
-                value={this.props.scheduledAction.behaviorId}
+                value={this.props.scheduledAction.behaviorId || ""}
                 onChange={this.onChangeAction}
               >
                 {actions.map((ea) => (
@@ -130,9 +149,9 @@ const ScheduledItemTitle = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderArguments: function() {
+    renderArguments() {
       const args = this.getArguments();
       if (args.length > 0) {
         return (
@@ -145,7 +164,7 @@ const ScheduledItemTitle = React.createClass({
             {args.map((arg, index) => (
               <div className="columns" key={`argument${index}`}>
                 <div className="column column-one-third">
-                  <FormInput ref={`argumentName${index}`} className="form-input-borderless" value={arg.name}
+                  <FormInput ref={(el) => this.nameInputs[index] = el} className="form-input-borderless" value={arg.name}
                     onChange={this.onChangeArgumentName.bind(this, index)}/>
                 </div>
                 <div className="column column-two-thirds">
@@ -165,26 +184,26 @@ const ScheduledItemTitle = React.createClass({
               </div>
             ))}
             <div className="mtm">
-              <button type="button" className="button-s" onClick={this.addArgument}>Add another input</button>
+              <Button className="button-s" onClick={this.addArgument}>Add another input</Button>
             </div>
           </div>
         );
       } else {
         return (
           <div className="mtm">
-            <button type="button" className="button-s" onClick={this.addArgument}>Provide input answers</button>
+            <Button className="button-s" onClick={this.addArgument}>Provide input answers</Button>
           </div>
         );
       }
-    },
+    }
 
-    render: function() {
+    render() {
       if (this.hasTriggerText()) {
         return this.renderTriggerConfig();
       } else {
         return this.renderActionConfig();
       }
     }
-});
+}
 
 export default ScheduledItemTitle;
