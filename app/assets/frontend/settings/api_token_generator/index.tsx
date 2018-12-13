@@ -2,67 +2,83 @@ import * as React from 'react';
 import APIRequestHelp from './api_request_help';
 import Collapsible from '../../shared_ui/collapsible';
 import CSRFTokenHiddenInput from '../../shared_ui/csrf_token_hidden_input';
-import Formatter from '../../lib/formatter';
+import Formatter, {Timestamp} from '../../lib/formatter';
 import HelpButton from '../../help/help_button';
 import FormInput from '../../form/input';
-import Page from '../../shared_ui/page';
+import {PageRequiredProps} from '../../shared_ui/page';
 import SettingsPage from '../../shared_ui/settings_page';
+import autobind from "../../lib/autobind";
 
-var revokeForm = jsRoutes.controllers.APITokenController.revokeToken();
-var createForm = jsRoutes.controllers.APITokenController.createToken();
+const revokeForm = jsRoutes.controllers.APITokenController.revokeToken();
+const createForm = jsRoutes.controllers.APITokenController.createToken();
 
-const ApiTokenGenerator = React.createClass({
-    propTypes: Object.assign({}, Page.requiredPropTypes, {
-      csrfToken: React.PropTypes.string.isRequired,
-      isAdmin: React.PropTypes.bool.isRequired,
-      teamId: React.PropTypes.string.isRequired,
-      tokens: React.PropTypes.arrayOf(React.PropTypes.shape({
-        id: React.PropTypes.string.isRequired,
-        label: React.PropTypes.string.isRequired,
-        lastUsed: React.PropTypes.string,
-        createdAt: React.PropTypes.string.isRequired,
-        isRevoked: React.PropTypes.bool.isRequired
-      })).isRequired,
-      justCreatedTokenId: React.PropTypes.string,
-      canGenerateTokens: React.PropTypes.bool.isRequired
-    }),
+interface ApiToken {
+  id: string
+  label: string
+  lastUsed?: Option<string>
+  createdAt: Timestamp
+  isRevoked: boolean
+}
 
-    getDefaultProps: function() {
-      return Page.requiredPropDefaults();
-    },
+interface ApiTokenGeneratorProps {
+  csrfToken: string
+  isAdmin: boolean
+  teamId: string
+  tokens: Array<ApiToken>
+  justCreatedTokenId?: Option<string>
+  canGenerateTokens: boolean
+}
 
-    sortByMostRecent: function(tokens) {
-      return tokens.map(t => t).sort((a, b) => a.createdAt < b.createdAt);
-    },
+interface State {
+  newTokenLabel: string
+}
 
-    getInitialState: function() {
-      return {
-        newTokenLabel: "",
-        tokens: this.sortByMostRecent(this.props.tokens)
-      };
-    },
+type Props = ApiTokenGeneratorProps & PageRequiredProps
 
-    getTokens: function() {
-      return this.state.tokens;
-    },
+class ApiTokenGenerator extends React.Component<Props, State> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+      this.state = {
+        newTokenLabel: ""
+      }
+    }
 
-    getNewTokenLabel: function() {
+    sortByMostRecent(tokens: Array<ApiToken>): Array<ApiToken> {
+      return tokens.slice().sort((a, b) => {
+        const first = Number(new Date(a.createdAt));
+        const second = Number(new Date(b.createdAt));
+        if (first > second) {
+          return -1;
+        } else if (first < second) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+    }
+
+    getTokens(): Array<ApiToken> {
+      return this.sortByMostRecent(this.props.tokens);
+    }
+
+    getNewTokenLabel(): string {
       return this.state.newTokenLabel;
-    },
+    }
 
-    setNewTokenLabel: function(value) {
+    setNewTokenLabel(value: string): void {
       this.setState({ newTokenLabel: value });
-    },
+    }
 
-    shouldHighlightToken: function(token) {
+    shouldHighlightToken(token: ApiToken): boolean {
       return this.props.justCreatedTokenId === token.id;
-    },
+    }
 
-    toggleApiHelp: function() {
+    toggleApiHelp(): void {
       this.props.onToggleActivePanel('ellipsisApiHelp');
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <SettingsPage teamId={this.props.teamId} activePage={"apiTokens"} isAdmin={this.props.isAdmin}>
           <p>
@@ -86,9 +102,9 @@ const ApiTokenGenerator = React.createClass({
           ))}
         </SettingsPage>
       );
-    },
+    }
 
-    renderTokenList: function() {
+    renderTokenList() {
       return (
         <div className="columns columns-elastic mobile-columns-float">
           <div className="column-group">
@@ -137,18 +153,18 @@ const ApiTokenGenerator = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderNoTokens: function() {
+    renderNoTokens() {
       return (
         <div>
           <hr />
           <p><i>There are no active tokens.</i></p>
         </div>
       );
-    },
+    }
 
-    renderTokenCreator: function() {
+    renderTokenCreator() {
       if (this.props.canGenerateTokens) {
         return (
           <div className="mvxl">
@@ -180,6 +196,6 @@ const ApiTokenGenerator = React.createClass({
         );
       }
     }
-});
+}
 
 export default ApiTokenGenerator;

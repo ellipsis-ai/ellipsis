@@ -2,42 +2,50 @@ import * as React from 'react';
 import Collapsible from '../../shared_ui/collapsible';
 import ExpandButton from '../../shared_ui/expand_button';
 import HelpPanel from '../../help/panel';
+import autobind from "../../lib/autobind";
 
-const APIRequestHelp = React.createClass({
-    propTypes: {
-      onCollapse: React.PropTypes.func.isRequired
-    },
+interface Props {
+  onCollapse: () => void
+}
 
-    getInitialState: function() {
-      return {
+interface State {
+  activeSection: string
+}
+
+class APIRequestHelp extends React.PureComponent<Props, State> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+      this.state = {
         activeSection: "postMessage"
-      };
-    },
+      }
+    }
 
-    toggleActiveSection: function(sectionName) {
+    toggleActiveSection(sectionName: string): void {
       const newSectionName = this.state.activeSection === sectionName ? "" : sectionName;
       this.setState({
         activeSection: newSectionName
       });
-    },
+    }
 
-    togglePostMessage: function() {
+    togglePostMessage(): void {
       this.toggleActiveSection("postMessage");
-    },
+    }
 
-    toggleSay: function() {
+    toggleSay(): void {
       this.toggleActiveSection("say");
-    },
+    }
 
-    collapse: function() {
+    collapse(): void {
       this.props.onCollapse();
-    },
+    }
 
-    getApiUrl(methodName) {
-      return jsRoutes.controllers.api.APIController[methodName]().absoluteURL(true);
-    },
+    getApiUrl(methodName: keyof APIController): string {
+      const method = jsRoutes.controllers.api.APIController[methodName];
+      return method().absoluteURL(true);
+    }
 
-    render: function() {
+    render() {
       return (
         <div>
           <HelpPanel
@@ -104,6 +112,6 @@ const APIRequestHelp = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default APIRequestHelp;
