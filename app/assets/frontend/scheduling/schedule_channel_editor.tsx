@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Checkbox from '../form/checkbox';
 import Collapsible from '../shared_ui/collapsible';
-import SearchWithGroupedResults from '../form/search_with_grouped_results';
+import SearchWithGroupedResults, {LabeledOptionGroup} from '../form/search_with_grouped_results';
 import ChannelName from './channel_name';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
@@ -230,7 +230,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
     }
 
     render() {
-      const channelOptionGroups = this.getFilteredChannelGroups().map(ea => {
+      const channelOptionGroups: Array<LabeledOptionGroup> = this.getFilteredChannelGroups().map(ea => {
         return {
           label: ea.groupName,
           options: ea.channels

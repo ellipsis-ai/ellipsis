@@ -2,43 +2,44 @@ import * as React from 'react';
 import Collapsible from '../../shared_ui/collapsible';
 import CsrfTokenHiddenInput from '../../shared_ui/csrf_token_hidden_input';
 import SettingsPage from '../../shared_ui/settings_page';
-import ifPresent from '../../lib/if_present';
 import FormInput from '../../form/input';
-import Page from '../../shared_ui/page';
+import {NavItemContent, PageRequiredProps} from '../../shared_ui/page';
+import autobind from "../../lib/autobind";
 
-const AwsConfigEditor = React.createClass({
-    propTypes: Object.assign({}, Page.requiredPropTypes, {
-      configId: React.PropTypes.string,
-      name: React.PropTypes.string,
-      requiredNameInCode: React.PropTypes.string,
-      accessKeyId: React.PropTypes.string,
-      secretAccessKey: React.PropTypes.string,
-      region: React.PropTypes.string,
-      configSaved: React.PropTypes.bool,
-      csrfToken: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired,
-      behaviorGroupId: React.PropTypes.string,
-      behaviorId: React.PropTypes.string,
-      documentationUrl: React.PropTypes.string.isRequired,
-      isAdmin: React.PropTypes.bool.isRequired
-    }),
+export interface AwsConfigEditorProps {
+  configId: string
+  name?: Option<string>
+  requiredNameInCode?: string
+  accessKeyId?: Option<string>
+  secretAccessKey?: Option<string>
+  region?: Option<string>
+  configSaved: boolean
+  csrfToken: string
+  teamId: string
+  behaviorGroupId?: Option<string>
+  behaviorId?: Option<string>
+  documentationUrl: string
+  isAdmin: boolean
+}
 
-    componentDidMount: function() {
-      this.renderNav();
-    },
+type Props = PageRequiredProps & AwsConfigEditorProps;
 
-    componentDidUpdate: function() {
-      this.renderNav();
-    },
+interface State {
+  name: string
+  accessKeyId: string
+  secretAccessKey: string
+  region: string
+  hasName: boolean
+  isSaving: boolean
+}
 
-    configNameInput: null,
+class AwsConfigEditor extends React.Component<Props, State> {
+    configNameInput: Option<FormInput>;
 
-    getDefaultProps: function() {
-      return Page.requiredPropDefaults();
-    },
-
-    getInitialState: function() {
-      return {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+      this.state = {
         name: this.props.name || "",
         accessKeyId: this.props.accessKeyId || "",
         secretAccessKey: this.props.secretAccessKey || "",
@@ -46,65 +47,73 @@ const AwsConfigEditor = React.createClass({
         hasName: this.props.configSaved || false,
         isSaving: false
       };
-    },
+    }
 
-    getName: function() {
+    componentDidMount(): void {
+      this.renderNav();
+    }
+
+    componentDidUpdate(): void {
+      this.renderNav();
+    }
+
+    getName(): string {
       return this.state.name;
-    },
+    }
 
-    nameIsEmpty: function() {
+    nameIsEmpty(): boolean {
       return !this.getName();
-    },
+    }
 
-    setName: function(name) {
+    setName(name: string): void {
       this.setState({ name: name });
-    },
+    }
 
-    onNameEnterKey: function() {
+    onNameEnterKey(): void {
       if (!this.nameIsEmpty()) {
         if (this.configNameInput) {
           this.configNameInput.blur();
         }
       }
-    },
+    }
 
-    getAccessKeyId: function() {
+    getAccessKeyId(): string {
       return this.state.accessKeyId;
-    },
+    }
 
-    setAccessKeyId: function(value) {
+    setAccessKeyId(value: string): void {
       this.setState({ accessKeyId: value });
-    },
+    }
 
-    getSecretAccessKey: function() {
+    getSecretAccessKey(): string {
       return this.state.secretAccessKey;
-    },
+    }
 
-    setSecretAccessKey: function(value) {
+    setSecretAccessKey(value: string): void {
       this.setState({ secretAccessKey: value });
-    },
+    }
 
-    getRegion: function() {
+    getRegion(): string {
       return this.state.region;
-    },
+    }
 
-    setRegion: function(value) {
+    setRegion(value: string): void {
       this.setState({ region: value });
-    },
+    }
 
-    canBeSaved: function() {
-      return !!(
+    canBeSaved(): boolean {
+      return Boolean(
         this.getName() && this.getAccessKeyId() && this.getSecretAccessKey() && this.getRegion()
       );
-    },
+    }
 
-    onSaveClick: function() {
+    onSaveClick(): void {
       this.setState({
         isSaving: true
       });
-    },
+    }
 
-    reset: function() {
+    reset() {
       this.setState({
         name: "",
         accessKeyId: "",
@@ -112,27 +121,27 @@ const AwsConfigEditor = React.createClass({
         region: "",
         hasName: false
       });
-    },
+    }
 
-    renderBehaviorGroupId: function() {
+    renderBehaviorGroupId() {
       var id = this.props.behaviorGroupId;
       if (id && id.length > 0) {
         return (<input type="hidden" name="behaviorGroupId" value={id} />);
       } else {
         return null;
       }
-    },
+    }
 
-    renderBehaviorId: function() {
+    renderBehaviorId() {
       var id = this.props.behaviorId;
       if (id && id.length > 0) {
         return (<input type="hidden" name="behaviorId" value={id} />);
       } else {
         return null;
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <SettingsPage teamId={this.props.teamId} activePage={"oauthApplications"} isAdmin={this.props.isAdmin}>
           <form action={jsRoutes.controllers.web.settings.AWSConfigController.save().url} method="POST" className="flex-row-cascade">
@@ -170,19 +179,19 @@ const AwsConfigEditor = React.createClass({
           </form>
         </SettingsPage>
       );
-    },
+    }
 
-    renderNav: function() {
-      const navItems = [{
+    renderNav() {
+      const navItems: Array<NavItemContent> = [{
         title: "Settings"
       }, {
         url: jsRoutes.controllers.web.settings.IntegrationsController.list(this.props.isAdmin ? this.props.teamId : null).url,
         title: "Integrations"
       }];
       this.props.onRenderNavItems(navItems.concat(this.renderConfigNavItems()));
-    },
+    }
 
-    renderConfigNavItems: function() {
+    renderConfigNavItems(): Array<NavItemContent> {
       if (!this.props.configSaved) {
         return [{
           title: "Add AWS configuration"
@@ -194,9 +203,9 @@ const AwsConfigEditor = React.createClass({
           title: title
         }];
       }
-    },
+    }
 
-    renderConfigure: function() {
+    renderConfigure() {
       return (
         <div>
           <p className="mtm mbxl">Set up a new AWS configuration so your skills can access data from an AWS account.</p>
@@ -231,9 +240,9 @@ const AwsConfigEditor = React.createClass({
                 <h4 className="mbn position-relative">
                   <span className="position-hanging-indent">2</span>
                   <span>Ensure that you have set up a profile on your AWS account. </span>
-                  {ifPresent(this.props.documentationUrl, url => (
-                    <a href={url} target="_blank">Go to AWS ↗︎</a>
-                  ))}
+                  {this.props.documentationUrl ? (
+                    <a href={this.props.documentationUrl} target="_blank">Go to AWS ↗︎</a>
+                  ) : null}
                 </h4>
               </div>
 
@@ -300,6 +309,6 @@ const AwsConfigEditor = React.createClass({
         </div>
       );
     }
-});
+}
 
 export default AwsConfigEditor;
