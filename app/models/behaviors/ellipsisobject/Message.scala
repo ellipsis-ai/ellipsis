@@ -4,15 +4,14 @@ import akka.actor.ActorSystem
 import json.UserData
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
-import play.api.libs.json._
 import services.DefaultServices
 import slick.dbio.DBIO
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 case class Message(
                     text: String,
-                    channel: Option[String],
+                    channel: Option[Channel],
                     thread: Option[String],
                     usersMentioned: Set[UserData],
                     permalink: Option[String],
@@ -29,10 +28,11 @@ object Message {
     for {
       maybePermalink <- DBIO.from(event.maybePermalinkFor(services))
       userDataList <- event.messageUserDataListAction(maybeConversation, services)
+      maybeChannelData <- event.eventContext.maybeChannelDataForAction(services)
     } yield {
       Message(
         event.messageText,
-        event.maybeChannel,
+        maybeChannelData,
         event.maybeThreadId,
         userDataList,
         maybePermalink,
