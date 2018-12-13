@@ -101,7 +101,7 @@ declare namespace ellipsis {
 
   export interface DeprecatedUserInfo {
     links: OAuthLink[]
-    messageInfo: MessageInfo
+    messageInfo: DeprecatedMessageInfo
   }
 
   export interface UserData {
@@ -318,7 +318,7 @@ declare namespace ellipsis {
   /**
    * Information about the user who ran the action
    */
-  const userInfo: UserInfo & UserData
+  const userInfo: DeprecatedUserInfo & UserData
 
   type EventType = "scheduled" | "api" | "test" | "chat" | "web"
 
