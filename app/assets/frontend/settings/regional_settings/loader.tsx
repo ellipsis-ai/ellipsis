@@ -3,7 +3,7 @@ import 'whatwg-fetch';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import RegionalSettings from './index';
-import PageComponent from '../../shared_ui/page';
+import PageComponent, {PageRequiredProps} from '../../shared_ui/page';
 const Page: any = PageComponent;
 import autobind from '../../lib/autobind';
 
@@ -26,7 +26,7 @@ type State = {
 }
 
 class RegionalSettingsLoader extends React.PureComponent<Props, State> {
-        constructor(props) {
+        constructor(props: Props) {
           super(props);
           autobind(this);
           this.state = {
@@ -36,7 +36,7 @@ class RegionalSettingsLoader extends React.PureComponent<Props, State> {
           };
         }
 
-        onSaveTimeZone(newTz, newTzName, newOffset) {
+        onSaveTimeZone(newTz: string, newTzName: string, newOffset: number) {
           this.setState({
             teamTimeZone: newTz,
             teamTimeZoneName: newTzName,
@@ -47,7 +47,7 @@ class RegionalSettingsLoader extends React.PureComponent<Props, State> {
         render() {
           return (
             <Page csrfToken={this.props.csrfToken}
-              onRender={(pageProps) => (
+              onRender={(pageProps: PageRequiredProps) => (
               <RegionalSettings
                 csrfToken={this.props.csrfToken}
                 isAdmin={this.props.isAdmin}

@@ -22,7 +22,7 @@ export interface EnvironmentVariableSetterProps {
   vars: Array<EnvironmentVariableData>,
   errorMessage?: Option<string>,
   focus?: Option<string>,
-  onRenderFooter?: Option<(content?, footerClassName?: string) => void>,
+  onRenderFooter?: Option<(content?: React.ReactNode, footerClassName?: string) => void>,
   activePanelName: string,
   activePanelIsModal: boolean,
   onToggleActivePanel: (panelName: string, beModal?: boolean, callback?: () => void) => void,

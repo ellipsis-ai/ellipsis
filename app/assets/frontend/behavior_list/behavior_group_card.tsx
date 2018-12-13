@@ -8,7 +8,7 @@ import EditableName from './editable_name';
 
 type Props = {
   group: BehaviorGroup,
-  onMoreInfoClick: (BehaviorGroup) => void,
+  onMoreInfoClick: (group: BehaviorGroup) => void,
   isImporting?: Option<boolean>,
   wasReimported?: Option<boolean>,
   cardClassName?: Option<string>,

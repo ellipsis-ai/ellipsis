@@ -183,13 +183,13 @@ class Scheduling extends React.Component<Props, State> {
       return this.state.selectedItem;
     }
 
-    updateSelectedItem(newItem, optionalCallback): void {
+    updateSelectedItem(newItem: ScheduledAction, optionalCallback?: () => void): void {
       this.setState({
         selectedItem: newItem
       }, optionalCallback);
     }
 
-    findChannelFor(channelId): Option<ScheduleChannel> {
+    findChannelFor(channelId: string): Option<ScheduleChannel> {
       return this.hasChannelList() && this.props.orgChannels.allChannels().find((ea) => ea.id === channelId) || null;
     }
 
@@ -228,7 +228,7 @@ class Scheduling extends React.Component<Props, State> {
       return !this.state.filterChannelId || this.state.filterChannelId === channelId;
     }
 
-    toggleFilter(channelId) {
+    toggleFilter(channelId: string) {
       this.setState({
         filterChannelId: this.filterActiveFor(channelId) ? null : channelId
       });
@@ -240,11 +240,11 @@ class Scheduling extends React.Component<Props, State> {
       });
     }
 
-    filterActiveFor(channelId): boolean {
+    filterActiveFor(channelId: string): boolean {
       return this.state.filterChannelId === channelId;
     }
 
-    toggleEditor(action) {
+    toggleEditor(action: ScheduledAction) {
       this.props.onClearErrors();
       this.setState({
         selectedItem: action,
@@ -342,7 +342,7 @@ class Scheduling extends React.Component<Props, State> {
       return this.props.isSaving || this.props.isDeleting;
     }
 
-    renderSidebar(groups) {
+    renderSidebar(groups: Array<ScheduleGroup>) {
       return (
         <div>
           <div className="phxl mobile-phl mbs">

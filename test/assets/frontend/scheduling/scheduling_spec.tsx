@@ -29,7 +29,7 @@ class Loader extends React.Component<SchedulingProps, SchedulingProps> {
   render() {
     return (
       <Scheduling
-        ref={(el) => this.page = el}
+        ref={(el: Scheduling) => this.page = el}
         {...this.state}
         {...Page.requiredPropDefaults()}
       />

@@ -36,7 +36,7 @@ interface DataTypeChoice {
 class DataTypeTester extends React.Component<Props, State> {
     searchQueryInput: Option<FormInput>;
 
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.state = {

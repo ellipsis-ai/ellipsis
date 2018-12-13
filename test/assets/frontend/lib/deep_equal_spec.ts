@@ -2,14 +2,14 @@ import DeepEqual from "../../../../app/assets/frontend/lib/deep_equal";
 
 class Foo {
   a: string;
-  constructor(a) {
+  constructor(a: string) {
     this.a = a;
   }
 }
 
 class Bar {
   a: string;
-  constructor(a) {
+  constructor(a: string) {
     this.a = a;
   }
 }

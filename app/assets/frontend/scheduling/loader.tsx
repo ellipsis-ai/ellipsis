@@ -131,7 +131,9 @@ class SchedulingLoader extends React.Component<Props, State> {
           if (this.props.isAdmin) {
             const url = jsRoutes.controllers.admin.UserInfoController.userDataFor(userId).url;
             DataRequest.jsonGet(url).then((userResponse: { user: Option<UserJson>, userNotFound: boolean }) => {
-              const userData = {};
+              const userData: {
+                [userId: string]: User
+              } = {};
               if (userResponse.user) {
                 userData[userId] = User.fromJson(userResponse.user);
                 this.updateUserMap(userData);

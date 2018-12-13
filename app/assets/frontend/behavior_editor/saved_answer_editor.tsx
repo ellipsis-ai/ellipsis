@@ -12,7 +12,7 @@ interface Props {
 }
 
 class SavedAnswerEditor extends React.Component<Props> {
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
     }

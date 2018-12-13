@@ -156,7 +156,7 @@ describe('BehaviorListApp', () => {
     deployment: null,
     isManaged: false
   };
-  const defaultConfig = {
+  const defaultConfig: BehaviorListLoaderProps = {
     containerId: "foo",
     csrfToken: "1",
     behaviorGroups: [group1, group2, group3],
@@ -165,17 +165,17 @@ describe('BehaviorListApp', () => {
     teamTimeZone: "America/Toronto",
     branchName: null,
     botName: "TestBot",
-    possibleResponseTypes: [normalResponseTypeJson]
+    isLinkedToGithub: false
   };
 
-  function createBehaviorListLoader(config) {
+  function createBehaviorListLoader(config: BehaviorListLoaderProps) {
     const div = document.createElement("div");
     return TestUtils.renderIntoDocument(
       <BehaviorListLoader {...config} feedbackContainer={div} />
     ) as BehaviorListLoader;
   }
 
-  let config: Partial<BehaviorListLoaderProps> = {};
+  let config: BehaviorListLoaderProps;
 
   beforeEach(() => {
     config = Object.assign({}, defaultConfig);

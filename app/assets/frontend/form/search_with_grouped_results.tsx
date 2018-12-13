@@ -54,12 +54,14 @@ class SearchWithGroupedResults extends React.Component<Props, State> {
     }
   }
 
-  onChangeSearch(newSearch) {
+  onChangeSearch(newSearch: string): void {
     this.props.onChangeSearch(newSearch);
   }
 
-  onSelect(newValue, newIndex) {
-    this.props.onSelect(newValue, newIndex);
+  onSelect(newValue: Option<string>, newIndex: Option<number>): void {
+    if (newValue && typeof newIndex === "number") {
+      this.props.onSelect(newValue, newIndex);
+    }
   }
 
   onSelectNext() {
@@ -69,14 +71,14 @@ class SearchWithGroupedResults extends React.Component<Props, State> {
     }
   }
 
-  onSelectPrevious() {
+  onSelectPrevious(): void {
     if (this.selector) {
       this.selector.selectPreviousItem();
       this.onSelect(this.selector.getCurrentValue(), this.selector.getCurrentIndex());
     }
   }
 
-  updateSearchText(newValue) {
+  updateSearchText(newValue: string): void {
     const newQuery = newValue.trim();
     if (newQuery) {
       this.setState({
@@ -131,7 +133,7 @@ class SearchWithGroupedResults extends React.Component<Props, State> {
     }
   }
 
-  renderGroup(group) {
+  renderGroup(group: LabeledOptionGroup) {
     if (group.options.length > 0) {
       return (
         <optgroup label={group.label} key={group.label || "empty"}>

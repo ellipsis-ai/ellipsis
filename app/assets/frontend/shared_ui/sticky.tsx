@@ -1,12 +1,24 @@
 import * as React from 'react';
 import DeepEqual from '../lib/deep_equal';
 
-function setStyles(element: Option<HTMLElement>, styles: Partial<CSSStyleDeclaration>) {
-  if (element && element.style) {
-    Object.keys(styles).forEach((styleName) => {
-      element.style[styleName] = styles[styleName];
-    });
-  }
+interface ValidCSSProps {
+  width: string,
+  height: string,
+  position: string,
+  maxHeight: string,
+  overflowY: string,
+  top: string,
+  left: string
+}
+
+function setStyles(element: Option<HTMLElement>, styles: Partial<ValidCSSProps>) {
+  const keys = Object.keys(styles) as Array<keyof ValidCSSProps>;
+  keys.forEach((styleName) => {
+    const value = styles[styleName];
+    if (element && value) {
+      element.style.setProperty(styleName, value);
+    }
+  });
 }
 
 export interface Coords {
@@ -101,7 +113,7 @@ class Sticky extends React.Component<Props> {
       this.scrollTopPosition = this.innerContainer ? this.innerContainer.scrollTop : 0;
     }
 
-    componentDidUpdate(prevProps) {
+    componentDidUpdate(prevProps: Props) {
       if (this.isDisabledFor(this.props) && this.isDisabledFor(prevProps)) {
         return;
       }

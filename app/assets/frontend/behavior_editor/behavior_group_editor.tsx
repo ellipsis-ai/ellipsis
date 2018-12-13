@@ -32,7 +32,9 @@ class BehaviorGroupEditor extends React.PureComponent<Props> {
     }
 
     exportGroup(): void {
-      window.location.href = jsRoutes.controllers.BehaviorImportExportController.export(this.props.group.id).url;
+      if (this.props.group.id) {
+        window.location.href = jsRoutes.controllers.BehaviorImportExportController.export(this.props.group.id).url;
+      }
     }
 
     render() {

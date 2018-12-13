@@ -29,7 +29,7 @@ export interface TriggerConfigurationProps {
 class TriggerConfiguration extends React.Component<TriggerConfigurationProps> {
   messageTriggerInputs: Array<Option<MessageTriggerInput>>;
 
-  constructor(props) {
+  constructor(props: TriggerConfigurationProps) {
     super(props);
     autobind(this);
     this.messageTriggerInputs = [];

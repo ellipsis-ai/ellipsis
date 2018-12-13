@@ -8,7 +8,7 @@ interface Props {
 }
 
 class CollapseButton extends React.PureComponent<Props> {
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
     }

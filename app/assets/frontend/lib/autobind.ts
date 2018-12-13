@@ -10,7 +10,7 @@ const blacklist = [
   'shouldComponentUpdate'
 ];
 
-function autobind(instance: object) {
+function autobind(instance: any) {
   Object.getOwnPropertyNames(Object.getPrototypeOf(instance)).forEach((propName) => {
     if (typeof instance[propName] === "function" && !blacklist.includes(propName)) {
       instance[propName] = instance[propName].bind(instance);

@@ -42,7 +42,7 @@ class BehaviorTester extends React.Component<Props, State> {
   testMessage: Option<FormInput>;
   validateMessage: () => void;
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     autobind(this);
     this.state = {

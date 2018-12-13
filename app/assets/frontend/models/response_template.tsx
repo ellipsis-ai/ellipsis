@@ -6,7 +6,7 @@ var validTemplateKeywordPatterns = [
   /^endif$/
 ];
 
-function stringStartsWithVarName(string, varName) {
+function stringStartsWithVarName(string: string, varName: string) {
   return string.split('.')[0].trim() === varName;
 }
 

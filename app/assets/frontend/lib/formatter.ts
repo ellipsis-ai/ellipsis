@@ -119,7 +119,7 @@ const Formatter = {
       return Formatter.formatNameForCode(name) === name;
     },
 
-    formatList: function<T>(list: Array<T>, optionalMapper?: (T) => string): string {
+    formatList: function<T>(list: Array<T>, optionalMapper?: (T: any) => string): string {
       var mapper = optionalMapper || ((ea) => ea);
       if (list.length === 1) {
         return list.map(mapper).join("");

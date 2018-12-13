@@ -191,7 +191,7 @@ describe('BehaviorList', () => {
   };
 
   class Footer extends React.Component {
-    renderFooter(content) {
+    renderFooter(content: React.ReactNode) {
       return (
         <div>{content}</div>
       );
@@ -204,7 +204,7 @@ describe('BehaviorList', () => {
     }
   }
 
-  function createBehaviorList(config) {
+  function createBehaviorList(config: BehaviorListProps) {
     const footer = TestUtils.renderIntoDocument(<Footer/>) as Footer;
     return TestUtils.renderIntoDocument(
       <BehaviorList {...config} {...Page.requiredPropDefaults()} onRenderFooter={footer.renderFooter} />

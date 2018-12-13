@@ -57,7 +57,7 @@ bounds, max-height/width and overflow get cleared after reveal, and reset before
       (container && container.parentElement && !container.parentElement.offsetHeight && !container.parentElement.offsetWidth));
   }
 
-  setContainerStyle(name: string, value: any): void {
+  setContainerStyle(name: "transition" | "maxHeight" | "maxWidth" | "overflow" | "display", value: any): void {
     if (this.container) {
       this.container.style[name] = value;
     }

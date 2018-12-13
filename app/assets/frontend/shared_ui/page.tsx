@@ -14,8 +14,8 @@ export interface PageRequiredProps {
   onClearActivePanel: (optionalCallback?: () => void) => void,
   onRenderFooter: (content?: any, footerClassName?: string) => any,
   onRenderNavItems: (items: Array<NavItemContent>) => void,
-  onRenderNavActions: (content) => void,
-  onRenderPanel: (panelName: string, panel) => void,
+  onRenderNavActions: (content: React.ReactNode) => void,
+  onRenderPanel: (panelName: string, panel: React.Component | HTMLElement | null) => void,
   headerHeight: number,
   footerHeight: number,
   ref?: any
@@ -47,7 +47,7 @@ type State = {
 }
 
 class Page extends React.Component<Props, State> {
-    panels: { [prop: string]: any };
+    panels: { [name: string]: HTMLElement };
     footer: any;
     component: React.Component;
     header: Option<HTMLElement>;
@@ -101,8 +101,10 @@ class Page extends React.Component<Props, State> {
       this.setState(this.getDefaultState(), optionalCallback);
     }
 
-    onRenderPanel(panelName: string, panel): void {
-      const newPanel = {};
+    onRenderPanel(panelName: string, panel: React.Component | HTMLElement | null): void {
+      const newPanel: {
+        [name: string]: React.Component | HTMLElement | null
+      } = {};
       newPanel[panelName] = panel;
       this.panels = Object.assign({}, this.panels, newPanel);
     }
@@ -126,7 +128,7 @@ class Page extends React.Component<Props, State> {
       }
       var focusTarget = event.target;
       var possibleMatches = activeModal.getElementsByTagName(focusTarget.tagName);
-      var match = Array.prototype.some.call(possibleMatches, function(element) {
+      var match = Array.prototype.some.call(possibleMatches, function(element: HTMLElement) {
         return element === focusTarget;
       });
       if (!match) {
@@ -203,7 +205,7 @@ class Page extends React.Component<Props, State> {
       this.toggleActivePanel('feedback', true);
     }
 
-    onRenderFooter(content?, footerClassName?: string) {
+    onRenderFooter(content?: React.ReactNode, footerClassName?: string) {
       return (
         <div>
           <ModalScrim isActive={this.state.activePanelIsModal} onClick={this.clearActivePanel} />
@@ -232,7 +234,7 @@ class Page extends React.Component<Props, State> {
       this.resetHeaderHeight();
     }
 
-    onRenderNavActions(content) {
+    onRenderNavActions(content: React.ReactNode) {
       // This should use ReactDOM.createPortal when we upgrade to React 16
       const el = this.navActions;
       if (el) {
@@ -263,14 +265,14 @@ class Page extends React.Component<Props, State> {
             onRenderNavActions: this.onRenderNavActions,
             headerHeight: this.getHeaderHeight(),
             footerHeight: this.getFooterHeight(),
-            ref: (component) => this.component = component
+            ref: (component: React.Component) => this.component = component
           })}
         </div>
       );
     }
 
     static requiredPropDefaults(): PageRequiredProps {
-      const renderPlaceholder = (ea) => ea;
+      const renderPlaceholder = (ea: any) => ea;
       return {
         activePanelName: "",
         activePanelIsModal: false,

@@ -9,7 +9,7 @@ import OptionalInt from './optional_int';
       }
     }
 
-    static fromString(string): Minute {
+    static fromString(string: string): Minute {
       const minutesRegex = /^([0-5]?[0-9])$/;
       const parsed = string.substr(-2, 2).match(minutesRegex) ||
         (string.substr(-3, 1) + string.substr(-1, 1)).match(minutesRegex);

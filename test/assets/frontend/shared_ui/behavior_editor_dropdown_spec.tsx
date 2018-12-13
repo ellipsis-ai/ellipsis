@@ -25,7 +25,7 @@ describe('DropdownMenu', () => {
     stopPropagation: jest.fn()
   };
 
-  function createDropdown(config, itemConfig) {
+  function createDropdown(config: DropdownMenuProps, itemConfig: DropdownMenuItemProps) {
     return TestUtils.renderIntoDocument(
       <DropdownMenu {...config}>
         <DropdownMenu.Item {...itemConfig} />
@@ -33,9 +33,11 @@ describe('DropdownMenu', () => {
     ) as DropdownMenu;
   }
 
-  let config: Partial<DropdownMenuProps> = {};
-  let itemConfig: Partial<DropdownMenuItemProps> = {};
-  let eventData = {};
+  let config: DropdownMenuProps;
+  let itemConfig: DropdownMenuItemProps;
+  let eventData: {
+    stopPropagation: () => void
+  };
 
   beforeEach(() => {
     toggled = false;

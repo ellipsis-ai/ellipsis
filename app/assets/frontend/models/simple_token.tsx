@@ -33,11 +33,11 @@ class RequiredSimpleTokenApi
       return true;
     }
 
-    clone(props: Partial<RequiredSimpleTokenApi>) {
+    clone(props: Partial<RequiredSimpleTokenApi>): this {
       return RequiredSimpleTokenApi.fromProps(Object.assign({}, this, props)) as this;
     }
 
-    static fromProps(props): RequiredSimpleTokenApi {
+    static fromProps(props: RequiredSimpleTokenApiJson): RequiredSimpleTokenApi {
       return new RequiredSimpleTokenApi(props.id, props.exportId, props.apiId, props.nameInCode);
     }
 

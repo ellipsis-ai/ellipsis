@@ -18,7 +18,7 @@ interface Props {
   className?: Option<string>,
   triggerClassName?: Option<string>,
   highlightText?: Option<string>,
-  renderStatus?: (Editable) => ReactNode
+  renderStatus?: (e: Editable) => ReactNode
 }
 
 class EditableName extends React.Component<Props> {
