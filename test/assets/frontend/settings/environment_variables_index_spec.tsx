@@ -1,6 +1,8 @@
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 import EnvironmentVariables from '../../../../app/assets/frontend/settings/environment_variables/index';
+import {EnvironmentVariableListConfig} from "../../../../app/assets/frontend/settings/environment_variables/loader";
+import Page from "../../../../app/assets/frontend/shared_ui/page";
 
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
 jsRoutes.controllers.GithubConfigController.index = jest.fn(() => ({ url: '/mock_github_config' }));
@@ -10,8 +12,9 @@ jsRoutes.controllers.web.settings.IntegrationsController.list = jest.fn(() => ({
 
 describe('EnvironmentVariables', () => {
 
-  const defaultConfig = Object.freeze({
+  const defaultConfig: EnvironmentVariableListConfig = {
     csrfToken: "0",
+    containerId: "foo",
     isAdmin: false,
     data: {
       teamId: "1",
@@ -29,24 +32,24 @@ describe('EnvironmentVariables', () => {
         isAlreadySavedWithValue: false
       }]
     }
-  });
+  };
 
-  function createIndex(config) {
+  function createIndex(config: EnvironmentVariableListConfig): EnvironmentVariables {
     return TestUtils.renderIntoDocument(
-      <EnvironmentVariables {...config} />
-    );
+      <EnvironmentVariables {...config} {...Page.requiredPropDefaults()} />
+    ) as EnvironmentVariables;
   }
 
-  let config = {};
+  let config: EnvironmentVariableListConfig;
 
   beforeEach(() => {
-    config = Object.assign(config, defaultConfig);
+    config = Object.assign({}, defaultConfig);
   });
 
   describe('groupAndSortVarsByNameAndPresenceOfValue', () => {
     it('puts variables with values before those without, and sorts each alphabetically', () => {
-      let index = createIndex(config);
-      let vars = index.groupAndSortVarsByNameAndPresenceOfValue(index.props.data.variables);
+      const index = createIndex(config);
+      const vars = index.groupAndSortVarsByNameAndPresenceOfValue(index.props.data.variables);
       expect(vars.map((ea) => ea.name)).toEqual(["ONE", "THREE", "FOUR", "TWO"]);
     });
   });

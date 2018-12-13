@@ -2,6 +2,8 @@ import autobind from '../../../../app/assets/frontend/lib/autobind';
 
 describe("autobind", () => {
   class Foo {
+    prop: string;
+
     constructor() {
       this.prop = "set";
       autobind(this);
@@ -16,6 +18,7 @@ describe("autobind", () => {
       return "rendered";
     }
   }
+
   it("sets the context of methods of an object to the object except React lifecycle methods and the constructor", () => {
     const f = new Foo();
     const g = f.foo;

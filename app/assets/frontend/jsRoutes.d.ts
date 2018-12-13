@@ -88,7 +88,7 @@ declare var jsRoutes: {
         IntegrationsController: {
           add: (teamId: Option<string>, groupId: Option<string>, selectedId: Option<string>, nameInCode: Option<string>) => JsRoute,
           list: (teamId?: Option<string>) => JsRoute
-        }
+        },
         RegionalSettingsController: {
           index: (teamId?: Option<string>) => JsRoute
         }

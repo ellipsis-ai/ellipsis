@@ -1,11 +1,11 @@
-import LibraryVersion from '../../../../app/assets/frontend/models/library_version';
+import LibraryVersion, {LibraryVersionJson} from '../../../../app/assets/frontend/models/library_version';
 
-const libraryVersion = Object.freeze({
+const libraryVersion: LibraryVersionJson = {
   "id": "abcdef",
   "libraryId": "ghijkl",
   "functionBody": "use strict;",
   "createdAt": 1468338136532
-});
+};
 
 describe('LibraryVersion', () => {
 

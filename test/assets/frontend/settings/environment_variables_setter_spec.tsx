@@ -1,29 +1,38 @@
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 
-import EnvironmentVariableSetter from '../../../../app/assets/frontend/settings/environment_variables/setter';
+import EnvironmentVariableSetter, {EnvironmentVariableSetterProps} from '../../../../app/assets/frontend/settings/environment_variables/setter';
 
 describe('EnvironmentVariableSetter', () => {
-  const defaultConfig = Object.freeze({
+  const defaultConfig: EnvironmentVariableSetterProps = {
     onSave: jest.fn(),
+    onDelete: jest.fn(),
+    activePanelName: "",
+    activePanelIsModal: false,
+    onToggleActivePanel: jest.fn(),
+    onClearActivePanel: jest.fn(),
+    teamId: "1",
+    csrfToken: "1",
+    isAdmin: false,
+    onAdminLoadedValue: jest.fn(),
     vars: []
-  });
+  };
 
-  function createSetter(config) {
+  function createSetter(config: EnvironmentVariableSetterProps): EnvironmentVariableSetter {
     return TestUtils.renderIntoDocument(
       <EnvironmentVariableSetter {...config} />
-    );
+    ) as EnvironmentVariableSetter;
   }
 
-  let config = {};
+  let config: EnvironmentVariableSetterProps;
 
   beforeEach(() => {
-    config = Object.assign(config, defaultConfig);
+    config = Object.assign({}, defaultConfig);
   });
 
   describe('setNewVarIndexName', () => {
     it('sets and formats the name of a new var at a particular index', () => {
-      var setter = createSetter(config);
+      const setter = createSetter(config);
       setter.setState = jest.fn();
       setter.getNewVars = jest.fn(() => [{
         name: "OLD_NAME",
@@ -81,9 +90,10 @@ describe('EnvironmentVariableSetter', () => {
         value: "throwaway",
         isAlreadySavedWithValue: false
       }]);
-      setter.setState = jest.fn();
+      const setStateMock = jest.fn();
+      setter.setState = setStateMock;
       setter.onSave();
-      var newState = setter.setState.mock.calls[0][0];
+      var newState = setStateMock.mock.calls[0][0];
       expect(newState.vars).toEqual([{
         name: "OLD",
         value: "",

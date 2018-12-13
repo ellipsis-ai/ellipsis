@@ -1,9 +1,10 @@
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
-global.fetch = require('./../../../mocks/mock_fetch');
+import mockFetch from './../../../mocks/mock_fetch';
+global.fetch = mockFetch;
 
 import Page from '../../../../app/assets/frontend/shared_ui/page';
-import RegionalSettings from '../../../../app/assets/frontend/settings/regional_settings/index';
+import RegionalSettings, {RegionalSettingsProps} from '../../../../app/assets/frontend/settings/regional_settings/index';
 
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
 jsRoutes.controllers.ApplicationController.possibleCitiesFor = jest.fn(() => ({ url: '/mock_possible_cities' }));
@@ -11,13 +12,11 @@ jsRoutes.controllers.GithubConfigController.index = jest.fn(() => ({ url: '/mock
 jsRoutes.controllers.web.settings.EnvironmentVariablesController.list = jest.fn(() => ({ url: '/mock_environment_variables_list' }));
 jsRoutes.controllers.web.settings.RegionalSettingsController.index = jest.fn(() => ({ url: '/mock_regional_settings' }));
 jsRoutes.controllers.web.settings.IntegrationsController.list = jest.fn(() => ({ url: '/mock_integrations' }));
-jsRoutes.controllers.web.settings.OAuth2ApplicationController.list = jest.fn(() => ({ url: '/mock_oauth2_list' }));
-jsRoutes.controllers.web.settings.AWSConfigController.list = jest.fn(() => ({ url: '/mock_aws_config_list' }));
 
 describe('RegionalSettings', () => {
   const onSaveTimeZone = jest.fn();
 
-  const defaultConfig = Object.freeze({
+  const defaultConfig: RegionalSettingsProps = {
     csrfToken: "0",
     teamId: "1",
     isAdmin: false,
@@ -25,19 +24,20 @@ describe('RegionalSettings', () => {
     teamTimeZone: "America/New_York",
     teamTimeZoneName: "Eastern Time",
     teamTimeZoneOffset: -14400
-  });
+  };
 
-  function createIndex(config) {
-    return TestUtils.renderIntoDocument(
+  function createIndex(config: RegionalSettingsProps): RegionalSettings {
+    const page: Page = TestUtils.renderIntoDocument(
       <Page csrfToken={config.csrfToken} feedbackContainer={document.createElement('span')}
         onRender={(pageProps) => (
           <RegionalSettings {...config} {...pageProps} />
         )}
       />
-    ).component;
+    ) as Page;
+    return page.component as RegionalSettings;
   }
 
-  let config = {};
+  let config: RegionalSettingsProps;
 
   beforeEach(() => {
     config = Object.assign({}, defaultConfig);
