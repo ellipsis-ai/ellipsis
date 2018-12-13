@@ -1,3 +1,6 @@
+import {DataRequest} from "../lib/data_request";
+import {BehaviorInvocationTestReportOutput} from "../models/behavior_invocation_result";
+
 function testInvocationUrl() {
   return jsRoutes.controllers.BehaviorEditorController.testInvocation().url;
 }
@@ -6,48 +9,48 @@ function testTriggersUrl() {
   return jsRoutes.controllers.BehaviorEditorController.testTriggers().url;
 }
 
-var commonRequiredParams = [
-    'behaviorId',
-    'csrfToken',
-    'onSuccess',
-    'onError'
-];
-
-function checkParamsFor(params, requiredParams) {
-    var missingParams = requiredParams.filter((paramName) => !params[paramName]);
-    if (!params || missingParams.length > 0) {
-      throw new Error("Required parameters missing: " + missingParams.join(", "));
-    }
+interface TestParams {
+  behaviorId: string
+  csrfToken: string
+  onError: () => void
 }
 
-function request(url, params, formData) {
-    formData.append('behaviorId', params.behaviorId);
-    fetch(url, {
-      credentials: 'same-origin',
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Csrf-Token': params.csrfToken
-      },
-      body: formData
-    })
-      .then((response) => response.json())
-      .then(params.onSuccess)
-      .catch(params.onError);
+interface InvocationTestParams extends TestParams {
+  paramValues: {
+    [name: string]: string
+  }
+  onSuccess: (output: BehaviorInvocationTestReportOutput) => void
 }
 
-function testInvocation(params) {
-      checkParamsFor(params, commonRequiredParams.concat('paramValues'));
-      var formData = new FormData();
-      formData.append('paramValuesJson', JSON.stringify(params.paramValues));
-      request(testInvocationUrl(), params, formData);
+interface BehaviorTriggerTestReportOutput {
+  message: string
+  activatedTrigger: Option<string>
+  paramValues: {
+    [name: string]: string
+  }
 }
 
-function testTriggers(params) {
-      checkParamsFor(params, commonRequiredParams.concat('message'));
-      var formData = new FormData();
-      formData.append('message', params.message);
-      request(testTriggersUrl(), params, formData);
+interface TriggerTestParams extends TestParams {
+  message: string
+  onSuccess: (output: BehaviorTriggerTestReportOutput) => void
+}
+
+function testInvocation(params: InvocationTestParams): void {
+  DataRequest.jsonPost(testInvocationUrl(), {
+    behaviorId: params.behaviorId,
+    paramValuesJson: JSON.stringify(params.paramValues)
+  }, params.csrfToken)
+    .then(params.onSuccess)
+    .catch(params.onError);
+}
+
+function testTriggers(params: TriggerTestParams) {
+  DataRequest.jsonPost(testTriggersUrl(), {
+    behaviorId: params.behaviorId,
+    message: params.message
+  }, params.csrfToken)
+    .then(params.onSuccess)
+    .catch(params.onError);
 }
 
 export {testInvocation, testTriggers};

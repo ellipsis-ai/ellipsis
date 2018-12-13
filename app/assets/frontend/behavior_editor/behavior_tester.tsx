@@ -8,7 +8,7 @@ import Trigger from '../models/trigger';
 import * as debounce from 'javascript-debounce';
 import {RequiredOAuthApplication} from '../models/oauth';
 import TesterAuthRequired from './tester_auth_required';
-import InvocationTestResult from '../models/behavior_invocation_result';
+import InvocationTestResult, {BehaviorInvocationTestReportOutput} from '../models/behavior_invocation_result';
 import InvocationResults from './behavior_tester_invocation_results';
 import autobind from "../lib/autobind";
 
@@ -149,20 +149,22 @@ class BehaviorTester extends React.Component<Props, State> {
         behaviorId: this.props.behaviorId,
         paramValues: this.state.inputValues,
         csrfToken: this.props.csrfToken,
-        onSuccess: (json) => {
-          var newResults = this.state.results.concat(InvocationTestResult.fromReportJSON(json));
-          this.setState({
-            results: newResults,
-            isTestingResult: false,
-            hasTestedResult: true
-          });
-        },
+        onSuccess: this.didTestInvocation,
         onError: () => {
           this.setState({
             resultErrorOccurred: true,
             isTestingResult: false
           });
         }
+      });
+    }
+
+    didTestInvocation(json: BehaviorInvocationTestReportOutput): void {
+      const newResults = this.state.results.concat(InvocationTestResult.fromReportJSON(json));
+      this.setState({
+        results: newResults,
+        isTestingResult: false,
+        hasTestedResult: true
       });
     }
 

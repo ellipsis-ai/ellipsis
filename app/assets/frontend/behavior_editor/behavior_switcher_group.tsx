@@ -13,9 +13,9 @@ type Props = {
   onAddNew: () => void,
   addNewLabel?: Option<string>,
   onSelect: BehaviorSelectCallback,
-  isModified: (Editable) => boolean,
+  isModified: (e: Editable) => boolean,
   renderGroupStatus?: () => ReactNode,
-  renderEditableStatus?: (Editable) => ReactNode
+  renderEditableStatus?: (e: Editable) => ReactNode
 }
 
 class BehaviorSwitcherGroup extends React.Component<Props> {

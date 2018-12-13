@@ -6,9 +6,9 @@ import autobind from '../lib/autobind';
 
 interface Props {
     group: BehaviorGroup
-    onBehaviorGroupIconChange: (string) => void
-    onBehaviorGroupNameChange: (string) => void
-    onBehaviorGroupDescriptionChange: (string) => void
+    onBehaviorGroupIconChange: (s: string) => void
+    onBehaviorGroupNameChange: (s: string) => void
+    onBehaviorGroupDescriptionChange: (s: string) => void
     onDone: () => void
     visible: boolean
     iconPickerVisible: boolean

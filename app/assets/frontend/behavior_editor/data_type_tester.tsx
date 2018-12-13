@@ -116,7 +116,7 @@ class DataTypeTester extends React.Component<Props, State> {
       }, this.fetchResult);
     }
 
-    params(): { searchQuery?: string } {
+    params(): { [name: string]: string } {
       if (this.state.searchQuery) {
         return { searchQuery: this.state.searchQuery };
       } else {
