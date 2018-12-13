@@ -20,7 +20,7 @@ interface ApiToken {
   isRevoked: boolean
 }
 
-interface ApiTokenGeneratorProps {
+export interface ApiTokenGeneratorProps {
   csrfToken: string
   isAdmin: boolean
   teamId: string

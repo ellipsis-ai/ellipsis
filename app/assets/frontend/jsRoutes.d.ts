@@ -77,7 +77,8 @@ declare var jsRoutes: {
     web: {
       settings: {
         AWSConfigController: {
-          add: (teamId: Option<string>, groupId: Option<string>, selectedId: Option<string>, nameInCode: Option<string>) => JsRoute
+          add: (teamId: Option<string>, groupId: Option<string>, selectedId: Option<string>, nameInCode: Option<string>) => JsRoute,
+          save: () => JsRoute
         },
         EnvironmentVariablesController: {
           list: (teamId?: Option<string>) => JsRoute,
