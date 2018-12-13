@@ -78,6 +78,7 @@ declare var jsRoutes: {
       settings: {
         AWSConfigController: {
           add: (teamId: Option<string>, groupId: Option<string>, selectedId: Option<string>, nameInCode: Option<string>) => JsRoute,
+          edit: (id: string, teamId: Option<string>) => JsRoute,
           save: () => JsRoute
         },
         EnvironmentVariablesController: {
@@ -88,7 +89,9 @@ declare var jsRoutes: {
         },
         IntegrationsController: {
           add: (teamId: Option<string>, groupId: Option<string>, selectedId: Option<string>, nameInCode: Option<string>) => JsRoute,
-          list: (teamId?: Option<string>) => JsRoute
+          edit: (id: string, teamId: Option<string>) => JsRoute,
+          list: (teamId?: Option<string>) => JsRoute,
+          save: () => JsRoute
         },
         RegionalSettingsController: {
           index: (teamId?: Option<string>) => JsRoute

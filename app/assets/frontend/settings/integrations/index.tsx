@@ -2,48 +2,50 @@ import * as React from 'react';
 import Collapsible from '../../shared_ui/collapsible';
 import HelpButton from '../../help/help_button';
 import HelpPanel from '../../help/panel';
-import Page from '../../shared_ui/page';
+import {PageRequiredProps} from '../../shared_ui/page';
 import SettingsPage from '../../shared_ui/settings_page';
 import Sort from '../../lib/sort';
+import autobind from "../../lib/autobind";
+import {OAuthApiJson, OAuthApplicationRefJson} from "../../models/oauth";
+import {AWSConfigRefJson} from "../../models/aws";
 
-const IntegrationList = React.createClass({
-    propTypes: Object.assign({}, Page.requiredPropTypes, {
-      csrfToken: React.PropTypes.string.isRequired,
-      isAdmin: React.PropTypes.bool.isRequired,
-      teamId: React.PropTypes.string.isRequired,
-      oauthApis: React.PropTypes.arrayOf(React.PropTypes.object),
-      oauthApplications: React.PropTypes.arrayOf(React.PropTypes.object),
-      awsConfigs: React.PropTypes.arrayOf(React.PropTypes.object)
-    }),
+export interface IntegrationListProps {
+  csrfToken: string
+  isAdmin: boolean
+  teamId: string
+  oauthApis: Array<OAuthApiJson>
+  oauthApplications: Array<OAuthApplicationRefJson>
+  awsConfigs: Array<AWSConfigRefJson>
+}
 
-    getDefaultProps: function() {
-      return Page.requiredPropDefaults();
-    },
+type Props = IntegrationListProps & PageRequiredProps;
 
-    hasApis: function() {
+interface ApplicationGroups {
+  [apiId: string]: Array<OAuthApplicationRefJson>
+}
+
+class IntegrationList extends React.Component<Props> {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+    }
+
+    hasApis(): boolean {
       return Boolean(this.getAllApis().length > 0);
-    },
+    }
 
-    getOAuthApis: function() {
-      return this.props.oauthApis || [];
-    },
+    getAllApis(): Array<OAuthApiJson> {
+      return this.props.oauthApis;
+    }
 
-    getAllApis: function() {
-      return this.getOAuthApis();
-    },
+    getAllApplications(): Array<OAuthApplicationRefJson> {
+      return this.props.oauthApplications;
+    }
 
-    getOAuthApplications: function() {
-      return this.props.oauthApplications || [];
-    },
-
-    getAllApplications: function() {
-      return this.getOAuthApplications();
-    },
-
-    getGroupedApplications: function() {
+    getGroupedApplications(): ApplicationGroups {
       const flatApps = Sort.arrayAlphabeticalBy(this.getAllApplications(), (item) => item.displayName);
-      const groupedApps = {};
-      flatApps.forEach(ea => {
+      const groupedApps: ApplicationGroups = {};
+      flatApps.forEach((ea) => {
         if (groupedApps[ea.apiId]) {
           groupedApps[ea.apiId].push(ea);
         } else {
@@ -51,30 +53,30 @@ const IntegrationList = React.createClass({
         }
       });
       return groupedApps;
-    },
+    }
 
-    getApiNameForId: function(apiId) {
+    getApiNameForId(apiId: string): string {
       const found = this.getAllApis().find(ea => ea.apiId === apiId);
       return found ? found.name : "";
-    },
+    }
 
-    hasApplications: function() {
+    hasApplications(): boolean {
       return Boolean(this.getAllApplications().length > 0);
-    },
+    }
 
-    hasAwsConfigs: function() {
+    hasAwsConfigs(): boolean {
       return Boolean(this.props.awsConfigs && this.props.awsConfigs.length > 0);
-    },
+    }
 
-    getAwsConfigs: function() {
-      return this.props.awsConfigs || [];
-    },
+    getAwsConfigs(): Array<AWSConfigRefJson> {
+      return this.props.awsConfigs;
+    }
 
-    toggleOAuthApplicationHelp: function() {
+    toggleOAuthApplicationHelp(): void {
       this.props.onToggleActivePanel("oAuthApplicationHelp");
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"}>
 
@@ -120,9 +122,9 @@ const IntegrationList = React.createClass({
           ))}
         </SettingsPage>
       );
-    },
+    }
 
-    renderNoApplications: function() {
+    renderNoApplications() {
       return (
         <div>
           <p><b>No APIs have been configured.</b></p>
@@ -138,22 +140,22 @@ const IntegrationList = React.createClass({
           </ul>
         </div>
       );
-    },
+    }
 
-    optionalTeamId: function() {
+    optionalTeamId(): Option<string> {
       return this.props.isAdmin ? this.props.teamId : null;
-    },
+    }
 
-    renderApplicationList: function() {
-      var grouped = this.getGroupedApplications();
-      var route = jsRoutes.controllers.web.settings.IntegrationsController.edit;
-      var groupKeys = Object.keys(grouped);
+    renderApplicationList() {
+      const grouped = this.getGroupedApplications();
+      const route = jsRoutes.controllers.web.settings.IntegrationsController.edit;
+      const groupKeys = Object.keys(grouped);
       return (
         <div>
 
           {groupKeys.map((key, groupIndex) => {
-            var group = grouped[key];
-            var groupName = this.getApiNameForId(key);
+            const group = grouped[key];
+            const groupName = this.getApiNameForId(key);
             if (group.length === 1 && groupName.toLowerCase() === group[0].displayName.toLowerCase()) {
               return (
                 <div key={`oAuthApplicationGroup${groupIndex}`} className="mvm">
@@ -179,9 +181,9 @@ const IntegrationList = React.createClass({
           })}
         </div>
       );
-    },
+    }
 
-    renderNoAwsConfigs: function() {
+    renderNoAwsConfigs() {
       return (
         <div>
           <p><b>There are no AWS configurations.</b></p>
@@ -197,9 +199,9 @@ const IntegrationList = React.createClass({
           </ul>
         </div>
       );
-    },
+    }
 
-    renderAwsConfigs: function() {
+    renderAwsConfigs() {
       var awsConfigs = this.getAwsConfigs();
       var route = jsRoutes.controllers.web.settings.AWSConfigController.edit;
       return (
@@ -216,9 +218,9 @@ const IntegrationList = React.createClass({
           </ul>
         </div>
       );
-    },
+    }
 
-    renderNewIntegrationLink: function() {
+    renderNewIntegrationLink() {
       return (
         <div className="mvxl">
           <a className="button"
@@ -228,9 +230,9 @@ const IntegrationList = React.createClass({
           </a>
         </div>
       );
-    },
+    }
 
-    renderOAuthApplicationHelp: function() {
+    renderOAuthApplicationHelp() {
       return (
         <HelpPanel
           heading="Creating a new configuration"
@@ -266,6 +268,6 @@ const IntegrationList = React.createClass({
         </HelpPanel>
       );
     }
-});
+}
 
 export default IntegrationList;

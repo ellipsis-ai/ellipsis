@@ -5,56 +5,56 @@ import CsrfTokenHiddenInput from '../../shared_ui/csrf_token_hidden_input';
 import FormInput from '../../form/input';
 import SettingsPage from '../../shared_ui/settings_page';
 import BrowserUtils from '../../lib/browser_utils';
-import ifPresent from '../../lib/if_present';
-import Page from '../../shared_ui/page';
+import {NavItemContent, PageRequiredProps} from '../../shared_ui/page';
+import {OAuthApiJson} from "../../models/oauth";
+import autobind from "../../lib/autobind";
+import Button from "../../form/button";
 
-const IntegrationEditor = React.createClass({
-    propTypes: Object.assign({}, Page.requiredPropTypes, {
-      isAdmin: React.PropTypes.bool.isRequired,
-      apis: React.PropTypes.arrayOf(React.PropTypes.shape({
-        apiId: React.PropTypes.string.isRequired,
-        name: React.PropTypes.string.isRequired,
-        newApplicationUrl: React.PropTypes.string,
-        iconImageUrl: React.PropTypes.string,
-        logoImageUrl: React.PropTypes.string
-      })).isRequired,
-      oauth1CallbackUrl: React.PropTypes.string.isRequired,
-      oauth2CallbackUrl: React.PropTypes.string.isRequired,
-      applicationKey: React.PropTypes.string,
-      applicationSecret: React.PropTypes.string,
-      requiresAuth: React.PropTypes.bool,
-      applicationApiId: React.PropTypes.string,
-      recommendedScope: React.PropTypes.string,
-      applicationScope: React.PropTypes.string,
-      requiredNameInCode: React.PropTypes.string,
-      applicationName: React.PropTypes.string,
-      applicationSaved: React.PropTypes.bool,
-      applicationShared: React.PropTypes.bool.isRequired,
-      applicationCanBeShared: React.PropTypes.bool.isRequired,
-      csrfToken: React.PropTypes.string.isRequired,
-      teamId: React.PropTypes.string.isRequired,
-      mainUrl: React.PropTypes.string.isRequired,
-      applicationId: React.PropTypes.string,
-      behaviorGroupId: React.PropTypes.string,
-      behaviorId: React.PropTypes.string
-    }),
+export interface OAuthEditorProps {
+  isAdmin: boolean,
+  apis: Array<OAuthApiJson>
+  oauth1CallbackUrl: string
+  oauth2CallbackUrl: string
+  applicationKey?: string
+  applicationSecret?: string
+  requiresAuth?: boolean
+  applicationApiId?: string
+  recommendedScope?: string
+  applicationScope?: string
+  requiredNameInCode?: string
+  applicationName?: string
+  applicationSaved?: boolean
+  applicationShared: boolean
+  applicationCanBeShared: boolean
+  csrfToken: string
+  teamId: string
+  mainUrl: string
+  applicationId?: string,
+  behaviorGroupId?: string,
+  behaviorId?: string
+}
 
-    componentDidMount: function() {
-      this.renderNav();
-    },
+type Props = OAuthEditorProps & PageRequiredProps;
 
-    componentDidUpdate: function() {
-      this.renderNav();
-    },
+interface State {
+  applicationApi: Option<OAuthApiJson>
+  applicationName: string
+  applicationKey: string
+  applicationSecret: string
+  applicationScope: string
+  hasNamedApplication: boolean
+  shouldRevealApplicationUrl: boolean
+  isSaving: boolean
+  applicationShared: boolean
+}
 
-    applicationNameInput: null,
+class IntegrationEditor extends React.Component<Props, State> {
+    applicationNameInput: Option<FormInput>;
 
-    getDefaultProps: function() {
-      return Page.requiredPropDefaults();
-    },
-
-    getInitialState: function() {
-      return {
+    constructor(props: Props) {
+      super(props);
+      autobind(this);
+      this.state = {
         applicationApi: this.findApiById(this.props.applicationApiId),
         applicationName: this.props.applicationName || "",
         applicationKey: this.props.applicationKey || "",
@@ -65,13 +65,21 @@ const IntegrationEditor = React.createClass({
         isSaving: false,
         applicationShared: this.props.applicationShared
       };
-    },
+    }
 
-    getAllApis: function() {
+    componentDidMount(): void {
+      this.renderNav();
+    }
+
+    componentDidUpdate(): void {
+      this.renderNav();
+    }
+
+    getAllApis(): Array<OAuthApiJson> {
       return this.props.apis;
-    },
+    }
 
-    findApiById: function(id) {
+    findApiById(id: Option<string>): Option<OAuthApiJson> {
       if (id) {
         const matches = this.getAllApis().filter(function(api) { return api.apiId === id; });
         if (matches.length > 0) {
@@ -79,173 +87,170 @@ const IntegrationEditor = React.createClass({
         }
       }
       return null;
-    },
+    }
 
-    getCallbackUrl: function() {
+    getCallbackUrl(): string {
       if (this.isOAuth1()) {
         return this.props.oauth1CallbackUrl;
       } else {
         return this.props.oauth2CallbackUrl;
       }
-    },
+    }
 
-    getMainUrl: function() {
+    getMainUrl(): string {
       return this.props.mainUrl;
-    },
+    }
 
-    apiIsSet: function() {
-      return !!this.state.applicationApi;
-    },
+    apiIsSet(): boolean {
+      return Boolean(this.state.applicationApi);
+    }
 
-    getApplicationApiName: function() {
+    getApplicationApiName(): string {
       return this.state.applicationApi ? this.state.applicationApi.name : "";
-    },
+    }
 
-    getApplicationApiScopeDocumentationUrl: function() {
-      return this.state.applicationApi ? this.state.applicationApi.scopeDocumentationUrl : "";
-    },
+    getApplicationApiScopeDocumentationUrl(): Option<string> {
+      return this.state.applicationApi ? this.state.applicationApi.scopeDocumentationUrl : null;
+    }
 
-    getApplicationApiNewApplicationUrl: function() {
-      return this.state.applicationApi ? this.state.applicationApi.newApplicationUrl : "";
-    },
+    getApplicationApiNewApplicationUrl(): Option<string> {
+      return this.state.applicationApi ? this.state.applicationApi.newApplicationUrl : null;
+    }
 
-    getApplicationApiId: function() {
+    getApplicationApiId(): string {
       return this.state.applicationApi ? this.state.applicationApi.apiId : "";
-    },
+    }
 
-    setApplicationApi: function(api) {
-      this.setState({ applicationApi: api }, function() {
+    setApplicationApi(api: OAuthApiJson): void {
+      this.setState({ applicationApi: api }, () => {
         if (this.applicationNameInput) {
           this.applicationNameInput.focus();
         }
         BrowserUtils.replaceQueryParam('apiId', api.apiId);
       });
-    },
+    }
 
-    reset: function() {
+    reset(): void {
       this.setState({
         applicationApi: null,
         applicationName: "",
-        applicationClientId: "",
         applicationScope: "",
         hasNamedApplication: false,
         shouldRevealApplicationUrl: false,
         applicationShared: false,
-        applicationConsumerKey: "",
-        applicationConsumerSecret: ""
       }, function() {
         BrowserUtils.removeQueryParam('apiId');
       });
-    },
+    }
 
-    getApplicationName: function() {
+    getApplicationName(): string {
       return this.state.applicationName;
-    },
+    }
 
-    applicationNameIsEmpty: function() {
+    applicationNameIsEmpty(): boolean {
       return !this.getApplicationName();
-    },
+    }
 
-    setApplicationName: function(name) {
+    setApplicationName(name: string): void {
       this.setState({ applicationName: name });
-    },
+    }
 
-    onApplicationNameEnterKey: function() {
+    onApplicationNameEnterKey(): void {
       if (!this.applicationNameIsEmpty()) {
         this.revealApplicationURL();
         if (this.applicationNameInput) {
           this.applicationNameInput.blur();
         }
       }
-    },
+    }
 
-    revealApplicationURL: function() {
+    revealApplicationURL(): void {
       this.setState({ shouldRevealApplicationUrl: true });
-    },
+    }
 
-    shouldRevealApplicationUrl: function() {
+    shouldRevealApplicationUrl(): boolean {
       return this.state.shouldRevealApplicationUrl;
-    },
+    }
 
-    shouldRevealCallbackUrl: function() {
-      return this.props.requiresAuth || (this.state.applicationApi && this.state.applicationApi.requiresAuth);
-    },
+    shouldRevealCallbackUrl(): boolean {
+      return this.props.requiresAuth || Boolean(this.state.applicationApi && this.state.applicationApi.requiresAuth);
+    }
 
-    getApplicationKey: function() {
+    getApplicationKey(): string {
       return this.state.applicationKey;
-    },
+    }
 
-    setApplicationKey: function(value) {
+    setApplicationKey(value: string): void {
       this.setState({ applicationKey: value });
-    },
+    }
 
-    getApplicationSecret: function() {
+    getApplicationSecret(): string {
       return this.state.applicationSecret;
-    },
+    }
 
-    setApplicationSecret: function(value) {
+    setApplicationSecret(value: string): void {
       this.setState({ applicationSecret: value });
-    },
+    }
 
-    getApplicationScope: function() {
+    getApplicationScope(): string {
       return this.state.applicationScope;
-    },
+    }
 
-    setApplicationScope: function(value) {
+    setApplicationScope(value: string): void {
       this.setState({ applicationScope: value });
-    },
+    }
 
-    oauthDetailsCanBeSaved: function() {
-      return this.getApplicationKey() && this.getApplicationSecret();
-    },
+    oauthDetailsCanBeSaved(): boolean {
+      return Boolean(this.getApplicationKey() && this.getApplicationSecret());
+    }
 
-    canBeSaved: function() {
-      return !!(
+    canBeSaved(): boolean {
+      return Boolean(
         this.getApplicationApiName() && this.getApplicationName() && this.oauthDetailsCanBeSaved()
       );
-    },
+    }
 
-    applicationCanBeShared: function() {
+    applicationCanBeShared(): boolean {
       return this.props.applicationCanBeShared;
-    },
+    }
 
-    onSaveClick: function() {
+    onSaveClick(): void {
       this.setState({
         isSaving: true
       });
-    },
+    }
 
-    onFocusExample: function(event) {
+    onFocusExample(event: React.FocusEvent<HTMLInputElement>): void {
       if (event) {
-        event.target.select();
+        event.currentTarget.select();
       }
-    },
+    }
 
-    onApplicationSharedChange: function(isChecked) {
+    onApplicationSharedChange(isChecked: boolean): void {
       this.setState({
         applicationShared: isChecked
       });
-    },
+    }
 
-    renderBehaviorGroupId: function() {
+    renderBehaviorGroupId() {
       var id = this.props.behaviorGroupId;
       if (id && id.length > 0) {
         return (<input type="hidden" name="behaviorGroupId" value={id} />);
       } else {
         return null;
       }
-    },
+    }
 
-    renderBehaviorId: function() {
+    renderBehaviorId() {
       var id = this.props.behaviorId;
       if (id && id.length > 0) {
         return (<input type="hidden" name="behaviorId" value={id} />);
       } else {
         return null;
       }
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"}>
           <form action={jsRoutes.controllers.web.settings.IntegrationsController.save().url} method="POST" className="flex-row-cascade">
@@ -254,7 +259,7 @@ const IntegrationEditor = React.createClass({
             <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
             <input type="hidden" name="id" value={this.props.applicationId} />
             <input type="hidden" name="teamId" value={this.props.teamId} />
-            <input type="hidden" name="isForOAuth1" value={this.isOAuth1()} />
+            <input type="hidden" name="isForOAuth1" value={String(this.isOAuth1())} />
             {this.renderBehaviorGroupId()}
             {this.renderBehaviorId()}
 
@@ -290,19 +295,19 @@ const IntegrationEditor = React.createClass({
           </form>
         </SettingsPage>
       );
-    },
+    }
 
-    renderNav: function() {
-      const navItems = [{
+    renderNav() {
+      const navItems: Array<NavItemContent> = [{
         title: "Settings"
       }, {
         url: jsRoutes.controllers.web.settings.IntegrationsController.list(this.props.isAdmin ? this.props.teamId : null).url,
         title: "Integrations"
       }];
       this.props.onRenderNavItems(navItems.concat(this.renderApplicationNavItems()));
-    },
+    }
 
-    renderApplicationNavItems: function() {
+    renderApplicationNavItems(): Array<NavItemContent> {
       const apiName = this.getApplicationApiName();
       if (!this.apiIsSet()) {
         return [{
@@ -320,13 +325,13 @@ const IntegrationEditor = React.createClass({
           title: title
         }];
       }
-    },
+    }
 
-    redirectToAWSEditor: function() {
-      window.location = jsRoutes.controllers.web.settings.AWSConfigController.add().url;
-    },
+    redirectToAWSEditor(): void {
+      window.location.href = jsRoutes.controllers.web.settings.AWSConfigController.add(null, null, null, null).url;
+    }
 
-    renderChooseApi: function() {
+    renderChooseApi() {
       return (
         <div>
           <p className="mtm">
@@ -336,32 +341,32 @@ const IntegrationEditor = React.createClass({
           </p>
 
           <div className="mvxl">
-            <button type="button" key={"apiTypeButton12"} className="button-l mrl mbl" onClick={this.redirectToAWSEditor}>
+            <Button className="button-l mrl mbl" onClick={this.redirectToAWSEditor}>
               <span className="type-black">AWS</span>
-          </button>
+            </Button>
             {this.getAllApis().map((api, index) => (
-              <button type="button" key={"apiTypeButton" + index}
+              <Button key={"apiTypeButton" + index}
                       className="button-l mrl mbl"
                       onClick={this.setApplicationApi.bind(this, api)}
               >
-                {ifPresent(api.logoImageUrl, url => (
-                  <img src={url} height="32" className="align-m" />
-                ), () => (
+                {api.logoImageUrl ? (
+                  <img alt="" src={api.logoImageUrl} height="32" className="align-m" />
+                ) : (
                   <span>
-                    {ifPresent(api.iconImageUrl, url => (
-                      <img src={url} width="24" height="24" className="mrm align-m mbxs" />
-                    ))}
+                    {api.iconImageUrl ? (
+                      <img alt="" src={api.iconImageUrl} width="24" height="24" className="mrm align-m mbxs" />
+                    ) : null}
                     <span className="type-black">{api.name}</span>
                   </span>
-                ))}
-              </button>
+                )}
+              </Button>
             ))}
           </div>
         </div>
       );
-    },
+    }
 
-    renderCallbackUrl: function() {
+    renderCallbackUrl() {
       if (this.shouldRevealCallbackUrl()) {
         return (
           <li>
@@ -373,9 +378,9 @@ const IntegrationEditor = React.createClass({
       } else {
         return null;
       }
-    },
+    }
 
-    renderConfigureApplication: function() {
+    renderConfigureApplication() {
       return (
         <div>
           <p className="mtm mbxl">Set up a new {this.getApplicationApiName()} configuration so your skills can access data from a {this.getApplicationApiName()} account.</p>
@@ -386,9 +391,9 @@ const IntegrationEditor = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderConfigureApplicationName: function() {
+    renderConfigureApplicationName() {
       return (
         <div>
           <h4 className="mbn position-relative">
@@ -429,13 +434,13 @@ const IntegrationEditor = React.createClass({
           </Collapsible>
         </div>
       );
-    },
+    }
 
-    isOAuth1: function() {
-      return this.state.applicationApi && this.state.applicationApi.isOAuth1;
-    },
+    isOAuth1(): boolean {
+      return Boolean(this.state.applicationApi && this.state.applicationApi.isOAuth1);
+    }
 
-    renderOAuthDetails: function() {
+    renderOAuthDetails() {
       return (
         <div>
           <hr className="mvxxxl" />
@@ -474,9 +479,10 @@ const IntegrationEditor = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderScopeDetails: function() {
+    renderScopeDetails() {
+      const docUrl = this.getApplicationApiScopeDocumentationUrl();
       return (
         <div>
           <hr className="mvxxxl" />
@@ -489,12 +495,12 @@ const IntegrationEditor = React.createClass({
             <p className="type-s">
               This may not be necessary for some APIs.
             </p>
-            {ifPresent(this.getApplicationApiScopeDocumentationUrl(), url => (
+            {docUrl ? (
               <p className="type-s">
-                <span>Use the <a href={url} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
+                <span>Use the <a href={docUrl} target="_blank">scope documentation at {this.getApplicationApiName()}</a> to determine </span>
                 <span>the correct value for your configuration.</span>
               </p>
-            ))}
+            ) : null}
 
             <div className="columns">
               <div className="column column-one-third">
@@ -510,9 +516,10 @@ const IntegrationEditor = React.createClass({
           </div>
         </div>
       );
-    },
+    }
 
-    renderConfigureApplicationDetails: function() {
+    renderConfigureApplicationDetails() {
+      const newAppUrl = this.getApplicationApiNewApplicationUrl();
       return (
         <div>
           <Collapsible revealWhen={this.shouldRevealApplicationUrl()}>
@@ -522,9 +529,9 @@ const IntegrationEditor = React.createClass({
               <h4 className="mbn position-relative">
                 <span className="position-hanging-indent">2</span>
                 <span>Register a new OAuth developer application on your {this.getApplicationApiName()} account. </span>
-                {ifPresent(this.getApplicationApiNewApplicationUrl(), url => (
-                  <a href={url} target="_blank">Go to {this.getApplicationApiName()} ↗︎</a>
-                ))}
+                {newAppUrl ? (
+                  <a href={newAppUrl} target="_blank">Go to {this.getApplicationApiName()} ↗︎</a>
+                ) : null}
               </h4>
               <ul className="type-s list-space-l mvl">
                 <li>You can set the name and description to whatever you like.</li>
@@ -540,7 +547,7 @@ const IntegrationEditor = React.createClass({
 
             {this.renderScopeDetails()}
 
-            {ifPresent(this.applicationCanBeShared(), () => (
+            {this.applicationCanBeShared() ? (
               <div className="mvm">
                 <h4 className="mbn position-relative">
                   <span className="position-hanging-indent">5</span>
@@ -562,12 +569,12 @@ const IntegrationEditor = React.createClass({
                   </div>
                 </div>
               </div>
-            ))}
+            ) : null}
 
           </Collapsible>
         </div>
       );
     }
-  });
+}
 
 export default IntegrationEditor;
