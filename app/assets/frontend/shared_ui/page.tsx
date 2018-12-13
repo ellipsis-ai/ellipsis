@@ -49,7 +49,7 @@ type State = {
 class Page extends React.Component<Props, State> {
     panels: { [prop: string]: any };
     footer: any;
-    component: any;
+    component: React.Component;
     header: Option<HTMLElement>;
     navItems: Option<HTMLElement>;
     navActions: Option<HTMLElement>;

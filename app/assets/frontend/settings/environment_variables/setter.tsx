@@ -15,7 +15,7 @@ import SubstringHighlighter from "../../shared_ui/substring_highlighter";
 
 const formatEnvVarName = Formatter.formatEnvironmentVariableName;
 
-interface Props {
+export interface EnvironmentVariableSetterProps {
   onCancelClick?: Option<() => void>,
   onSave: (vars: Array<EnvironmentVariableData>) => void,
   onDelete: (name: string) => void,
@@ -45,14 +45,14 @@ interface State {
   filter: string
 }
 
-class Setter extends React.Component<Props, State> {
+class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
   envVarValueInputs: {
     [varName: string]: Option<FocusableTextInputInterface>
   };
   newVarNameInputs: Array<Option<FocusableTextInputInterface>>;
   newVarValueInputs: Array<Option<FocusableTextInputInterface>>;
 
-  constructor(props: Props) {
+  constructor(props: EnvironmentVariableSetterProps) {
     super(props);
     autobind(this);
     this.state = this.defaultState();
@@ -120,7 +120,7 @@ class Setter extends React.Component<Props, State> {
     }
   }
 
-  componentWillReceiveProps(newProps: Props): void {
+  componentWillReceiveProps(newProps: EnvironmentVariableSetterProps): void {
     if (newProps.vars !== this.props.vars) {
       this.setState({
         vars: this.state.vars.map((oldVar) => {

@@ -9,7 +9,7 @@ import TeamTimeZoneSetter from '../../time_zone/team_time_zone_setter';
 import Page from '../../shared_ui/page';
 import autobind from '../../lib/autobind';
 
-type RegionalSettingsProps = {
+export interface RegionalSettingsProps {
   csrfToken: string,
   isAdmin: boolean,
   teamId: string,
