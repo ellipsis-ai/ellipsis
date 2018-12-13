@@ -1,18 +1,24 @@
 import * as React from 'react';
+import autobind from "../lib/autobind";
 
-const ExpandButton = React.createClass({
-    propTypes: {
-      onToggle: React.PropTypes.func.isRequired,
-      expandedWhen: React.PropTypes.bool.isRequired,
-      children: React.PropTypes.node.isRequired,
-      className: React.PropTypes.string
-    },
+interface Props {
+  onToggle: () => void
+  expandedWhen: boolean
+  children: React.ReactNode
+  className?: Option<string>
+}
 
-    toggle: function() {
+class ExpandButton extends React.Component<Props> {
+    constructor(props) {
+      super(props);
+      autobind(this);
+    }
+
+    toggle(): void {
       this.props.onToggle();
-    },
+    }
 
-    render: function() {
+    render() {
       return (
         <button type="button" className={`button-raw ${this.props.className || ""}`} onClick={this.toggle}>
           <span>
@@ -24,6 +30,6 @@ const ExpandButton = React.createClass({
         </button>
       );
     }
-});
+}
 
 export default ExpandButton;

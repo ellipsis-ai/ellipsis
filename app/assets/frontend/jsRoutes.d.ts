@@ -10,7 +10,9 @@ declare var jsRoutes: {
       linkCustomOAuth2Service: (configId: string, code?: Option<string>, state?: Option<string>, invocationId?: Option<string>, redirect?: Option<string>) => JsRoute
     },
     APITokenController: {
-      listTokens: (tokenId: Option<string>, teamId?: Option<string>) => JsRoute
+      createToken: () => JsRoute,
+      listTokens: (tokenId: Option<string>, teamId?: Option<string>) => JsRoute,
+      revokeToken: () => JsRoute
     },
     ApplicationController: {
       deleteBehaviorGroups: () => JsRoute,
@@ -91,7 +93,11 @@ declare var jsRoutes: {
           index: (teamId?: Option<string>) => JsRoute
         }
       }
-    }
+    },
+
+    api: {
+      APIController: APIController
+    },
 
     admin: {
       UserInfoController: {
@@ -100,3 +106,8 @@ declare var jsRoutes: {
     }
   }
 };
+
+declare interface APIController {
+  postMessage(): JsRoute
+  say(): JsRoute
+}
