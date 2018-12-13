@@ -145,7 +145,7 @@ case class SlackMessageSender(
                                     maybeAttachments: Option[Seq[Attachment]] = None,
                                     channel: String,
                                     maybeThreadTs: Option[String]
-                                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
+                                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     client.postEphemeralMessage(
       text,
       channel,
@@ -183,17 +183,17 @@ case class SlackMessageSender(
                                text: String,
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
-                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    val channel = channelToUse(maybeChannelToForce)
-    val maybeThreadTs = maybeThreadTsToUse(channel)
-    maybeResponseUrlToUse(channel).map { responseUrl =>
-      client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral)
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    val responseChannel = channelToUse(maybeChannelToForce)
+    val maybeThreadTs = maybeThreadTsToUse(responseChannel)
+    maybeResponseUrlToUse(responseChannel).map { responseUrl =>
+      client.postToResponseUrl(text, maybeAttachments, responseUrl, isEphemeral).map(_ => None)
     }.getOrElse {
-      if (isEphemeral) {
-        postEphemeralMessage(text, maybeAttachments, channel, maybeThreadTs)
+      if (isEphemeral && !SlackEventContext.channelIsDM(responseChannel)) {
+        postEphemeralMessage(text, maybeAttachments, responseChannel, maybeThreadTs).map(_ => None)
       } else {
         client.postChatMessage(
-          channel,
+          responseChannel,
           text,
           username = None,
           asUser = Some(true),
@@ -208,7 +208,7 @@ case class SlackMessageSender(
           deleteOriginal = None,
           threadTs = maybeThreadTs,
           replyBroadcast = None
-        ).recover(postErrorRecovery(channel, text))
+        ).map(ts => Some(ts)).recover(postErrorRecovery(responseChannel, text))
       }
     }
   }
@@ -225,8 +225,13 @@ case class SlackMessageSender(
   }
 
   private def maybePreambleText: Option[String] = {
-    if (responseType == Private && !maybeDMChannel.contains(originatingChannel)) {
+    val responseChannel = channelToUse()
+    val switchingChannels = responseChannel != originatingChannel
+    val switchingToPrivate = switchingChannels && maybeDMChannel.contains(responseChannel)
+    if (switchingToPrivate) {
       Some(s"<@${user}> I’ve sent you a <${client.profile.botDMDeepLink}|private message> :sleuth_or_spy:")
+    } else if (switchingChannels) {
+      Some(s"<@${user}> I’ve sent you a response in another channel.")
     } else {
       None
     }
@@ -272,7 +277,7 @@ case class SlackMessageSender(
           segment,
           maybeAttachmentsForSegment
         )
-      }.flatMap { ts => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, Some(ts))}
+      }.flatMap { maybeTs => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeTs)}
     }
   }
 

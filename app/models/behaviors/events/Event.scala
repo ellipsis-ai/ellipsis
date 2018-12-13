@@ -156,17 +156,20 @@ trait Event {
   }
 
   def shouldAutoForcePrivate(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
-      isEphemeral && params.exists(_.paramType.mayRequireTypedAnswer)
+    if (behaviorVersion.forcePrivateResponse) {
+      Future.successful(true)
+    } else {
+      dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
+        isEphemeral && params.exists(_.paramType.mayRequireTypedAnswer)
+      }
     }
   }
+
   def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     for {
-      forcePrivate <- shouldAutoForcePrivate(behaviorVersion, services.dataService).map(_ || behaviorVersion.forcePrivateResponse)
+      forcePrivate <- shouldAutoForcePrivate(behaviorVersion, services.dataService)
       maybeChannelToUse <- if (forcePrivate) {
-        eventContext.eventualMaybeDMChannel(services).map { maybeDMChannel =>
-          maybeDMChannel
-        }
+        eventContext.eventualMaybeDMChannel(services)
       } else {
         Future.successful(maybeChannel)
       }

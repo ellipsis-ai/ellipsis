@@ -313,7 +313,7 @@ case class SlackApiClient(
                             parse: Option[String] = None,
                             linkNames: Option[String] = None,
                             attachments: Option[Seq[Attachment]] = None
-                          ): Future[String] = {
+                          ): Future[Unit] = {
     val params = Map(
       "channel" -> channelId,
       "thread_ts" -> maybeThreadTs,
@@ -324,9 +324,7 @@ case class SlackApiClient(
       "link_names" -> linkNames,
       "attachments" -> attachments.map(a => Json.stringify(Json.toJson(a)))
     )
-    postResponseFor("chat.postEphemeral", params).map { r =>
-      extract[String](r, "message_ts")
-    }
+    postResponseFor("chat.postEphemeral", params).map(_ => {})
   }
 
   def postToResponseUrl(
@@ -335,7 +333,7 @@ case class SlackApiClient(
                          responseUrl: String,
                          isEphemeral: Boolean,
                          replaceOriginal: Boolean = false
-                       ): Future[String] = {
+                       ): Future[Unit] = {
     val responseType = if (isEphemeral) { "ephemeral" } else { "in_channel" }
     val payload = Json.obj(
       "response_type" -> JsString(responseType),
@@ -350,10 +348,7 @@ case class SlackApiClient(
       url(responseUrl).
       withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
       post(payload).
-      map { r =>
-        // These endpoints seem to just return a 200 OK with no data, so let's simulate a timestamp
-        SlackTimestamp.now
-      }
+      map(_ => {})
   }
 
   def addReactionToMessage(emojiName: String, channelId: String, timestamp: String): Future[Boolean] = {

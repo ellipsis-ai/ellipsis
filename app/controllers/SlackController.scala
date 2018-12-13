@@ -804,6 +804,7 @@ class SlackController @Inject() (
 
     def instantBackgroundResponse(responseText: String, permission: ActionPermission): Future[Option[String]] = {
       val trimmed = responseText.trim.replaceAll("(^\\u00A0|\\u00A0$)", "")
+      val useEphemeralResponse = isEphemeral || permission.beQuiet
       if (trimmed.isEmpty) {
         Future.successful(None)
       } else {
@@ -828,7 +829,7 @@ class SlackController @Inject() (
               user.id,
               message_ts,
               maybeOriginalMessageThreadId,
-              isEphemeral || permission.beQuiet,
+              useEphemeralResponse,
               Some(response_url),
               beQuiet = false
             )

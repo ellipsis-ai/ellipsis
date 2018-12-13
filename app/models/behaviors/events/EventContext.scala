@@ -213,10 +213,10 @@ case class SlackEventContext(
   }
 
   val isDirectMessage: Boolean = {
-    channel.startsWith("D")
+    SlackEventContext.channelIsDM(channel)
   }
   val isPrivateChannel: Boolean = {
-    channel.startsWith("G")
+    SlackEventContext.channelIsPrivateChannel(channel)
   }
   val isPublicChannel: Boolean = {
     !isDirectMessage && !isPrivateChannel
@@ -301,7 +301,7 @@ case class SlackEventContext(
         unformattedText,
         responseType,
         developerContext,
-        channel,
+        originatingChannel = channel,
         maybeDMChannel,
         maybeThreadId,
         maybeShouldUnfurl,
@@ -407,6 +407,16 @@ case class SlackEventContext(
     SlackMessageAttachment(maybeText, maybeUserDataList, maybeTitle, maybeTitleLink, maybeColor, maybeCallbackId, actions)
   }
 
+}
+
+object SlackEventContext {
+  def channelIsDM(channel: String): Boolean = {
+    channel.startsWith("D")
+  }
+
+  def channelIsPrivateChannel(channel: String): Boolean = {
+    channel.startsWith("G")
+  }
 }
 
 case class MSTeamsEventContext(
