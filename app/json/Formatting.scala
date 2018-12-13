@@ -216,7 +216,7 @@ object Formatting {
 
   lazy implicit val adminTeamDataWrites = Json.writes[AdminTeamData]
 
-  lazy implicit val messageInfoDeprecatedFormat = Json.format[DeprecatedMessageInfo]
+  lazy implicit val deprecatedMessageInfoFormat = Json.format[DeprecatedMessageInfo]
   lazy implicit val channelInfoFormat = Json.format[Channel]
   lazy implicit val messageInfoFormat = Json.format[Message]
 

@@ -1,4 +1,4 @@
-package services
+package models.behaviors.ellipsisobject
 
 object EllipsisObjectConstants {
 
