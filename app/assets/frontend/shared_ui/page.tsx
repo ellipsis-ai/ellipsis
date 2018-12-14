@@ -15,7 +15,7 @@ export interface PageRequiredProps {
   onRenderFooter: (content?: any, footerClassName?: string) => any,
   onRenderNavItems: (items: Array<NavItemContent>) => void,
   onRenderNavActions: (content: React.ReactNode) => void,
-  onRenderPanel: (panelName: string, panel: React.Component | HTMLElement | null) => void,
+  onRenderPanel: (panelName: string, panel: Panel) => void,
   headerHeight: number,
   footerHeight: number,
   ref?: any
@@ -46,8 +46,11 @@ type State = {
   footerHeight: number
 }
 
+type Panel = React.Component | HTMLElement | null;
+type PanelMap = { [name: string]: Panel };
+
 class Page extends React.Component<Props, State> {
-    panels: { [name: string]: HTMLElement };
+    panels: PanelMap;
     footer: any;
     component: React.Component;
     header: Option<HTMLElement>;
@@ -101,10 +104,8 @@ class Page extends React.Component<Props, State> {
       this.setState(this.getDefaultState(), optionalCallback);
     }
 
-    onRenderPanel(panelName: string, panel: React.Component | HTMLElement | null): void {
-      const newPanel: {
-        [name: string]: React.Component | HTMLElement | null
-      } = {};
+    onRenderPanel(panelName: string, panel: Panel): void {
+      const newPanel: PanelMap = {};
       newPanel[panelName] = panel;
       this.panels = Object.assign({}, this.panels, newPanel);
     }
@@ -121,14 +122,14 @@ class Page extends React.Component<Props, State> {
       }
     }
 
-    handleModalFocus(event: any): void {
-      var activeModal = this.state.activePanelIsModal ? this.getActiveModalElement(this.state.activePanelName) : null;
+    handleModalFocus(event: FocusEvent): void {
+      const activeModal = this.state.activePanelIsModal ? this.getActiveModalElement(this.state.activePanelName) : null;
       if (!activeModal) {
         return;
       }
-      var focusTarget = event.target;
-      var possibleMatches = activeModal.getElementsByTagName(focusTarget.tagName);
-      var match = Array.prototype.some.call(possibleMatches, function(element: HTMLElement) {
+      const focusTarget = event.relatedTarget as Element;
+      const possibleMatches = activeModal.getElementsByTagName(focusTarget.tagName);
+      const match = Array.prototype.some.call(possibleMatches, function(element: HTMLElement) {
         return element === focusTarget;
       });
       if (!match) {
@@ -138,9 +139,9 @@ class Page extends React.Component<Props, State> {
       }
     }
 
-    getActiveModalElement(panelName: string): any {
+    getActiveModalElement(panelName: string): HTMLElement | null {
       const panel = this.panels[panelName];
-      return panel ? ReactDOM.findDOMNode(panel) : null;
+      return panel ? ReactDOM.findDOMNode<HTMLElement>(panel) : null;
     }
 
     focusOnPrimaryOrFirstPossibleElement(parentElement: any): void {
