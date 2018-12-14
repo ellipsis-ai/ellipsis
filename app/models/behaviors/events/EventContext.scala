@@ -11,7 +11,7 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.ellipsisobject.BotInfo
+import models.behaviors.ellipsisobject.{BotInfo, Channel}
 import models.behaviors.events.ms_teams._
 import models.behaviors.events.slack._
 import models.behaviors.testing.TestRunEvent
@@ -80,6 +80,8 @@ sealed trait EventContext {
       Seq(Some(channelDetails), maybeUserDetails).flatten.reduce(_ ++ _)
     }
   }
+
+  def maybeChannelDataForAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Channel]]
 
   def maybeThreadId: Option[String]
 
@@ -259,6 +261,10 @@ case class SlackEventContext(
       "channelMembers" -> Json.toJson(members),
       "channelName" -> Json.toJson(maybeChannelInfo.map(_.computedName))
     ))
+  }
+
+  def maybeChannelDataForAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Channel]] = {
+    Channel.buildForSlackAction(channel, profile, services).map(Some(_))
   }
 
   def maybeUserDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[JsObject]] = {
@@ -479,6 +485,10 @@ case class MSTeamsEventContext(
     }
   }
 
+  def maybeChannelDataForAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Channel]] = {
+    DBIO.successful(Some(Channel(channel, info.conversation.name, None, None))) // TODO: flesh this out
+  }
+
   def maybeChannelForSendAction(
                                  responseType: BehaviorResponseType,
                                  maybeConversation: Option[Conversation],
@@ -666,6 +676,10 @@ case class TestEventContext(
 
   def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     Future.successful(s"${team.name} TestBot")
+  }
+
+  def maybeChannelDataForAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Channel]] = {
+    DBIO.successful(None)
   }
 
   def messageRecipientPrefix(isUninterruptedConversation: Boolean): String = ""

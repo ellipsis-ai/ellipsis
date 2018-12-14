@@ -55,6 +55,7 @@ class AWSLambdaServiceImpl @Inject() (
                                        ) extends AWSLambdaService {
 
   import AWSLambdaConstants._
+  import EllipsisObjectConstants._
 
   val client: AWSLambdaAsync =
     AWSLambdaAsyncClientBuilder.standard().
@@ -122,7 +123,7 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
-  private def teamInfoFor(behaviorVersion: BehaviorVersion, userInfo: UserInfo, maybeBotInfo: Option[BotInfo]): DBIO[TeamInfo] = {
+  private def teamInfoFor(behaviorVersion: BehaviorVersion, userInfo: DeprecatedUserInfo, maybeBotInfo: Option[BotInfo]): DBIO[TeamInfo] = {
     val team = behaviorVersion.team
     val groupVersion = behaviorVersion.groupVersion
     for {
@@ -140,7 +141,7 @@ class AWSLambdaServiceImpl @Inject() (
 
   private def invocationJsonFor(
                                  behaviorVersion: BehaviorVersion,
-                                 userInfo: UserInfo,
+                                 userInfo: DeprecatedUserInfo,
                                  teamInfo: TeamInfo,
                                  eventInfo: EventInfo,
                                  parameterValues: Seq[ParameterWithValue],
@@ -158,7 +159,7 @@ class AWSLambdaServiceImpl @Inject() (
         }),
         USER_INFO_KEY -> userInfo.toJson,
         TEAM_INFO_KEY -> teamInfo.toJson,
-        EVENT_INFO_KEY -> eventInfo.toJson
+        EVENT_KEY -> eventInfo.toJson
       ))
     )
     JsObject(parameterValueData ++ contextParamData ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id))))
@@ -249,16 +250,18 @@ class AWSLambdaServiceImpl @Inject() (
                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
-      userInfo <- event.userInfoAction(maybeConversation, defaultServices)
+      userInfo <- event.deprecatedUserInfoAction(maybeConversation, defaultServices)
+      eventUser <- event.eventUserAction(maybeConversation, defaultServices)
       token <- dataService.invocationTokens.createForAction(userInfo.user, behaviorVersion, event.maybeScheduled, Some(event.eventContext.teamIdForContext))
       maybeBotInfo <- DBIO.from(event.maybeBotInfo(defaultServices))
       teamInfo <- teamInfoFor(behaviorVersion, userInfo, maybeBotInfo)
+      maybeMessage <- event.maybeMessageInfoAction(maybeConversation, defaultServices)
       result <- {
         val invocationJson = invocationJsonFor(
           behaviorVersion,
           userInfo,
           teamInfo,
-          EventInfo(event),
+          EventInfo(event, eventUser, maybeMessage),
           parametersWithValues,
           environmentVariables,
           token

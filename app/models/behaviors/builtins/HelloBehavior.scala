@@ -24,7 +24,7 @@ case class HelloBehavior(
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
-      messageInfo <- event.messageInfo(None, services)
+      messageInfo <- event.deprecatedMessageInfo(None, services)
       appVersion <- version(services)
     } yield {
       val greeting = (messageInfo.details \ "name").asOpt[String].map(name => (s"Hello @$name")).getOrElse("Hello")

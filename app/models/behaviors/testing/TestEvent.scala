@@ -2,7 +2,7 @@ package models.behaviors.testing
 
 import akka.actor.ActorSystem
 import models.accounts.user.User
-import models.behaviors.ellipsisobject.UserInfo
+import models.behaviors.ellipsisobject.DeprecatedUserInfo
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import models.team.Team
@@ -23,11 +23,11 @@ trait TestEvent extends Event {
 
   def isDirectMessage(channel: String): Boolean = false
 
-  override def userInfoAction(
+  override def deprecatedUserInfoAction(
                                maybeConversation: Option[Conversation],
                                services: DefaultServices
-                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
-    UserInfo.buildForAction(user, this, maybeConversation, services)
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[DeprecatedUserInfo] = {
+    DeprecatedUserInfo.buildForAction(user, this, maybeConversation, services)
   }
 
   override def ensureUserAction(dataService: DataService): DBIO[User] = {
