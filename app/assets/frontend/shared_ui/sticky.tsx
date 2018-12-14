@@ -12,13 +12,15 @@ interface ValidCSSProps {
 }
 
 function setStyles(element: Option<HTMLElement>, styles: Partial<ValidCSSProps>) {
-  const keys = Object.keys(styles) as Array<keyof ValidCSSProps>;
-  keys.forEach((styleName) => {
-    const value = styles[styleName];
-    if (element && value) {
-      element.style.setProperty(styleName, value);
-    }
-  });
+  if (element) {
+    const keys = Object.keys(styles) as Array<keyof ValidCSSProps>;
+    keys.forEach((styleName) => {
+      const value = styles[styleName];
+      if (typeof value === "string") {
+        element.style[styleName] = value;
+      }
+    });
+  }
 }
 
 export interface Coords {
