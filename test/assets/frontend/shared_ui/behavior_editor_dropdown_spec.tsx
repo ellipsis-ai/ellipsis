@@ -8,12 +8,13 @@ import DropdownMenu, {
 describe('DropdownMenu', () => {
   let toggled = false;
 
-  const defaultConfig: Partial<DropdownMenuProps> = {
+  const defaultConfig: DropdownMenuProps = {
     labelClassName: '',
     label: 'A menu',
     openWhen: false,
     menuClassName: '',
-    toggle: function() { toggled = !toggled; }
+    toggle: function() { toggled = !toggled; },
+    children: undefined
   };
 
   const defaultItemConfig: DropdownMenuItemProps = {
@@ -41,9 +42,9 @@ describe('DropdownMenu', () => {
 
   beforeEach(() => {
     toggled = false;
-    config = Object.assign(config, defaultConfig);
-    eventData = Object.assign(eventData, defaultEventData);
-    itemConfig = Object.assign(itemConfig, defaultItemConfig);
+    config = Object.assign({}, defaultConfig);
+    eventData = Object.assign({}, defaultEventData);
+    itemConfig = Object.assign({}, defaultItemConfig);
   });
 
   describe('onMouseDown', () => {
