@@ -15,18 +15,19 @@ class Bar {
 }
 
 describe("DeepEqual", () => {
+  const a = { b: "c" };
+  function b() { return; }
+  function c() { return; }
+
   describe("isEqual", () => {
     it("returns true for deeply equal things", () => {
       expect(DeepEqual.isEqual(0, 0)).toBe(true);
       expect(DeepEqual.isEqual("0", "0")).toBe(true);
       expect(DeepEqual.isEqual([], [])).toBe(true);
       expect(DeepEqual.isEqual([0], [0])).toBe(true);
-
-      const a = { b: "c" };
       expect(DeepEqual.isEqual(a, a)).toBe(true);
-
-      function b() { return; }
       expect(DeepEqual.isEqual(b, b)).toBe(true);
+      expect(DeepEqual.isEqual(b(), c())).toBe(true);
       expect(DeepEqual.isEqual({ f: 0 }, { f: 0 })).toBe(true);
       expect(DeepEqual.isEqual(NaN, NaN)).toBe(true);
       expect(DeepEqual.isEqual(null, null)).toBe(true);
@@ -51,9 +52,14 @@ describe("DeepEqual", () => {
       expect(DeepEqual.isEqual({ f: 0 }, { f: 1 })).toBe(false);
       expect(DeepEqual.isEqual(0, NaN)).toBe(false);
       expect(DeepEqual.isEqual(null, undefined)).toBe(false);
+      expect(DeepEqual.isEqual(b, c)).toBe(false);
       expect(DeepEqual.isEqual(function() {}, function() {})).toBe(false);
       expect(DeepEqual.isEqual(new Foo("b"), new Bar("b"))).toBe(false);
       expect(DeepEqual.isEqual(new Bar("a"), new Bar("b"))).toBe(false);
+      expect(DeepEqual.isEqual(null, {})).toBe(false);
+      expect(DeepEqual.isEqual({}, null)).toBe(false);
+      expect(DeepEqual.isEqual(null, { f: "u" })).toBe(false);
+      expect(DeepEqual.isEqual({ f: "u" }, null)).toBe(false);
     });
   })
 });
