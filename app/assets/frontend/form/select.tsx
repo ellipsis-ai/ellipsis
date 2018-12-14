@@ -27,7 +27,7 @@ export interface SelectOption {
 class Select extends React.Component<Props, State> implements FocusableTextInputInterface {
     selectElement: Option<HTMLSelectElement>;
 
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.state = {

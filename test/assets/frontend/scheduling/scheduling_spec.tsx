@@ -6,10 +6,10 @@ import Recurrence from '../../../../app/assets/frontend/models/recurrence';
 import ScheduledAction, {ScheduledActionInterface} from '../../../../app/assets/frontend/models/scheduled_action';
 import ScheduleChannel, {ScheduleChannelInterface} from '../../../../app/assets/frontend/models/schedule_channel';
 import ID from '../../../../app/assets/frontend/lib/id';
-import Page from '../../../../app/assets/frontend/shared_ui/page';
 import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
 import OrgChannels from "../../../../app/assets/frontend/models/org_channels";
 import TeamChannels from "../../../../app/assets/frontend/models/team_channels";
+import {getPageRequiredProps} from "../shared_ui/page_spec";
 
 jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
 jest.mock('../../../../app/assets/frontend/lib/browser_utils');
@@ -29,9 +29,9 @@ class Loader extends React.Component<SchedulingProps, SchedulingProps> {
   render() {
     return (
       <Scheduling
-        ref={(el) => this.page = el}
+        ref={(el: Scheduling) => this.page = el}
         {...this.state}
-        {...Page.requiredPropDefaults()}
+        {...getPageRequiredProps()}
       />
     );
   }

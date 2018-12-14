@@ -8,7 +8,7 @@ import autobind from "../lib/autobind";
 type Props = RecurrenceEditorProps
 
 class MonthDayEditor extends React.Component<Props> {
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
     }

@@ -31,7 +31,7 @@ class MessageTriggerInput extends React.Component<Props, State> {
   validateTrigger: () => void;
   input: Option<FormInput>;
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     autobind(this);
     this.state = {

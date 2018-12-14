@@ -9,7 +9,7 @@ interface Props {
 }
 
 class ExpandButton extends React.Component<Props> {
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
     }

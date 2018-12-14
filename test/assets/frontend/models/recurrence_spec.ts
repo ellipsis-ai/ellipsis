@@ -1,4 +1,4 @@
-import Recurrence from '../../../../app/assets/frontend/models/recurrence';
+import Recurrence, {RecurrenceInterface} from '../../../../app/assets/frontend/models/recurrence';
 
 describe('Recurrence', () => {
 
@@ -18,7 +18,7 @@ describe('Recurrence', () => {
     daysOfWeek: []
   });
 
-  function newRecurrence(props) {
+  function newRecurrence(props: Partial<RecurrenceInterface>) {
     return new Recurrence(Object.assign({}, defaults, props));
   }
 

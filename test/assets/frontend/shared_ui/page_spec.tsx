@@ -1,9 +1,31 @@
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 
-import Page from '../../../../app/assets/frontend/shared_ui/page';
+import Page, {PageRequiredProps} from '../../../../app/assets/frontend/shared_ui/page';
 import PageFooterRenderingError from '../../../../app/assets/frontend/shared_ui/page_footer_rendering_error';
 import FixedFooter from '../../../../app/assets/frontend/shared_ui/fixed_footer';
+
+const renderPlaceholder = (ea: any) => ea;
+function placeholderCallback() {
+  void(0);
+}
+
+function getPageRequiredProps(): PageRequiredProps {
+  return {
+    activePanelName: "",
+    activePanelIsModal: false,
+    onToggleActivePanel: placeholderCallback,
+    onClearActivePanel: placeholderCallback,
+    onRenderFooter: renderPlaceholder,
+    onRenderPanel: renderPlaceholder,
+    onRenderNavItems: renderPlaceholder,
+    onRenderNavActions: renderPlaceholder,
+    headerHeight: 0,
+    footerHeight: 0
+  };
+};
+
+export {getPageRequiredProps};
 
 class FooterRenderingComponent extends React.Component<{
   onRenderFooter: (content: any) => void
@@ -81,7 +103,7 @@ describe('Page', () => {
     it('when not called by the child component, it throws a PageFooterRenderingError', () => {
       expect.assertions(1);
       try {
-        createPage((pageProps => (<NoFooterComponent {...pageProps} />)));
+        createPage(((pageProps: PageRequiredProps) => (<NoFooterComponent {...pageProps} />)));
       } catch(e) {
         expect(e).toBeInstanceOf(PageFooterRenderingError);
       }

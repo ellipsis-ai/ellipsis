@@ -285,7 +285,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
         });
       });
 
-      const equalizeLineNumbers = function(unifiedLine) {
+      const equalizeLineNumbers = function(unifiedLine: Array<TextPart>) {
         const firstUnchangedPart = unifiedLine.find((part) => part.isUnchanged());
         if (firstUnchangedPart) {
           let oldPartIndex = -1;
@@ -317,7 +317,7 @@ class OrderingDiff<T extends Diffable> implements Diff {
       //
       // Since we split changes into lines, we want to find any case where a line includes
       // both removing and adding "\n", and replace them with "unchanged" parts
-      const replaceRedundantNewLineChanges = function(oldLine, index) {
+      const replaceRedundantNewLineChanges = function(oldLine: Array<TextPart>, index: number) {
         const newLine = newLines[index];
         if (oldLine.length === 0 || !newLine || newLine.length === 0) {
           return;

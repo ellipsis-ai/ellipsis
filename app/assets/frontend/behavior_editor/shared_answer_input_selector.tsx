@@ -9,7 +9,7 @@ interface Props {
 }
 
 class SharedAnswerInputSelector extends React.PureComponent<Props> {
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
     }

@@ -2,18 +2,19 @@ import * as MockDataRequest from '../../../mocks/mock_data_request';
 import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 import BehaviorEditor, {BehaviorEditorProps} from '../../../../app/assets/frontend/behavior_editor/index';
-import BehaviorVersion, {BehaviorVersionJson} from '../../../../app/assets/frontend/models/behavior_version';
-import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
+import BehaviorVersion from '../../../../app/assets/frontend/models/behavior_version';
+import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
 import ParamType from '../../../../app/assets/frontend/models/param_type';
 import {TriggerType} from "../../../../app/assets/frontend/models/trigger";
 import {AWSConfigRef} from '../../../../app/assets/frontend/models/aws';
 import {OAuthApplicationRef} from '../../../../app/assets/frontend/models/oauth';
 import {SimpleTokenApiRef} from '../../../../app/assets/frontend/models/simple_token';
-import Page, {PageRequiredProps} from "../../../../app/assets/frontend/shared_ui/page";
+import {PageRequiredProps} from "../../../../app/assets/frontend/shared_ui/page";
 import BehaviorResponseType from "../../../../app/assets/frontend/models/behavior_response_type";
 import Input from "../../../../app/assets/frontend/models/input";
 import ResponseTemplate from "../../../../app/assets/frontend/models/response_template";
 import DataTypeConfig from "../../../../app/assets/frontend/models/data_type_config";
+import {getPageRequiredProps} from "../shared_ui/page_spec";
 
 jest.mock('../../../../app/assets/frontend/behavior_editor/code_configuration', () => {
   return {
@@ -277,14 +278,13 @@ describe('BehaviorEditor', () => {
   });
 
   let editorConfig: BehaviorEditorProps;
-  let firstBehavior: BehaviorVersion;
 
   beforeEach(function() {
     editorConfig = Object.assign({}, defaultConfig);
   });
 
   function createEditor(config: BehaviorEditorProps): BehaviorEditor {
-    const props: BehaviorEditorProps & PageRequiredProps = Object.assign({}, Page.requiredPropDefaults(), config);
+    const props: BehaviorEditorProps & PageRequiredProps = Object.assign({}, getPageRequiredProps(), config);
     return TestUtils.renderIntoDocument(
       <BehaviorEditor {...props} />
     ) as BehaviorEditor;

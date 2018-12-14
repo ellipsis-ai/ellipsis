@@ -22,7 +22,7 @@ class ApiConfigList extends React.Component<Props> {
       autobind(this);
     }
 
-    onApiConfigClick(required): void {
+    onApiConfigClick(required: RequiredApiConfig): void {
       this.props.onApiConfigClick(required);
     }
 

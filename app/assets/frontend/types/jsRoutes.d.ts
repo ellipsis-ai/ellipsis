@@ -48,7 +48,7 @@ declare var jsRoutes: {
     },
     BehaviorImportExportController: {
       doImport: () => JsRoute,
-      "export": (string) => JsRoute
+      "export": (id: string) => JsRoute
     },
     FeedbackController: {
       send: () => JsRoute

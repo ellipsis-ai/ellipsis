@@ -185,7 +185,7 @@ class DropdownMenuItem extends React.Component<DropdownMenuItemProps, MenuItemSt
       this.state.hover !== nextState.hover;
   }
 
-  visibleWhen(condition) {
+  visibleWhen(condition: Option<boolean>) {
     return " visibility " + (condition ? "visibility-visible" : "visibility-hidden") + " ";
   }
 

@@ -18,7 +18,7 @@ interface Props {
 class ReactionTriggerInput extends React.Component<Props> {
   input: Option<FormInput>;
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     autobind(this);
   }

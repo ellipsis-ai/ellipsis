@@ -100,7 +100,7 @@ class BehaviorList extends React.Component<Props, State> {
     };
 
     this.delaySubmitSearch = debounce(() => this.submitSearch(), 50);
-    this.delayUpdateActiveSearch = debounce((newText) => this.updateActiveSearch(newText), 200);
+    this.delayUpdateActiveSearch = debounce((newText: string) => this.updateActiveSearch(newText), 200);
     this.delayOnScroll = debounce(() => this.onScroll(), 50);
     this.mainHeader = document.getElementById('main-header');
   }
@@ -610,7 +610,7 @@ class BehaviorList extends React.Component<Props, State> {
     if (!groupId) {
       return null;
     }
-    const onCheckedChangeForGroup = (isChecked) => {
+    const onCheckedChangeForGroup = (isChecked: boolean) => {
       this.onGroupCheckboxChange(groupId, isChecked);
     };
     return (

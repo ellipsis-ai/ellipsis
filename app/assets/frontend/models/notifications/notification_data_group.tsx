@@ -48,7 +48,9 @@ class NotificationDataGroup<T extends NotificationData> implements NotificationD
     }
 
     static groupByKind(notifications: Array<NotificationData>): Array<NotificationDataGroup<any>> {
-      var kinds = {};
+      const kinds: {
+        [kind: string]: NotificationDataGroup<any>
+      } = {};
       notifications.forEach((ea) => {
         const group = kinds[ea.kind] || new NotificationDataGroup({ kind: ea.kind });
         kinds[ea.kind] = group.concat(ea);

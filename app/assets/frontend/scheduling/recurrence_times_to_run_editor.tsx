@@ -10,7 +10,7 @@ type Props = RecurrenceEditorProps
 class RecurrenceTimesToRunEditor extends React.Component<Props> {
   totalTimesInput: Option<FormInput>;
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     autobind(this);
   }

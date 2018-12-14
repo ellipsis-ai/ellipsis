@@ -676,7 +676,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
   "isManaged": false
 });
 
-function textDiff(left, right) {
+function textDiff(left: string, right: string) {
   return MultiLineTextPropertyDiff.maybeFor("", left, right);
 }
 

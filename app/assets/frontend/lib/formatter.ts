@@ -119,8 +119,8 @@ const Formatter = {
       return Formatter.formatNameForCode(name) === name;
     },
 
-    formatList: function<T>(list: Array<T>, optionalMapper?: (T) => string): string {
-      var mapper = optionalMapper || ((ea) => ea);
+    formatList: function<T>(list: Array<T>, optionalMapper?: (item: T) => string): string {
+      const mapper = optionalMapper || ((ea) => String(ea));
       if (list.length === 1) {
         return list.map(mapper).join("");
       } else if (list.length === 2) {

@@ -6,10 +6,12 @@ import Recurrence, {RecurrenceInterface} from "../../../../app/assets/frontend/m
 const onChangeSpy = jest.fn();
 
 function createEditorWithRecurrence(recurrenceProps?: Partial<RecurrenceInterface>): RecurrenceTimesToRunEditor {
-  return TestUtils.renderIntoDocument(React.createElement(RecurrenceTimesToRunEditor, {
-    recurrence: new Recurrence({}).becomeMinutely().clone(recurrenceProps || {}),
-    onChange: onChangeSpy
-  })) as RecurrenceTimesToRunEditor;
+  return TestUtils.renderIntoDocument((
+    <RecurrenceTimesToRunEditor
+      recurrence={new Recurrence({}).becomeMinutely().clone(recurrenceProps || {})}
+      onChange={onChangeSpy}
+    />
+  )) as RecurrenceTimesToRunEditor;
 }
 
 describe("RecurrenceTimesToRunEditor", () => {

@@ -276,7 +276,7 @@ class BehaviorEditor extends React.Component<Props, State> {
 
   getSelectedApiConfig(): Option<RequiredApiConfig> {
     const selectedId = this.getSelectedApiConfigId();
-    return this.getRequiredApiConfigWithId(selectedId);
+    return selectedId ? this.getRequiredApiConfigWithId(selectedId): null;
   }
 
   getAllConfigs(): Array<ApiConfigRef> {
@@ -295,7 +295,7 @@ class BehaviorEditor extends React.Component<Props, State> {
       .concat(this.getRequiredSimpleTokenApis());
   }
 
-  getRequiredApiConfigWithId(id): Option<RequiredApiConfig> {
+  getRequiredApiConfigWithId(id: string): Option<RequiredApiConfig> {
     return this.getAllRequiredApiConfigs().find(ea => ea.id === id);
   }
 
@@ -1093,7 +1093,7 @@ class BehaviorEditor extends React.Component<Props, State> {
     }
   }
 
-  getNextBehaviorIdFor(group) {
+  getNextBehaviorIdFor(group: BehaviorGroup): Option<string> {
     if (group.behaviorVersions.length) {
       return group.behaviorVersions[0].behaviorId;
     } else {

@@ -133,7 +133,7 @@ class CodeEditor extends React.Component<Props> {
       fontSize: EDITOR_FONT_SIZE,
       lineHeight: EDITOR_LINE_HEIGHT,
       fontFamily: "Source Code Pro",
-      lineNumbers: (lineNumber) => String(lineNumber + this.props.firstLineNumber - 1),
+      lineNumbers: (lineNumber: number) => String(lineNumber + this.props.firstLineNumber - 1),
       minimap: {
         enabled: false
       },

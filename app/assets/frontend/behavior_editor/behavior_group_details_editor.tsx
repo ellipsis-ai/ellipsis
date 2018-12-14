@@ -8,7 +8,7 @@ import DeleteButton from "../shared_ui/delete_button";
 
 interface Props {
   group: BehaviorGroup,
-  onBehaviorGroupIconChange: (icon: Option<string>) => void,
+  onBehaviorGroupIconChange: (icon: string) => void,
   onBehaviorGroupNameChange: (name: string) => void,
   onBehaviorGroupDescriptionChange: (description: string) => void
   iconPickerVisible: boolean
@@ -36,7 +36,7 @@ class BehaviorGroupDetailsEditor extends React.PureComponent<Props> {
     }
 
     onChangeEmoji(emoji: EmojiInterface): void {
-      this.props.onBehaviorGroupIconChange(emoji.native);
+      this.props.onBehaviorGroupIconChange(emoji.native || "");
       this.props.onToggleIconPicker();
     }
 
