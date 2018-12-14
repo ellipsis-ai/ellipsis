@@ -59,7 +59,7 @@ class SearchWithGroupedResults extends React.Component<Props, State> {
   }
 
   onSelect(newValue: Option<string>, newIndex: Option<number>): void {
-    if (newValue && typeof newIndex === "number") {
+    if (typeof newValue === "string" && typeof newIndex === "number") {
       this.props.onSelect(newValue, newIndex);
     }
   }
