@@ -3,8 +3,10 @@ import BehaviorGroup from '../models/behavior_group';
 import FormInput from '../form/input';
 import Textarea from '../form/textarea';
 import autobind from '../lib/autobind';
-import EmojiInput, {EmojiInterface} from "../form/emoji_input";
+import EmojiInput from "../form/emoji_input";
 import DeleteButton from "../shared_ui/delete_button";
+import {EmojiData} from "emoji-mart";
+import {BaseEmoji} from "emoji-mart/dist-es/utils/emoji-index/nimble-emoji-index";
 
 interface Props {
   group: BehaviorGroup,
@@ -35,8 +37,9 @@ class BehaviorGroupDetailsEditor extends React.PureComponent<Props> {
       }
     }
 
-    onChangeEmoji(emoji: EmojiInterface): void {
-      this.props.onBehaviorGroupIconChange(emoji.native || "");
+    onChangeEmoji(emoji: EmojiData): void {
+      const baseEmoji = emoji as BaseEmoji;
+      this.props.onBehaviorGroupIconChange(baseEmoji.native || "");
       this.props.onToggleIconPicker();
     }
 

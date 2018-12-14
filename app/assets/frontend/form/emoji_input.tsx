@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Picker, Emoji } from 'emoji-mart';
+import {Picker, Emoji, EmojiData} from 'emoji-mart';
 import autobind from '../lib/autobind';
 import DropdownContainer from "../shared_ui/dropdown_container";
 import Button from "./button";
@@ -8,26 +8,13 @@ const EMOJI_SIZE = 32;
 const EMOJI_SHEET_SIZE = 64;
 const EMOJI_SET = "twitter";
 
-export interface EmojiInterface {
-  id: string
-  name: string
-  colons: string
-  text: string
-  emoticons: Array<string>
-  skin?: Option<number>
-  native?: Option<string>
-  custom?: Option<boolean>
-  imageUrl?: Option<string>
-  short_names?: Array<string>
-}
-
 interface Props {
-  id?: Option<string>
+  id?: string
   raw?: Option<string>
   pickerVisible: boolean
   onTogglePicker: () => void
-  onClickEmoji: (emoji: EmojiInterface) => void
-  filterEmoji?: (emoji: EmojiInterface) => boolean
+  onClickEmoji: (emoji: EmojiData) => void
+  filterEmoji?: (emoji: EmojiData) => boolean
   emojiAsText?: React.ReactNode
 }
 
@@ -38,7 +25,7 @@ class EmojiInput extends React.Component<Props> {
   }
 
   renderSelectedEmoji() {
-    const emoji = this.props.id ? { id: this.props.id, skin: 3 } : null;
+    const emoji = this.props.id ? this.props.id : null;
     if (emoji) {
       return (
         <Emoji
