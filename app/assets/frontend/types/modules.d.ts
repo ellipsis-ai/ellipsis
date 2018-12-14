@@ -1,9 +1,20 @@
-// TODO: Write types for external modules we're using
-declare module "emoji-mart";
-declare module "javascript-debounce";
+declare module "javascript-debounce" {
+  const debounce: <T extends (...args: Array<any>) => any>(f: T, timeout: number) => T;
+  export = debounce;
+}
+
 declare module "monaco-editor/esm/vs/language/typescript/lib/lib" {
   export const lib_es5_dts: string;
   export const lib_es2015_dts: string;
 }
-declare module "urijs";
-declare module "uuid";
+
+/*
+ The @types/uuid package adds node types as a dependency which we do not want,
+ so here's a simple replacement:
+ */
+declare module "uuid" {
+  function v4(options?: {
+    random?: Array<number>,
+    rng?: () => Array<number>
+  }, buffer?: Uint8Array, offset?: number): string
+}
