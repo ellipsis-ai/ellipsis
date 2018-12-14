@@ -6,7 +6,6 @@ import Collapsible from '../../shared_ui/collapsible';
 import Button from '../../form/button';
 import SettingsPage from '../../shared_ui/settings_page';
 import TeamTimeZoneSetter from '../../time_zone/team_time_zone_setter';
-import Page from '../../shared_ui/page';
 import autobind from '../../lib/autobind';
 
 export interface RegionalSettingsProps {
@@ -133,7 +132,5 @@ class RegionalSettings extends React.Component<Props, State> {
       );
     }
   }
-
-RegionalSettings.defaultProps = Page.requiredPropDefaults();
 
 export default RegionalSettings;

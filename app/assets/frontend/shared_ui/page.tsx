@@ -15,7 +15,7 @@ export interface PageRequiredProps {
   onRenderFooter: (content?: any, footerClassName?: string) => any,
   onRenderNavItems: (items: Array<NavItemContent>) => void,
   onRenderNavActions: (content: React.ReactNode) => void,
-  onRenderPanel: (panelName: string, panel: Panel) => void,
+  onRenderPanel: (panelName: string, panel: Container) => void,
   headerHeight: number,
   footerHeight: number,
   ref?: any
@@ -46,17 +46,16 @@ type State = {
   footerHeight: number
 }
 
-type Panel = React.Component | HTMLElement | null;
-type PanelMap = { [name: string]: Panel };
+type Container = React.Component | HTMLElement | null;
+type PanelMap = { [name: string]: Container };
 
 class Page extends React.Component<Props, State> {
     panels: PanelMap;
-    footer: any;
+    footer: Container;
     component: React.Component;
     header: Option<HTMLElement>;
     navItems: Option<HTMLElement>;
     navActions: Option<HTMLElement>;
-    static requiredPropTypes: {};
     static feedbackContainerId: string;
 
     constructor(props: Props) {
@@ -104,7 +103,7 @@ class Page extends React.Component<Props, State> {
       this.setState(this.getDefaultState(), optionalCallback);
     }
 
-    onRenderPanel(panelName: string, panel: Panel): void {
+    onRenderPanel(panelName: string, panel: Container): void {
       const newPanel: PanelMap = {};
       newPanel[panelName] = panel;
       this.panels = Object.assign({}, this.panels, newPanel);
@@ -116,7 +115,7 @@ class Page extends React.Component<Props, State> {
       }
     }
 
-    onDocumentKeyDown(event: any): void {
+    onDocumentKeyDown(event: KeyboardEvent): void {
       if (Event.keyPressWasEsc(event)) {
         this.handleEscKey();
       }
@@ -144,8 +143,8 @@ class Page extends React.Component<Props, State> {
       return panel ? ReactDOM.findDOMNode<HTMLElement>(panel) : null;
     }
 
-    focusOnPrimaryOrFirstPossibleElement(parentElement: any): void {
-      var primaryElement = parentElement.querySelector('button.button-primary');
+    focusOnPrimaryOrFirstPossibleElement(parentElement: HTMLElement): void {
+      var primaryElement = parentElement.querySelector<HTMLElement>('button.button-primary');
       if (primaryElement) {
         primaryElement.focus();
       } else {
@@ -153,9 +152,9 @@ class Page extends React.Component<Props, State> {
       }
     }
 
-    focusOnFirstPossibleElement(parentElement: any): void {
+    focusOnFirstPossibleElement(parentElement: HTMLElement): void {
       var tabSelector = 'a[href], area[href], input:not([disabled]), button:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, object, embed, *[tabindex], *[contenteditable]';
-      var firstFocusableElement = parentElement.querySelector(tabSelector);
+      var firstFocusableElement = parentElement.querySelector<HTMLElement>(tabSelector);
       if (firstFocusableElement) {
         firstFocusableElement.focus();
       }
@@ -271,40 +270,7 @@ class Page extends React.Component<Props, State> {
         </div>
       );
     }
-
-    static requiredPropDefaults(): PageRequiredProps {
-      const renderPlaceholder = (ea: any) => ea;
-      return {
-        activePanelName: "",
-        activePanelIsModal: false,
-        onToggleActivePanel: Page.placeholderCallback,
-        onClearActivePanel: Page.placeholderCallback,
-        onRenderFooter: renderPlaceholder,
-        onRenderPanel: renderPlaceholder,
-        onRenderNavItems: renderPlaceholder,
-        onRenderNavActions: renderPlaceholder,
-        headerHeight: 0,
-        footerHeight: 0
-      };
-    }
-
-    static placeholderCallback() {
-      void(0);
-    }
 }
-
-Page.requiredPropTypes = {
-  activePanelName: React.PropTypes.string.isRequired,
-  activePanelIsModal: React.PropTypes.bool.isRequired,
-  onToggleActivePanel: React.PropTypes.func.isRequired,
-  onClearActivePanel: React.PropTypes.func.isRequired,
-  onRenderFooter: React.PropTypes.func.isRequired,
-  onRenderPanel: React.PropTypes.func.isRequired,
-  onRenderNavItems: React.PropTypes.func.isRequired,
-  onRenderNavActions: React.PropTypes.func.isRequired,
-  headerHeight: React.PropTypes.number.isRequired,
-  footerHeight: React.PropTypes.number.isRequired
-};
 
 Page.feedbackContainerId = 'header-feedback';
 

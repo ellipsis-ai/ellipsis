@@ -3,8 +3,7 @@ import 'whatwg-fetch';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import RegionalSettings from './index';
-import PageComponent, {PageRequiredProps} from '../../shared_ui/page';
-const Page: any = PageComponent;
+import Page, {PageRequiredProps} from '../../shared_ui/page';
 import autobind from '../../lib/autobind';
 
 type Props = {

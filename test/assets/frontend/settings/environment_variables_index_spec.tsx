@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as TestUtils from 'react-addons-test-utils';
 import EnvironmentVariables from '../../../../app/assets/frontend/settings/environment_variables/index';
 import {EnvironmentVariableListConfig} from "../../../../app/assets/frontend/settings/environment_variables/loader";
-import Page from "../../../../app/assets/frontend/shared_ui/page";
+import {getPageRequiredProps} from "../shared_ui/page_spec";
 
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
 jsRoutes.controllers.GithubConfigController.index = jest.fn(() => ({ url: '/mock_github_config' }));
@@ -36,7 +36,7 @@ describe('EnvironmentVariables', () => {
 
   function createIndex(config: EnvironmentVariableListConfig): EnvironmentVariables {
     return TestUtils.renderIntoDocument(
-      <EnvironmentVariables {...config} {...Page.requiredPropDefaults()} />
+      <EnvironmentVariables {...config} {...getPageRequiredProps()} />
     ) as EnvironmentVariables;
   }
 

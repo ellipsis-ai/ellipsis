@@ -5,6 +5,28 @@ import Page, {PageRequiredProps} from '../../../../app/assets/frontend/shared_ui
 import PageFooterRenderingError from '../../../../app/assets/frontend/shared_ui/page_footer_rendering_error';
 import FixedFooter from '../../../../app/assets/frontend/shared_ui/fixed_footer';
 
+const renderPlaceholder = (ea: any) => ea;
+function placeholderCallback() {
+  void(0);
+}
+
+function getPageRequiredProps(): PageRequiredProps {
+  return {
+    activePanelName: "",
+    activePanelIsModal: false,
+    onToggleActivePanel: placeholderCallback,
+    onClearActivePanel: placeholderCallback,
+    onRenderFooter: renderPlaceholder,
+    onRenderPanel: renderPlaceholder,
+    onRenderNavItems: renderPlaceholder,
+    onRenderNavActions: renderPlaceholder,
+    headerHeight: 0,
+    footerHeight: 0
+  };
+};
+
+export {getPageRequiredProps};
+
 class FooterRenderingComponent extends React.Component<{
   onRenderFooter: (content: any) => void
 }> {
