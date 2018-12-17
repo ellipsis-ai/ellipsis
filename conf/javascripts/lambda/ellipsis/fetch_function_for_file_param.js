@@ -1,5 +1,6 @@
+const request = require('request');
+const USER_ERROR_MESSAGE = "An unknown error occurred while trying to read the file you uploaded.";
 module.exports = function(param, $CONTEXT_PARAM) {
-  const request = require('request');
   return function() {
     const url = $CONTEXT_PARAM.apiBaseUrl + "/api/v1/files";
     const qs = { token: $CONTEXT_PARAM.token, fileId: param.id };
@@ -22,10 +23,11 @@ module.exports = function(param, $CONTEXT_PARAM) {
             contentType: contentType,
             filename: filename
           });
-        } else if (err) {
-          reject(err);
         } else {
-          reject(`${res.statusCode}: ${body}`);
+          const errorMessage = `${res.statusCode}: ${res.statusMessage}`;
+          reject(new $CONTEXT_PARAM.Error(err || errorMessage, {
+            userMessage: USER_ERROR_MESSAGE
+          }));
         }
       });
     });
