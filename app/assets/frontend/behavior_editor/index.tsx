@@ -1,6 +1,6 @@
 import * as React from 'react';
 import APIConfigPanel from './api_config_panel';
-import {AWSConfigRef} from '../models/aws';
+import {AWSConfigRef, RequiredAWSConfig} from '../models/aws';
 import BehaviorGroup, {BehaviorGroupJson} from '../models/behavior_group';
 import BehaviorGroupVersionMetaData from '../models/behavior_group_version_meta_data';
 import BehaviorGroupDetailsPanel from './behavior_group_details_panel';
@@ -34,11 +34,9 @@ import LibraryVersion, {LibraryVersionInterface, LibraryVersionJson} from '../mo
 import LinkedGithubRepo from '../models/linked_github_repo';
 import ModalScrim from '../shared_ui/modal_scrim';
 import Notifications from '../notifications/notifications';
-import {OAuthApiJson, OAuthApplicationRef} from '../models/oauth';
+import {OAuthApiJson, OAuthApplicationRef, RequiredOAuthApplication} from '../models/oauth';
 import {NavItemContent, PageRequiredProps} from '../shared_ui/page';
 import ParamType from '../models/param_type';
-import {RequiredAWSConfig} from '../models/aws';
-import {RequiredOAuthApplication} from '../models/oauth';
 import ResponseTemplate from '../models/response_template';
 import ResponseTemplateConfiguration from './response_template_configuration';
 import ResponseTemplateHelp from './response_template_help';
@@ -61,7 +59,6 @@ import Event from '../lib/event';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import * as debounce from 'javascript-debounce';
 import Sort from '../lib/sort';
-import 'codemirror/mode/markdown/markdown';
 import DeploymentStatus from "./deployment_status";
 import GithubRepoActions from "./versions/github_repo_actions";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";

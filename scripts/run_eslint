@@ -1,2 +1,0 @@
-#!/bin/sh
-./node_modules/.bin/eslint --ext .js,.jsx -- app/assets/ test/ npm_modules/ conf/javascripts/

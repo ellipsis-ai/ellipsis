@@ -7,14 +7,11 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {
-    "emoji-mart": "^2.8.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.1.0",
     "@babel/preset-env": "^7.1.0",
     "@babel/preset-react": "^7.0.0",
-    "@types/codemirror": "0.0.60",
     "@types/diff-match-patch": "^1.0.32",
     "@types/emoji-mart": "^2.8.2",
     "@types/jest": "^23.3.7",
@@ -24,21 +21,18 @@
     "@types/urijs": "^1.15.38",
     "animated-scroll-to": "1.1.8",
     "babel-core": "^7.0.0-bridge.0",
-    "babel-eslint": "8.2.1",
     "babel-jest": "^23.6.0",
     "babel-loader": "^8.0.3",
-    "codemirror": "5.34.0",
     "config": "1.29.4",
     "core-js": "2.4.1",
     "css-loader": "^1.0.0",
     "diff-match-patch": "1.0.1",
-    "eslint": "4.17.0",
-    "eslint-plugin-react": "7.4.0",
+    "emoji-mart": "^2.9.2",
     "javascript-debounce": "1.0.0",
     "jest": "^23.6.0",
-    "jshint": "^2.9.6",
     "moment": "2.21.0",
     "monaco-editor": "^0.15.2",
+    "prop-types": "^15.6.2",
     "react": "15.3.1",
     "react-addons-test-utils": "15.3.1",
     "react-dom": "15.3.1",
@@ -55,7 +49,6 @@
     "whatwg-fetch": "1.0.0"
   },
   "scripts": {
-    "lint": "scripts/run_eslint",
     "test": "node --trace-warnings node_modules/.bin/jest --runInBand",
     "postinstall": "find ./npm_modules/* -maxdepth 2 -name package.json -exec sh -c 'cd $(dirname \"{}\"); npm install' \\;",
     "build": "NODE_CONFIG_DIR='./conf/webpack' webpack --mode production --env.WEBPACK_BUILD_PATH=${WEBPACK_BUILD_PATH} -p --config ./app/assets/frontend/webpack/webpack.base.config.js",
