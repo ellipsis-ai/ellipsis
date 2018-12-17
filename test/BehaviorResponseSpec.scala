@@ -8,7 +8,7 @@ import models.behaviors.input.Input
 import models.behaviors.testing.TestMessageEvent
 import models.behaviors.triggers.{MessageSent, TemplateTrigger}
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.JsString
 import play.api.test.Helpers._

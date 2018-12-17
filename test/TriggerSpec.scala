@@ -4,7 +4,7 @@ import models.behaviors.behaviorparameter.{BehaviorParameter, TextType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
 import models.behaviors.triggers.Trigger
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 
 trait TriggerSpec extends PlaySpec with MockitoSugar {

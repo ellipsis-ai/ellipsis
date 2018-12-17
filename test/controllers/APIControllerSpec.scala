@@ -27,7 +27,7 @@ import models.behaviors.{BotResult, BotResultService, SimpleTextResult}
 import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.Application
 import play.api.libs.json._

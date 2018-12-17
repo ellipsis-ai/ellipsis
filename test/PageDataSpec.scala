@@ -1,4 +1,4 @@
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import utils.{PageData, PageDataOutOfRangeException}
 

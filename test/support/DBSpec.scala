@@ -26,8 +26,9 @@ import models.behaviors.savedanswer.SavedAnswer
 import models.behaviors.triggers.MessageSent
 import models.team.Team
 import modules.ActorModule
-import org.scalatest.mock.MockitoSugar
-import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
+import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.db.DBApi
 import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
@@ -42,7 +43,7 @@ import slick.dbio.DBIO
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
+trait DBSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar {
 
   lazy val config = app.injector.instanceOf(classOf[Configuration])
   lazy val dbApi = app.injector.instanceOf(classOf[DBApi])

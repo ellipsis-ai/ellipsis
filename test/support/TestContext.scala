@@ -10,7 +10,7 @@ import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.team.Team
 import modules.ActorModule
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient

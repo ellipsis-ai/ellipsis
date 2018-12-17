@@ -10,7 +10,7 @@ import models.behaviors.events.SlackEventContext
 import models.behaviors.{DeveloperContext, NoResponseResult, SuccessResult}
 import models.team.Team
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsNull, JsObject, JsString}
 import services.slack.SlackApiClient
