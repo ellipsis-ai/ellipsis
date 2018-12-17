@@ -1,6 +1,6 @@
 import * as MockDataRequest from '../../../mocks/mock_data_request';
 import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 import BehaviorEditor, {BehaviorEditorProps} from '../../../../app/assets/frontend/behavior_editor/index';
 import BehaviorVersion from '../../../../app/assets/frontend/models/behavior_version';
 import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';

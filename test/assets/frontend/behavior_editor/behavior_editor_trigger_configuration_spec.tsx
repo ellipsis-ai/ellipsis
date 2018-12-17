@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 import TriggerConfiguration, {TriggerConfigurationProps} from '../../../../app/assets/frontend/behavior_editor/trigger_configuration';
 import Trigger, {TriggerType} from '../../../../app/assets/frontend/models/trigger';
 import ParamNotInFunctionNotificationData from "../../../../app/assets/frontend/models/notifications/param_not_in_function_notification_data";

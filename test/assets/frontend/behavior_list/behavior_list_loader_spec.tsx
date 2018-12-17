@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 import BehaviorListLoader, {BehaviorListLoaderProps} from '../../../../app/assets/frontend/behavior_list/loader';
 import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
 import TimeZoneSetter from '../../../../app/assets/frontend/time_zone/team_time_zone_setter';
