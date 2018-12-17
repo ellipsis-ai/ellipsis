@@ -38,8 +38,8 @@ jobs:
             cat npm_modules/*/package-lock.json > npm_modules/npm_checksum
       - restore_cache:
           keys:
-            - v9-node-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
-            - v9-node-{{ arch }}-{{ checksum "package-lock.json" }}
+            - v10-node-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - v10-node-{{ arch }}-{{ checksum "package-lock.json" }}
       - restore_cache:
           keys:
             - v7-npm_modules-{{ arch }}-{{ checksum "npm_modules/npm_checksum" }}
@@ -50,11 +50,11 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-          key: v9-node-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          key: v10-node-{{ arch }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
       - save_cache:
           paths:
             - node_modules
-          key: v9-node-{{ arch }}-{{ checksum "package-lock.json" }}
+          key: v10-node-{{ arch }}-{{ checksum "package-lock.json" }}
       - save_cache:
           paths:
             - npm_modules/ellipsis-action-logs/node_modules
