@@ -18,10 +18,6 @@ class ModalScrim extends React.PureComponent<Props> {
     }
   }
 
-  shouldComponentUpdate(newProps: Props): boolean {
-    return this.props.isActive !== newProps.isActive;
-  }
-
   render() {
     return (
       <div

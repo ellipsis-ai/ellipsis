@@ -138,12 +138,13 @@ class Page extends React.Component<Props, State> {
       }
     }
 
-    getActiveModalElement(panelName: string): HTMLElement | null {
+    getActiveModalElement(panelName: string): Element | null {
       const panel = this.panels[panelName];
-      return panel ? ReactDOM.findDOMNode<HTMLElement>(panel) : null;
+      const domNode = panel ? ReactDOM.findDOMNode(panel) : null;
+      return domNode && domNode instanceof Element ? domNode : null;
     }
 
-    focusOnPrimaryOrFirstPossibleElement(parentElement: HTMLElement): void {
+    focusOnPrimaryOrFirstPossibleElement(parentElement: Element): void {
       var primaryElement = parentElement.querySelector<HTMLElement>('button.button-primary');
       if (primaryElement) {
         primaryElement.focus();
@@ -152,7 +153,7 @@ class Page extends React.Component<Props, State> {
       }
     }
 
-    focusOnFirstPossibleElement(parentElement: HTMLElement): void {
+    focusOnFirstPossibleElement(parentElement: Element): void {
       var tabSelector = 'a[href], area[href], input:not([disabled]), button:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, object, embed, *[tabindex], *[contenteditable]';
       var firstFocusableElement = parentElement.querySelector<HTMLElement>(tabSelector);
       if (firstFocusableElement) {

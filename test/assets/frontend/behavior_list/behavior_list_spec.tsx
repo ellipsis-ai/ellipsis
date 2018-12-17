@@ -5,7 +5,7 @@ import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group
 import BehaviorGroupCard from '../../../../app/assets/frontend/behavior_list/behavior_group_card';
 import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavior_version";
 import {TriggerType} from "../../../../app/assets/frontend/models/trigger";
-import {getPageRequiredProps} from "../shared_ui/page_spec";
+import {getPageRequiredProps} from "../../../mocks/mock_page";
 
 const absoluteUrl = () => "https://nope/";
 

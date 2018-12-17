@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as TestUtils from 'react-dom/test-utils';
 import EnvironmentVariables from '../../../../app/assets/frontend/settings/environment_variables/index';
 import {EnvironmentVariableListConfig} from "../../../../app/assets/frontend/settings/environment_variables/loader";
-import {getPageRequiredProps} from "../shared_ui/page_spec";
+import {getPageRequiredProps} from "../../../mocks/mock_page";
 
 jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
 jsRoutes.controllers.GithubConfigController.index = jest.fn(() => ({ url: '/mock_github_config' }));
