@@ -141,14 +141,6 @@ then
   exit 1
 fi
 
-if [ ! -f node_modules/.bin/eslint ]
-then
-  printf "\n\n${RED}eslint is not installed.\n"
-  printf "Try running npm install${PLAIN}.\n";
-  printf "Bye.\n"
-  exit 1
-fi
-
 if [ ! -f node_modules/.bin/jest ]
 then
   printf "\n\n${RED}jest is not installed.\n"
@@ -177,24 +169,6 @@ printf "\n${GREEN}OK.${PLAIN}\n"
 printf "\n\n${GREEN}Announcing the deployment to #dev...${PLAIN}\n"
 printf "_____________________________________________________ \n";
 announce_start
-printf "\n${GREEN}OK.${PLAIN}\n"
-
-printf "\n\n${GREEN}Running eslint...${PLAIN}\n";
-printf "_____________________________________________________ \n";
-npm run lint
-if [ $? -eq 1 ]
-then
-  read -p "${MAGENTA}eslint failed. You should probably stop. Do you want to continue anyway? [y/N]: ${PLAIN}" -n 1 -r
-  echo
-  if [[ ! $REPLY =~ ^[Yy]$ ]]
-  then
-    announce_failure
-    printf "Bye.\n"
-    exit 1
-  else
-    printf "OK, continuing anyway...\n";
-  fi
-fi
 printf "\n${GREEN}OK.${PLAIN}\n"
 
 printf "\n\n${GREEN}Running jest...${PLAIN}\n";
