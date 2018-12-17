@@ -11,7 +11,7 @@ import models.behaviors.events.Event
 import models.behaviors.events.slack.SlackMessageEvent
 import sangria.schema.Schema
 import services.ms_teams.ChannelWithTeam
-import services.ms_teams.apiModels.Application
+import services.ms_teams.apiModels.{Application, MSTeamsUser}
 import services.slack.apiModels.SlackUser
 
 import scala.concurrent.Future
@@ -64,6 +64,8 @@ trait CacheService {
   def getMSTeamsApplicationData(teamIdForContext: String, dataFn: String => Future[Option[Application]]): Future[Option[Application]]
 
   def getMSTeamsChannelFor(profile: MSTeamsBotProfile, channelId: String): Future[Option[ChannelWithTeam]]
+
+  def getMSTeamsUser(key: String, dataFn: String => Future[Option[MSTeamsUser]]): Future[Option[MSTeamsUser]]
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
 

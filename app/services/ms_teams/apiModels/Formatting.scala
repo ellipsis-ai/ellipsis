@@ -91,4 +91,7 @@ object Formatting {
   lazy implicit val directoryObjectFormat: Format[DirectoryObject] = Json.format[DirectoryObject]
   lazy implicit val getPrivateConversationInfoFormat: Format[GetPrivateConversationInfo] = Json.format[GetPrivateConversationInfo]
 
+  lazy implicit val mailBoxSettingsFormat: Format[MailBoxSettings] = Json.format[MailBoxSettings]
+  lazy implicit val userFormat: Format[MSTeamsUser] = Json.format[MSTeamsUser]
+
 }
