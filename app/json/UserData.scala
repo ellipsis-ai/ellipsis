@@ -4,6 +4,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import services.DefaultServices
+import services.ms_teams.apiModels.MSTeamsUser
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
@@ -31,6 +32,18 @@ object UserData {
       fullName = slackUserData.profile.flatMap(_.realName),
       email = slackUserData.profile.flatMap(_.email),
       timeZone = slackUserData.tz
+    )
+  }
+
+  def fromMSTeamsUser(user: User, msTeamsUser: MSTeamsUser): UserData = {
+    UserData(
+      ellipsisUserId = user.id,
+      context = Some(Conversation.MS_TEAMS_CONTEXT),
+      userName = msTeamsUser.displayName,
+      userIdForContext = Some(msTeamsUser.id),
+      fullName = msTeamsUser.displayName,
+      email = msTeamsUser.mail,
+      timeZone = msTeamsUser.mailBoxSettings.flatMap(_.timeZone)
     )
   }
 
