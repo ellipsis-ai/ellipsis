@@ -15,6 +15,7 @@ function getPageRequiredProps(): PageRequiredProps {
     onRenderPanel: renderPlaceholder,
     onRenderNavItems: renderPlaceholder,
     onRenderNavActions: renderPlaceholder,
+    onRevealedPanel: placeholderCallback,
     headerHeight: 0,
     footerHeight: 0
   };

@@ -16,6 +16,7 @@ export interface PageRequiredProps {
   onRenderNavItems: (items: Array<NavItemContent>) => void,
   onRenderNavActions: (content: React.ReactNode) => void,
   onRenderPanel: (panelName: string, panel: Container) => void,
+  onRevealedPanel: () => void,
   headerHeight: number,
   footerHeight: number,
   ref?: any
@@ -82,21 +83,21 @@ class Page extends React.Component<Props, State> {
 
     toggleActivePanel(name: string, beModal?: boolean, optionalCallback?: () => void): void {
       var alreadyOpen = this.state.activePanelName === name;
-      var callback = typeof(optionalCallback) === 'function' ?
-        optionalCallback : (() => {
-          if (!alreadyOpen && beModal) {
-            var activeModal = this.getActiveModalElement(name);
-            if (activeModal) {
-              this.focusOnPrimaryOrFirstPossibleElement(activeModal);
-            }
-          }
-        });
       this.setState({
         activePanelName: alreadyOpen ? this.state.previousPanelName : name,
         activePanelIsModal: alreadyOpen ? this.state.previousPanelIsModal : !!beModal,
         previousPanelName: this.state.activePanelName,
         previousPanelIsModal: this.state.activePanelIsModal
-      }, callback);
+      }, optionalCallback);
+    }
+
+    onRevealedPanel(): void {
+      if (this.state.activePanelIsModal) {
+        const activeModal = this.getActiveModalElement(this.state.activePanelName);
+        if (activeModal) {
+          this.focusOnPrimaryOrFirstPossibleElement(activeModal);
+        }
+      }
     }
 
     clearActivePanel(optionalCallback?: () => void): void {
@@ -266,6 +267,7 @@ class Page extends React.Component<Props, State> {
             onRenderNavActions: this.onRenderNavActions,
             headerHeight: this.getHeaderHeight(),
             footerHeight: this.getFooterHeight(),
+            onRevealedPanel: this.onRevealedPanel,
             ref: (component: React.Component) => this.component = component
           })}
         </div>

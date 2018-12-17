@@ -144,36 +144,6 @@ describe('Page', () => {
     });
   });
 
-  describe('toggleActivePanel', () => {
-    it('passes a callback to setState if a valid function is passed', () => {
-      const page = createMockedPage();
-      const callback = jest.fn();
-      const setStateMock = setStateMockFactory();
-      page.setState = setStateMock;
-      page.toggleActivePanel('foo', false, callback);
-      expect(setStateMock.mock.calls[0][1]).toBe(callback);
-      expect(callback).toBeCalled();
-    });
-
-    it('doesn’t pass the callback to setState if it’s not a function', () => {
-      const page = createMockedPage();
-      const notACallback = undefined;
-      const setStateMock = setStateMockFactory();
-      page.setState = setStateMock;
-      page.toggleActivePanel('foo', false, notACallback);
-      expect(setStateMock.mock.calls[0][1]).not.toBe(notACallback);
-    });
-
-    it('finds the active modal if a panel is toggled on modally', () => {
-      const page = createMockedPage();
-      const fooElement = document.createElement('div');
-      page.onRenderPanel('foo', fooElement);
-      const spy = jest.spyOn(page, 'getActiveModalElement');
-      page.toggleActivePanel('foo', true);
-      expect(spy).toHaveBeenCalledWith('foo');
-    });
-  });
-
   describe('clearActivePanel', () => {
     it('passes a callback to setState if a valid function is passed', () => {
       const page = createMockedPage();
