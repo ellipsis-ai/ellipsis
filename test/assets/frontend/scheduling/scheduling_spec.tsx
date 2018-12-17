@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 import * as MockDataRequest from '../../../mocks/mock_data_request';
 import Scheduling from '../../../../app/assets/frontend/scheduling/index';
 import Recurrence from '../../../../app/assets/frontend/models/recurrence';

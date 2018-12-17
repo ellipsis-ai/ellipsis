@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 import EnvironmentVariables from '../../../../app/assets/frontend/settings/environment_variables/index';
 import {EnvironmentVariableListConfig} from "../../../../app/assets/frontend/settings/environment_variables/loader";
 import {getPageRequiredProps} from "../shared_ui/page_spec";

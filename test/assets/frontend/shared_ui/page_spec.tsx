@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 
 import Page, {PageRequiredProps} from '../../../../app/assets/frontend/shared_ui/page';
 import PageFooterRenderingError from '../../../../app/assets/frontend/shared_ui/page_footer_rendering_error';
