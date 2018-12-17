@@ -7,9 +7,7 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {
-    "emoji-mart": "^2.8.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.1.0",
     "@babel/preset-env": "^7.1.0",
@@ -29,6 +27,7 @@
     "core-js": "2.4.1",
     "css-loader": "^1.0.0",
     "diff-match-patch": "1.0.1",
+    "emoji-mart": "^2.8.1",
     "javascript-debounce": "1.0.0",
     "jest": "^23.6.0",
     "moment": "2.21.0",
