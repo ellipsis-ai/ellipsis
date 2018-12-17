@@ -63,10 +63,6 @@ jobs:
             - npm_modules/ellipsis-post-message/node_modules
           key: v7-npm_modules-{{ arch }}-{{ checksum "npm_modules/npm_checksum" }}
       - run:
-          name: Run JavaScript linter
-          command: |
-            npm run lint
-      - run:
           name: Run Typescript checking
           command: |
             npm run typescript
