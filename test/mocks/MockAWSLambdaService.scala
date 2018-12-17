@@ -12,7 +12,7 @@ import models.behaviors.library.LibraryVersion
 import models.behaviors.nodemoduleversion.NodeModuleVersion
 import models.behaviors.{BotResult, DeveloperContext, ParameterWithValue, SuccessResult}
 import models.environmentvariable.EnvironmentVariable
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.Configuration
 import play.api.libs.json.{JsNull, JsObject, JsString}
 import play.api.libs.ws.WSClient

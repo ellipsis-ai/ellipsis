@@ -3,7 +3,7 @@ package controllers
 import models.IDs
 import models.accounts.user.UserTeamAccess
 import org.mockito.Mockito.when
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Call
 import support.{NotFoundForOtherTeamContext, NotFoundWithLoginContext}

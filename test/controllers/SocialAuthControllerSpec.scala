@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.test._
 import models.IDs
 import models.accounts.logintoken.LoginToken
 import models.accounts.user.User
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito._
 import org.scalatestplus.play.PlaySpec
 import play.api.test.FakeRequest

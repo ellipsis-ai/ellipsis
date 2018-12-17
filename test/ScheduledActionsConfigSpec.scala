@@ -14,7 +14,7 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.slack.apiModels.SlackTeam

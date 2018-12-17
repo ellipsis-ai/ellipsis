@@ -7,7 +7,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.Event
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import services.slack.apiModels.{Attachment, SlackUser}
 import services.slack.{SlackApiClient, SlackApiError, SlackEventService}
 import utils.SlackTimestamp

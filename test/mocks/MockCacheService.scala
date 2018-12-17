@@ -10,7 +10,7 @@ import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.Event
 import models.behaviors.events.slack.SlackMessageEvent
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import sangria.schema.Schema
 import services.caching._
 import services.ms_teams.ChannelWithTeam
