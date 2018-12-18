@@ -13,7 +13,8 @@ class SlackMessageFormatterSpec extends PlaySpec {
        userIdForContext = Some(userId),
        fullName = None,
        email = None,
-       timeZone = None
+       timeZone = None,
+       formattedLink = None
      )
   }
 

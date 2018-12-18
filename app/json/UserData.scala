@@ -16,7 +16,8 @@ case class UserData(
                       userIdForContext: Option[String],
                       fullName: Option[String],
                       email: Option[String],
-                      timeZone: Option[String]
+                      timeZone: Option[String],
+                      formattedLink: Option[String]
                     ) {
   val userNameOrDefault: String = userName.getOrElse(s"User with ID <$ellipsisUserId>")
 }
@@ -31,7 +32,8 @@ object UserData {
       userIdForContext = Some(slackUserData.accountId),
       fullName = slackUserData.profile.flatMap(_.realName),
       email = slackUserData.profile.flatMap(_.email),
-      timeZone = slackUserData.tz
+      timeZone = slackUserData.tz,
+      formattedLink = Some(s"<@${slackUserData.accountId}>")
     )
   }
 
@@ -43,7 +45,8 @@ object UserData {
       userIdForContext = Some(msTeamsUser.id),
       fullName = msTeamsUser.displayName,
       email = msTeamsUser.mail,
-      timeZone = msTeamsUser.mailBoxSettings.flatMap(_.timeZone)
+      timeZone = msTeamsUser.mailBoxSettings.flatMap(_.timeZone),
+      formattedLink = msTeamsUser.formattedLink
     )
   }
 
@@ -67,7 +70,8 @@ object UserData {
       userIdForContext = None,
       fullName = Some("Ellipsis Admin"),
       email = None,
-      timeZone = None
+      timeZone = None,
+      formattedLink = None
     )
   }
 
@@ -79,7 +83,8 @@ object UserData {
       userIdForContext = None,
       fullName = None,
       email = None,
-      timeZone = None
+      timeZone = None,
+      formattedLink = None
     )
   }
 }

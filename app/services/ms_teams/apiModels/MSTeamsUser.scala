@@ -5,4 +5,6 @@ case class MSTeamsUser(
                          displayName: Option[String],
                          mail: Option[String],
                          mailBoxSettings: Option[MailBoxSettings]
-                      )
+                      ) {
+  val formattedLink: Option[String] = displayName.map(d => s"<at>$d</at>")
+}

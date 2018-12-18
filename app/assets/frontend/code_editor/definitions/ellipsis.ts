@@ -125,6 +125,9 @@ declare namespace ellipsis {
     
     /** The user’s time zone name in tz database format, e.g. "America/Los_Angeles" */
     timeZone?: string
+    
+    /** A link for the user, formatted for the specific context */
+    formattedLink? string
   }
 
   export interface DeprecatedMessageInfo {
