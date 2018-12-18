@@ -126,7 +126,7 @@ class IntegrationEditor extends React.Component<Props, State> {
         if (this.applicationNameInput) {
           this.applicationNameInput.focus();
         }
-        BrowserUtils.replaceQueryParam('apiId', api.apiId);
+        BrowserUtils.modifyQueryParam('apiId', api.apiId);
       });
     }
 

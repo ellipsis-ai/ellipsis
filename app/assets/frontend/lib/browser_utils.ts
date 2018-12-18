@@ -9,6 +9,12 @@ const BrowserUtils = {
       }
     },
 
+    getQueryParamValue: function(qpName: string): Option<string> {
+      const url = new URI();
+      const params = url.query(true) as { [q: string]: string | undefined };
+      return params[qpName] || null;
+    },
+
     hasQueryParam: function(qpName: string): boolean {
       var url = new URI();
       return url.hasQuery(qpName);
@@ -20,19 +26,29 @@ const BrowserUtils = {
     },
 
     removeQueryParam: function(qpName: string): void {
-      var url = new URI();
-      url.removeQuery(qpName);
-      this.replaceURL(url.href());
+      const existingValue = this.getQueryParamValue(qpName);
+      if (typeof existingValue === "string") {
+        const url = new URI();
+        url.removeQuery(qpName);
+        this.modifyURL(url.href());
+      }
     },
 
-    replaceQueryParam: function(qpName: string, value: string): void {
-      var url = new URI();
-      url.removeQuery(qpName).addQuery(qpName, value);
-      this.replaceURL(url.href());
+    modifyQueryParam: function(qpName: string, value: string): void {
+      const existingValue = this.getQueryParamValue(qpName);
+      if (existingValue !== value) {
+        const url = new URI();
+        url.removeQuery(qpName).addQuery(qpName, value);
+        this.modifyURL(url.href());
+      }
     },
 
     replaceURL: function(url: string): void {
       window.history.replaceState({}, "", url);
+    },
+
+    modifyURL: function(url: string): void {
+      window.history.pushState({}, "", url);
     },
 
     loadURL: function(url: string): void {
