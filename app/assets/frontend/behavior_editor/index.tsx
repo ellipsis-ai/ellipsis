@@ -1152,7 +1152,7 @@ class BehaviorEditor extends React.Component<Props, State> {
       versionBrowserOpen: this.props.activePanelName === 'versionBrowser'
     }, () => {
       if (this.state.versionBrowserOpen) {
-        BrowserUtils.replaceQueryParam("showVersions", "true");
+        BrowserUtils.modifyQueryParam("showVersions", "true");
       } else {
         BrowserUtils.removeQueryParam("showVersions");
       }
@@ -1749,6 +1749,7 @@ class BehaviorEditor extends React.Component<Props, State> {
     window.addEventListener('resize', this.checkMobileLayout, false);
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
     window.addEventListener('focus', () => this.checkForUpdatesLater(2000), false);
+    window.addEventListener('popstate', this.browserDidPopState, false);
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
     this.loadTestResults();
@@ -1762,6 +1763,20 @@ class BehaviorEditor extends React.Component<Props, State> {
   componentDidUpdate(): void {
     this.renderNavItems();
     this.renderNavActions();
+  }
+
+  browserDidPopState(): void {
+    const urlSelectedId = BrowserUtils.getQueryParamValue("actionId");
+    const showVersions = BrowserUtils.getQueryParamValue("showVersions");
+    const currentSelectedId = this.getSelectedId();
+    if (urlSelectedId !== currentSelectedId) {
+      this.onSelect(null, urlSelectedId);
+    }
+    if (showVersions === "true" && this.props.activePanelName !== "versionBrowser") {
+      this.showVersions();
+    } else if (!showVersions && this.props.activePanelName === "versionBrowser") {
+      this.props.onClearActivePanel();
+    }
   }
 
   checkForUpdates(): void {
@@ -2275,7 +2290,7 @@ class BehaviorEditor extends React.Component<Props, State> {
     } : null);
     this.setState(newState, () => {
       if (optionalGroupId) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, optionalBehaviorId).url);
+        BrowserUtils.modifyURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, optionalBehaviorId).url);
       }
       window.scrollTo(window.scrollX, this.getEditorScrollPosition());
       this.setState({
