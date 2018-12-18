@@ -3,6 +3,7 @@ package utils
 import akka.actor.ActorSystem
 import json.Formatting._
 import json.UserData
+import models.MSTeamsMessageFormatter
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
@@ -214,7 +215,7 @@ case class MSTeamsMessageSender(
   }
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val formattedText = unformattedText // TODO: formatting
+    val formattedText = MSTeamsMessageFormatter.bodyTextFor(unformattedText, userDataList)
     val attachments = attachmentsToUse.flatMap {
       case a: MSTeamsMessageAttachment => Some(a.underlying)
       case _ => None
