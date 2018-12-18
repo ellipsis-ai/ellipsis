@@ -28,10 +28,8 @@ object ResponseInfo {
                      maybeReplyToId: Option[String],
                      attachments: Option[Seq[Attachment]]
                    ): ResponseInfo = {
-    val parser = Parser.builder().build()
-    val node = parser.parse(text)
-    val builder = mutable.ArrayBuilder.make[String]
-    val collector = new MentionCollector(builder)
+    val node = Parser.builder().build().parse(text)
+    val collector = new MentionCollector()
     node.accept(collector)
     val mentionStrings = collector.mentionStrings
     val entities = Seq(from.toMentionEntity, recipient.toMentionEntity).flatMap{ ea =>
@@ -74,7 +72,9 @@ object ResponseInfo {
 
 }
 
-class MentionCollector(builder: mutable.ArrayBuilder[String]) extends AbstractVisitor {
+class MentionCollector extends AbstractVisitor {
+
+  val builder: mutable.ArrayBuilder[String] = mutable.ArrayBuilder.make[String]
 
   def mentionStrings: Set[String] = {
     builder.result.toSet[String]
