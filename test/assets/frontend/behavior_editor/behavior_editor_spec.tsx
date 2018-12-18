@@ -14,7 +14,7 @@ import BehaviorResponseType from "../../../../app/assets/frontend/models/behavio
 import Input from "../../../../app/assets/frontend/models/input";
 import ResponseTemplate from "../../../../app/assets/frontend/models/response_template";
 import DataTypeConfig from "../../../../app/assets/frontend/models/data_type_config";
-import {getPageRequiredProps} from "../shared_ui/page_spec";
+import {getPageRequiredProps} from "../../../mocks/mock_page";
 
 jest.mock('../../../../app/assets/frontend/behavior_editor/code_configuration', () => {
   return {

@@ -9,7 +9,7 @@ import ID from '../../../../app/assets/frontend/lib/id';
 import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
 import OrgChannels from "../../../../app/assets/frontend/models/org_channels";
 import TeamChannels from "../../../../app/assets/frontend/models/team_channels";
-import {getPageRequiredProps} from "../shared_ui/page_spec";
+import {getPageRequiredProps} from "../../../mocks/mock_page";
 
 jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
 jest.mock('../../../../app/assets/frontend/lib/browser_utils');
@@ -24,7 +24,7 @@ class Loader extends React.Component<SchedulingProps, SchedulingProps> {
   page: Scheduling;
   constructor(props: SchedulingProps) {
     super(props);
-    this.state = props;
+    this.state = Object.assign({}, props);
   }
   render() {
     return (
