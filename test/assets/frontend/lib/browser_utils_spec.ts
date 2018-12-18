@@ -19,8 +19,14 @@ window.history.pushState = jest.fn((data, title, newUrl: string) => {
 jest.mock('urijs', () => {
   // Super dumb mock that only lets you add/remove/check "?foo=bar"
   class URI {
+    location: string;
+
+    constructor() {
+      this.location = location;
+    }
+
     query() {
-      return /\?foo=bar/.test(location) ? { foo: "bar" } : {};
+      return /\?foo=bar/.test(this.location) ? { foo: "bar" } : {};
     }
 
     hasQuery() {
@@ -28,17 +34,17 @@ jest.mock('urijs', () => {
     }
 
     removeQuery() {
-      location = location.replace(/\?foo=bar$/, "");
+      this.location = this.location.replace(/\?foo=bar$/, "");
       return this;
     }
 
     addQuery() {
-      location = location + '?foo=bar';
+      this.location = this.location + '?foo=bar';
       return this;
     }
 
     href() {
-      return location;
+      return this.location;
     }
   }
   return URI;

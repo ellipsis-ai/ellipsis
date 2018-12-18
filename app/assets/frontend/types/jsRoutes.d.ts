@@ -30,7 +30,7 @@ declare var jsRoutes: {
       linkToGithubRepo: () => JsRoute,
       metaData: (groupId: string) => JsRoute,
       newFromGithub: () => JsRoute,
-      newGroup: (teamId: string) => JsRoute,
+      newGroup: (teamId: string, selectedId?: Option<string>) => JsRoute,
       newUnsavedBehavior: (isDataType: boolean, isTest: boolean, teamId: string, behaviorIdToClone: Option<string>, newName: Option<string>) => JsRoute,
       newUnsavedLibrary: (teamId: string, libraryIdToClone: Option<string>) => JsRoute,
       nodeModuleVersionsFor: (groupId: string) => JsRoute,

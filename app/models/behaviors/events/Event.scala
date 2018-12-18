@@ -142,7 +142,7 @@ trait Event {
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.BehaviorEditorController.newGroup(Some(ellipsisTeamId))
+      val path = controllers.routes.BehaviorEditorController.newGroup(Some(ellipsisTeamId), None)
       s"$baseUrl$path"
     }.get
     s"[teach me something new]($newBehaviorLink)"

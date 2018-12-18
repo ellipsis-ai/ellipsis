@@ -1753,6 +1753,7 @@ class BehaviorEditor extends React.Component<Props, State> {
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
     this.loadTestResults();
+    BrowserUtils.replaceURL(this.getNewURLFor(this.props.group.id, this.props.selectedId));
     if (this.props.showVersions) {
       this.showVersions();
     }
@@ -1765,12 +1766,16 @@ class BehaviorEditor extends React.Component<Props, State> {
     this.renderNavActions();
   }
 
+  getSelectedIdFromBrowser(): Option<string> {
+    return BrowserUtils.getQueryParamValue("actionId");
+  }
+
   browserDidPopState(): void {
-    const urlSelectedId = BrowserUtils.getQueryParamValue("actionId");
+    const urlSelectedId = this.getSelectedIdFromBrowser();
     const showVersions = BrowserUtils.getQueryParamValue("showVersions");
     const currentSelectedId = this.getSelectedId();
     if (urlSelectedId !== currentSelectedId) {
-      this.onSelect(null, urlSelectedId);
+      this.onSelect(this.getBehaviorGroup().id, urlSelectedId);
     }
     if (showVersions === "true" && this.props.activePanelName !== "versionBrowser") {
       this.showVersions();
@@ -1833,9 +1838,7 @@ class BehaviorEditor extends React.Component<Props, State> {
       if (typeof(nextProps.onLoad) === 'function') {
         nextProps.onLoad();
       }
-      if (newGroup.id) {
-        BrowserUtils.replaceURL(jsRoutes.controllers.BehaviorEditorController.edit(newGroup.id, this.getSelectedId()).url);
-      }
+      BrowserUtils.replaceURL(this.getNewURLFor(newGroup.id, this.getSelectedId()));
     }
   }
 
@@ -2281,16 +2284,17 @@ class BehaviorEditor extends React.Component<Props, State> {
     return selected && selected.editorScrollPosition || 0;
   }
 
-  onSelect(optionalGroupId: Option<string>, optionalBehaviorId: Option<string>, optionalCallback?: () => void) {
+  onSelect(groupId: Option<string>, editableId: Option<string>, optionalCallback?: () => void) {
     const newState = Object.assign({
       animationDisabled: true,
-      selectedId: optionalBehaviorId
+      selectedId: editableId
     }, this.windowIsMobile() ? {
       behaviorSwitcherVisible: false
     } : null);
     this.setState(newState, () => {
-      if (optionalGroupId) {
-        BrowserUtils.modifyURL(jsRoutes.controllers.BehaviorEditorController.edit(optionalGroupId, optionalBehaviorId).url);
+      const oldSelectedId = this.getSelectedIdFromBrowser();
+      if (editableId !== oldSelectedId) {
+        BrowserUtils.modifyURL(this.getNewURLFor(groupId, editableId));
       }
       window.scrollTo(window.scrollX, this.getEditorScrollPosition());
       this.setState({
@@ -2300,6 +2304,14 @@ class BehaviorEditor extends React.Component<Props, State> {
         optionalCallback();
       }
     });
+  }
+
+  getNewURLFor(groupId: Option<string>, editableId: Option<string>): string {
+    const controller = jsRoutes.controllers.BehaviorEditorController;
+    const route = groupId ?
+      controller.edit(groupId, editableId) :
+      controller.newGroup(this.getBehaviorGroup().teamId, editableId);
+    return route.url;
   }
 
   animationIsDisabled(): boolean {
