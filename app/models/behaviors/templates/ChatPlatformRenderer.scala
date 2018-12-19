@@ -101,9 +101,9 @@ abstract class ChatPlatformRenderer(stringBuilder: StringBuilder) extends Abstra
   }
 
   override def visit(heading: Heading) {
-    stringBuilder.append("*")
+    stringBuilder.append(emphasis)
     visitChildren(heading)
-    stringBuilder.append(s"*$newline$newline")
+    stringBuilder.append(s"$emphasis$newline$newline")
   }
 
   override def visit(thematicBreak: ThematicBreak) {
@@ -132,13 +132,7 @@ abstract class ChatPlatformRenderer(stringBuilder: StringBuilder) extends Abstra
 
   }
 
-  def linkWithTitle(link: Link): Unit = {
-    stringBuilder.append("<")
-    stringBuilder.append(s"${link.getDestination}")
-    stringBuilder.append("|")
-    visitChildren(link)
-    stringBuilder.append(">")
-  }
+  protected def linkWithTitle(link: Link): Unit
 
   override def visit(link: Link) {
     link.getFirstChild match {
