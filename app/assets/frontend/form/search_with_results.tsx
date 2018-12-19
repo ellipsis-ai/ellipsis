@@ -4,19 +4,22 @@ import Select from './select';
 import * as debounce from 'javascript-debounce';
 import autobind from "../lib/autobind";
 
+export interface SearchOption {
+  name: string
+  value: string
+}
+
 interface Props {
   placeholder?: string
   value: string,
-  options: Array<{
-    name: string,
-    value: string
-  }>,
+  options: Array<SearchOption>,
   isSearching: boolean,
   noMatches: boolean,
   error?: Option<string>
   onChangeSearch: (newSearch: string) => void,
   onSelect: (newValue: string, newIndex: number) => void,
   onEnterKey?: (value: string) => void
+  onEscKey?: () => void
 }
 
 interface State {
@@ -147,6 +150,7 @@ class SearchWithResults extends React.Component<Props, State> {
                 onUpKey={this.onSelectPrevious}
                 onDownKey={this.onSelectNext}
                 onEnterKey={this.onEnterKey}
+                onEscKey={this.props.onEscKey}
                 withResults={true}
               />
               <div className="position-relative">

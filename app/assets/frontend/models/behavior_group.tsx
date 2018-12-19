@@ -176,6 +176,10 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
       return this.actionInputs.concat(this.dataTypeInputs);
     }
 
+    getLibraries(): Array<LibraryVersion> {
+      return this.libraryVersions;
+    }
+
     getAllInputIdsFromBehaviorVersions(): Set<string> {
       let inputIds = new Set();
       this.behaviorVersions.forEach(ea => {

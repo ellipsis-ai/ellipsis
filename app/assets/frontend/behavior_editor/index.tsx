@@ -88,6 +88,7 @@ import Editable, {EditableInterface} from "../models/editable";
 import Trigger from "../models/trigger";
 import BehaviorConfig, {BehaviorConfigInterface} from "../models/behavior_config";
 import {EditorCursorPosition} from "./code_editor";
+import QuickSearchPanel from "./quick_search_panel";
 
 export interface BehaviorEditorProps {
   group: BehaviorGroup
@@ -955,6 +956,9 @@ class BehaviorEditor extends React.Component<Props, State> {
       if (this.isModified()) {
         this.onSaveBehaviorGroup();
       }
+    } else if (Event.keyPressWasOpenShortcut(event)) {
+      event.preventDefault();
+      this.toggleActivePanel("quickSearch", true);
     }
   }
 
@@ -1957,6 +1961,18 @@ class BehaviorEditor extends React.Component<Props, State> {
               ) : null}
             </div>
           ) : null}
+
+          <Collapsible ref={(el) => this.props.onRenderPanel('quickSearch', el)}
+            revealWhen={this.props.activePanelName === 'quickSearch'}
+            onChange={this.collapsiblePanelDidUpdate}
+            animationDuration={0.1}
+          >
+            <QuickSearchPanel
+              group={this.getBehaviorGroup()}
+              onDone={this.props.onClearActivePanel}
+              onSelect={this.onSelect}
+            />
+          </Collapsible>
 
           <Collapsible ref={(el) => this.props.onRenderPanel("requestBehaviorGroupDetails", el)}
             revealWhen={this.props.activePanelName === 'requestBehaviorGroupDetails'}
