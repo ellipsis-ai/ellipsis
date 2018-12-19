@@ -1,7 +1,5 @@
 package models
 
-import java.util.regex.Matcher
-
 import json.UserData
 import models.behaviors.templates.{ChatPlatformRenderer, MSTeamsRenderer}
 
