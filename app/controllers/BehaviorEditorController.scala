@@ -39,7 +39,7 @@ class BehaviorEditorController @Inject() (
   val configuration = services.configuration
   val ws = services.ws
 
-  def newGroup(maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def newGroup(maybeTeamId: Option[String], maybeBehaviorId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     render.async {
       case Accepts.JavaScript() => {
@@ -49,7 +49,7 @@ class BehaviorEditorController @Inject() (
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield teamAccess.maybeTargetTeam.map { team =>
-          val dataRoute = routes.BehaviorEditorController.newGroup(maybeTeamId)
+          val dataRoute = routes.BehaviorEditorController.newGroup(maybeTeamId, maybeBehaviorId)
           Ok(views.html.behavioreditor.edit(viewConfig(Some(teamAccess)), dataRoute, "New skill"))
         }.getOrElse {
           notFoundWithLoginFor(request, Some(teamAccess))

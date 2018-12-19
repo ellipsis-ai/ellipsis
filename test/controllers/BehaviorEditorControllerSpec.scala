@@ -16,7 +16,7 @@ class BehaviorEditorControllerSpec extends PlaySpec with MockitoSugar {
 
     "show custom not found page when the wrong teamId supplied" in new NotFoundForOtherTeamContext {
 
-      def buildCall: Call = controllers.routes.BehaviorEditorController.newGroup(Some(otherTeam.id))
+      def buildCall: Call = controllers.routes.BehaviorEditorController.newGroup(Some(otherTeam.id), None)
 
       testNotFound
 
