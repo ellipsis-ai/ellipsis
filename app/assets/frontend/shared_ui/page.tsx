@@ -124,10 +124,10 @@ class Page extends React.Component<Props, State> {
 
     handleModalFocus(event: FocusEvent): void {
       const activeModal = this.state.activePanelIsModal ? this.getActiveModalElement(this.state.activePanelName) : null;
-      if (!activeModal) {
+      const focusTarget = event.relatedTarget as Element | null;
+      if (!activeModal || !focusTarget) {
         return;
       }
-      const focusTarget = event.relatedTarget as Element;
       const possibleMatches = activeModal.getElementsByTagName(focusTarget.tagName);
       const match = Array.prototype.some.call(possibleMatches, function(element: HTMLElement) {
         return element === focusTarget;

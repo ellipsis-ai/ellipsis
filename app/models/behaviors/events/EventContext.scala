@@ -514,7 +514,6 @@ case class MSTeamsEventContext(
     for {
       maybeDMChannel <- eventualMaybeDMChannel(services)
       botName <- botName(services)
-      userDataList <- event.messageUserDataList(maybeConversation, services)
       maybeResult <- MSTeamsMessageSender(
         services.msTeamsApiService.profileClientFor(profile),
         userIdForContext,
@@ -532,7 +531,6 @@ case class MSTeamsEventContext(
         files,
         choices,
         botName,
-        userDataList,
         services,
         event.isEphemeral,
         event.beQuiet
