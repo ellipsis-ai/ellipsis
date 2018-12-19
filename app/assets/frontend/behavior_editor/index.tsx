@@ -1750,6 +1750,7 @@ class BehaviorEditor extends React.Component<Props, State> {
     window.addEventListener('scroll', debounce(this.updateBehaviorScrollPosition, 500), false);
     window.addEventListener('focus', () => this.checkForUpdatesLater(2000), false);
     window.addEventListener('popstate', this.browserDidPopState, false);
+    window.addEventListener('beforeunload', this.browserWillUnload, false);
     this.checkForUpdatesLater();
     this.loadNodeModuleVersions();
     this.loadTestResults();
@@ -1781,6 +1782,12 @@ class BehaviorEditor extends React.Component<Props, State> {
       this.showVersions();
     } else if (!showVersions && this.props.activePanelName === "versionBrowser") {
       this.props.onClearActivePanel();
+    }
+  }
+
+  browserWillUnload(event: BeforeUnloadEvent): void {
+    if (this.isModified()) {
+      event.returnValue = "You have unsaved changes. Are you sure you want to leave the page?";
     }
   }
 
