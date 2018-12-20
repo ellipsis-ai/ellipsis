@@ -95,6 +95,14 @@ class QuickSearchPanel extends React.Component<Props, State> {
     return index >= 0 ? index : Infinity;
   }
 
+  editableToOption(editable: Editable, searchText: string): RankedSearchOption {
+    return {
+      name: `${editable.icon()} ${editable.getName()}`,
+      value: editable.getPersistentId(),
+      rank: this.rankFor(editable.getName(), searchText)
+    };
+  }
+
   getResultsFor(rawSearchText: string): Array<RankedSearchOption> {
     const searchText = rawSearchText.trim().toLowerCase();
     if (!searchText) {
@@ -109,42 +117,16 @@ class QuickSearchPanel extends React.Component<Props, State> {
         const name = `${action.icon()} ${action.getName()}${triggers.length > 0 ? " · Triggers: " + triggers.join(" · ") : ""}`;
         return {
           name: name,
-          value: action.behaviorId,
+          value: action.getPersistentId(),
           rank: this.rankFor(forRanking, searchText)
         };
       });
 
-    const dataTypeOptions = this.props.group.getDataTypes()
-      .filter((dataType) => this.editableMatchesSearch(dataType, searchText))
-      .map((dataType) => {
-        return {
-          name: `${dataType.icon()} ${dataType.getName()}`,
-          value: dataType.behaviorId,
-          rank: this.rankFor(dataType.getName(), searchText)
-        };
-      });
+    const otherEditables = ([] as Array<Editable>).concat(this.props.group.getDataTypes(), this.props.group.getLibraries(), this.props.group.getTests());
+    const otherOptions = otherEditables.filter((ea) => this.editableMatchesSearch(ea, searchText))
+      .map((ea) => this.editableToOption(ea, searchText));
 
-    const libraryOptions = this.props.group.getLibraries()
-      .filter((library) => this.editableMatchesSearch(library, searchText))
-      .map((library) => {
-        return {
-          name: `${library.icon()} ${library.getName()}`,
-          value: library.libraryId,
-          rank: this.rankFor(library.getName(), searchText)
-        };
-      });
-
-    const testOptions = this.props.group.getTests()
-      .filter((test) => this.editableMatchesSearch(test, searchText))
-      .map((test) => {
-        return {
-          name: `${test.icon()} ${test.getName()}`,
-          value: test.behaviorId,
-          rank: this.rankFor(test.getName(), searchText)
-        };
-      });
-
-    return Sort.arrayAlphabeticalBy(actionOptions.concat(dataTypeOptions, libraryOptions, testOptions), (ea) => `${ea.rank}${ea.name}`);
+    return Sort.arrayAlphabeticalBy(actionOptions.concat(otherOptions), (ea) => `${ea.rank}${ea.name}`);
   };
 
   render() {
