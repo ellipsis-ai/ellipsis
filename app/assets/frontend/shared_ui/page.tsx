@@ -146,7 +146,7 @@ class Page extends React.Component<Props, State> {
     }
 
     focusOnPrimaryOrFirstPossibleElement(parentElement: Element): void {
-      var primaryElement = parentElement.querySelector<HTMLElement>('button.button-primary');
+      const primaryElement = parentElement.querySelector<HTMLElement>('button.button-primary:not([disabled])');
       if (primaryElement) {
         primaryElement.focus();
       } else {

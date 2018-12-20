@@ -34,7 +34,7 @@ class SearchWithResults extends React.Component<Props, State> {
     constructor(props: Props) {
       super(props);
       autobind(this);
-      this.delayChangeSearch = debounce(this.onChangeSearch, 250);
+      this.delayChangeSearch = debounce(this.onChangeSearch, 100);
       this.state = {
         searchText: ""
       };

@@ -106,7 +106,7 @@ class QuickSearchPanel extends React.Component<Props, State> {
       .map((action) => {
         const triggers = action.triggers.filter((trigger) => !trigger.isRegex).map((trigger) => trigger.displayText());
         const forRanking = `${action.getName()} ${triggers.join(" ")}`;
-        const name = `${action.getName()}${triggers.length > 0 ? " · Triggers: " + triggers.join(" · ") : ""} (action)`;
+        const name = `${action.icon()} ${action.getName()}${triggers.length > 0 ? " · Triggers: " + triggers.join(" · ") : ""}`;
         return {
           name: name,
           value: action.behaviorId,
@@ -118,7 +118,7 @@ class QuickSearchPanel extends React.Component<Props, State> {
       .filter((dataType) => this.editableMatchesSearch(dataType, searchText))
       .map((dataType) => {
         return {
-          name: `${dataType.getName()} (data type)`,
+          name: `${dataType.icon()} ${dataType.getName()}`,
           value: dataType.behaviorId,
           rank: this.rankFor(dataType.getName(), searchText)
         };
@@ -128,7 +128,7 @@ class QuickSearchPanel extends React.Component<Props, State> {
       .filter((library) => this.editableMatchesSearch(library, searchText))
       .map((library) => {
         return {
-          name: `${library.getName()} (library)`,
+          name: `${library.icon()} ${library.getName()}`,
           value: library.libraryId,
           rank: this.rankFor(library.getName(), searchText)
         };
@@ -138,7 +138,7 @@ class QuickSearchPanel extends React.Component<Props, State> {
       .filter((test) => this.editableMatchesSearch(test, searchText))
       .map((test) => {
         return {
-          name: `${test.getName()} (test)`,
+          name: `${test.icon()} ${test.getName()}`,
           value: test.behaviorId,
           rank: this.rankFor(test.getName(), searchText)
         };
@@ -151,10 +151,11 @@ class QuickSearchPanel extends React.Component<Props, State> {
     return (
       <div className="box-action phn">
         <div className="container container-c">
-          <h4 className="mvn">Switch to any component in this skill</h4>
+          <h4 className="mvn">Switch to any action, data type, library or test in this skill</h4>
 
           <SearchWithResults
             ref={(el) => this.searchInput = el}
+            placeholder={"Search by name"}
             value={this.state.currentResultValue}
             options={this.state.results}
             isSearching={false}
@@ -165,7 +166,7 @@ class QuickSearchPanel extends React.Component<Props, State> {
             onEscKey={this.onEscKey}
           />
 
-          <Button className="mrs" onClick={this.onSelect} disabled={!this.state.currentResultValue}>Switch</Button>
+          <Button className="button-primary mrs" onClick={this.onSelect} disabled={!this.state.currentResultValue}>Switch to selection</Button>
           <Button onClick={this.onDone}>Cancel</Button>
 
         </div>
