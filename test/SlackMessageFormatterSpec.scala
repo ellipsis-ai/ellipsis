@@ -1,22 +1,24 @@
+import json.UserData
 import models.SlackMessageFormatter
-import models.behaviors.events.MessageUserData
+import models.behaviors.conversations.conversation.Conversation
 import org.scalatestplus.play.PlaySpec
 
 class SlackMessageFormatterSpec extends PlaySpec {
 
-  def messageUserData(userId: String, username: String, displayName: String): MessageUserData = {
-     MessageUserData(
-       context = "slack",
-       userName = displayName,
-       ellipsisUserId = None,
+  def messageUserData(userId: String, username: String, displayName: String): UserData = {
+     UserData(
+       ellipsisUserId = userId,
+       context = Some(Conversation.SLACK_CONTEXT),
+       userName = Some(displayName),
        userIdForContext = Some(userId),
        fullName = None,
        email = None,
-       timeZone = None
+       timeZone = None,
+       formattedLink = None
      )
   }
 
-  val userList: Set[MessageUserData] = Set(
+  val userList: Set[UserData] = Set(
     messageUserData("U1", "alligator", "Alligatór"),
     messageUserData("U2", "baboon", "A Baboon!"),
     messageUserData("U3", "crocodile", "Mr. Croc O. Dile")

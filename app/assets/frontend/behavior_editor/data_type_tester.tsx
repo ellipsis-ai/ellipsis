@@ -36,7 +36,7 @@ interface DataTypeChoice {
 class DataTypeTester extends React.Component<Props, State> {
     searchQueryInput: Option<FormInput>;
 
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
       this.state = {
@@ -116,7 +116,7 @@ class DataTypeTester extends React.Component<Props, State> {
       }, this.fetchResult);
     }
 
-    params(): { searchQuery?: string } {
+    params(): { [name: string]: string } {
       if (this.state.searchQuery) {
         return { searchQuery: this.state.searchQuery };
       } else {

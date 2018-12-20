@@ -6,7 +6,7 @@ export interface FixedElementProps {
   children: any;
   className?: string;
   zIndexClassName?: string;
-  onHeightChange: (number) => void;
+  onHeightChange: (number: number) => void;
   marginTop?: Option<number>;
 }
 

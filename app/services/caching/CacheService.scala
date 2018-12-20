@@ -1,17 +1,17 @@
 package services.caching
 
 import com.amazonaws.services.lambda.model.InvokeResult
-import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
+import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
+import models.behaviors.events.Event
 import models.behaviors.events.slack.SlackMessageEvent
-import models.behaviors.events.{Event, MessageUserData}
 import sangria.schema.Schema
 import services.ms_teams.ChannelWithTeam
-import services.ms_teams.apiModels.Application
+import services.ms_teams.apiModels.{Application, MSTeamsUser}
 import services.slack.apiModels.SlackUser
 
 import scala.concurrent.Future
@@ -65,6 +65,8 @@ trait CacheService {
 
   def getMSTeamsChannelFor(profile: MSTeamsBotProfile, channelId: String): Future[Option[ChannelWithTeam]]
 
+  def getMSTeamsUser(key: String, dataFn: String => Future[Option[MSTeamsUser]]): Future[Option[MSTeamsUser]]
+
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData]
@@ -91,9 +93,9 @@ trait CacheService {
     }
   }
 
-  def cacheMessageUserDataList(messageUserDataList: Seq[MessageUserData], conversationId: String): Unit
+  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Unit
 
-  def getMessageUserDataList(conversationId: String): Option[Seq[MessageUserData]]
+  def getMessageUserDataList(conversationId: String): Option[Seq[UserData]]
 
   def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit
 

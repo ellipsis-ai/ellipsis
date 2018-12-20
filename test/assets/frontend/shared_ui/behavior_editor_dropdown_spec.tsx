@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 import DropdownMenu, {
   DropdownMenuItemProps,
   DropdownMenuProps
@@ -8,12 +8,13 @@ import DropdownMenu, {
 describe('DropdownMenu', () => {
   let toggled = false;
 
-  const defaultConfig: Partial<DropdownMenuProps> = {
+  const defaultConfig: DropdownMenuProps = {
     labelClassName: '',
     label: 'A menu',
     openWhen: false,
     menuClassName: '',
-    toggle: function() { toggled = !toggled; }
+    toggle: function() { toggled = !toggled; },
+    children: undefined
   };
 
   const defaultItemConfig: DropdownMenuItemProps = {
@@ -25,7 +26,7 @@ describe('DropdownMenu', () => {
     stopPropagation: jest.fn()
   };
 
-  function createDropdown(config, itemConfig) {
+  function createDropdown(config: DropdownMenuProps, itemConfig: DropdownMenuItemProps) {
     return TestUtils.renderIntoDocument(
       <DropdownMenu {...config}>
         <DropdownMenu.Item {...itemConfig} />
@@ -33,15 +34,17 @@ describe('DropdownMenu', () => {
     ) as DropdownMenu;
   }
 
-  let config: Partial<DropdownMenuProps> = {};
-  let itemConfig: Partial<DropdownMenuItemProps> = {};
-  let eventData = {};
+  let config: DropdownMenuProps;
+  let itemConfig: DropdownMenuItemProps;
+  let eventData: {
+    stopPropagation: () => void
+  };
 
   beforeEach(() => {
     toggled = false;
-    config = Object.assign(config, defaultConfig);
-    eventData = Object.assign(eventData, defaultEventData);
-    itemConfig = Object.assign(itemConfig, defaultItemConfig);
+    config = Object.assign({}, defaultConfig);
+    eventData = Object.assign({}, defaultEventData);
+    itemConfig = Object.assign({}, defaultItemConfig);
   });
 
   describe('onMouseDown', () => {

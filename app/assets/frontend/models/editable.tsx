@@ -1,6 +1,8 @@
 import DeepEqual from '../lib/deep_equal';
 import {Timestamp} from "../lib/formatter";
 import BehaviorVersion from "./behavior_version";
+import BehaviorGroup from "./behavior_group";
+import LibraryVersion from "./library_version";
 
 export interface EditableJson {
   id?: Option<string>;
@@ -56,7 +58,7 @@ abstract class Editable implements EditableInterface {
       return false;
     }
 
-    isLibraryVersion(): boolean {
+    isLibraryVersion(): this is LibraryVersion {
       return false;
     }
 
@@ -91,33 +93,21 @@ abstract class Editable implements EditableInterface {
       }
     }
 
-    namePlaceholderText(): string {
-      return "Item name";
-    }
+    abstract namePlaceholderText(): string
 
-    cloneActionText(): string {
-      return "Clone item…";
-    }
+    abstract cloneActionText(): string
 
-    deleteActionText(): string {
-      return "Delete item…";
-    }
+    abstract deleteActionText(): string
 
-    confirmDeleteText(): string {
-      return "Are you sure you want to delete this item?";
-    }
+    abstract confirmDeleteText(): string
 
     getEditorTitle(): string {
       return this.isNew ? this.getNewEditorTitle() : this.getExistingEditorTitle();
     }
 
-    getNewEditorTitle(): string {
-      return "New item";
-    }
+    abstract getNewEditorTitle(): string
 
-    getExistingEditorTitle(): string {
-      return "Edit item";
-    }
+    abstract getExistingEditorTitle(): string
 
     getName(): string {
       return this.name || "";
@@ -127,9 +117,7 @@ abstract class Editable implements EditableInterface {
       return this.description || "";
     }
 
-    cancelNewText(): string {
-      return "Cancel new item";
-    }
+    abstract cancelNewText(): string
 
     includesText(queryString: string): boolean {
       var lowercase = queryString.toLowerCase().trim();
@@ -138,6 +126,8 @@ abstract class Editable implements EditableInterface {
     }
 
     abstract getPersistentId(): string
+
+    abstract buildUpdatedGroupFor<T extends EditableInterface>(group: BehaviorGroup, props: Partial<T>): BehaviorGroup
 
     abstract clone(props: Partial<EditableInterface>): Editable
 
@@ -153,6 +143,8 @@ abstract class Editable implements EditableInterface {
     isIdenticalToVersion<T extends Editable>(version: T): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), version.forEqualityComparison());
     }
+
+    abstract icon(): string
 }
 
 export default Editable;

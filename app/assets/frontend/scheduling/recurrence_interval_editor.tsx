@@ -6,7 +6,7 @@ import ToggleGroup, {ToggleGroupItem} from "../form/toggle_group";
 type Props = RecurrenceEditorProps & RecurrenceEditorTimeZoneProps
 
 class RecurrenceIntervalEditor extends React.Component<Props> {
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     autobind(this);
   }

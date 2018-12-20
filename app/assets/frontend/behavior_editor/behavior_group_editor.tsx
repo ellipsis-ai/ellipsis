@@ -7,9 +7,9 @@ import autobind from '../lib/autobind';
 type Props = {
     group: BehaviorGroup,
     isModified: boolean,
-    onBehaviorGroupNameChange: (string) => void,
-    onBehaviorGroupDescriptionChange: (string) => void,
-    onBehaviorGroupIconChange: (string) => void,
+    onBehaviorGroupNameChange: (s: string) => void,
+    onBehaviorGroupDescriptionChange: (s: string) => void,
+    onBehaviorGroupIconChange: (s: string) => void,
     onDeleteClick: () => void
     iconPickerVisible: boolean
     onToggleIconPicker: () => void
@@ -32,7 +32,9 @@ class BehaviorGroupEditor extends React.PureComponent<Props> {
     }
 
     exportGroup(): void {
-      window.location.href = jsRoutes.controllers.BehaviorImportExportController.export(this.props.group.id).url;
+      if (this.props.group.id) {
+        window.location.href = jsRoutes.controllers.BehaviorImportExportController.export(this.props.group.id).url;
+      }
     }
 
     render() {

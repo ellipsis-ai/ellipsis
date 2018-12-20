@@ -17,6 +17,7 @@ import {maybeDiffFor, ModifiedDiff} from '../../models/diffs';
 import autobind from '../../lib/autobind';
 import SVGWarning from '../../svg/warning';
 import {GithubFetchError} from '../../models/github/github_fetch_error';
+import {UpdateFromGithubSuccessData} from "../loader";
 
 const versionSources = {
   local: "local",
@@ -28,7 +29,7 @@ type Props = {
   currentGroup: BehaviorGroup,
   currentGroupIsModified: boolean,
   currentUserId: string,
-  currentSelectedId?: string,
+  currentSelectedId?: Option<string>,
   versions: Array<BehaviorGroup>,
   onClearActivePanel: () => void,
   onUndoChanges: () => void,
@@ -36,7 +37,7 @@ type Props = {
   isLinkedToGithub: boolean,
   linkedGithubRepo: Option<LinkedGithubRepo>,
   onLinkGithubRepo: (owner: string, repo: string, branch: Option<string>, callback: () => void) => void,
-  onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: (json: { data: BehaviorGroupJson }) => void, onError: (branch: string, error?: GithubFetchError) => void) => void,
+  onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: (json: UpdateFromGithubSuccessData) => void, onError: (branch: string, error?: Option<GithubFetchError>) => void) => void,
   onSaveChanges: () => void,
   isModifyingGithubRepo: boolean,
   onChangedGithubRepo: () => void
@@ -165,7 +166,7 @@ class VersionBrowser extends React.Component<Props, State> {
     });
   }
 
-  onError(branch: string, error?: GithubFetchError): void {
+  onError(branch: string, error?: Option<GithubFetchError>): void {
     if (error && error.type && error.type === "NoBranchFound") {
       this.setState({
         isFetching: false,
@@ -219,7 +220,7 @@ class VersionBrowser extends React.Component<Props, State> {
   }
 
   authorForVersion(version: BehaviorGroup): string {
-    const isCurrentUser = version.author && version.author.id === this.props.currentUserId;
+    const isCurrentUser = version.author && version.author.ellipsisUserId === this.props.currentUserId;
     return version.author ? `by ${isCurrentUser ? "you" : version.author.formattedName()}` : "";
   }
 

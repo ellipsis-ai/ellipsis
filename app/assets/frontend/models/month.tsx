@@ -47,13 +47,13 @@ import OptionalInt from './optional_int';
       }
     }
 
-    static fromString(string): Month {
+    static fromString(string: string): Month {
       const parsed = string.match(/^(1[0-2]|[1-9])$/);
       const int = super.fromStringWithDefault(parsed ? parsed[1] : "", Month.JANUARY.value);
       return new Month(int.value);
     }
 
-    static isValid(intOrNull): boolean {
+    static isValid(intOrNull: Option<number>): boolean {
       return new Month(intOrNull).isValid();
     }
   }

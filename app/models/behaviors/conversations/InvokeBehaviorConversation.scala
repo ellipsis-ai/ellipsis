@@ -176,12 +176,11 @@ object InvokeBehaviorConversation {
                  maybeThreadId: Option[String],
                  maybeActivatedTrigger: Option[Trigger],
                  maybeParent: Option[NewParentConversation],
-                 dataService: DataService,
-                 cacheService: CacheService
+                 services: DefaultServices
                  )(implicit ec: ExecutionContext): Future[InvokeBehaviorConversation] = {
     val action = for {
       maybeParent <- maybeParent.map { parent =>
-        dataService.parentConversations.createAction(parent).map(Some(_))
+        services.dataService.parentConversations.createAction(parent).map(Some(_))
       }.getOrElse(DBIO.successful(None))
       newInstance <- DBIO.successful(InvokeBehaviorConversation(
         IDs.next,
@@ -200,14 +199,15 @@ object InvokeBehaviorConversation {
         Some(event.originalEventType),
         maybeParent.map(_.id)
       ))
-      _ <- dataService.conversations.saveAction(newInstance)
+      _ <- services.dataService.conversations.saveAction(newInstance)
+      userDataList <- event.messageUserDataListAction(services)
     } yield {
       maybeChannel.foreach { channel =>
-        cacheService.cacheLastConversationId(event.ellipsisTeamId, channel, newInstance.id)
+        services.cacheService.cacheLastConversationId(event.ellipsisTeamId, channel, newInstance.id)
       }
-      cacheService.cacheMessageUserDataList(event.messageUserDataList.toSeq, newInstance.id)
+      services.cacheService.cacheMessageUserDataList(userDataList.toSeq, newInstance.id)
       newInstance
     }
-    dataService.run(action.transactionally)
+    services.dataService.run(action.transactionally)
   }
 }

@@ -4,13 +4,13 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
 import javax.inject.Inject
+import json.Formatting._
 import json.UserData
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import services.DataService
-import json.Formatting.userDataWrites
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,7 +41,7 @@ class UserInfoController @Inject() (
       } yield {
         Ok(Json.toJson(UserInfoResponse(
           maybeUser.map { user =>
-            maybeUserData.getOrElse(UserData.withoutProfile(user.id, maybeTeam))
+            maybeUserData.getOrElse(UserData.withoutProfile(user.id))
           },
           maybeUser.isEmpty
         )))

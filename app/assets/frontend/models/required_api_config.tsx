@@ -1,3 +1,7 @@
+import ApiConfigRef from "./api_config_ref";
+import BehaviorEditor from "../behavior_editor";
+import {ApiConfigEditor} from "../behavior_editor/api_config_panel";
+
 export interface RequiredApiConfigJson {
   id?: Option<string>,
   exportId?: Option<string>,
@@ -6,6 +10,8 @@ export interface RequiredApiConfigJson {
 }
 
 abstract class RequiredApiConfig implements RequiredApiConfigJson {
+  readonly config?: Option<ApiConfigRef>;
+
   constructor(
     readonly id: Option<string>,
     readonly exportId: Option<string>,
@@ -47,7 +53,14 @@ abstract class RequiredApiConfig implements RequiredApiConfigJson {
     abstract codePathPrefix(): string
 
     abstract isConfigured(): boolean
-  }
+
+    abstract configName(): Option<string>
+
+    abstract clone(props: Partial<RequiredApiConfig>): this
+
+    abstract editorFor(editor: BehaviorEditor): ApiConfigEditor<any>
+}
 
 export default RequiredApiConfig;
 
+export interface RequiredApiConfigEditor {}

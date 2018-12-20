@@ -3,7 +3,8 @@ import DeleteButton from '../shared_ui/delete_button';
 import FormInput from '../form/input';
 import Trigger, {TriggerInterface} from '../models/trigger';
 import autobind from "../lib/autobind";
-import EmojiInput, {EmojiInterface} from "../form/emoji_input";
+import EmojiInput from "../form/emoji_input";
+import {CustomEmoji, EmojiData} from "emoji-mart";
 
 interface Props {
   existingTriggerEmojiIds: Array<string>
@@ -18,7 +19,7 @@ interface Props {
 class ReactionTriggerInput extends React.Component<Props> {
   input: Option<FormInput>;
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     autobind(this);
   }
@@ -41,9 +42,11 @@ class ReactionTriggerInput extends React.Component<Props> {
     this.focus();
   }
 
-  onClickEmoji(emoji: EmojiInterface): void {
-    this.onChange('text', emoji.id);
-    this.toggleReactionPicker();
+  onClickEmoji(emoji: EmojiData): void {
+    if (emoji.id) {
+      this.onChange('text', emoji.id);
+      this.toggleReactionPicker();
+    }
   }
 
   isEmpty(): boolean {
@@ -73,10 +76,12 @@ class ReactionTriggerInput extends React.Component<Props> {
     this.props.onToggleEmojiPicker();
   }
 
-  filterExistingEmoji(emoji: EmojiInterface): boolean {
-    const shortName = emoji.short_names && emoji.short_names[0];
-    if (shortName) {
-      return !this.props.existingTriggerEmojiIds.includes(shortName);
+  filterExistingEmoji(emoji: EmojiData): boolean {
+    const customEmoji = emoji as CustomEmoji;
+    const shortName = customEmoji.short_names && customEmoji.short_names[0];
+    const name = shortName || emoji.id;
+    if (name) {
+      return !this.props.existingTriggerEmojiIds.includes(name);
     } else {
       return true;
     }

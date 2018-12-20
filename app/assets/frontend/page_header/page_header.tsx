@@ -103,7 +103,7 @@
       }
     }
 
-    showMenu(menu, button) {
+    showMenu(menu: HTMLElement, button: HTMLElement) {
       this.removeClass(menu, 'display-none');
       this.addClass(button, 'button-dropdown-trigger-menu-open');
       if (this.navBar) {

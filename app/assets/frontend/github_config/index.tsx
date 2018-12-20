@@ -1,7 +1,5 @@
 import * as React from 'react';
 import CSRFTokenHiddenInput from '../shared_ui/csrf_token_hidden_input';
-import PageComponent from '../shared_ui/page';
-const Page: any = PageComponent;
 import SettingsPage from '../shared_ui/settings_page';
 import {PageRequiredProps} from "../shared_ui/page";
 import autobind from '../lib/autobind';
@@ -22,9 +20,6 @@ export interface GithubConfigProps {
 type Props = GithubConfigProps & PageRequiredProps
 
 class GithubConfig extends React.Component<Props> {
-  props: Props;
-  static defaultProps: PageRequiredProps;
-
     constructor(props: Props) {
       super(props);
       autobind(this);
@@ -94,7 +89,5 @@ class GithubConfig extends React.Component<Props> {
       );
     }
 }
-
-GithubConfig.defaultProps = Page.requiredPropDefaults();
 
 export default GithubConfig;

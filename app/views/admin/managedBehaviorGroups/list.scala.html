@@ -1,7 +1,6 @@
 @import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroup
 @import models.team.Team
-@import json.BehaviorGroupData
-@import json.UserData
+@import json.{BehaviorGroupData, UserData}
 @import helper._
 
 @(
@@ -34,7 +33,7 @@
                 <select name="contactId" class="form-select-element">
                   <option value="">– No contact selected –</option>
                   @usersData.map { ea =>
-                    <option value="@ea.id" @if(managed.maybeContactId.contains(ea.id)){ selected="selected" }else{}>@ea.userNameOrDefault</option>
+                    <option value="@ea.ellipsisUserId" @if(managed.maybeContactId.contains(ea.ellipsisUserId)){ selected="selected" }else{}>@ea.userNameOrDefault</option>
                   }
                 </select>
               </div>

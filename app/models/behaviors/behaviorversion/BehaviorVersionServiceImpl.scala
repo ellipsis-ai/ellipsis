@@ -357,7 +357,7 @@ class BehaviorVersionServiceImpl @Inject() (
       missingTeamEnvVars <- dataService.teamEnvironmentVariables.missingInAction(behaviorVersion, dataService)
       requiredOAuth1ApiConfigs <- dataService.requiredOAuth1ApiConfigs.allForAction(behaviorVersion.groupVersion)
       requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
-      userInfo <- event.userInfoAction(None, defaultServices)
+      userInfo <- event.deprecatedUserInfoAction(None, defaultServices)
       notReadyOAuth1Applications <- DBIO.successful(requiredOAuth1ApiConfigs.filterNot(_.isReady))
       notReadyOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth1Applications <- DBIO.successful(requiredOAuth1ApiConfigs.flatMap(_.maybeApplication).filter { app =>

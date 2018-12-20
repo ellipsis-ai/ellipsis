@@ -1,11 +1,11 @@
 import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 import BehaviorList, {BehaviorListProps} from '../../../../app/assets/frontend/behavior_list/index';
 import BehaviorGroup from '../../../../app/assets/frontend/models/behavior_group';
 import BehaviorGroupCard from '../../../../app/assets/frontend/behavior_list/behavior_group_card';
-import Page from '../../../../app/assets/frontend/shared_ui/page';
 import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavior_version";
 import {TriggerType} from "../../../../app/assets/frontend/models/trigger";
+import {getPageRequiredProps} from "../../../mocks/mock_page";
 
 const absoluteUrl = () => "https://nope/";
 
@@ -122,6 +122,7 @@ describe('BehaviorList', () => {
     "createdAt": 1511816895686
   }
   const group1 = BehaviorGroup.fromJson({
+    teamId: "1",
     id: "a",
     name: "A",
     description: "",
@@ -136,6 +137,7 @@ describe('BehaviorList', () => {
     isManaged: false
   });
   const group2 = BehaviorGroup.fromJson({
+    teamId: "1",
     id: "b",
     name: "B",
     description: "",
@@ -150,6 +152,7 @@ describe('BehaviorList', () => {
     isManaged: false
   });
   const group3 = BehaviorGroup.fromJson({
+    teamId: "1",
     id: "c",
     name: "",
     description: "",
@@ -188,7 +191,7 @@ describe('BehaviorList', () => {
   };
 
   class Footer extends React.Component {
-    renderFooter(content) {
+    renderFooter(content: React.ReactNode) {
       return (
         <div>{content}</div>
       );
@@ -201,10 +204,10 @@ describe('BehaviorList', () => {
     }
   }
 
-  function createBehaviorList(config) {
+  function createBehaviorList(config: BehaviorListProps) {
     const footer = TestUtils.renderIntoDocument(<Footer/>) as Footer;
     return TestUtils.renderIntoDocument(
-      <BehaviorList {...config} {...Page.requiredPropDefaults()} onRenderFooter={footer.renderFooter} />
+      <BehaviorList {...config} {...getPageRequiredProps()} onRenderFooter={footer.renderFooter} />
     ) as BehaviorList;
   }
 

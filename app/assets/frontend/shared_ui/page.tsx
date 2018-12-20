@@ -14,8 +14,9 @@ export interface PageRequiredProps {
   onClearActivePanel: (optionalCallback?: () => void) => void,
   onRenderFooter: (content?: any, footerClassName?: string) => any,
   onRenderNavItems: (items: Array<NavItemContent>) => void,
-  onRenderNavActions: (content) => void,
-  onRenderPanel: (panelName: string, panel) => void,
+  onRenderNavActions: (content: React.ReactNode) => void,
+  onRenderPanel: (panelName: string, panel: Container) => void,
+  onRevealedPanel: () => void,
   headerHeight: number,
   footerHeight: number,
   ref?: any
@@ -46,14 +47,16 @@ type State = {
   footerHeight: number
 }
 
+type Container = React.Component | HTMLElement | null;
+type PanelMap = { [name: string]: Container };
+
 class Page extends React.Component<Props, State> {
-    panels: { [prop: string]: any };
-    footer: any;
-    component: any;
+    panels: PanelMap;
+    footer: Container;
+    component: React.Component;
     header: Option<HTMLElement>;
     navItems: Option<HTMLElement>;
     navActions: Option<HTMLElement>;
-    static requiredPropTypes: {};
     static feedbackContainerId: string;
 
     constructor(props: Props) {
@@ -80,29 +83,29 @@ class Page extends React.Component<Props, State> {
 
     toggleActivePanel(name: string, beModal?: boolean, optionalCallback?: () => void): void {
       var alreadyOpen = this.state.activePanelName === name;
-      var callback = typeof(optionalCallback) === 'function' ?
-        optionalCallback : (() => {
-          if (!alreadyOpen && beModal) {
-            var activeModal = this.getActiveModalElement(name);
-            if (activeModal) {
-              this.focusOnPrimaryOrFirstPossibleElement(activeModal);
-            }
-          }
-        });
       this.setState({
         activePanelName: alreadyOpen ? this.state.previousPanelName : name,
         activePanelIsModal: alreadyOpen ? this.state.previousPanelIsModal : !!beModal,
         previousPanelName: this.state.activePanelName,
         previousPanelIsModal: this.state.activePanelIsModal
-      }, callback);
+      }, optionalCallback);
+    }
+
+    onRevealedPanel(): void {
+      if (this.state.activePanelIsModal) {
+        const activeModal = this.getActiveModalElement(this.state.activePanelName);
+        if (activeModal) {
+          this.focusOnPrimaryOrFirstPossibleElement(activeModal);
+        }
+      }
     }
 
     clearActivePanel(optionalCallback?: () => void): void {
       this.setState(this.getDefaultState(), optionalCallback);
     }
 
-    onRenderPanel(panelName: string, panel): void {
-      const newPanel = {};
+    onRenderPanel(panelName: string, panel: Container): void {
+      const newPanel: PanelMap = {};
       newPanel[panelName] = panel;
       this.panels = Object.assign({}, this.panels, newPanel);
     }
@@ -113,20 +116,20 @@ class Page extends React.Component<Props, State> {
       }
     }
 
-    onDocumentKeyDown(event: any): void {
+    onDocumentKeyDown(event: KeyboardEvent): void {
       if (Event.keyPressWasEsc(event)) {
         this.handleEscKey();
       }
     }
 
-    handleModalFocus(event: any): void {
-      var activeModal = this.state.activePanelIsModal ? this.getActiveModalElement(this.state.activePanelName) : null;
-      if (!activeModal) {
+    handleModalFocus(event: FocusEvent): void {
+      const activeModal = this.state.activePanelIsModal ? this.getActiveModalElement(this.state.activePanelName) : null;
+      const focusTarget = event.relatedTarget as Element | null;
+      if (!activeModal || !focusTarget) {
         return;
       }
-      var focusTarget = event.target;
-      var possibleMatches = activeModal.getElementsByTagName(focusTarget.tagName);
-      var match = Array.prototype.some.call(possibleMatches, function(element) {
+      const possibleMatches = activeModal.getElementsByTagName(focusTarget.tagName);
+      const match = Array.prototype.some.call(possibleMatches, function(element: HTMLElement) {
         return element === focusTarget;
       });
       if (!match) {
@@ -136,13 +139,14 @@ class Page extends React.Component<Props, State> {
       }
     }
 
-    getActiveModalElement(panelName: string): any {
+    getActiveModalElement(panelName: string): Element | null {
       const panel = this.panels[panelName];
-      return panel ? ReactDOM.findDOMNode(panel) : null;
+      const domNode = panel ? ReactDOM.findDOMNode(panel) : null;
+      return domNode && domNode instanceof Element ? domNode : null;
     }
 
-    focusOnPrimaryOrFirstPossibleElement(parentElement: any): void {
-      var primaryElement = parentElement.querySelector('button.button-primary');
+    focusOnPrimaryOrFirstPossibleElement(parentElement: Element): void {
+      const primaryElement = parentElement.querySelector<HTMLElement>('button.button-primary:not([disabled])');
       if (primaryElement) {
         primaryElement.focus();
       } else {
@@ -150,9 +154,9 @@ class Page extends React.Component<Props, State> {
       }
     }
 
-    focusOnFirstPossibleElement(parentElement: any): void {
+    focusOnFirstPossibleElement(parentElement: Element): void {
       var tabSelector = 'a[href], area[href], input:not([disabled]), button:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, object, embed, *[tabindex], *[contenteditable]';
-      var firstFocusableElement = parentElement.querySelector(tabSelector);
+      var firstFocusableElement = parentElement.querySelector<HTMLElement>(tabSelector);
       if (firstFocusableElement) {
         firstFocusableElement.focus();
       }
@@ -203,7 +207,7 @@ class Page extends React.Component<Props, State> {
       this.toggleActivePanel('feedback', true);
     }
 
-    onRenderFooter(content?, footerClassName?: string) {
+    onRenderFooter(content?: React.ReactNode, footerClassName?: string) {
       return (
         <div>
           <ModalScrim isActive={this.state.activePanelIsModal} onClick={this.clearActivePanel} />
@@ -232,7 +236,7 @@ class Page extends React.Component<Props, State> {
       this.resetHeaderHeight();
     }
 
-    onRenderNavActions(content) {
+    onRenderNavActions(content: React.ReactNode) {
       // This should use ReactDOM.createPortal when we upgrade to React 16
       const el = this.navActions;
       if (el) {
@@ -263,44 +267,13 @@ class Page extends React.Component<Props, State> {
             onRenderNavActions: this.onRenderNavActions,
             headerHeight: this.getHeaderHeight(),
             footerHeight: this.getFooterHeight(),
-            ref: (component) => this.component = component
+            onRevealedPanel: this.onRevealedPanel,
+            ref: (component: React.Component) => this.component = component
           })}
         </div>
       );
     }
-
-    static requiredPropDefaults(): PageRequiredProps {
-      return {
-        activePanelName: "",
-        activePanelIsModal: false,
-        onToggleActivePanel: Page.placeholderCallback,
-        onClearActivePanel: Page.placeholderCallback,
-        onRenderFooter: Page.placeholderCallback,
-        onRenderPanel: Page.placeholderCallback,
-        onRenderNavItems: Page.placeholderCallback,
-        onRenderNavActions: Page.placeholderCallback,
-        headerHeight: 0,
-        footerHeight: 0
-      };
-    }
-
-    static placeholderCallback() {
-      void(0);
-    }
 }
-
-Page.requiredPropTypes = {
-  activePanelName: React.PropTypes.string.isRequired,
-  activePanelIsModal: React.PropTypes.bool.isRequired,
-  onToggleActivePanel: React.PropTypes.func.isRequired,
-  onClearActivePanel: React.PropTypes.func.isRequired,
-  onRenderFooter: React.PropTypes.func.isRequired,
-  onRenderPanel: React.PropTypes.func.isRequired,
-  onRenderNavItems: React.PropTypes.func.isRequired,
-  onRenderNavActions: React.PropTypes.func.isRequired,
-  headerHeight: React.PropTypes.number.isRequired,
-  footerHeight: React.PropTypes.number.isRequired
-};
 
 Page.feedbackContainerId = 'header-feedback';
 

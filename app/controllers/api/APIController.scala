@@ -1,7 +1,7 @@
 package controllers.api
 
 import _root_.json.Formatting._
-import _root_.json.{APIErrorData, APITokenData, UserData}
+import _root_.json._
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import controllers.api.context.ApiMethodContextBuilder

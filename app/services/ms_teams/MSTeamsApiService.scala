@@ -103,8 +103,8 @@ trait MSTeamsApiClient {
 
   private def extract[T](response: WSResponse, fields: Seq[String])(implicit fmt: Format[T]): T = {
     val json = responseToJson(response, None)
-    val resolved = fields.foldLeft(json)((j, f) => (j \ f).get)
-    resolved.validate[T] match {
+    val lookupResult = fields.foldLeft(json)((json, ea) => (json \ ea).get)
+    lookupResult.validate[T] match {
       case JsSuccess(v, _) => v
       case JsError(_) => {
         (json \ "error").validate[String] match {
@@ -121,6 +121,10 @@ trait MSTeamsApiClient {
 
       }
     }
+  }
+
+  private def extractValue[T](response: WSResponse)(implicit fmt: Format[T]): T = {
+    extract[T](response, Seq("value"))
   }
 
   private def preparePostParams(params: Map[String,Any]): Map[String,String] = {
@@ -162,6 +166,21 @@ trait MSTeamsApiClient {
       val json = responseToJson(result, Some("id"))
       (json \ "id").as[String]
     }
+  }
+
+  def indicateTyping(info: ActivityInfo): Future[Unit] = {
+    val value = Json.toJson(ResponseInfo.newForTyping(
+      info.recipient,
+      info.conversation,
+      info.from
+    ))
+    for {
+      token <- fetchBotFrameworkToken
+      _ <- ws.
+        url(info.responseUrl).
+        withHttpHeaders(headersFor(token): _*).
+        post(value)
+    } yield {}
   }
 
   private def messageUrlFor(serviceUrl: String, conversationId: String, activityId: String): String = {
@@ -212,7 +231,7 @@ trait MSTeamsApiClient {
 
   def getOrgInfo: Future[Option[MSTeamsOrganization]] = {
     getResponseFor("organization", Seq()).
-      map(r => extract[Seq[MSTeamsOrganization]](r, Seq("value")).headOption).
+      map(r => extractValue[Seq[MSTeamsOrganization]](r).headOption).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -231,7 +250,7 @@ trait MSTeamsApiClient {
       "$filter" -> s"appId eq '$clientId'"
     )
     getResponseFor(s"applications", params).
-      map(r => extract[Seq[Application]](r, Seq("value")).headOption).
+      map(r => extractValue[Seq[Application]](r).headOption).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -246,12 +265,34 @@ trait MSTeamsApiClient {
       }
   }
 
+  def getUserInfo(userId: String): Future[Option[MSTeamsUser]] = {
+    getResponseFor(s"users/$userId", Seq()).
+      map(r => Some(extract[MSTeamsUser](r, Seq()))).
+      recover {
+        case MSTeamsApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve user info: $err
+               |
+               |User ID: $userId
+               |Tenant ID: ${tenantId}
+             """.stripMargin)
+          None
+        }
+        case err: Exception => {
+          Logger.info(err.getMessage)
+          None
+        }
+
+      }
+  }
+
   def getAllTeams: Future[Seq[Team]] = {
     val params = Seq(
       "$filter" -> s"resourceProvisioningOptions/Any(x:x eq 'Team')"
     )
     getResponseFor(s"groups", params).
-      map(r => extract[Seq[Team]](r, Seq("value"))).
+      map(r => extractValue[Seq[Team]](r)).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -267,7 +308,7 @@ trait MSTeamsApiClient {
 
   def getAllChannelsFor(team: Team): Future[Seq[Channel]] = {
     getResponseFor(s"teams/${team.id}/channels", Seq()).
-      map(r => extract[Seq[Channel]](r, Seq("value"))).
+      map(r => extractValue[Seq[Channel]](r)).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -301,7 +342,7 @@ trait MSTeamsApiClient {
 
   def getChannelInfo(teamId: String, channelId: String): Future[Option[Channel]] = {
     getResponseFor(s"teams/${encode(teamId)}/channels/${encode(channelId)}", Seq()).
-      map(r => Some(extract[Channel](r, Seq("value")))).
+      map(r => Some(extractValue[Channel](r))).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -318,7 +359,7 @@ trait MSTeamsApiClient {
 
   def getTeamMembers(team: Team): Future[Seq[DirectoryObject]] = {
     getResponseFor(s"groups/${team.id}/members", Seq()).
-      map(r => extract[Seq[DirectoryObject]](r, Seq("value"))).
+      map(r => extractValue[Seq[DirectoryObject]](r)).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(

@@ -26,6 +26,13 @@ class FormSearch extends React.Component<Props> implements FocusableTextInputInt
       return props;
     }
 
+    onEscKey(): void {
+      this.clearValue();
+      if (this.props.onEscKey) {
+        this.props.onEscKey();
+      }
+    }
+
     clearValue(): void {
       const hasCurrentValue = Boolean(this.props.value);
       this.props.onChange("");
@@ -82,7 +89,7 @@ class FormSearch extends React.Component<Props> implements FocusableTextInputInt
                       this.getClassNames().join(" ")
                     }`
                   }
-                  onEscKey={this.clearValue}
+                  onEscKey={this.onEscKey}
                 />
               </div>
               <div

@@ -94,10 +94,14 @@ declare namespace ellipsis {
     token: string
     oauthToken: string
   }
-
-  export interface UserInfo {
+  
+  export interface EventUser {
     links: OAuthLink[]
-    messageInfo: MessageInfo
+  }
+
+  export interface DeprecatedUserInfo {
+    links: OAuthLink[]
+    messageInfo: DeprecatedMessageInfo
   }
 
   export interface UserData {
@@ -121,9 +125,12 @@ declare namespace ellipsis {
     
     /** The user’s time zone name in tz database format, e.g. "America/Los_Angeles" */
     timeZone?: string
+    
+    /** A link for the user, formatted for the specific context */
+    formattedLink? string
   }
 
-  export interface MessageInfo {
+  export interface DeprecatedMessageInfo {
     /** The text of the message that preceded this action */
     text: string
     
@@ -150,6 +157,33 @@ declare namespace ellipsis {
     
     /** Additional contextual details about this message */
     details: ContextMessageDetails
+    reactionAdded?: string
+  }
+  
+  export interface Channel {
+    id: string
+    name?: string
+    formattedLink?: string
+    members?: UserData[]
+  }
+  
+  export interface Message {
+    /** The text of the message that preceded this action */
+    text: string
+    
+    /** The channel ID for where this message originated, if applicable */
+    channel?: Channel
+    
+    /** The thread ID for where this message originated, if applicable */
+    thread?: string
+    
+    /** List of info about users mentioned in this message, if any */
+    usersMentioned: UserData[]
+    
+    /** Link to this message, if applicable */
+    permalink?: string
+    
+    /** The reaction added to the message, if any */
     reactionAdded?: string
   }
 
@@ -287,7 +321,7 @@ declare namespace ellipsis {
   /**
    * Information about the user who ran the action
    */
-  const userInfo: UserInfo & UserData
+  const userInfo: DeprecatedUserInfo & UserData
 
   type EventType = "scheduled" | "api" | "test" | "chat" | "web"
 
@@ -297,6 +331,18 @@ declare namespace ellipsis {
      * (This may not be how this action was triggered, if another action triggered this one.)
      */
     originalEventType: EventType
+    
+    /* The user who triggered the event */
+    user: EventUser & UserData
+    
+    /** The name of the event platform, e.g. "slack" or "msTeams" */
+    platformName: string
+
+    /** The human-readable description of the event platform, e.g. "Slack" or "Microsoft Teams" */
+    platformDescription: string
+    
+    /* The associated message, if a message event */
+    message?: Message
   }
 }
 `;

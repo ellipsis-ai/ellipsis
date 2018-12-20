@@ -37,14 +37,14 @@ class NotificationForEnvVarMissing extends React.PureComponent<Props> {
         return (
           <span>
             <span>This skill requires the following environment variables to work properly: </span>
-            {this.props.details.map(function(detail, index) {
+            {this.props.details.map((detail, index) => {
               return (
                 <span key={"notificationDetail" + index}>
                   {this.getButtonForEnvVar(detail)}
                   <span>{index + 1 < numVarsMissing ? ", " : ""}</span>
                 </span>
               );
-            }, this)}
+            })}
           </span>
         );
       }

@@ -33,7 +33,7 @@ export interface FormInputProps {
 class FormInput extends React.Component<FormInputProps> implements FocusableTextInputInterface {
   input: Option<HTMLInputElement>;
 
-  constructor(props) {
+  constructor(props: FormInputProps) {
     super(props);
     autobind(this);
     this.input = null;

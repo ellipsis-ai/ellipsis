@@ -1,26 +1,11 @@
 import {Diffable, DiffableProp} from "./diffs";
 
-import ApiConfigRef, {ApiConfigRefJson} from './api_config_ref';
+import ApiConfigRef, {ApiConfigRefJson, ApiJson} from './api_config_ref';
 import RequiredApiConfigWithConfig from './required_api_config_with_config';
 import ID from '../lib/id';
 import {RequiredApiConfigJson} from "./required_api_config";
-
-type callback = () => void
-
-export interface RequiredOAuthEditor {
-  onAddOAuthApplication: (r: RequiredOAuthApplication, c?: Option<callback>) => void,
-  addNewOAuthApplication: (r?: Option<RequiredOAuthApplication>) => void,
-  onRemoveOAuthApplication: (r: RequiredOAuthApplication, c?: Option<callback>) => void,
-  onUpdateOAuthApplication: (r: RequiredOAuthApplication, c?: Option<callback>) => void,
-  getOAuthLogoUrlForConfig: (r: RequiredOAuthApplication) => string,
-  getOAuthApiNameForConfig: (r: RequiredOAuthApplication) => string,
-  getAllOAuthApplications: () => Array<RequiredOAuthApplication>
-}
-
-type OAuthApplicationRefEditor = {
-  getOAuthLogoUrlForConfig: (OAuthApplicationRef) => string,
-  getOAuthApiNameForConfig: (OAuthApplicationRef) => string,
-}
+import {ApiConfigEditor} from "../behavior_editor/api_config_panel";
+import BehaviorEditor from "../behavior_editor";
 
 export interface RequiredOAuthApplicationJson extends RequiredApiConfigJson {
   config?: Option<OAuthApplicationRefJson>,
@@ -31,11 +16,18 @@ interface RequiredOAuthApplicationInterface extends RequiredOAuthApplicationJson
   config?: Option<OAuthApplicationRef>
 }
 
-class RequiredOAuthApplication extends RequiredApiConfigWithConfig implements Diffable, RequiredOAuthApplicationInterface {
-  readonly config: Option<OAuthApplicationRef>;
-  readonly recommendedScope: string;
+export class RequiredOAuthApplication
+  extends RequiredApiConfigWithConfig
+  implements Diffable, RequiredOAuthApplicationInterface {
 
-  constructor(id: Option<string>, exportId: Option<string>, apiId: string, nameInCode: string, config: Option<OAuthApplicationRef>, recommendedScope: string) {
+  constructor(
+    readonly id: Option<string>,
+    readonly exportId: Option<string>,
+    readonly apiId: string,
+    readonly nameInCode: string,
+    readonly config: Option<OAuthApplicationRef>,
+    readonly recommendedScope: string
+  ) {
     super(id, exportId, apiId, nameInCode, config);
     Object.defineProperties(this, {
       recommendedScope: { value: recommendedScope, enumerable: true }
@@ -57,34 +49,6 @@ class RequiredOAuthApplication extends RequiredApiConfigWithConfig implements Di
     }];
   }
 
-  onAddConfigFor(editor: RequiredOAuthEditor) {
-    return editor.onAddOAuthApplication;
-  }
-
-  onAddNewConfigFor(editor: RequiredOAuthEditor) {
-    return editor.addNewOAuthApplication;
-  }
-
-  onRemoveConfigFor(editor: RequiredOAuthEditor) {
-    return editor.onRemoveOAuthApplication;
-  }
-
-  onUpdateConfigFor(editor: RequiredOAuthEditor) {
-    return editor.onUpdateOAuthApplication;
-  }
-
-  getApiLogoUrl(editor: RequiredOAuthEditor) {
-    return editor.getOAuthLogoUrlForConfig(this);
-  }
-
-  getApiName(editor: RequiredOAuthEditor) {
-    return editor.getOAuthApiNameForConfig(this);
-  }
-
-  getAllConfigsFrom(editor: RequiredOAuthEditor) {
-    return editor.getAllOAuthApplications().filter(ea => ea.apiId === this.apiId);
-  }
-
   codePathPrefix() {
     return "ellipsis.accessTokens.";
   }
@@ -93,7 +57,7 @@ class RequiredOAuthApplication extends RequiredApiConfigWithConfig implements Di
     return `${this.codePathPrefix()}${this.nameInCode}`;
   }
 
-  configName() {
+  configName(): string {
     return this.config ? this.config.displayName : "";
   }
 
@@ -101,8 +65,24 @@ class RequiredOAuthApplication extends RequiredApiConfigWithConfig implements Di
     return Boolean(this.config);
   }
 
-  clone(props: Partial<RequiredOAuthApplicationInterface>): RequiredOAuthApplication {
-    return RequiredOAuthApplication.fromProps(Object.assign({}, this, props));
+  clone(props: Partial<RequiredOAuthApplication>) {
+    return RequiredOAuthApplication.fromProps(Object.assign({}, this, props)) as this;
+  }
+
+  editorFor(editor: BehaviorEditor) {
+    return RequiredOAuthApplication.editorFor(editor);
+  }
+
+  static editorFor(editor: BehaviorEditor): ApiConfigEditor<RequiredOAuthApplication> {
+    return {
+      allApiConfigsFor: editor.getAllOAuthApplications(),
+      onGetApiLogoUrl: editor.getOAuthLogoUrlForConfig,
+      onGetApiName: editor.getOAuthApiNameForConfig,
+      onAddConfig: editor.onAddOAuthApplication,
+      onAddNewConfig: editor.addNewOAuthApplication,
+      onRemoveConfig: editor.onRemoveOAuthApplication,
+      onUpdateConfig: editor.onUpdateOAuthApplication,
+    }
   }
 
   static fromProps(props: RequiredOAuthApplicationInterface) {
@@ -127,11 +107,13 @@ export interface OAuthApplicationRefJson extends ApiConfigRefJson {
   scope: string;
 }
 
-class OAuthApplicationRef extends ApiConfigRef implements OAuthApplicationRefJson {
-  readonly apiId: string;
-  readonly scope: string;
-
-  constructor(id: string, displayName: string, apiId: string, scope: string) {
+export class OAuthApplicationRef extends ApiConfigRef implements OAuthApplicationRefJson {
+  constructor(
+    readonly id: string,
+    readonly displayName: string,
+    readonly apiId: string,
+    readonly scope: string
+  ) {
     super(id, displayName);
     Object.defineProperties(this, {
       apiId: { value: apiId, enumerable: true },
@@ -139,12 +121,8 @@ class OAuthApplicationRef extends ApiConfigRef implements OAuthApplicationRefJso
     });
   }
 
-  getApiLogoUrl(editor: OAuthApplicationRefEditor) {
-    return editor.getOAuthLogoUrlForConfig(this);
-  }
-
-  getApiName(editor: OAuthApplicationRefEditor) {
-    return editor.getOAuthApiNameForConfig(this);
+  getApiId(): string {
+    return this.apiId;
   }
 
   configName() {
@@ -162,9 +140,20 @@ class OAuthApplicationRef extends ApiConfigRef implements OAuthApplicationRefJso
     );
   }
 
-  static fromJson(props: { id: string, displayName: string, apiId: string, scope: string }): OAuthApplicationRef {
+  editorFor(editor: BehaviorEditor) {
+    return RequiredOAuthApplication.editorFor(editor);
+  }
+
+  static fromJson(props: OAuthApplicationRefJson): OAuthApplicationRef {
     return new OAuthApplicationRef(props.id, props.displayName, props.apiId, props.scope);
   }
 }
 
-export {OAuthApplicationRef, RequiredOAuthApplication};
+export interface OAuthApiJson extends ApiJson {
+  apiId: string
+  name: string
+  requiresAuth: boolean
+  newApplicationUrl?: Option<string>
+  scopeDocumentationUrl?: Option<string>
+  isOAuth1: boolean
+}

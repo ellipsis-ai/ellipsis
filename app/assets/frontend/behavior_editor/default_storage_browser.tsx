@@ -4,7 +4,7 @@ import Button from '../form/button';
 import Checkbox from '../form/checkbox';
 import {DataRequest} from '../lib/data_request';
 import DataTypeField from '../models/data_type_field';
-import DefaultStorageItem from '../models/default_storage_item';
+import DefaultStorageItem, {DefaultStorageItemJson} from '../models/default_storage_item';
 import autobind from '../lib/autobind';
 
 type Props = {
@@ -77,7 +77,7 @@ class DefaultStorageBrowser extends React.Component<Props, State> {
     onLoadedData(json: { [prop: string]: any }): void {
       const queryName = this.props.behaviorVersion.getGraphQLListQueryName();
       try {
-        const items = json.data[queryName].map((data) => {
+        const items = json.data[queryName].map((data: DefaultStorageItemJson) => {
           return new DefaultStorageItem(
             data.id,
             this.props.behaviorVersion.behaviorId,

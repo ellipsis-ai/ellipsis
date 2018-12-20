@@ -6,7 +6,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors._
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.behaviortestresult.BehaviorTestResult
-import models.behaviors.events.MessageUserData
+import models.behaviors.ellipsisobject.{Channel, DeprecatedMessageInfo, Message}
 import models.behaviors.events.slack.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
@@ -60,6 +60,8 @@ object Formatting {
 
   lazy implicit val legacyBehaviorConfigJson = Json.format[LegacyBehaviorConfigJson]
 
+  lazy implicit val userDataFormat = Json.format[UserData]
+
   lazy implicit val behaviorConfigReads = Json.reads[BehaviorConfig]
   lazy implicit val behaviorConfigWrites = Json.writes[BehaviorConfig]
 
@@ -82,9 +84,6 @@ object Formatting {
 
   lazy implicit val slackUserDataReads = Json.reads[SlackUserData]
   lazy implicit val slackUserDataWrites = Json.writes[SlackUserData]
-
-  lazy implicit val userDataReads = Json.reads[UserData]
-  lazy implicit val userDataWrites = Json.writes[UserData]
 
   lazy implicit val behaviorGroupDeploymentDataFormat = Json.format[BehaviorGroupDeploymentData]
 
@@ -173,39 +172,39 @@ object Formatting {
   lazy implicit val slackFileSpecReads = Json.reads[UploadFileSpec]
   lazy implicit val slackFileSpecWrites = Json.writes[UploadFileSpec]
 
-  implicit val resultOutputWrites = Json.writes[ResultOutput]
-  implicit val testReportOutputWrites = Json.writes[InvocationTestReportOutput]
+  lazy implicit val resultOutputWrites = Json.writes[ResultOutput]
+  lazy implicit val testReportOutputWrites = Json.writes[InvocationTestReportOutput]
 
-  implicit val awsConfigEditConfigReads = Json.reads[AWSConfigEditConfig]
-  implicit val awsConfigEditConfigWrites = Json.writes[AWSConfigEditConfig]
+  lazy implicit val awsConfigEditConfigReads = Json.reads[AWSConfigEditConfig]
+  lazy implicit val awsConfigEditConfigWrites = Json.writes[AWSConfigEditConfig]
 
-  implicit val awsConfigListConfigReads = Json.reads[AWSConfigListConfig]
-  implicit val awsConfigListConfigWrites = Json.writes[AWSConfigListConfig]
+  lazy implicit val awsConfigListConfigReads = Json.reads[AWSConfigListConfig]
+  lazy implicit val awsConfigListConfigWrites = Json.writes[AWSConfigListConfig]
 
-  implicit val executionLogReads = Json.reads[ExecutionLogData]
-  implicit val executionErrorValueReads = Json.reads[ExecutionErrorData]
+  lazy implicit val executionLogReads = Json.reads[ExecutionLogData]
+  lazy implicit val executionErrorValueReads = Json.reads[ExecutionErrorData]
 
-  implicit val behaviorGroupVersionMetaDataWrites = Json.writes[BehaviorGroupVersionMetaData]
+  lazy implicit val behaviorGroupVersionMetaDataWrites = Json.writes[BehaviorGroupVersionMetaData]
 
-  implicit val regionalSettingsConfigFormat = Json.format[RegionalSettingsConfig]
+  lazy implicit val regionalSettingsConfigFormat = Json.format[RegionalSettingsConfig]
 
-  implicit val logEntryDataFormat = Json.format[LogEntryData]
+  lazy implicit val logEntryDataFormat = Json.format[LogEntryData]
 
-  implicit val apiErrorDataFormat = Json.format[APIErrorData]
-  implicit val apiErrorResultDataFormat = Json.format[APIResultWithErrorsData]
+  lazy implicit val apiErrorDataFormat = Json.format[APIErrorData]
+  lazy implicit val apiErrorResultDataFormat = Json.format[APIResultWithErrorsData]
 
-  implicit val linkedAccountDataFormat = Json.format[LinkedAccountData]
+  lazy implicit val linkedAccountDataFormat = Json.format[LinkedAccountData]
 
-  implicit val githubConfigConfigFormat = Json.format[GithubConfigConfig]
+  lazy implicit val githubConfigConfigFormat = Json.format[GithubConfigConfig]
 
-  implicit val integrationListConfigFormat = Json.format[IntegrationListConfig]
+  lazy implicit val integrationListConfigFormat = Json.format[IntegrationListConfig]
 
   lazy implicit val actionArgFormat = Json.format[ActionArg]
   lazy implicit val nextActionFormat = Json.format[NextAction]
   lazy implicit val skillCodeActionChoiceFormat = Json.format[SkillCodeActionChoice]
   lazy implicit val actionChoiceFormat = Json.format[ActionChoice]
 
-  implicit val supportRequestConfigFormat = Json.format[SupportRequestConfig]
+  lazy implicit val supportRequestConfigFormat = Json.format[SupportRequestConfig]
 
   lazy implicit val slackConversationTopicFormat: Format[SlackConversationTopic] = Json.format[SlackConversationTopic]
   lazy implicit val slackConversationPurposeFormat: Format[SlackConversationPurpose] = Json.format[SlackConversationPurpose]
@@ -217,8 +216,9 @@ object Formatting {
 
   lazy implicit val adminTeamDataWrites = Json.writes[AdminTeamData]
 
-  implicit val messageUserDataWrites = Json.format[MessageUserData]
-  implicit val messageInfoWrites = Json.format[MessageInfo]
+  lazy implicit val deprecatedMessageInfoFormat = Json.format[DeprecatedMessageInfo]
+  lazy implicit val channelInfoFormat = Json.format[Channel]
+  lazy implicit val messageInfoFormat = Json.format[Message]
 
 }
 

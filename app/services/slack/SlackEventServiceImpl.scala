@@ -62,35 +62,7 @@ class SlackEventServiceImpl @Inject()(
   }
 
   private def slackUserDataFromSlackUser(user: SlackUser, client: SlackApiClient): SlackUserData = {
-    val maybeProfile = user.profile.map { profile =>
-      SlackUserProfileData(
-        profile.display_name,
-        profile.first_name,
-        profile.last_name,
-        profile.real_name,
-        profile.email,
-        profile.phone
-      )
-    }
-    val maybeTeams = user.enterprise_user.flatMap(_.teams)
-    val firstTeam = user.team_id.
-      orElse(maybeTeams.flatMap(_.headOption)).
-      getOrElse(client.profile.slackTeamId)
-    val otherTeams = maybeTeams.filter(_ != firstTeam).getOrElse(Seq.empty)
-    SlackUserData(
-      user.id,
-      user.enterprise_user.flatMap(_.enterprise_id),
-      SlackUserTeamIds(firstTeam, otherTeams),
-      user.name,
-      isPrimaryOwner = user.is_primary_owner.getOrElse(false),
-      isOwner = user.is_owner.getOrElse(false),
-      isRestricted = user.is_restricted.getOrElse(false),
-      isUltraRestricted = user.is_ultra_restricted.getOrElse(false),
-      isBot = user.is_bot.getOrElse(false),
-      tz = user.tz,
-      user.deleted.getOrElse(false),
-      maybeProfile
-    )
+    SlackUserData.fromSlackUser(user, client.profile)
   }
 
   def fetchSlackUserDataFn(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: (SlackApiError => Option[SlackUser])): SlackUserDataCacheKey => Future[Option[SlackUserData]] = {

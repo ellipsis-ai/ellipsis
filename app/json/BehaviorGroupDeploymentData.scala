@@ -8,12 +8,12 @@ import services.DataService
 import scala.concurrent.{ExecutionContext, Future}
 
 case class BehaviorGroupDeploymentData(
-                                       id: String,
-                                       groupId: String,
-                                       groupVersionId: String,
-                                       comment: Option[String],
-                                       deployer: Option[UserData],
-                                       createdAt: OffsetDateTime
+                                        id: String,
+                                        groupId: String,
+                                        groupVersionId: String,
+                                        comment: Option[String],
+                                        deployer: Option[UserData],
+                                        createdAt: OffsetDateTime
                                      )
 
 object BehaviorGroupDeploymentData {

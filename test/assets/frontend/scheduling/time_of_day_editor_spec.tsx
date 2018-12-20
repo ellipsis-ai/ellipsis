@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as TestUtils from "react-addons-test-utils";
+import * as TestUtils from "react-dom/test-utils";
 import {RecurrenceInterface} from "../../../../app/assets/frontend/models/recurrence";
 import Recurrence from "../../../../app/assets/frontend/models/recurrence";
 import TimeOfDayEditor from "../../../../app/assets/frontend/scheduling/time_of_day_editor";

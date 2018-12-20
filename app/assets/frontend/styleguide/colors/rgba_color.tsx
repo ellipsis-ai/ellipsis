@@ -134,16 +134,16 @@ type RGB = {
       };
     }
 
-    static hslToRgb(hInt, sInt, lInt): RGB {
+    static hslToRgb(hInt: number, sInt: number, lInt: number): RGB {
       let h = hInt / 360;
-      let s = parseInt(sInt, 10) / 100;
-      let l = parseInt(lInt, 10) / 100;
+      let s = sInt / 100;
+      let l = lInt / 100;
       let r, g, b;
 
       if (s === 0) {
         r = g = b = l; // achromatic
       } else {
-        const hue2rgb = function(p, q, tOrig) {
+        const hue2rgb = function(p: number, q: number, tOrig: number) {
           let t = tOrig;
           if (t < 0) t += 1;
           if (t > 1) t -= 1;

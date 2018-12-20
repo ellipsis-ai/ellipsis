@@ -13,7 +13,7 @@ import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroupInfo
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
 import play.api.mvc.Call

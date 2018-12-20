@@ -8,13 +8,13 @@ import autobind from '../lib/autobind';
 import BehaviorGroup from "../models/behavior_group";
 import BehaviorGroupDeployment from "../models/behavior_group_deployment";
 import User from '../models/user';
-import Formatter from "../lib/formatter";
+import Formatter, {Timestamp} from "../lib/formatter";
 
 type Props = {
   group: BehaviorGroup,
   isModified: boolean,
-  lastSaveTimestamp?: string,
-  lastDeployTimestamp?: string,
+  lastSaveTimestamp?: Option<Timestamp>,
+  lastDeployTimestamp?: Option<Timestamp>,
   currentUserId: string,
   onDevModeChannelsClick: () => void,
   onDeployClick: (callback: () => void) => void,
@@ -103,7 +103,7 @@ class DeploymentStatus extends React.PureComponent<Props, State> {
   userNameFor(user: Option<User>): string {
     if (!user) {
       return "unknown";
-    } else if (user.id === this.props.currentUserId) {
+    } else if (user.ellipsisUserId === this.props.currentUserId) {
       return "you";
     } else {
       return user.formattedFullNameOrUserName();

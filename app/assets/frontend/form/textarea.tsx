@@ -18,7 +18,7 @@ interface Props {
 class Textarea extends React.Component<Props> implements FocusableTextInputInterface {
   input: Option<HTMLTextAreaElement>;
 
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
     }

@@ -20,13 +20,13 @@ import OptionalInt from './optional_int';
       return typeof this.value === "number" && DayOfWeek.SHORT_NAMES[this.value - 1] || "";
     }
 
-    static fromString(string): DayOfWeek {
+    static fromString(string: string): DayOfWeek {
       const parsed = string.match(/^([1-7])$/);
       const int = super.fromStringWithDefault(parsed ? parsed[1] : "", DayOfWeek.MONDAY.value);
       return new DayOfWeek(int.value);
     }
 
-    static isValid(intOrNull): boolean {
+    static isValid(intOrNull: Option<number>): boolean {
       const d = new DayOfWeek(intOrNull);
       return d.is((ea) => ea >= 1 && ea <= 7);
     }

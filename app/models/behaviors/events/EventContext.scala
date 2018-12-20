@@ -3,7 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
-import json.SlackUserData
+import json.{SlackUserData, UserData}
 import models.accounts.{MSTeamsContext, SlackContext}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -11,6 +11,7 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.ellipsisobject.{BotInfo, Channel}
 import models.behaviors.events.ms_teams._
 import models.behaviors.events.slack._
 import models.behaviors.testing.TestRunEvent
@@ -80,6 +81,8 @@ sealed trait EventContext {
     }
   }
 
+  def maybeChannelDataForAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Channel]]
+
   def maybeThreadId: Option[String]
 
   def sendMessage(
@@ -130,7 +133,7 @@ sealed trait EventContext {
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -212,10 +215,10 @@ case class SlackEventContext(
   }
 
   val isDirectMessage: Boolean = {
-    channel.startsWith("D")
+    SlackEventContext.channelIsDM(channel)
   }
   val isPrivateChannel: Boolean = {
-    channel.startsWith("G")
+    SlackEventContext.channelIsPrivateChannel(channel)
   }
   val isPublicChannel: Boolean = {
     !isDirectMessage && !isPrivateChannel
@@ -260,6 +263,10 @@ case class SlackEventContext(
     ))
   }
 
+  def maybeChannelDataForAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Channel]] = {
+    Channel.buildForSlackAction(channel, profile, services).map(Some(_))
+  }
+
   def maybeUserDetailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[JsObject]] = {
     val client = services.slackApiService.clientFor(profile)
     services.slackEventService.maybeSlackUserDataFor(userIdForContext, client, (e) => {
@@ -292,6 +299,7 @@ case class SlackEventContext(
     for {
       maybeDMChannel <- eventualMaybeDMChannel(services)
       botName <- botName(services)
+      userDataList <- event.messageUserDataList(maybeConversation, services)
       maybeTs <- SlackMessageSender(
         services.slackApiService.clientFor(profile),
         userIdForContext,
@@ -299,7 +307,7 @@ case class SlackEventContext(
         unformattedText,
         responseType,
         developerContext,
-        channel,
+        originatingChannel = channel,
         maybeDMChannel,
         maybeThreadId,
         maybeShouldUnfurl,
@@ -309,7 +317,7 @@ case class SlackEventContext(
         choices,
         services.configuration,
         botName,
-        event.messageUserDataList(maybeConversation, services),
+        userDataList,
         services,
         event.isEphemeral,
         event.maybeResponseUrl,
@@ -395,7 +403,7 @@ case class SlackEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -405,6 +413,16 @@ case class SlackEventContext(
     SlackMessageAttachment(maybeText, maybeUserDataList, maybeTitle, maybeTitleLink, maybeColor, maybeCallbackId, actions)
   }
 
+}
+
+object SlackEventContext {
+  def channelIsDM(channel: String): Boolean = {
+    channel.startsWith("D")
+  }
+
+  def channelIsPrivateChannel(channel: String): Boolean = {
+    channel.startsWith("G")
+  }
 }
 
 case class MSTeamsEventContext(
@@ -467,6 +485,10 @@ case class MSTeamsEventContext(
     }
   }
 
+  def maybeChannelDataForAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Channel]] = {
+    DBIO.successful(Some(Channel(channel, info.conversation.name, None, None))) // TODO: flesh this out
+  }
+
   def maybeChannelForSendAction(
                                  responseType: BehaviorResponseType,
                                  maybeConversation: Option[Conversation],
@@ -509,7 +531,6 @@ case class MSTeamsEventContext(
         files,
         choices,
         botName,
-        event.messageUserDataList(maybeConversation, services),
         services,
         event.isEphemeral,
         event.beQuiet
@@ -562,7 +583,8 @@ case class MSTeamsEventContext(
 
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
                      (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
-    eventualResults // TODO: this
+    MSTeamsMessageReactionHandler.handle(services.msTeamsApiService.profileClientFor(profile), eventualResults, info)
+    eventualResults
   }
 
   def messageActionButtonFor(
@@ -597,7 +619,7 @@ case class MSTeamsEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,
@@ -652,6 +674,10 @@ case class TestEventContext(
 
   def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     Future.successful(s"${team.name} TestBot")
+  }
+
+  def maybeChannelDataForAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Channel]] = {
+    DBIO.successful(None)
   }
 
   def messageRecipientPrefix(isUninterruptedConversation: Boolean): String = ""
@@ -731,7 +757,7 @@ case class TestEventContext(
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
-                            maybeUserDataList: Option[Set[MessageUserData]] = None,
+                            maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
                             maybeColor: Option[String] = None,

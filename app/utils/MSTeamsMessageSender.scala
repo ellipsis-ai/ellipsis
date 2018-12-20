@@ -1,13 +1,17 @@
 package utils
 
 import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
+import json.UserData
+import models.MSTeamsMessageFormatter
 import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.events.ms_teams._
 import models.behaviors.{ActionChoice, DeveloperContext}
+import models.team.{Team => EllipsisTeam}
 import play.api.libs.json.Json
 import services.DefaultServices
 import services.ms_teams.MSTeamsApiClient
@@ -52,7 +56,6 @@ case class MSTeamsMessageSender(
                                  files: Seq[UploadFileSpec] = Seq(),
                                  choices: Seq[ActionChoice],
                                  botName: String,
-                                 userDataList: Set[MessageUserData],
                                  services: DefaultServices,
                                  isEphemeral: Boolean,
                                  beQuiet: Boolean
@@ -212,13 +215,33 @@ case class MSTeamsMessageSender(
     Future.sequence(files.map(sendFile)).map(_ => {})
   }
 
+  def userIdsInText(text: String): Set[String] = {
+    """<@(.+?)>""".r.findAllMatchIn(text).flatMap(_.subgroups).toSet
+  }
+
+  def userDataListFor(text: String, team: EllipsisTeam)(implicit ec: ExecutionContext): Future[Set[UserData]] = {
+    val ids = userIdsInText(text)
+    Future.sequence(ids.map { eaId =>
+      for {
+        user <- services.dataService.users.ensureUserFor(LoginInfo(Conversation.MS_TEAMS_CONTEXT, eaId), Seq(), team.id)
+        userData <- services.dataService.users.userDataFor(user, team)
+      } yield userData.copy(userIdForContext = Some(eaId))
+    })
+  }
+
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    val formattedText = unformattedText // TODO: formatting
     val attachments = attachmentsToUse.flatMap {
       case a: MSTeamsMessageAttachment => Some(a.underlying)
       case _ => None
     }
     for {
+      maybeTeam <- client.maybeEllipsisTeamId.map { tid =>
+        services.dataService.teams.find(tid)
+      }.getOrElse(Future.successful(None))
+      userDataList <- maybeTeam.map { team =>
+        userDataListFor(unformattedText, team)
+      }.getOrElse(Future.successful(Set[UserData]()))
+      formattedText <- Future.successful(MSTeamsMessageFormatter.bodyTextFor(unformattedText, userDataList))
       _ <- sendPreamble(formattedText)
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles

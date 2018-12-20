@@ -83,7 +83,9 @@ class DefaultStorageAdder extends React.Component<Props, State> {
         error: null,
         isSaving: true
       }, () => {
-        const newItem = {};
+        const newItem: {
+          [k: string]: any
+        } = {};
         this.getWritableFieldsFor(this.props.behaviorVersion).forEach((field, index) => {
           newItem[field.name] = this.state.fieldValues[index];
         });

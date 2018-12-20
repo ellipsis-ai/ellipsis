@@ -6,6 +6,7 @@ import {RequiredOAuthApplication} from '../models/oauth';
 import {RequiredSimpleTokenApi} from '../models/simple_token';
 import autobind from "../lib/autobind";
 import RequiredApiConfig from "../models/required_api_config";
+import ApiConfigRef from "../models/api_config_ref";
 
 interface Props {
   requiredAWSConfigs: Array<RequiredAWSConfig>,
@@ -22,7 +23,7 @@ class ApiConfigList extends React.Component<Props> {
       autobind(this);
     }
 
-    onApiConfigClick(required): void {
+    onApiConfigClick(required: RequiredApiConfig): void {
       this.props.onApiConfigClick(required);
     }
 
@@ -63,7 +64,7 @@ class ApiConfigList extends React.Component<Props> {
           <div className="container container-wide prl">
             <div className="columns columns-elastic">
               <div className="column column-expand ptl">
-                <h6>API integrations</h6>
+                <h6>{ApiConfigRef.icon()} API integrations</h6>
               </div>
               <div className="column column-shrink ptm type-link">
                 <AddButton

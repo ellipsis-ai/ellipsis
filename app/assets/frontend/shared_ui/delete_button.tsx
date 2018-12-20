@@ -12,7 +12,7 @@ interface Props {
 class DeleteButton extends React.PureComponent<Props> {
   button: Option<Button>;
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     autobind(this);
   }

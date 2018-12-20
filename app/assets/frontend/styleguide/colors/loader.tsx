@@ -9,9 +9,4 @@ import * as ReactDOM from 'react-dom';
 import Colors from './index';
 
 const container = document.getElementById(ColorsConfig.containerId);
-if (container) {
-  ReactDOM.render(
-    React.createElement(Colors, ColorsConfig),
-    container
-  );
-}
+ReactDOM.render(React.createElement(Colors), container);

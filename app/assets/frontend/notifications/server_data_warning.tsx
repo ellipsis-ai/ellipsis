@@ -30,7 +30,7 @@ class NotificationForServerDataWarning extends React.PureComponent<Props> {
       const versionData = notificationDetail.newerVersion;
       const name = versionData && versionData.author && versionData.author.formattedFullNameOrUserName();
       const timestamp = versionData ? Formatter.formatTimestampRelativeIfRecent(versionData.createdAt) : "recently";
-      if (versionData && versionData.author && versionData.author.id === notificationDetail.currentUserId) {
+      if (versionData && versionData.author && versionData.author.ellipsisUserId === notificationDetail.currentUserId) {
         return `You saved a newer version of this skill in another window ${timestamp}.`;
       } else if (name) {
         return `${name} saved a newer version of this skill ${timestamp}.`;

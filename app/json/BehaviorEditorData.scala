@@ -190,8 +190,8 @@ object BehaviorEditorData {
         dataService.managedBehaviorGroups.infoFor(group, team).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield {
-      val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
+        val newBehaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None, dataService);
         BehaviorGroupData(
           None,
           team.id,
@@ -200,7 +200,7 @@ object BehaviorEditorData {
           icon = None,
           actionInputs = Seq(),
           dataTypeInputs = Seq(),
-          Seq(BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None, dataService)),
+          Seq(newBehaviorVersionData),
           Seq(),
           Seq(),
           Seq(),
@@ -216,6 +216,9 @@ object BehaviorEditorData {
           maybeLinkedGithubRepo.map(LinkedGithubRepoData.from)
         )
       }
+      val maybeVerifiedSelectedId = maybeGroupData.map { _ =>
+        maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
+      }.getOrElse(data.actionBehaviorVersions.headOption.flatMap(_.behaviorId))
       BehaviorEditorData(
         teamAccess,
         data,

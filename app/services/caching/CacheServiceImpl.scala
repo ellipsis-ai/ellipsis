@@ -8,7 +8,7 @@ import akka.http.caching.scaladsl.{Cache, CachingSettings}
 import com.amazonaws.services.lambda.model.InvokeResult
 import javax.inject.{Inject, Provider, Singleton}
 import json.Formatting._
-import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
+import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.IDs
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -21,7 +21,7 @@ import play.api.Logger
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
 import sangria.schema.Schema
-import services.ms_teams.apiModels.Application
+import services.ms_teams.apiModels.{Application, MSTeamsUser}
 import services.ms_teams.{ChannelWithTeam, MSTeamsApiService}
 import services.slack.SlackEventService
 import services.slack.apiModels.{SlackUser, SlackUserProfile}
@@ -262,6 +262,12 @@ class CacheServiceImpl @Inject() (
     } yield channelMap.get(channelId)
   }
 
+  private val msTeamsUserCache: Cache[String, Option[MSTeamsUser]] = LfuCache(cacheSettingsWithTimeToLive(msTeamsApiCallExpiry))
+
+  def getMSTeamsUser(key: String, dataFn: String => Future[Option[MSTeamsUser]]): Future[Option[MSTeamsUser]] = {
+    msTeamsUserCache.getOrLoad(key, dataFn)
+  }
+
   private def groupVersionDataKey(versionId: String): String = {
     s"ImmutableBehaviorGroupVersionData-v1-${versionId}"
   }
@@ -311,14 +317,14 @@ class CacheServiceImpl @Inject() (
     s"conversation-${conversationId}-messageUserDataList-v1"
   }
 
-  def cacheMessageUserDataList(messageUserDataList: Seq[MessageUserData], conversationId: String): Unit = {
+  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Unit = {
     val maybeExisting = getMessageUserDataList(conversationId)
     set(cacheKeyForMessageUserDataList(conversationId), Json.toJson(maybeExisting.getOrElse(Seq()) ++ messageUserDataList), Duration.Inf)
   }
 
-  def getMessageUserDataList(conversationId: String): Option[Seq[MessageUserData]] = {
+  def getMessageUserDataList(conversationId: String): Option[Seq[UserData]] = {
     get[JsValue](cacheKeyForMessageUserDataList(conversationId)).flatMap { json =>
-      json.validate[Seq[MessageUserData]] match {
+      json.validate[Seq[UserData]] match {
         case JsSuccess(data, _) => Some(data)
         case JsError(_) => None
       }

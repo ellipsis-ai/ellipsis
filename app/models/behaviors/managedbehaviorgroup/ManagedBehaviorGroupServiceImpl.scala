@@ -3,7 +3,6 @@ package models.behaviors.managedbehaviorgroup
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
-import json.UserData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup

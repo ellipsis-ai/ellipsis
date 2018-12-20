@@ -1,11 +1,13 @@
 package models.behaviors.events.ms_teams
 
 import akka.actor.ActorSystem
+import json.UserData
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
 import services.ms_teams.apiModels.{Attachment, File}
 import services.{DataService, DefaultServices}
+import slick.dbio.DBIO
 import utils.FileReference
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -69,8 +71,8 @@ case class MSTeamsMessageEvent(
 
   lazy val includesBotMention: Boolean = true
 
-  def messageUserDataList: Set[MessageUserData] = {
-    Set()
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
+    DBIO.successful(Set())
     // TODO: look at this
 //    message.userList.map(MessageUserData.fromSlackUserData)
   }

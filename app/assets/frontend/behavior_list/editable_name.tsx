@@ -12,13 +12,13 @@ interface Props {
   version: Editable,
   disableLink?: Option<boolean>,
   omitDescription?: Option<boolean>,
-  labelDataType?: Option<boolean>,
+  labelType?: Option<boolean>,
   onClick?: Option<BehaviorSelectCallback>,
   isImportable?: Option<boolean>,
   className?: Option<string>,
   triggerClassName?: Option<string>,
   highlightText?: Option<string>,
-  renderStatus?: (Editable) => ReactNode
+  renderStatus?: (e: Editable) => ReactNode
 }
 
 class EditableName extends React.Component<Props> {
@@ -130,7 +130,7 @@ class EditableName extends React.Component<Props> {
       return (
         <div className={this.getDisplayClassesFor(version)}>
           <span className={this.props.disableLink ? "" : "link"}>{version.name || "New data type"}</span>
-          {this.props.labelDataType ? (
+          {this.props.labelType ? (
             <span>{" (data type)"}</span>
           ) : null}
         </div>
@@ -141,6 +141,9 @@ class EditableName extends React.Component<Props> {
       return (
         <div className={this.getDisplayClassesFor(version)}>
           <span className={this.props.disableLink ? "" : "link"}>{version.name || "New library"}</span>
+          {this.props.labelType ? (
+            <span>{" (library)"}</span>
+          ) : null}
         </div>
       );
     }

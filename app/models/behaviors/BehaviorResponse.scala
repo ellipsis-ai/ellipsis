@@ -148,20 +148,28 @@ case class BehaviorResponse(
       }
     }.getOrElse {
       if (behaviorVersion.responseType == Threaded) {
-        event.sendMessage(
-          "Let's continue this in a thread :speech_balloon:",
-          behaviorVersion.responseType,
-          maybeShouldUnfurl = None,
-          None,
-          attachments = Seq(),
-          files = Seq(),
-          choices = Seq(),
-          DeveloperContext.default,
-          services
-        )
+        maybeStartThreadRoot
       } else {
         Future.successful(None)
       }
+    }
+  }
+
+  private def maybeStartThreadRoot(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    if (event.isEphemeral) {
+      Future.successful(None)
+    } else {
+      event.sendMessage(
+        "Let’s continue this in a thread. :speech_balloon:",
+        behaviorVersion.responseType,
+        maybeShouldUnfurl = None,
+        None,
+        attachments = Seq(),
+        files = Seq(),
+        choices = Seq(),
+        DeveloperContext.default,
+        services
+      )
     }
   }
 
@@ -182,8 +190,7 @@ case class BehaviorResponse(
                 maybeThreadId,
                 maybeActivatedTrigger,
                 maybeNewParent,
-                dataService,
-                cacheService
+                services
               )
               _ <- Future.sequence(parametersWithValues.map { p =>
                 p.maybeValue.map { v =>

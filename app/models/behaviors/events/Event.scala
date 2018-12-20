@@ -1,12 +1,14 @@
 package models.behaviors.events
 
 import akka.actor.ActorSystem
+import json.UserData
 import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.ellipsisobject._
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.triggers.Trigger
 import models.team.Team
@@ -74,20 +76,41 @@ trait Event {
     dataService.run(ensureUserAction(dataService))
   }
 
-  def userInfoAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[UserInfo] = {
-    UserInfo.buildForAction(this, maybeConversation, services)
+  def deprecatedUserInfoAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[DeprecatedUserInfo] = {
+    DeprecatedUserInfo.buildForAction(this, maybeConversation, services)
   }
 
-  def messageInfo(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[MessageInfo] = {
-    MessageInfo.buildFor(this, maybeConversation, services)
+  def deprecatedMessageInfo(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[DeprecatedMessageInfo] = {
+    DeprecatedMessageInfo.buildFor(this, maybeConversation, services)
   }
 
-  def messageUserDataList: Set[MessageUserData]
+  def eventUserAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[EventUser] = {
+    EventUser.buildForAction(this, maybeConversation, services)
+  }
 
-  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices): Set[MessageUserData] = {
-    messageUserDataList ++ maybeConversation.flatMap { conversation =>
-      services.cacheService.getMessageUserDataList(conversation.id)
-    }.getOrElse(Seq.empty)
+  def maybeMessageInfoAction(
+                        maybeConversation: Option[Conversation],
+                        services: DefaultServices
+                      )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[Message]] = {
+    DBIO.successful(None)
+  }
+
+  def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]]
+
+  def messageUserDataList(services: DefaultServices)(implicit ec: ExecutionContext): Future[Set[UserData]] = {
+    services.dataService.run(messageUserDataListAction(services))
+  }
+
+  def messageUserDataListAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
+    messageUserDataListAction(services).map { list =>
+      list ++ maybeConversation.flatMap { conversation =>
+        services.cacheService.getMessageUserDataList(conversation.id)
+      }.getOrElse(Seq.empty)
+    }
+  }
+
+  def messageUserDataList(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext): Future[Set[UserData]] = {
+    services.dataService.run(messageUserDataListAction(maybeConversation, services))
   }
 
   def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {
@@ -119,7 +142,7 @@ trait Event {
 
   def teachMeLinkFor(lambdaService: AWSLambdaService): String = {
     val newBehaviorLink = lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.BehaviorEditorController.newGroup(Some(ellipsisTeamId))
+      val path = controllers.routes.BehaviorEditorController.newGroup(Some(ellipsisTeamId), None)
       s"$baseUrl$path"
     }.get
     s"[teach me something new]($newBehaviorLink)"
@@ -148,17 +171,20 @@ trait Event {
   }
 
   def shouldAutoForcePrivate(behaviorVersion: BehaviorVersion, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
-      isEphemeral && params.exists(_.paramType.mayRequireTypedAnswer)
+    if (behaviorVersion.forcePrivateResponse) {
+      Future.successful(true)
+    } else {
+      dataService.behaviorParameters.allFor(behaviorVersion).map { params =>
+        isEphemeral && params.exists(_.paramType.mayRequireTypedAnswer)
+      }
     }
   }
+
   def maybeChannelToUseFor(behaviorVersion: BehaviorVersion, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     for {
-      forcePrivate <- shouldAutoForcePrivate(behaviorVersion, services.dataService).map(_ || behaviorVersion.forcePrivateResponse)
+      forcePrivate <- shouldAutoForcePrivate(behaviorVersion, services.dataService)
       maybeChannelToUse <- if (forcePrivate) {
-        eventContext.eventualMaybeDMChannel(services).map { maybeDMChannel =>
-          maybeDMChannel
-        }
+        eventContext.eventualMaybeDMChannel(services)
       } else {
         Future.successful(maybeChannel)
       }

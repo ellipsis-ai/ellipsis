@@ -19,10 +19,8 @@ import models.behaviors.events.Event
 import models.behaviors.events.slack.SlackMessageEvent
 import models.team.Team
 import play.api.Logger
-import play.api.libs.json.Json
 import services.DefaultServices
 import services.ms_teams.apiModels.MSTeamsUser
-import services.ms_teams.apiModels.Formatting._
 import services.slack.SlackApiClient
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -183,7 +181,6 @@ class UserServiceImpl @Inject() (
         } else {
           Future.successful(false)
         }
-        maybeTeam <- dataService.teams.find(user.teamId)
       } yield {
         if (isAdmin) {
           UserData.asAdmin(user.id)
@@ -193,43 +190,25 @@ class UserServiceImpl @Inject() (
           } else {
             Logger.error(s"Non-admin user data requested with mismatched team ID: user ID ${user.id} with team ID ${user.teamId} compared to requested team ID ${team.id}")
           }
-          UserData.withoutProfile(user.id, maybeTeam)
+          UserData.withoutProfile(user.id)
         }
       }
     } else {
       for {
         maybeSlackUserData <- maybeSlackUserDataFor(user, team)
-        maybeMSTeamsUserData <- maybeMSTeamsUserDataFor(user, team)
+        maybeMSTeamsUser <- maybeMSTeamsUserFor(user, team)
       } yield {
-        userDataFor(user, team, maybeSlackUserData, maybeMSTeamsUserData)
+        userDataFor(user, team, maybeSlackUserData, maybeMSTeamsUser)
       }
     }
   }
 
-  private def userDataFor(
-                           user: User,
-                           team: Team,
-                           maybeSlackUserData: Option[SlackUserData],
-                           maybeMSTeamsUserData: Option[MSTeamsUser]): UserData = {
-    val maybeTzString = maybeSlackUserData.flatMap(_.tz).orElse(team.maybeTimeZone.map(_.toString))
-    val context = if (maybeSlackUserData.isDefined) {
-      Some(Conversation.SLACK_CONTEXT)
-    } else if (maybeMSTeamsUserData.isDefined) {
-      Some(Conversation.MS_TEAMS_CONTEXT)
-    } else {
-      None
+  private def userDataFor(user: User, team: Team, maybeSlackUserData: Option[SlackUserData], maybeMSTeamsUser: Option[MSTeamsUser]): UserData = {
+    maybeSlackUserData.map(d => UserData.fromSlackUserData(user, d)).getOrElse {
+      maybeMSTeamsUser.map(d => UserData.fromMSTeamsUser(user, d)).getOrElse {
+        UserData.withoutProfile(user.id)
+      }
     }
-    UserData(
-      id = user.id,
-      userName = maybeSlackUserData.map(_.getDisplayName).orElse(maybeMSTeamsUserData.flatMap(_.displayName)),
-      fullName = maybeSlackUserData.flatMap(_.maybeRealName).orElse(maybeMSTeamsUserData.flatMap(_.displayName)),
-      tz = maybeTzString,
-      teamName = Some(team.name),
-      email = maybeSlackUserData.flatMap(_.profile.flatMap(_.email)).orElse(maybeMSTeamsUserData.flatMap(_.mail)),
-      context = context,
-      userIdForContext = maybeSlackUserData.map(_.accountId).orElse(maybeMSTeamsUserData.map(_.id)),
-      details = maybeSlackUserData.map(Json.toJsObject(_)).orElse(maybeMSTeamsUserData.map(Json.toJsObject(_)))
-    )
   }
 
   private def maybeSlackUserDataFor(user: User, team: Team): Future[Option[SlackUserData]] = {
@@ -283,7 +262,7 @@ class UserServiceImpl @Inject() (
         for {
           user <- ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, slackUserData.accountId), team.id)
         } yield {
-          Some(userDataFor(user, team, maybeSlackUserData, None)) // TODO: MS Teams
+          maybeSlackUserData.map(d => UserData.fromSlackUserData(user, d))
         }
       }.getOrElse(Future.successful(None))
     } yield maybeUserData
@@ -312,6 +291,26 @@ class UserServiceImpl @Inject() (
         slackTeamIds <- maybeSlackUserData.map(_.accountTeamIds)
       } yield SlackProfile(slackTeamIds, linkedAccount.loginInfo, maybeSlackUserData.flatMap(_.accountEnterpriseId))
     }
+  }
+
+  private def fetchMSTeamsUserFor(user: User, team: Team): String => Future[Option[MSTeamsUser]] = {
+    _ => {
+      for {
+        botProfiles <- dataService.msTeamsBotProfiles.allFor(team.id)
+        maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSTeamsFor(user)
+        maybeUser <- maybeLinkedAccount.map { linked =>
+          val userIdForContext = linked.loginInfo.providerKey
+          val maybeClient = botProfiles.headOption.map(msTeamsApiService.profileClientFor)
+          maybeClient.map { client =>
+            client.getUserInfo(userIdForContext)
+          }.getOrElse(Future.successful(None))
+        }.getOrElse(Future.successful(None))
+      } yield maybeUser
+    }
+  }
+
+  private def maybeMSTeamsUserFor(user: User, team: Team): Future[Option[MSTeamsUser]] = {
+    cacheService.getMSTeamsUser(user.id, fetchMSTeamsUserFor(user, team))
   }
 
   def maybeMSTeamsProfileFor(user: User): Future[Option[MSTeamsProfile]] = {

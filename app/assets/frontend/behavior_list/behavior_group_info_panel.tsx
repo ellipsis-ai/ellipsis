@@ -11,7 +11,7 @@ import User from "../models/user";
 
   type Props = {
     groupData: Option<BehaviorGroup>,
-    onBehaviorGroupImport: (BehaviorGroup) => void,
+    onBehaviorGroupImport: (group: BehaviorGroup) => void,
     onBehaviorGroupUpdate: (originalGroup: BehaviorGroup, updatedGroup: BehaviorGroup) => void,
     onToggle: () => void,
     isImportable: boolean,

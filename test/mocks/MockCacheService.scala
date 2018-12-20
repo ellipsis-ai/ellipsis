@@ -1,20 +1,20 @@
 package mocks
 
 import com.amazonaws.services.lambda.model.InvokeResult
-import json.{ImmutableBehaviorGroupVersionData, SlackUserData}
+import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.IDs
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
+import models.behaviors.events.Event
 import models.behaviors.events.slack.SlackMessageEvent
-import models.behaviors.events.{Event, MessageUserData}
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import sangria.schema.Schema
 import services.caching._
 import services.ms_teams.ChannelWithTeam
-import services.ms_teams.apiModels.Application
+import services.ms_teams.apiModels.{Application, MSTeamsUser}
 import services.slack.apiModels.SlackUser
 
 import scala.concurrent.Future
@@ -71,6 +71,8 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getMSTeamsChannelFor(profile: MSTeamsBotProfile, channelId: String): Future[Option[ChannelWithTeam]] = Future.successful(None)
 
+  def getMSTeamsUser(key: String, dataFn: String => Future[Option[MSTeamsUser]]): Future[Option[MSTeamsUser]] = Future.successful(None)
+
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {}
 
   def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = None
@@ -85,9 +87,9 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getLastConversationId(teamId: String, channelId: String): Option[String] = None
 
-  def cacheMessageUserDataList(messageUserDataList: Seq[MessageUserData], conversationId: String): Unit = {}
+  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Unit = {}
 
-  def getMessageUserDataList(conversationId: String): Option[Seq[MessageUserData]] = None
+  def getMessageUserDataList(conversationId: String): Option[Seq[UserData]] = None
 
   def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit = {}
 

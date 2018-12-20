@@ -152,7 +152,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return `Cancel new ${this.kindLabel()}`;
     }
 
-    buildUpdatedGroupFor(group: BehaviorGroup, props: {}): BehaviorGroup {
+    buildUpdatedGroupFor(group: BehaviorGroup, props: Partial<BehaviorVersionInterface>): BehaviorGroup {
       const timestampedBehavior = this.clone(props).copyWithNewTimestamp();
       const updatedVersions = group.behaviorVersions.
         filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
@@ -423,6 +423,28 @@ ellipsis.success(\`Hello, \${name}.\`);
 //   { id: "2", label: "Two" }
 // ]);
 `);
+    }
+
+    icon(): string {
+      if (this.isDataType()) {
+        return BehaviorVersion.dataTypeIcon();
+      } else if (this.isTest()) {
+        return BehaviorVersion.testIcon();
+      } else {
+        return BehaviorVersion.actionIcon();
+      }
+    }
+
+    static actionIcon(): string {
+      return "🎬";
+    }
+
+    static dataTypeIcon(): string {
+      return "📁";
+    }
+
+    static testIcon(): string {
+      return "📐";
     }
 
 }
