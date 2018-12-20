@@ -425,6 +425,28 @@ ellipsis.success(\`Hello, \${name}.\`);
 `);
     }
 
+    icon(): string {
+      if (this.isDataType()) {
+        return BehaviorVersion.dataTypeIcon();
+      } else if (this.isTest()) {
+        return BehaviorVersion.testIcon();
+      } else {
+        return BehaviorVersion.actionIcon();
+      }
+    }
+
+    static actionIcon(): string {
+      return "🎬";
+    }
+
+    static dataTypeIcon(): string {
+      return "📁";
+    }
+
+    static testIcon(): string {
+      return "📐";
+    }
+
 }
 
 export default BehaviorVersion;

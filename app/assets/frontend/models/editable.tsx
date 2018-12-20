@@ -143,6 +143,8 @@ abstract class Editable implements EditableInterface {
     isIdenticalToVersion<T extends Editable>(version: T): boolean {
       return DeepEqual.isEqual(this.forEqualityComparison(), version.forEqualityComparison());
     }
+
+    abstract icon(): string
 }
 
 export default Editable;

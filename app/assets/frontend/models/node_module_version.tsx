@@ -32,6 +32,10 @@ class NodeModuleVersion implements NodeModuleVersionInterface {
     return jsonArray.map((props) => NodeModuleVersion.fromProps(props));
   }
 
+  static icon(): string {
+    return "📦";
+  }
+
 }
 
 export default NodeModuleVersion;

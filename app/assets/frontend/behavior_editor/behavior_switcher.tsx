@@ -73,7 +73,7 @@ class BehaviorSwitcher extends React.Component<Props> {
         return (
           <div className="border-bottom mtl pbl">
             <div className="container container-wide mbs">
-              <h6>Required NPM modules</h6>
+              <h6>{NodeModuleVersion.icon()} NPM modules</h6>
             </div>
             <div className="type-s">
               <NodeModuleList nodeModuleVersions={this.props.nodeModuleVersions} updatingNodeModules={this.props.updatingNodeModules} />
@@ -155,7 +155,7 @@ class BehaviorSwitcher extends React.Component<Props> {
 
           <div>
             <BehaviorSwitcherGroup
-              heading="Actions"
+              heading={`${BehaviorVersion.actionIcon()} Actions`}
               editables={this.props.actionBehaviors}
               selectedId={this.props.selectedId}
               onAddNew={this.props.addNewAction}
@@ -165,7 +165,7 @@ class BehaviorSwitcher extends React.Component<Props> {
             />
 
             <BehaviorSwitcherGroup
-              heading="Data types"
+              heading={`${BehaviorVersion.dataTypeIcon()} Data types`}
               editables={this.props.dataTypeBehaviors}
               selectedId={this.props.selectedId}
               onAddNew={this.props.addNewDataType}
@@ -175,7 +175,7 @@ class BehaviorSwitcher extends React.Component<Props> {
             />
 
             <BehaviorSwitcherGroup
-              heading="Libraries"
+              heading={`${LibraryVersion.icon()} Libraries`}
               editables={this.props.libraries}
               selectedId={this.props.selectedId}
               onAddNew={this.props.addNewLibrary}
@@ -185,7 +185,7 @@ class BehaviorSwitcher extends React.Component<Props> {
             />
 
             <BehaviorSwitcherGroup
-              heading="Tests"
+              heading={`${BehaviorVersion.testIcon()} Tests`}
               editables={this.props.tests}
               selectedId={this.props.selectedId}
               onAddNew={this.props.addNewTest}

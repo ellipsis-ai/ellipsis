@@ -40,6 +40,10 @@ abstract class ApiConfigRef implements ApiConfigRefJson {
   abstract configName(): string
 
   abstract editorFor(editor: BehaviorEditor): ApiConfigEditor<any>
+
+  static icon(): string {
+    return "🔌";
+  }
 }
 
 export default ApiConfigRef;
