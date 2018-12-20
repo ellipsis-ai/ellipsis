@@ -86,13 +86,14 @@ input.box-code-example {
 .form-multi-select {
   .form-input-height-auto();
   .position-relative(); /* Ensures option element offset position is relative to the select element */
+  margin: 0; /* Safari adds margins by default ¯\_🍎_/¯ */
   padding: 0;
   border-radius: 0;
 }
 
 .form-multi-select option {
   padding: @xxs @form-padding-horizontal;
-  min-height: @xl - @xxs * 2;
+  height: @xl - @xxs * 2;
 }
 
 .form-input.type-monospace {
@@ -149,13 +150,16 @@ input.box-code-example {
   text-decoration: none;
 }
 
-.form-input:focus, .form-field:focus {
+.form-input:focus, .form-field:focus, .form-multi-select:focus {
   outline: none;
   border-color: @border-color-focus;
   border-width: @border-width-thick;
-  padding: (@form-padding-vertical - @border-width-thick) (@form-padding-horizontal - @border-width-thick);
   position: relative;
   z-index: 1;
+}
+
+.form-input:focus, .form-field:focus {
+  padding: (@form-padding-vertical - @border-width-thick) (@form-padding-horizontal - @border-width-thick);
 }
 
 .form-input-s:focus {

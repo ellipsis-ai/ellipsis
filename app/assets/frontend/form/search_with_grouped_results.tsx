@@ -3,13 +3,11 @@ import SearchInput from './search';
 import Select from './select';
 import * as debounce from 'javascript-debounce';
 import autobind from "../lib/autobind";
+import {SearchOption} from "./search_with_results";
 
 export interface LabeledOptionGroup {
   label: string
-  options: Array<{
-    name: string,
-    value: string
-  }>
+  options: Array<SearchOption>
 }
 
 interface Props {
@@ -21,7 +19,8 @@ interface Props {
   error?: Option<string>
   onChangeSearch: (newSearchText: string) => void
   onSelect: (newValue: string, newIndex: number) => void,
-  onEnterKey?: Option<(value: string) => void> 
+  onEnterKey?: Option<(value: string) => void>
+  onEscKey?: () => void
 }
 
 interface State {
@@ -36,7 +35,7 @@ class SearchWithGroupedResults extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     autobind(this);
-    this.delayChangeSearch = debounce(this.onChangeSearch, 250);
+    this.delayChangeSearch = debounce(this.onChangeSearch, 100);
     this.state = {
       searchText: ""
     };
@@ -162,6 +161,7 @@ class SearchWithGroupedResults extends React.Component<Props, State> {
               onUpKey={this.onSelectPrevious}
               onDownKey={this.onSelectNext}
               onEnterKey={this.onEnterKey}
+              onEscKey={this.props.onEscKey}
               withResults={true}
             />
             <div className="position-relative">

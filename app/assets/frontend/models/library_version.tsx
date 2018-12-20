@@ -168,6 +168,13 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
       );
     }
 
+    icon(): string {
+      return LibraryVersion.icon();
+    }
+
+    static icon(): string {
+      return "🧰";
+    }
 }
 
 export default LibraryVersion;
