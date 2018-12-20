@@ -2,7 +2,7 @@ package models.accounts.user
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import json.UserData
+import json.{SlackUserData, UserData}
 import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.profile.SlackProfile
@@ -40,6 +40,8 @@ trait UserService extends IdentityService[User] {
   def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]]
 
   def maybeSlackTeamIdsFor(user: User): Future[Option[SlackUserTeamIds]]
+
+  def maybeSlackUserDataFor(user: User): Future[Option[SlackUserData]]
 
   def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]]
 

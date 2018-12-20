@@ -20,6 +20,8 @@ trait LinkedAccountService {
 
   def allForLoginInfoAction(loginInfo: LoginInfo): DBIO[Seq[LinkedAccount]]
 
+  def allForLoginInfo(loginInfo: LoginInfo): Future[Seq[LinkedAccount]]
+
   def maybeForSlackForAction(user: User): DBIO[Option[LinkedAccount]]
 
   def maybeForSlackFor(user: User): Future[Option[LinkedAccount]]
