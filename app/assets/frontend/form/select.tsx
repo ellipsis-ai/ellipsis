@@ -114,11 +114,13 @@ class Select extends React.Component<Props, State> implements FocusableTextInput
     render() {
       return (
         <div
-          className={
-            (this.props.size ? "" : "form-select ") +
-            (this.state.focused ? "form-select-focus " : "") +
-            (this.props.className || "")
-          }
+          className={`${
+            this.props.size ? "form-multi-select-container" : "form-select"
+          } ${
+            this.state.focused ? "form-select-focus" : ""
+          } ${
+            this.props.className || ""
+          }`}
         >
           <select ref={(el) => this.selectElement = el}
             className={
@@ -131,7 +133,7 @@ class Select extends React.Component<Props, State> implements FocusableTextInput
             onFocus={this.onFocus}
             onBlur={this.onBlur}
             size={this.props.size}
-            style={this.props.size ? { minHeight: `${this.props.size * 1.5}em` } : undefined}
+            style={this.props.size ? { minHeight: `${(this.props.size * 1.5) + 0.5}em` } : undefined}
             disabled={!!this.props.disabled}
           >
             {this.props.children}

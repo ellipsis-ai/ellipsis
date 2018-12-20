@@ -57,7 +57,8 @@ class Event {
     }
 
     static keyPressWasOpenShortcut(event: AnyKeyboardEvent): boolean {
-      return Event.keyPressIncludedPlatformCommandKey(event, false) && event.key === 'o';
+      /* Safari won't allow hijacking Cmd-o without shift key */
+      return Event.keyPressIncludedPlatformCommandKey(event, true) && event.key === 'o';
     }
 }
 
