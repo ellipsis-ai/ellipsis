@@ -7,7 +7,7 @@ import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack.SlackMessageEvent
-import models.behaviors.{BotResult, SimpleTextResult, TextWithAttachmentsResult}
+import models.behaviors._
 import services.DefaultServices
 import utils.Color
 
@@ -27,25 +27,31 @@ class EventHandler @Inject() (
 
   def slackEventService = services.slackEventService
 
-  def startInvokeConversationFor(event: Event, willHaveOtherResults: Future[Boolean]): Future[Seq[BotResult]] = {
+  def startInvokeConversationFor(event: Event): Future[Seq[BotResult]] = {
     for {
       maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
-      hasOtherResults <- willHaveOtherResults
       results <- {
-        val eventualResults = Future.sequence(responses.map(_.result))
-        if (responses.exists(_.userExpectsResponse)) {
-          event.resultReactionHandler(eventualResults, services)
+        val builtinBehaviors = Seq(BuiltinBehavior.maybeFrom(event, services)).flatten
+        val eventualBuiltinResults = Future.sequence(builtinBehaviors.map(_.result))
+        val eventualResponseResults = Future.sequence(responses.map(_.result))
+        val allEventualResults = Future.sequence(Seq(eventualResponseResults, eventualBuiltinResults)).map(_.flatten)
+        if (responses.exists(_.userExpectsResponse) || builtinBehaviors.nonEmpty) {
+          event.resultReactionHandler(allEventualResults, services)
         }
-        eventualResults.flatMap { r =>
-          if (r.isEmpty && !hasOtherResults && event.isResponseExpected) {
-            event.noExactMatchResult(services).map { noMatchResult =>
-              Seq(noMatchResult)
+        for {
+          responseResults <- eventualResponseResults
+          builtinResults <- eventualBuiltinResults
+          allResults <- {
+            if (responseResults.isEmpty && builtinResults.forall(_.resultType == ResultType.NoResponse) && event.isResponseExpected) {
+              event.noExactMatchResult(services).map { noMatchResult =>
+                Seq(noMatchResult)
+              }
+            } else {
+              Future.successful(responseResults ++ builtinResults)
             }
-          } else {
-            Future.successful(r)
           }
-        }
+        } yield allResults
       }
     } yield results
   }
@@ -171,10 +177,7 @@ class EventHandler @Inject() (
           cacheService.clearLastConversationId(event.ellipsisTeamId, channel)
         }
       }
-      val builtInResults = BuiltinBehavior.maybeFrom(event, services).map { builtin =>
-        event.resultReactionHandler(builtin.result.map(Seq(_)), services)
-      }.getOrElse(Future.successful(Seq()))
-      Future.sequence(Seq(startInvokeConversationFor(event, builtInResults.map(_.nonEmpty)), builtInResults)).map(_.flatten)
+      startInvokeConversationFor(event)
     }).recover {
       case e: FetchValidValuesBadResultException => Seq(e.result)
     }
