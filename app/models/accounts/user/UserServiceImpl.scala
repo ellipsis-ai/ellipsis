@@ -297,7 +297,7 @@ class UserServiceImpl @Inject() (
     _ => {
       for {
         botProfiles <- dataService.msTeamsBotProfiles.allFor(team.id)
-        maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSTeamsFor(user)
+        maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSAzureActiveDirectoryFor(user)
         maybeUser <- maybeLinkedAccount.map { linked =>
           val userIdForContext = linked.loginInfo.providerKey
           val maybeClient = botProfiles.headOption.map(msTeamsApiService.profileClientFor)

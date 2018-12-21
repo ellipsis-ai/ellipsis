@@ -67,13 +67,16 @@ class LinkedAccountServiceImpl @Inject() (
     dataService.run(saveAction(link))
   }
 
-  def allFor(user: User): Future[Seq[LinkedAccount]] = {
-    val action = allForQuery(user.id).
+  def allForAction(user: User): DBIO[Seq[LinkedAccount]] = {
+    allForQuery(user.id).
       result.
       map { result =>
         result.map(tuple2LinkedAccount)
       }
-    dataService.run(action)
+  }
+
+  def allFor(user: User): Future[Seq[LinkedAccount]] = {
+    dataService.run(allForAction(user))
   }
 
   def allForLoginInfoAction(loginInfo: LoginInfo): DBIO[Seq[LinkedAccount]] = {

@@ -9,7 +9,7 @@ import services.ApiConfigInfo
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class TeamInfo(team: Team, links: Seq[LinkedInfo], requiredAWSConfigs: Seq[RequiredAWSConfig], maybeBotInfo: Option[BotInfo]) {
+case class TeamInfo(team: Team, links: Seq[IdentityInfo], requiredAWSConfigs: Seq[RequiredAWSConfig], maybeBotInfo: Option[BotInfo]) {
 
   val configuredRequiredAWSConfigs: Seq[(RequiredAWSConfig, AWSConfig)] = {
     requiredAWSConfigs.flatMap { ea =>
@@ -47,18 +47,16 @@ object TeamInfo {
     val oauth2ApplicationsNeedingRefresh =
       apiConfigInfo.requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
         filter { app =>
-          !userInfo.links.exists(_.externalSystem == app.name)
+          !userInfo.links.exists(_.platformName == app.name)
         }.
         filterNot(_.api.grantType.requiresAuth)
     val apps = oauth2ApplicationsNeedingRefresh
     Future.sequence(apps.map { ea =>
       ea.getClientCredentialsTokenFor(ws).map { maybeToken =>
-        maybeToken.map { token =>
-          LinkedInfo(ea.name, token)
-        }
+        IdentityInfo(ea.api.name, Some(ea.name), None, maybeToken)
       }
-    }).map { linkMaybes =>
-      TeamInfo(team, linkMaybes.flatten, apiConfigInfo.requiredAWSConfigs, maybeBotInfo)
+    }).map { links =>
+      TeamInfo(team, links, apiConfigInfo.requiredAWSConfigs, maybeBotInfo)
     }
   }
 

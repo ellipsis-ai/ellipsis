@@ -16,6 +16,8 @@ trait LinkedAccountService {
 
   def save(link: LinkedAccount): Future[LinkedAccount]
 
+  def allForAction(user: User): DBIO[Seq[LinkedAccount]]
+
   def allFor(user: User): Future[Seq[LinkedAccount]]
 
   def allForLoginInfoAction(loginInfo: LoginInfo): DBIO[Seq[LinkedAccount]]

@@ -12,7 +12,7 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
-case class DeprecatedUserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option[DeprecatedMessageInfo], maybeUserData: Option[UserData]) {
+case class DeprecatedUserInfo(user: User, links: Seq[IdentityInfo], maybeMessageInfo: Option[DeprecatedMessageInfo], maybeUserData: Option[UserData]) {
 
   def toJson: JsObject = {
     val linkInfo = JsArray(links.map(_.toJson))
@@ -34,18 +34,7 @@ object DeprecatedUserInfo {
                       services: DefaultServices
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[DeprecatedUserInfo] = {
     for {
-      linkedOAuth1Tokens <- services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)
-      linkedOAuth2Tokens <- services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)
-      linkedSimpleTokens <- services.dataService.linkedSimpleTokens.allForUserAction(user)
-      links <- DBIO.successful {
-        linkedOAuth1Tokens.map { ea =>
-          LinkedInfo(ea.application.name, ea.accessToken)
-        } ++ linkedOAuth2Tokens.map { ea =>
-          LinkedInfo(ea.application.name, ea.accessToken)
-        } ++ linkedSimpleTokens.map { ea =>
-          LinkedInfo(ea.api.name, ea.accessToken)
-        }
-      }
+      links <- IdentityInfo.allForAction(user, services)
       messageInfo <- DBIO.from(event.deprecatedMessageInfo(maybeConversation, services))
       maybeTeam <- services.dataService.teams.findAction(user.teamId)
       maybeUserData <- maybeTeam.map { team =>
