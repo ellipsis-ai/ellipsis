@@ -1,7 +1,6 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
-import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.BotResult
 import models.behaviors.builtins.admin.LookupSlackUserBehavior
 import models.behaviors.events.Event

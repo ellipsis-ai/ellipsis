@@ -6,13 +6,11 @@ import json.SlackUserData
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackProvider
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.accounts.user.User
 import models.behaviors.behaviorversion.Normal
-import models.behaviors.{BotResult, NoResponseForBuiltinResult, SimpleTextResult}
 import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.events.Event
+import models.behaviors.{BotResult, NoResponseForBuiltinResult, SimpleTextResult}
 import models.team.Team
-import play.api.Logger
 import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
