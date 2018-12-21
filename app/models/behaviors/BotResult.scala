@@ -407,25 +407,33 @@ case class TextWithAttachmentsResult(
   }
 }
 
-case class NoResponseResult(
-                             event: Event,
-                             behaviorVersion: BehaviorVersion,
-                             maybeConversation: Option[Conversation],
-                             payloadJson: JsValue,
-                             maybeLogResult: Option[AWSLambdaLogResult]
-                           ) extends BotResultWithLogResult {
-
+trait NoResponseResult extends BotResult {
+  val responseType: BehaviorResponseType = Normal
+  val resultType: ResultType.Value = ResultType.NoResponse
   val developerContext: DeveloperContext = DeveloperContext.default
-
-  val resultType = ResultType.NoResponse
-  val responseType: BehaviorResponseType = Normal // N/A
-  override val shouldInterrupt = false
-
-  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
   def text: String = ""
 
+  override val shouldInterrupt: Boolean = false
   override val shouldSend: Boolean = false
+}
+
+case class NoResponseForBehaviorVersionResult(
+                                               event: Event,
+                                               behaviorVersion: BehaviorVersion,
+                                               maybeConversation: Option[Conversation],
+                                               payloadJson: JsValue,
+                                               maybeLogResult: Option[AWSLambdaLogResult]
+                                             ) extends BotResultWithLogResult with NoResponseResult {
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+}
+
+case class NoResponseForBuiltinResult(
+                                       event: Event
+                                     ) extends NoResponseResult {
+  val maybeConversation: Option[Conversation] = None
+  val maybeBehaviorVersion: Option[BehaviorVersion] = None
 }
 
 trait WithBehaviorLink {
