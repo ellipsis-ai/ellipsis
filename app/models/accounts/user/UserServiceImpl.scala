@@ -244,7 +244,7 @@ class UserServiceImpl @Inject() (
         val msTeamsUserId = linked.loginInfo.providerKey
         val maybeClient = botProfiles.headOption.map(msTeamsApiService.profileClientFor)
         maybeClient.map { client =>
-          client.getUser(msTeamsUserId)
+          client.getUserInfo(msTeamsUserId)
         }.getOrElse(Future.successful(None))
       }.getOrElse(Future.successful(None))
     } yield maybeUserData

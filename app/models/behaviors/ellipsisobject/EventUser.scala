@@ -13,15 +13,14 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
-case class EventUser(user: User, links: Seq[IdentityInfo], maybeUserData: Option[UserData]) {
+case class EventUser(user: User, identities: Seq[IdentityInfo], maybeUserData: Option[UserData]) {
 
   def toJson: JsObject = {
-    val linksPart = Json.obj(
-      "links" -> JsArray(links.map(_.toJson)), // TODO: deprecated
-      "identities" -> json.JsArray(links.map(_.toJson))
+    val identitiesPart = Json.obj(
+      "identities" -> json.JsArray(identities.map(_.toJson))
     )
     val userDataPart = maybeUserData.map(data => Json.toJsObject(data)).getOrElse(Json.obj())
-    linksPart ++ userDataPart
+    identitiesPart ++ userDataPart
   }
 }
 
@@ -34,13 +33,13 @@ object EventUser {
                       services: DefaultServices
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[EventUser] = {
     for {
-      links <- IdentityInfo.allForAction(user, services)
+      identities <- IdentityInfo.allForAction(user, services)
       maybeTeam <- services.dataService.teams.findAction(user.teamId)
       maybeUserData <- maybeTeam.map { team =>
         DBIO.from(services.dataService.users.userDataFor(user, team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
-      EventUser(user, links, maybeUserData)
+      EventUser(user, identities, maybeUserData)
     }
   }
 
