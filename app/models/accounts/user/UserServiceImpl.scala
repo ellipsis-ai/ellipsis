@@ -236,20 +236,6 @@ class UserServiceImpl @Inject() (
     } yield maybeUserData
   }
 
-  private def maybeMSTeamsUserDataFor(user: User, team: Team): Future[Option[MSTeamsUser]] = {
-    for {
-      botProfiles <- dataService.msTeamsBotProfiles.allFor(team.id)
-      maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSAzureActiveDirectoryFor(user)
-      maybeUserData <- maybeLinkedAccount.map { linked =>
-        val msTeamsUserId = linked.loginInfo.providerKey
-        val maybeClient = botProfiles.headOption.map(msTeamsApiService.profileClientFor)
-        maybeClient.map { client =>
-          client.getUserInfo(msTeamsUserId)
-        }.getOrElse(Future.successful(None))
-      }.getOrElse(Future.successful(None))
-    } yield maybeUserData
-  }
-
   def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]] = {
     // TODO: Slack-specific for now; in future we might want to lookup users from other sources
     for {
