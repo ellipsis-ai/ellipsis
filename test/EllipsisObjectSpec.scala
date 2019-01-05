@@ -1,8 +1,10 @@
 import java.time._
 
 import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
 import json.UserData
 import models.IDs
+import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.ellipsisobject._
@@ -59,7 +61,9 @@ class EllipsisObjectSpec extends DBSpec {
     when(services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)).thenReturn(DBIO.successful(Seq()))
     when(services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)).thenReturn(DBIO.successful(Seq()))
     when(services.dataService.linkedSimpleTokens.allForUserAction(user)).thenReturn(DBIO.successful(Seq()))
-    when(services.dataService.linkedAccounts.allForAction(user)).thenReturn(DBIO.successful(Seq()))
+    when(services.dataService.linkedAccounts.allForAction(user)).thenReturn(DBIO.successful(Seq(
+      LinkedAccount(user, LoginInfo(platformName, userIdForContext), OffsetDateTime.now)
+    )))
   }
 
   "toJson" should {
@@ -76,8 +80,28 @@ class EllipsisObjectSpec extends DBSpec {
         val token = InvocationToken(IDs.next, user.id, IDs.next, None, None, OffsetDateTime.now)
         val json = EllipsisObject(userInfo, teamInfo, eventInfo, Seq(), "test.ellipsis", token).toJson
         Logger.info(Json.prettyPrint(json))
-        (json \ "event" \ "user" \ "ellipsisUserId").as[String] mustBe user.id
-        (json \ "userInfo" \ "ellipsisUserId").as[String] mustBe user.id
+
+        val eventResult = json \ "event"
+        (eventResult \ "originalEventType").as[String] mustBe EventType.test.toString
+        val eventUserResult = eventResult \ "user"
+        (eventUserResult \ "ellipsisUserId").as[String] mustBe user.id
+        val identitiesResult = eventUserResult \ "identities"
+        (identitiesResult \ 0 \ "platform").as[String] mustBe platformName
+        (identitiesResult \ 0 \ "id").as[String] mustBe userIdForContext
+
+        // deprecated stuff:
+        val userInfoResult = json \ "userInfo"
+        (userInfoResult \ "ellipsisUserId").as[String] mustBe user.id
+        (userInfoResult \ "links" \ 0 \ "platform").as[String] mustBe platformName
+        (userInfoResult \ "links" \ 0 \ "id").as[String] mustBe userIdForContext
+        val messageInfoResult = userInfoResult \ "messageInfo"
+        (messageInfoResult \ "text").as[String] mustBe messageText
+        (messageInfoResult \ "medium").as[String] mustBe platformName
+        (messageInfoResult \ "mediumDescription").as[String] mustBe platformDesc
+        (messageInfoResult \ "channel").as[String] mustBe maybeChannel.get
+        (messageInfoResult \ "userId").as[String] mustBe userIdForContext
+        (messageInfoResult \ "permalink").as[String] mustBe maybePermalink.get
+
       })
     }
   }
