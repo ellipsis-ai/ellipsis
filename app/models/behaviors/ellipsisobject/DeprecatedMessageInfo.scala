@@ -6,6 +6,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import play.api.libs.json._
 import services.DefaultServices
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,15 +25,15 @@ case class DeprecatedMessageInfo(
 
 object DeprecatedMessageInfo {
 
-  def buildFor(
+  def buildForAction(
                 event: Event,
                 maybeConversation: Option[Conversation],
                 services: DefaultServices
-              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[DeprecatedMessageInfo] = {
+              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[DeprecatedMessageInfo] = {
     for {
-      details <- event.detailsFor(services)
-      maybePermalink <- event.maybePermalinkFor(services)
-      userDataList <- event.messageUserDataList(maybeConversation, services)
+      details <- DBIO.from(event.detailsFor(services))
+      maybePermalink <- DBIO.from(event.maybePermalinkFor(services))
+      userDataList <- event.messageUserDataListAction(maybeConversation, services)
     } yield {
       DeprecatedMessageInfo(
         event.messageText,

@@ -80,8 +80,12 @@ trait Event {
     DeprecatedUserInfo.buildForAction(this, maybeConversation, services)
   }
 
+  def deprecatedMessageInfoAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[DeprecatedMessageInfo] = {
+    DeprecatedMessageInfo.buildForAction(this, maybeConversation, services)
+  }
+
   def deprecatedMessageInfo(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[DeprecatedMessageInfo] = {
-    DeprecatedMessageInfo.buildFor(this, maybeConversation, services)
+    services.dataService.run(deprecatedMessageInfoAction(maybeConversation, services))
   }
 
   def eventUserAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[EventUser] = {

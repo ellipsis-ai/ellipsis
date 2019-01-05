@@ -35,7 +35,7 @@ object DeprecatedUserInfo {
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[DeprecatedUserInfo] = {
     for {
       links <- IdentityInfo.allForAction(user, services)
-      messageInfo <- DBIO.from(event.deprecatedMessageInfo(maybeConversation, services))
+      messageInfo <- event.deprecatedMessageInfoAction(maybeConversation, services)
       maybeTeam <- services.dataService.teams.findAction(user.teamId)
       maybeUserData <- maybeTeam.map { team =>
         DBIO.from(services.dataService.users.userDataFor(user, team)).map(Some(_))
