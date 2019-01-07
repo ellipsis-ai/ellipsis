@@ -2,7 +2,7 @@ package models.behaviors.builtins
 
 import akka.actor.ActorSystem
 import json.{BehaviorGroupData, BehaviorVersionData}
-import models.behaviors.behaviorversion.Normal
+import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack._
 import models.behaviors.events.{Event, EventContext}
@@ -123,14 +123,10 @@ case class DisplayHelpBehavior(
     }
   }
 
-  def matchesHelpActionName(maybeBehaviorVersionName: Option[String]): Boolean = {
-    maybeBehaviorVersionName.exists(_.equalsIgnoreCase("help"))
-  }
-
   private def shouldRunHelpActionFor(result: HelpResult, behaviorVersions: Seq[BehaviorVersionData]): Boolean = {
     result.group match {
       case skillGroupData: SkillHelpGroupData => {
-        behaviorVersions.forall(ea => matchesHelpActionName(ea.name)) ||
+        behaviorVersions.forall(ea => BehaviorVersion.nameIsHelpAction(ea.name)) ||
           maybeHelpSearch.isEmpty ||
           maybeHelpSearch.exists(_.equalsIgnoreCase(skillGroupData.name.trim))
       }
@@ -165,7 +161,7 @@ case class DisplayHelpBehavior(
         dataService.behaviorVersions.allForGroupVersion(groupVersion)
       }.getOrElse(Future.successful(Seq()))
       maybeBehaviorVersion <- Future.successful {
-        behaviorVersions.filterNot(_.isDataType).find(ea => matchesHelpActionName(ea.maybeName))
+        behaviorVersions.filterNot(_.isDataType).find(ea => BehaviorVersion.nameIsHelpAction(ea.maybeName))
       }
       maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.behaviorResponses.buildFor(event, behaviorVersion, Map(), None, None, None, userExpectsResponse = true).map(Some(_))
