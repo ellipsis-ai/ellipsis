@@ -86,6 +86,8 @@ case class BehaviorVersion(
     }.isDefined
   }
 
+  val isHelpAction: Boolean = BehaviorVersion.nameIsHelpAction(maybeName)
+
   def resultFor(
                  payload: ByteBuffer,
                  logResult: AWSLambdaLogResult,
@@ -152,6 +154,8 @@ case class BehaviorVersion(
 object BehaviorVersion {
 
   val dirName: String = "behavior_versions"
+
+  def nameIsHelpAction(maybeName: Option[String]): Boolean = maybeName.exists(_.trim.equalsIgnoreCase("help"))
 
   def codeFor(functionBody: String): String = {
     s"module.exports = ${functionBody.trim};"

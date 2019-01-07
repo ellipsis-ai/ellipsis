@@ -3,7 +3,7 @@ package models.behaviors.events
 import javax.inject._
 import models.behaviors.behaviorparameter.FetchValidValuesBadResultException
 import models.behaviors.behaviorversion.Normal
-import models.behaviors.builtins.BuiltinBehavior
+import models.behaviors.builtins.{BuiltinBehavior, DisplayHelpBehavior}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack.SlackMessageEvent
@@ -32,7 +32,11 @@ class EventHandler @Inject() (
       maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
       results <- {
-        val builtinBehaviors = Seq(BuiltinBehavior.maybeFrom(event, services)).flatten
+        val responsesIncludeHelpAction = responses.exists(_.behaviorVersion.isHelpAction)
+        val builtinBehaviors = Seq(BuiltinBehavior.maybeFrom(event, services)).flatten.filter {
+          case _: DisplayHelpBehavior => !responsesIncludeHelpAction
+          case _ => true
+        }
         val eventualBuiltinResults = Future.sequence(builtinBehaviors.map(_.result))
         val eventualResponseResults = Future.sequence(responses.map(_.result))
         val allEventualResults = Future.sequence(Seq(eventualResponseResults, eventualBuiltinResults)).map(_.flatten)
