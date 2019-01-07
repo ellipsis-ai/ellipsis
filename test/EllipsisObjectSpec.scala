@@ -60,6 +60,8 @@ class EllipsisObjectSpec extends DBSpec {
     when(event.originalEventType).thenReturn(EventType.test)
     val eventContext = mock[TestEventContext]
     when(event.eventContext).thenReturn(eventContext)
+    when(eventContext.name).thenReturn(platformName)
+    when(eventContext.description).thenReturn(platformDesc)
     when(services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)).thenReturn(DBIO.successful(Seq()))
     when(services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)).thenReturn(DBIO.successful(Seq()))
     when(services.dataService.linkedSimpleTokens.allForUserAction(user)).thenReturn(DBIO.successful(Seq()))
@@ -94,6 +96,8 @@ class EllipsisObjectSpec extends DBSpec {
         (identitiesResult \ 0 \ "id").as[String] mustBe userIdForContext
         val eventMessage = (eventResult \ "message").as[Message]
         eventMessage mustBe maybeMessage.get
+        (eventResult \ "platformName").as[String] mustBe platformName
+        (eventResult \ "platformDescription").as[String] mustBe platformDesc
 
         // deprecated stuff:
         val userInfoResult = json \ "userInfo"
