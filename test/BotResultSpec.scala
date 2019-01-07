@@ -7,7 +7,7 @@ import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
 import models.behaviors.events.SlackEventContext
-import models.behaviors.{DeveloperContext, NoResponseResult, SuccessResult}
+import models.behaviors.{DeveloperContext, NoResponseForBehaviorVersionResult, SuccessResult}
 import models.team.Team
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
@@ -177,7 +177,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
         val event: SlackMessageEvent = newEventFor(profile)
 
         val responseText = "response"
-        val result = NoResponseResult(event, mock[BehaviorVersion], None, JsNull, None)
+        val result = NoResponseForBehaviorVersionResult(event, mock[BehaviorVersion], None, JsNull, None)
         val resultTs: String = SlackTimestamp.now
 
         val conversation = newConversationFor(team, user, profile, event)

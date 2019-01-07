@@ -2,6 +2,7 @@ package models.behaviors.builtins
 
 import akka.actor.ActorSystem
 import models.behaviors.BotResult
+import models.behaviors.builtins.admin.LookupSlackUserBehavior
 import models.behaviors.events.Event
 import services.DefaultServices
 
@@ -33,6 +34,7 @@ object BuiltinBehavior {
   val helloRegex: Regex = s"""(?i)^hello|hi|ola|ciao|bonjour$$""".r
   val enableDevModeChannelRegex = s"""(?i)^enable dev mode$$""".r
   val disableDevModeChannelRegex = s"""(?i)^disable dev mode$$""".r
+  val adminLookupUserRegex: Regex = s"""(?i)^admin (?:lookup|whois|who is) (slack|ellipsis|msteams) user(?:\\s*id)? (\\S+)(?: on (slack|ellipsis|msteams) team(?:\\s*id)? (\\S+))?$$""".r
 
   def maybeFrom(event: Event, services: DefaultServices): Option[BuiltinBehavior] = {
     if (event.includesBotMention) {
@@ -65,6 +67,29 @@ object BuiltinBehavior {
         case helloRegex() => Some(HelloBehavior(event, services))
         case enableDevModeChannelRegex() => Some(EnableDevModeChannelBehavior(event, services))
         case disableDevModeChannelRegex() => Some(DisableDevModeChannelBehavior(event, services))
+        case adminLookupUserRegex(userIdType, userId, teamIdTypeOrNull, teamIdOrNull) => {
+          val maybeTeamIdType = Option(teamIdTypeOrNull).map(_.toLowerCase)
+          val maybeEllipsisTeamId = if (maybeTeamIdType.contains("ellipsis")) {
+            Option(teamIdOrNull)
+          } else {
+            None
+          }
+          val maybeSlackTeamId = if (maybeTeamIdType.contains("slack")) {
+            Option(teamIdOrNull)
+          } else {
+            None
+          }
+          if (userIdType == "slack") {
+            Some(LookupSlackUserBehavior(userId, maybeEllipsisTeamId, maybeSlackTeamId, event, services))
+// TODO: other types of IDs
+//        } else if (idType == "ellipsis") {
+//          Some(LookupEllipsisUserBehavior(userId, event, services))
+//        } else if (idType == "msteams") {
+//          Some(LookupMsTeamsUserBehavior(userId, event, services))
+          } else {
+            None
+          }
+        }
         case _ => None
       }
     } else {
