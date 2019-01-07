@@ -4,7 +4,7 @@ import models.behaviors.ellipsisobject.EllipsisObjectConstants.{ENV_KEY, EVENT_K
 import models.behaviors.invocationtoken.InvocationToken
 import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable}
 import play.api.libs.json._
-import services.AWSLambdaConstants.{API_BASE_URL_KEY, TEAM_INFO_KEY, USER_INFO_KEY}
+import services.AWSLambdaConstants._
 
 case class EllipsisObject(
                            userInfo: DeprecatedUserInfo,
@@ -24,7 +24,8 @@ case class EllipsisObject(
         ea.name -> JsString(ea.value)
       }),
       USER_INFO_KEY -> userInfo.toJson,
-      TEAM_INFO_KEY -> teamInfo.toJson,
+      TEAM_INFO_KEY -> teamInfo.toJson, // deprecated
+      TEAM_KEY -> teamInfo.toJson,
       EVENT_KEY -> eventInfo.toJson
     )
   }

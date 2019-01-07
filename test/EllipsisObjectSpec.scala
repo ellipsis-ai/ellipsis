@@ -3,6 +3,7 @@ import java.time._
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.UserData
+import json.Formatting._
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
@@ -15,7 +16,7 @@ import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import play.api.Logger
-import play.api.libs.json.Json
+import play.api.libs.json.{JsArray, Json}
 import services.DefaultServices
 import slick.dbio.DBIO
 import support.{DBSpec, TestContext}
@@ -27,7 +28,8 @@ class EllipsisObjectSpec extends DBSpec {
   val messageText: String = "foo bar"
   val platformName: String = "test"
   val platformDesc: String = "Test"
-  val maybeChannel: Option[String] = Some("testchannel")
+  val channel: String = "testchannel"
+  val maybeChannel: Option[String] = Some(channel)
   val maybeThread: Option[String] = None
   val userIdForContext: String = "UTEST"
   val maybePermalink: Option[String] = Some("perma.link")
@@ -76,7 +78,9 @@ class EllipsisObjectSpec extends DBSpec {
         teamInfo <- DBIO.successful(TeamInfo(team, Seq(), Seq(), None))
         eventUser <- EventUser.buildForAction(event, maybeConversation, services)
       } yield {
-        val eventInfo = EventInfo(event, eventUser, None)
+        val maybeChannelObj = Some(Channel(channel, maybeChannel, Some(s"<@$channel>"), None))
+        val maybeMessage = Some(Message(messageText, maybeChannelObj, maybeThread, usersMentioned = Set(), permalink = maybePermalink, reactionAdded = None))
+        val eventInfo = EventInfo(event, eventUser, maybeMessage)
         val token = InvocationToken(IDs.next, user.id, IDs.next, None, None, OffsetDateTime.now)
         val json = EllipsisObject(userInfo, teamInfo, eventInfo, Seq(), "test.ellipsis", token).toJson
         Logger.info(Json.prettyPrint(json))
@@ -88,6 +92,8 @@ class EllipsisObjectSpec extends DBSpec {
         val identitiesResult = eventUserResult \ "identities"
         (identitiesResult \ 0 \ "platform").as[String] mustBe platformName
         (identitiesResult \ 0 \ "id").as[String] mustBe userIdForContext
+        val eventMessage = (eventResult \ "message").as[Message]
+        eventMessage mustBe maybeMessage.get
 
         // deprecated stuff:
         val userInfoResult = json \ "userInfo"
@@ -98,9 +104,13 @@ class EllipsisObjectSpec extends DBSpec {
         (messageInfoResult \ "text").as[String] mustBe messageText
         (messageInfoResult \ "medium").as[String] mustBe platformName
         (messageInfoResult \ "mediumDescription").as[String] mustBe platformDesc
-        (messageInfoResult \ "channel").as[String] mustBe maybeChannel.get
+        (messageInfoResult \ "channel").as[String] mustBe channel
         (messageInfoResult \ "userId").as[String] mustBe userIdForContext
         (messageInfoResult \ "permalink").as[String] mustBe maybePermalink.get
+
+        val teamResult = json \ "team"
+        (teamResult \ "timeZone").as[String] mustBe team.timeZone.getId
+        (teamResult \ "links").get mustBe JsArray.empty
 
       })
     }

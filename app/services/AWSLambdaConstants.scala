@@ -7,6 +7,7 @@ object AWSLambdaConstants {
   val ERROR_CALLBACK = s"$CONTEXT_PARAM.error()"
   val USER_INFO_KEY = "userInfo"
   val TEAM_INFO_KEY = "teamInfo"
+  val TEAM_KEY = "team"
   val API_BASE_URL_KEY = "apiBaseUrl"
   val RESULT_KEY = "successResult"
   def invocationParamFor(i: Int): String = s"param$i"
