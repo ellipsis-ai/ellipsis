@@ -2,8 +2,8 @@ import java.time._
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
-import json.UserData
 import json.Formatting._
+import json.UserData
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
@@ -16,7 +16,7 @@ import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import play.api.Logger
-import play.api.libs.json.{JsArray, Json}
+import play.api.libs.json.Json
 import services.DefaultServices
 import slick.dbio.DBIO
 import support.{DBSpec, TestContext}
@@ -87,34 +87,43 @@ class EllipsisObjectSpec extends DBSpec {
         val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, Seq(), "test.ellipsis", token))
         Logger.info(Json.prettyPrint(json))
 
-        val eventResult = json \ "event"
-        (eventResult \ "originalEventType").as[String] mustBe EventType.test.toString
-        val eventUserResult = eventResult \ "user"
-        (eventUserResult \ "ellipsisUserId").as[String] mustBe user.id
-        val identitiesResult = eventUserResult \ "identities"
-        (identitiesResult \ 0 \ "platform").as[String] mustBe platformName
-        (identitiesResult \ 0 \ "id").as[String] mustBe userIdForContext
-        val eventMessage = (eventResult \ "message").as[Message]
-        eventMessage mustBe maybeMessage.get
-        (eventResult \ "platformName").as[String] mustBe platformName
-        (eventResult \ "platformDescription").as[String] mustBe platformDesc
+        val resultObject = json.as[EllipsisObject]
+
+        val resultEvent = resultObject.event
+        resultEvent.originalEventType mustBe EventType.test.toString
+        resultEvent.platformName mustBe platformName
+        resultEvent.platformDescription mustBe platformDesc
+
+        val resultEventUser = resultEvent.user
+        resultEventUser.ellipsisUserId mustBe user.id
+        resultEventUser.identities must have length(1)
+        val resultIdentity = resultEventUser.identities.head
+        resultIdentity.platform mustBe platformName
+        resultIdentity.id must contain(userIdForContext)
+
+        val resultEventMessage = resultEvent.message.get
+        resultEventMessage.text mustBe messageText
+        resultEventMessage.channel.flatMap(_.name) must contain(channel)
+        resultEventMessage.permalink mustBe maybePermalink
 
         // deprecated stuff:
-        val userInfoResult = json \ "userInfo"
-        (userInfoResult \ "ellipsisUserId").as[String] mustBe user.id
-        (userInfoResult \ "links" \ 0 \ "platform").as[String] mustBe platformName
-        (userInfoResult \ "links" \ 0 \ "id").as[String] mustBe userIdForContext
-        val messageInfoResult = userInfoResult \ "messageInfo"
-        (messageInfoResult \ "text").as[String] mustBe messageText
-        (messageInfoResult \ "medium").as[String] mustBe platformName
-        (messageInfoResult \ "mediumDescription").as[String] mustBe platformDesc
-        (messageInfoResult \ "channel").as[String] mustBe channel
-        (messageInfoResult \ "userId").as[String] mustBe userIdForContext
-        (messageInfoResult \ "permalink").as[String] mustBe maybePermalink.get
+        val resultUserInfo = resultObject.userInfo
+        resultUserInfo.ellipsisUserId mustBe user.id
+        resultUserInfo.links must have length(1)
+        val link = resultUserInfo.links.head
+        link.platform mustBe platformName
+        link.id must contain(userIdForContext)
+        val resultMessageInfo = resultUserInfo.messageInfo.get
+        resultMessageInfo.text mustBe messageText
+        resultMessageInfo.medium mustBe platformName
+        resultMessageInfo.mediumDescription mustBe platformDesc
+        resultMessageInfo.channel must contain(channel)
+        resultMessageInfo.userId mustBe userIdForContext
+        resultMessageInfo.permalink mustBe maybePermalink
 
-        val teamResult = json \ "team"
-        (teamResult \ "timeZone").as[String] mustBe team.timeZone.getId
-        (teamResult \ "links").get mustBe JsArray.empty
+        val resultTeam = resultObject.team
+        resultTeam.timeZone must contain(team.timeZone.toString)
+        resultTeam.links must have length(0)
 
       })
     }
