@@ -28,7 +28,7 @@ object IdentityInfo {
                 accessToken: Option[String]
               ): IdentityInfo = {
     IdentityInfo(
-      platformName,
+      integrationName.getOrElse(platformName), // maintain the existing semantics for deprecated externalSystem
       platformName,
       integrationName,
       userIdOnPlatform,

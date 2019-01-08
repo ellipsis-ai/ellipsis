@@ -41,7 +41,7 @@ object TeamInfo {
     val oauth2ApplicationsNeedingRefresh =
       apiConfigInfo.requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).
         filter { app =>
-          !userInfo.links.exists(_.platform == app.name)
+          !userInfo.links.exists(_.externalSystem == app.name)
         }.
         filterNot(_.api.grantType.requiresAuth)
     val apps = oauth2ApplicationsNeedingRefresh
