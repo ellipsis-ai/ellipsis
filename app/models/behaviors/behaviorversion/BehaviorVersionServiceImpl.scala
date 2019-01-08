@@ -361,10 +361,10 @@ class BehaviorVersionServiceImpl @Inject() (
       notReadyOAuth1Applications <- DBIO.successful(requiredOAuth1ApiConfigs.filterNot(_.isReady))
       notReadyOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.filterNot(_.isReady))
       missingOAuth1Applications <- DBIO.successful(requiredOAuth1ApiConfigs.flatMap(_.maybeApplication).filter { app =>
-        !userInfo.links.exists(_.externalSystem == app.name)
+        !userInfo.links.flatMap(_.integration).contains(app.name)
       })
       missingOAuth2Applications <- DBIO.successful(requiredOAuth2ApiConfigs.flatMap(_.maybeApplication).filter { app =>
-        !userInfo.links.exists(_.externalSystem == app.name)
+        !userInfo.links.flatMap(_.integration).contains(app.name)
       })
       botPrefix <- DBIO.from(event.contextualBotPrefix(defaultServices))
       developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)

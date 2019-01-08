@@ -7,6 +7,7 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
+import json.Formatting._
 import json.{SlackUserData, UserData}
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
@@ -38,6 +39,7 @@ class UserServiceImpl @Inject() (
   def configuration = services.configuration
   def slackApiService = services.slackApiService
   def msTeamsApiService = services.msTeamsApiService
+  def msTeamsEventService = services.msTeamsEventService
 
   import UserQueries._
 
@@ -281,7 +283,7 @@ class UserServiceImpl @Inject() (
     _ => {
       for {
         botProfiles <- dataService.msTeamsBotProfiles.allFor(team.id)
-        maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSTeamsFor(user)
+        maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSAzureActiveDirectoryFor(user)
         maybeUser <- maybeLinkedAccount.map { linked =>
           val userIdForContext = linked.loginInfo.providerKey
           val maybeClient = botProfiles.headOption.map(msTeamsApiService.profileClientFor)
@@ -299,7 +301,7 @@ class UserServiceImpl @Inject() (
 
   def maybeMSTeamsProfileFor(user: User): Future[Option[MSTeamsProfile]] = {
     for {
-      maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSTeamsFor(user)
+      maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSAzureActiveDirectoryFor(user)
       maybeBotProfile <- dataService.msTeamsBotProfiles.allFor(user.teamId).map(_.headOption)
     } yield {
       for {

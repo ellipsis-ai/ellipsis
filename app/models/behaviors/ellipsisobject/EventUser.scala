@@ -1,25 +1,25 @@
 package models.behaviors.ellipsisobject
 
 import akka.actor.ActorSystem
-import json.Formatting._
-import json.UserData
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
-import play.api.libs.json._
 import services.DefaultServices
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
-case class EventUser(user: User, links: Seq[LinkedInfo], maybeUserData: Option[UserData]) {
-
-  def toJson: JsObject = {
-    val linksPart = Json.obj("links" -> JsArray(links.map(_.toJson)))
-    val userDataPart = maybeUserData.map(data => Json.toJsObject(data)).getOrElse(Json.obj())
-    linksPart ++ userDataPart
-  }
-}
+case class EventUser(
+                      identities: Seq[IdentityInfo],
+                      ellipsisUserId: String,
+                      context: Option[String],
+                      userName: Option[String],
+                      userIdForContext: Option[String],
+                      fullName: Option[String],
+                      email: Option[String],
+                      timeZone: Option[String],
+                      formattedLink: Option[String]
+                    )
 
 object EventUser {
 
@@ -30,24 +30,23 @@ object EventUser {
                       services: DefaultServices
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[EventUser] = {
     for {
-      linkedOAuth1Tokens <- services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)
-      linkedOAuth2Tokens <- services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)
-      linkedSimpleTokens <- services.dataService.linkedSimpleTokens.allForUserAction(user)
-      links <- DBIO.successful {
-        linkedOAuth1Tokens.map { ea =>
-          LinkedInfo(ea.application.name, ea.accessToken)
-        } ++ linkedOAuth2Tokens.map { ea =>
-          LinkedInfo(ea.application.name, ea.accessToken)
-        } ++ linkedSimpleTokens.map { ea =>
-          LinkedInfo(ea.api.name, ea.accessToken)
-        }
-      }
+      identities <- IdentityInfo.allForAction(user, services)
       maybeTeam <- services.dataService.teams.findAction(user.teamId)
       maybeUserData <- maybeTeam.map { team =>
         DBIO.from(services.dataService.users.userDataFor(user, team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
-      EventUser(user, links, maybeUserData)
+      EventUser(
+        identities,
+        user.id,
+        maybeUserData.flatMap(_.context),
+        maybeUserData.flatMap(_.userName),
+        maybeUserData.flatMap(_.userIdForContext),
+        maybeUserData.flatMap(_.fullName),
+        maybeUserData.flatMap(_.email),
+        maybeUserData.flatMap(_.timeZone),
+        maybeUserData.flatMap(_.formattedLink)
+      )
     }
   }
 

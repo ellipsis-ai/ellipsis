@@ -12,18 +12,18 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
-case class DeprecatedUserInfo(user: User, links: Seq[LinkedInfo], maybeMessageInfo: Option[DeprecatedMessageInfo], maybeUserData: Option[UserData]) {
-
-  def toJson: JsObject = {
-    val linkInfo = JsArray(links.map(_.toJson))
-    val messageInfo = maybeMessageInfo.map(info => Json.toJsObject(info)).getOrElse(Json.obj())
-    val userDataPart = maybeUserData.map(data => Json.toJsObject(data)).getOrElse(Json.obj())
-    Json.obj(
-      "links" -> linkInfo,
-      "messageInfo" -> messageInfo
-    ) ++ userDataPart
-  }
-}
+case class DeprecatedUserInfo(
+                               links: Seq[IdentityInfo],
+                               messageInfo: Option[DeprecatedMessageInfo],
+                               ellipsisUserId: String,
+                               context: Option[String],
+                               userName: Option[String],
+                               userIdForContext: Option[String],
+                               fullName: Option[String],
+                               email: Option[String],
+                               timeZone: Option[String],
+                               formattedLink: Option[String]
+                              )
 
 object DeprecatedUserInfo {
 
@@ -34,25 +34,25 @@ object DeprecatedUserInfo {
                       services: DefaultServices
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[DeprecatedUserInfo] = {
     for {
-      linkedOAuth1Tokens <- services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)
-      linkedOAuth2Tokens <- services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)
-      linkedSimpleTokens <- services.dataService.linkedSimpleTokens.allForUserAction(user)
-      links <- DBIO.successful {
-        linkedOAuth1Tokens.map { ea =>
-          LinkedInfo(ea.application.name, ea.accessToken)
-        } ++ linkedOAuth2Tokens.map { ea =>
-          LinkedInfo(ea.application.name, ea.accessToken)
-        } ++ linkedSimpleTokens.map { ea =>
-          LinkedInfo(ea.api.name, ea.accessToken)
-        }
-      }
-      messageInfo <- DBIO.from(event.deprecatedMessageInfo(maybeConversation, services))
+      links <- IdentityInfo.allForAction(user, services)
+      messageInfo <- event.deprecatedMessageInfoAction(maybeConversation, services)
       maybeTeam <- services.dataService.teams.findAction(user.teamId)
       maybeUserData <- maybeTeam.map { team =>
         DBIO.from(services.dataService.users.userDataFor(user, team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
-      DeprecatedUserInfo(user, links, Some(messageInfo), maybeUserData)
+      DeprecatedUserInfo(
+        links,
+        Some(messageInfo),
+        user.id,
+        maybeUserData.flatMap(_.context),
+        maybeUserData.flatMap(_.userName),
+        maybeUserData.flatMap(_.userIdForContext),
+        maybeUserData.flatMap(_.fullName),
+        maybeUserData.flatMap(_.email),
+        maybeUserData.flatMap(_.timeZone),
+        maybeUserData.flatMap(_.formattedLink)
+      )
     }
   }
 
