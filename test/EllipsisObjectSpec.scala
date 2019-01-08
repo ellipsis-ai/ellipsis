@@ -70,7 +70,7 @@ class EllipsisObjectSpec extends DBSpec {
     )))
   }
 
-  "toJson" should {
+  "buildFor" should {
 
     "build a valid object" in new TestContext {
       val event = mock[TestMessageEvent]
