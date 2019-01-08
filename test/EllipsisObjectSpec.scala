@@ -77,14 +77,14 @@ class EllipsisObjectSpec extends DBSpec {
       setUpMocksFor(event, user, team, services)
       runNow(for {
         userInfo <- DeprecatedUserInfo.buildForAction(event, maybeConversation, services)
-        teamInfo <- DBIO.successful(TeamInfo(team, Seq(), Seq(), None))
+        teamInfo <- DBIO.successful(TeamInfo(Seq(), Map(), None, None, Some(team.timeZone.toString)))
         eventUser <- EventUser.buildForAction(event, maybeConversation, services)
       } yield {
         val maybeChannelObj = Some(Channel(channel, maybeChannel, Some(s"<@$channel>"), None))
         val maybeMessage = Some(Message(messageText, maybeChannelObj, maybeThread, usersMentioned = Set(), permalink = maybePermalink, reactionAdded = None))
-        val eventInfo = EventInfo(event, eventUser, maybeMessage)
+        val eventInfo = EventInfo.buildFor(event, eventUser, maybeMessage)
         val token = InvocationToken(IDs.next, user.id, IDs.next, None, None, OffsetDateTime.now)
-        val json = EllipsisObject(userInfo, teamInfo, eventInfo, Seq(), "test.ellipsis", token).toJson
+        val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, Seq(), "test.ellipsis", token))
         Logger.info(Json.prettyPrint(json))
 
         val eventResult = json \ "event"

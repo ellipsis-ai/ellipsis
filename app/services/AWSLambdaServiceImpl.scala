@@ -14,6 +14,7 @@ import com.amazonaws.services.logs.model.{CreateLogGroupRequest, PutSubscription
 import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.Inject
+import json.Formatting._
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorParameter, FileType}
@@ -28,7 +29,7 @@ import models.behaviors.events.Event
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.library.LibraryVersion
 import models.behaviors.nodemoduleversion.NodeModuleVersion
-import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable}
+import models.environmentvariable.EnvironmentVariable
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
@@ -55,7 +56,6 @@ class AWSLambdaServiceImpl @Inject() (
                                        ) extends AWSLambdaService {
 
   import AWSLambdaConstants._
-  import EllipsisObjectConstants._
 
   val client: AWSLambdaAsync =
     AWSLambdaAsyncClientBuilder.standard().
@@ -149,8 +149,8 @@ class AWSLambdaServiceImpl @Inject() (
                                  token: InvocationToken
                                ): JsObject = {
     val parameterValueData = parameterValues.map { ea => (ea.invocationName, ea.preparedValue) }
-    val contextObject = EllipsisObject(userInfo, teamInfo, eventInfo, environmentVariables, apiBaseUrl, token)
-    val contextParamData = Seq(CONTEXT_PARAM -> contextObject.toJson)
+    val contextObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, environmentVariables, apiBaseUrl, token)
+    val contextParamData = Seq(CONTEXT_PARAM -> Json.toJson(contextObject))
     JsObject(parameterValueData ++ contextParamData ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id))))
   }
 
@@ -241,7 +241,8 @@ class AWSLambdaServiceImpl @Inject() (
       developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
       userInfo <- event.deprecatedUserInfoAction(maybeConversation, defaultServices)
       eventUser <- event.eventUserAction(maybeConversation, defaultServices)
-      token <- dataService.invocationTokens.createForAction(userInfo.user, behaviorVersion, event.maybeScheduled, Some(event.eventContext.teamIdForContext))
+      user <- event.ensureUserAction(defaultServices.dataService)
+      token <- dataService.invocationTokens.createForAction(user, behaviorVersion, event.maybeScheduled, Some(event.eventContext.teamIdForContext))
       maybeBotInfo <- DBIO.from(event.maybeBotInfo(defaultServices))
       teamInfo <- teamInfoFor(behaviorVersion, userInfo, maybeBotInfo)
       maybeMessage <- event.maybeMessageInfoAction(maybeConversation, defaultServices)
@@ -250,7 +251,7 @@ class AWSLambdaServiceImpl @Inject() (
           behaviorVersion,
           userInfo,
           teamInfo,
-          EventInfo(event, eventUser, maybeMessage),
+          EventInfo.buildFor(event, eventUser, maybeMessage),
           parametersWithValues,
           environmentVariables,
           token

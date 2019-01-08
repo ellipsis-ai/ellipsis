@@ -12,18 +12,18 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
-case class DeprecatedUserInfo(user: User, links: Seq[IdentityInfo], maybeMessageInfo: Option[DeprecatedMessageInfo], maybeUserData: Option[UserData]) {
-
-  def toJson: JsObject = {
-    val linkInfo = JsArray(links.map(_.toJson))
-    val messageInfo = maybeMessageInfo.map(info => Json.toJsObject(info)).getOrElse(Json.obj())
-    val userDataPart = maybeUserData.map(data => Json.toJsObject(data)).getOrElse(Json.obj())
-    Json.obj(
-      "links" -> linkInfo,
-      "messageInfo" -> messageInfo
-    ) ++ userDataPart
-  }
-}
+case class DeprecatedUserInfo(
+                               links: Seq[IdentityInfo],
+                               messageInfo: Option[DeprecatedMessageInfo],
+                               ellipsisUserId: String,
+                               context: Option[String],
+                               userName: Option[String],
+                               userIdForContext: Option[String],
+                               fullName: Option[String],
+                               email: Option[String],
+                               timeZone: Option[String],
+                               formattedLink: Option[String]
+                              )
 
 object DeprecatedUserInfo {
 
@@ -41,7 +41,18 @@ object DeprecatedUserInfo {
         DBIO.from(services.dataService.users.userDataFor(user, team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
-      DeprecatedUserInfo(user, links, Some(messageInfo), maybeUserData)
+      DeprecatedUserInfo(
+        links,
+        Some(messageInfo),
+        user.id,
+        maybeUserData.flatMap(_.context),
+        maybeUserData.flatMap(_.userName),
+        maybeUserData.flatMap(_.userIdForContext),
+        maybeUserData.flatMap(_.fullName),
+        maybeUserData.flatMap(_.email),
+        maybeUserData.flatMap(_.timeZone),
+        maybeUserData.flatMap(_.formattedLink)
+      )
     }
   }
 

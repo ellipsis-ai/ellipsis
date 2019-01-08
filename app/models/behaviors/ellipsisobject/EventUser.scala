@@ -1,28 +1,25 @@
 package models.behaviors.ellipsisobject
 
 import akka.actor.ActorSystem
-import json.Formatting._
-import json.UserData
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
-import play.api.libs.json
-import play.api.libs.json._
 import services.DefaultServices
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
-case class EventUser(user: User, identities: Seq[IdentityInfo], maybeUserData: Option[UserData]) {
-
-  def toJson: JsObject = {
-    val identitiesPart = Json.obj(
-      "identities" -> json.JsArray(identities.map(_.toJson))
-    )
-    val userDataPart = maybeUserData.map(data => Json.toJsObject(data)).getOrElse(Json.obj())
-    identitiesPart ++ userDataPart
-  }
-}
+case class EventUser(
+                      identities: Seq[IdentityInfo],
+                      ellipsisUserId: String,
+                      context: Option[String],
+                      userName: Option[String],
+                      userIdForContext: Option[String],
+                      fullName: Option[String],
+                      email: Option[String],
+                      timeZone: Option[String],
+                      formattedLink: Option[String]
+                    )
 
 object EventUser {
 
@@ -39,7 +36,17 @@ object EventUser {
         DBIO.from(services.dataService.users.userDataFor(user, team)).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield {
-      EventUser(user, identities, maybeUserData)
+      EventUser(
+        identities,
+        user.id,
+        maybeUserData.flatMap(_.context),
+        maybeUserData.flatMap(_.userName),
+        maybeUserData.flatMap(_.userIdForContext),
+        maybeUserData.flatMap(_.fullName),
+        maybeUserData.flatMap(_.email),
+        maybeUserData.flatMap(_.timeZone),
+        maybeUserData.flatMap(_.formattedLink)
+      )
     }
   }
 

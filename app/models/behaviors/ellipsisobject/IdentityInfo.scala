@@ -5,37 +5,40 @@ import models.accounts.linkedoauth1token.LinkedOAuth1Token
 import models.accounts.linkedoauth2token.LinkedOAuth2Token
 import models.accounts.linkedsimpletoken.LinkedSimpleToken
 import models.accounts.user.User
-import play.api.libs.json._
 import services.DefaultServices
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
 case class IdentityInfo(
-                         platformName: String,
-                         integrationName: Option[String],
-                         userIdOnPlatform: Option[String],
-                         accessToken: Option[String]
-                       ) {
-
-  def toJson: JsObject = {
-    val idPart = userIdOnPlatform.map(v => "id" -> JsString(v)).toSeq
-    val tokenPart = accessToken.map { v =>
-      Seq("token" -> JsString(v), "oauthToken" -> JsString(v))
-    }.toSeq.flatten
-    val integrationPart = integrationName.map(v => "integration" -> JsString(v)).toSeq
-    JsObject(Seq(
-      "externalSystem" -> JsString(platformName), // TODO: deprecated
-      "platform" -> JsString(platformName)
-    ) ++ integrationPart ++ tokenPart ++ idPart)
-  }
-
-}
+                         externalSystem: String, // deprecated
+                         platform: String,
+                         integration: Option[String],
+                         id: Option[String],
+                         token: Option[String],
+                         oauthToken: Option[String]
+                       )
 
 object IdentityInfo {
 
-  def forOAuth1Token(token: LinkedOAuth1Token): IdentityInfo = {
+  def buildFor(
+                platformName: String,
+                integrationName: Option[String],
+                userIdOnPlatform: Option[String],
+                accessToken: Option[String]
+              ): IdentityInfo = {
     IdentityInfo(
+      platformName,
+      platformName,
+      integrationName,
+      userIdOnPlatform,
+      accessToken,
+      accessToken
+    )
+  }
+
+  def forOAuth1Token(token: LinkedOAuth1Token): IdentityInfo = {
+    buildFor(
       token.application.api.name,
       Some(token.application.name),
       None,
@@ -44,7 +47,7 @@ object IdentityInfo {
   }
 
   def forOAuth2Token(token: LinkedOAuth2Token): IdentityInfo = {
-    IdentityInfo(
+    buildFor(
       token.application.api.name,
       Some(token.application.name),
       None,
@@ -53,7 +56,7 @@ object IdentityInfo {
   }
 
   def forSimpleToken(token: LinkedSimpleToken): IdentityInfo = {
-    IdentityInfo(
+    buildFor(
       token.api.name,
       None,
       None,
@@ -62,7 +65,7 @@ object IdentityInfo {
   }
 
   def forLinkedAccount(linked: LinkedAccount): IdentityInfo = {
-    IdentityInfo(
+    buildFor(
       linked.loginInfo.providerID,
       None,
       Some(linked.loginInfo.providerKey),
