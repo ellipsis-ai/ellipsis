@@ -303,7 +303,7 @@ declare namespace ellipsis {
   }
 
   /**
-   * Information about the team’s Ellipsis instance
+   * Information about the team’s Ellipsis instance (deprecated key: use \`ellipsis.team\` instead)
    */
   const teamInfo: {
     links: OAuthLink[]
@@ -317,9 +317,25 @@ declare namespace ellipsis {
     /** The team’s current time zone in tz database format, e.g. \`America/New_York\` */
     timeZone: string
   }
+  
+    /**
+   * Information about the team’s Ellipsis instance
+   */
+  const team: {
+    links: OAuthLink[]
+    
+    /** The bot’s name in the platform used to run the action */ 
+    botName: string
+    
+    /** The bot’s user ID in the platform used to run the action */
+    botUserIdForContext: string
+    
+    /** The team’s current time zone in tz database format, e.g. \`America/New_York\` */
+    timeZone: string
+  }
 
   /**
-   * Information about the user who ran the action
+   * Information about the user who ran the action (deprecated: use \`ellipsis.event.user\` instead)
    */
   const userInfo: DeprecatedUserInfo & UserData
 
