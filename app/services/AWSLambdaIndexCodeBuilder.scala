@@ -89,18 +89,18 @@ case class AWSLambdaIndexCodeBuilder(
     s"""exports.handler = function(event, context, lambdaCallback) {
        |  $behaviorsMap;
        |
-        |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
+       |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
        |
-        |  $OVERRIDE_CONSOLE
+       |  $OVERRIDE_CONSOLE
        |  $CALLBACK_FUNCTION
        |  const callback = ellipsisCallback;
        |
-        |  $NO_RESPONSE_CALLBACK_FUNCTION
+       |  $NO_RESPONSE_CALLBACK_FUNCTION
        |  $SUCCESS_CALLBACK_FUNCTION
        |  $ERROR_CLASS
        |  $ERROR_CALLBACK_FUNCTION
        |
-        |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
+       |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
        |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
        |  $CONTEXT_PARAM.Error = EllipsisError;
        |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
@@ -110,13 +110,13 @@ case class AWSLambdaIndexCodeBuilder(
        |  process.removeAllListeners('uncaughtException');
        |  process.on('uncaughtException', $CONTEXT_PARAM.error);
        |
-        |  ${awsCodeFor(apiConfigInfo)}
+       |  ${awsCodeFor(apiConfigInfo)}
        |  $CONTEXT_PARAM.accessTokens = {};
        |  ${oauth1AccessTokensCodeFor(apiConfigInfo.requiredOAuth1ApiConfigs)}
        |  ${oauth2AccessTokensCodeFor(apiConfigInfo.requiredOAuth2ApiConfigs)}
        |  ${simpleTokensCodeFor(apiConfigInfo.requiredSimpleTokenApis)}
        |
-        |  try {
+       |  try {
        |    behaviors[event.behaviorVersionId]();
        |  } catch(err) {
        |    $CONTEXT_PARAM.error(err);
