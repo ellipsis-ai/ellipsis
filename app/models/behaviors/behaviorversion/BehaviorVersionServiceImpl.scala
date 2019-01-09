@@ -332,13 +332,15 @@ class BehaviorVersionServiceImpl @Inject() (
   }
 
   def maybeFunctionFor(behaviorVersion: BehaviorVersion): Future[Option[String]] = {
-    behaviorVersion.maybeFunctionBody.map { functionBody =>
+    if (behaviorVersion.maybeFunctionBody.isDefined) {
       (for {
         params <- dataService.behaviorParameters.allFor(behaviorVersion)
       } yield {
-        lambdaService.functionWithParams(params, functionBody, isForExport = true)
+        AWSLambdaBehaviorCodeBuilder(behaviorVersion, params, isForExport = true).functionWithParams
       }).map(Some(_))
-    }.getOrElse(Future.successful(None))
+    } else {
+      Future.successful(None)
+    }
   }
 
   def maybePreviousFor(behaviorVersion: BehaviorVersion): Future[Option[BehaviorVersion]] = {
