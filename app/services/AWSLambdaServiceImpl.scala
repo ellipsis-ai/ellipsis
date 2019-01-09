@@ -305,137 +305,8 @@ class AWSLambdaServiceImpl @Inject() (
   val amazonServiceExceptionRegex = """.*com\.amazonaws\.AmazonServiceException.*""".r
   val resourceNotFoundExceptionRegex = """com\.amazonaws\.services\.lambda\.model\.ResourceNotFoundException.*""".r
 
-  private def awsConfigCodeFor(required: RequiredAWSConfig): String = {
-    if (required.isConfigured) {
-      val teamInfoPath = s"event.$CONTEXT_PARAM.teamInfo.aws.${required.nameInCode}"
-      s"""$CONTEXT_PARAM.aws.${required.nameInCode} = {
-         |  accessKeyId: ${teamInfoPath}.accessKeyId,
-         |  secretAccessKey: ${teamInfoPath}.secretAccessKey,
-         |  region: ${teamInfoPath}.region,
-         |};
-         |
-     """.stripMargin
-    } else {
-      ""
-    }
-  }
-
-  private def awsCodeFor(apiConfigInfo: ApiConfigInfo): String = {
-    if (apiConfigInfo.requiredAWSConfigs.isEmpty) {
-      ""
-    } else {
-      s"""
-         |$CONTEXT_PARAM.aws = {};
-         |
-         |${apiConfigInfo.requiredAWSConfigs.map(awsConfigCodeFor).mkString("\n")}
-       """.stripMargin
-    }
-  }
-
-  private def oauth1AccessTokenCodeFor(app: RequiredOAuth1ApiConfig): String = {
-    app.maybeApplication.map { application =>
-      s"""$CONTEXT_PARAM.accessTokens.${app.nameInCode} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem === "${application.name}").token;"""
-    }.getOrElse("")
-  }
-
-  private def oauth1AccessTokensCodeFor(requiredOAuth1ApiConfigs: Seq[RequiredOAuth1ApiConfig]): String = {
-    requiredOAuth1ApiConfigs.map(oauth1AccessTokenCodeFor).mkString("\n")
-  }
-
-  private def oauth2AccessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
-    app.maybeApplication.map { application =>
-      val infoKey =  if (application.api.grantType.requiresAuth) { "userInfo" } else { "teamInfo" }
-      s"""$CONTEXT_PARAM.accessTokens.${app.nameInCode} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem === "${application.name}").token;"""
-    }.getOrElse("")
-  }
-
-  private def oauth2AccessTokensCodeFor(requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
-    requiredOAuth2ApiConfigs.map(oauth2AccessTokenCodeFor).mkString("\n")
-  }
-
-  private def accessTokenCodeFor(required: RequiredSimpleTokenApi): String = {
-    s"""$CONTEXT_PARAM.accessTokens.${required.nameInCode} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem === "${required.api.name}").token;"""
-  }
-
-  private def simpleTokensCodeFor(requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]): String = {
-    requiredSimpleTokenApis.map(accessTokenCodeFor).mkString("\n")
-  }
-
-  def decorateParams(params: Seq[BehaviorParameter]): String = {
-    params.map { ea =>
-      ea.input.paramType.decorationCodeFor(ea)
-    }.mkString("")
-  }
-
-  def functionWithParams(params: Seq[BehaviorParameter], functionBody: String, isForExport: Boolean): String = {
-    val paramNames = params.map(_.input.name)
-    val paramDecoration = if (isForExport) { "" } else { decorateParams(params) }
-    s"""function(${(paramNames ++ Array(CONTEXT_PARAM)).mkString(", ")}) {
-        |  $paramDecoration${functionBody.trim}
-        |}\n""".stripMargin
-  }
-
-  private def behaviorMappingFor(behaviorVersion: BehaviorVersion, params: Seq[BehaviorParameter]): String = {
-    val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
-    val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
-    s""""${behaviorVersion.id}": function() {
-       |  var fn = require("./${behaviorVersion.jsName}");
-       |  return fn($invocationParamsString);
-       |}""".stripMargin
-  }
-
-  private def behaviorsMapFor(behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])]): String = {
-    s"""var behaviors = {
-       |  ${behaviorVersionsWithParams.map { case(bv, params) => behaviorMappingFor(bv, params)}.mkString(", ")}
-       |}
-     """.stripMargin
-  }
-
   private def hasFileParams(behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])]): Boolean = {
     behaviorVersionsWithParams.exists { case(_, params) => params.exists(_.input.paramType == FileType) }
-  }
-
-  private def nodeCodeFor(
-                           behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
-                           apiConfigInfo: ApiConfigInfo
-                         ): String = {
-    s"""exports.handler = function(event, context, lambdaCallback) {
-        |  ${behaviorsMapFor(behaviorVersionsWithParams)};
-        |
-        |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-        |
-        |  $OVERRIDE_CONSOLE
-        |  $CALLBACK_FUNCTION
-        |  const callback = ellipsisCallback;
-        |
-        |  $NO_RESPONSE_CALLBACK_FUNCTION
-        |  $SUCCESS_CALLBACK_FUNCTION
-        |  $ERROR_CLASS
-        |  $ERROR_CALLBACK_FUNCTION
-        |
-        |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
-        |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
-        |  $CONTEXT_PARAM.Error = EllipsisError;
-        |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
-        |  $CONTEXT_PARAM.require = function(module) { return require(module.replace(/@.+$$/, "")); }
-        |  process.removeAllListeners('unhandledRejection');
-        |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
-        |  process.removeAllListeners('uncaughtException');
-        |  process.on('uncaughtException', $CONTEXT_PARAM.error);
-        |
-        |  ${awsCodeFor(apiConfigInfo)}
-        |  $CONTEXT_PARAM.accessTokens = {};
-        |  ${oauth1AccessTokensCodeFor(apiConfigInfo.requiredOAuth1ApiConfigs)}
-        |  ${oauth2AccessTokensCodeFor(apiConfigInfo.requiredOAuth2ApiConfigs)}
-        |  ${simpleTokensCodeFor(apiConfigInfo.requiredSimpleTokenApis)}
-        |
-        |  try {
-        |    behaviors[event.behaviorVersionId]();
-        |  } catch(err) {
-        |    $CONTEXT_PARAM.error(err);
-        |  }
-        |}
-    """.stripMargin
   }
 
   private def dirNameFor(functionName: String) = s"/tmp/$functionName"
@@ -465,12 +336,12 @@ class AWSLambdaServiceImpl @Inject() (
     val path = Path(dirName)
     path.createDirectory()
 
-    writeFileNamed(s"$dirName/index.js", nodeCodeFor(behaviorVersionsWithParams, apiConfigInfo))
+    writeFileNamed(s"$dirName/index.js", AWSLambdaIndexCodeBuilder(behaviorVersionsWithParams, apiConfigInfo).build)
 
     val behaviorVersionsDirName = s"$dirName/${BehaviorVersion.dirName}"
     Path(behaviorVersionsDirName).createDirectory()
     behaviorVersionsWithParams.foreach { case(behaviorVersion, params) =>
-      writeFileNamed(s"$dirName/${behaviorVersion.jsName}", BehaviorVersion.codeFor(functionWithParams(params, behaviorVersion.functionBody, isForExport = false)))
+      writeFileNamed(s"$dirName/${behaviorVersion.jsName}", AWSLambdaBehaviorCodeBuilder(behaviorVersion, params, isForExport = false).build)
     }
 
     if (hasFileParams(behaviorVersionsWithParams)) {
