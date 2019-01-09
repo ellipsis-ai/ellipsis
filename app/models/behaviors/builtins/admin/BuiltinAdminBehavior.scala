@@ -25,8 +25,7 @@ trait BuiltinAdminBehavior extends BuiltinBehavior {
   protected def adminResult(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult]
 
   protected def teamLinkFor(teamId: String): String = {
-    services.lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      s"${baseUrl}${controllers.routes.ApplicationController.index(Some(teamId)).url}"
-    }.get
+    val baseUrl = services.lambdaService.configuration.get[String]("application.apiBaseUrl")
+    s"${baseUrl}${controllers.routes.ApplicationController.index(Some(teamId)).url}"
   }
 }
