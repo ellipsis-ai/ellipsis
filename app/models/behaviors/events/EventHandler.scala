@@ -31,31 +31,27 @@ class EventHandler @Inject() (
     for {
       maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
       responses <- dataService.behaviorResponses.allFor(event, maybeTeam, None)
-      results <- {
+      maybeBuiltin <- BuiltinBehavior.maybeFrom(event, services)
+      behaviorResults <- {
         val responsesIncludeHelpAction = responses.exists(_.behaviorVersion.isHelpAction)
-        val builtinBehaviors = Seq(BuiltinBehavior.maybeFrom(event, services)).flatten.filter {
+        val builtinBehaviors = Seq(maybeBuiltin).flatten.filter {
           case _: DisplayHelpBehavior => !responsesIncludeHelpAction
           case _ => true
         }
-        val eventualBuiltinResults = Future.sequence(builtinBehaviors.map(_.result))
-        val eventualResponseResults = Future.sequence(responses.map(_.result))
-        val allEventualResults = Future.sequence(Seq(eventualResponseResults, eventualBuiltinResults)).map(_.flatten)
+        val eventualResults = Future.sequence(responses.map(_.result) ++ builtinBehaviors.map(_.result))
         if (responses.exists(_.userExpectsResponse) || builtinBehaviors.nonEmpty) {
-          event.resultReactionHandler(allEventualResults, services)
+          event.resultReactionHandler(eventualResults, services)
         }
-        for {
-          responseResults <- eventualResponseResults
-          builtinResults <- eventualBuiltinResults
-          allResults <- {
-            if (responseResults.isEmpty && builtinResults.forall(_.resultType == ResultType.NoResponse) && event.isResponseExpected) {
-              event.noExactMatchResult(services).map { noMatchResult =>
-                Seq(noMatchResult)
-              }
-            } else {
-              Future.successful(responseResults ++ builtinResults)
-            }
+        eventualResults
+      }
+      results <- {
+        if (behaviorResults.isEmpty && event.isResponseExpected) {
+          event.noExactMatchResult(services).map { noMatchResult =>
+            Seq(noMatchResult)
           }
-        } yield allResults
+        } else {
+          Future.successful(behaviorResults)
+        }
       }
     } yield results
   }
