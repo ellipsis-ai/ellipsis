@@ -7,9 +7,8 @@ import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.slack.SlackProvider
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorversion.Normal
-import models.behaviors.builtins.BuiltinBehavior
 import models.behaviors.events.Event
-import models.behaviors.{BotResult, NoResponseForBuiltinResult, SimpleTextResult}
+import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import services.DefaultServices
 
@@ -17,22 +16,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class LookupSlackUserInfo(slackUserData: SlackUserData, teams: Seq[Team])
 
-case class LookupSlackUserBehavior(slackUserId: String, maybeEllipsisTeamId: Option[String], maybeSlackTeamId: Option[String], event: Event, services: DefaultServices) extends BuiltinBehavior {
-  private val dataService = services.dataService
+case class LookupSlackUserBehavior(slackUserId: String, maybeEllipsisTeamId: Option[String], maybeSlackTeamId: Option[String], event: Event, services: DefaultServices) extends BuiltinAdminBehavior {
 
-  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
-    for {
-      user <- event.ensureUser(dataService)
-      isAdmin <- dataService.users.isAdmin(user)
-      result <- if (isAdmin) {
-        lookupResult
-      } else {
-        Future.successful(NoResponseForBuiltinResult(event))
-      }
-    } yield result
-  }
-
-  private def lookupResult(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+  protected def adminResult(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       linkedAccounts <- dataService.linkedAccounts.allForLoginInfo(LoginInfo(SlackProvider.ID, slackUserId))
       maybeLookupInfo <- maybeEllipsisTeamId.map { ellipsisTeamId =>
