@@ -16,9 +16,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class LookupSlackUserInfo(slackUserData: SlackUserData, teams: Seq[Team])
 
-case class LookupSlackUserBehavior(slackUserId: String, maybeEllipsisTeamId: Option[String], maybeSlackTeamId: Option[String], event: Event, services: DefaultServices) extends BuiltinAdminBehavior {
+case class AdminLookupSlackUserBehavior(slackUserId: String, maybeEllipsisTeamId: Option[String], maybeSlackTeamId: Option[String], event: Event, services: DefaultServices) extends BuiltinAdminBehavior {
 
-  protected def adminResult(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       linkedAccounts <- dataService.linkedAccounts.allForLoginInfo(LoginInfo(SlackProvider.ID, slackUserId))
       maybeLookupInfo <- maybeEllipsisTeamId.map { ellipsisTeamId =>

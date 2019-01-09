@@ -8,9 +8,9 @@ import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class LookupEllipsisUserBehavior(ellipsisUserId: String, maybeEllipsisTeamId: Option[String], event: Event, services: DefaultServices) extends BuiltinAdminBehavior {
+case class AdminLookupEllipsisUserBehavior(ellipsisUserId: String, event: Event, services: DefaultServices) extends BuiltinAdminBehavior {
 
-  def adminResult(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
+  def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
       maybeUser <- dataService.users.find(ellipsisUserId)
       maybeTeam <- maybeUser.map { user =>
