@@ -81,10 +81,10 @@ case class AdminSearchCurrentFunctionsBehavior(searchText: String, event: Event,
             val groupVersionId = groupSet.groupVersion.id
             val groupId = groupSet.groupVersion.group.id
             val icon = groupSet.groupVersion.maybeIcon.map(_ + " ").getOrElse("")
-            val currentStatus = if (groupSet.isCurrent) { "(current)" } else { "(non-current)"}
-            val deployedStatus = if (groupSet.isDeployed) { "(deployed)" } else { "(not deployed)" }
+            val currentStatus = if (groupSet.isCurrent) { "current" } else { "_old_" }
+            val deployedStatus = if (groupSet.isDeployed) { "deployed" } else { "_not deployed_" }
             val name = s"[${icon}${groupSet.groupVersion.name}](${editSkillLinkFor(groupId)})"
-            val title = s"$name (version ID `$groupVersionId`) $currentStatus $deployedStatus"
+            val title = s"$name — version ID `$groupVersionId` ($currentStatus · $deployedStatus)"
             val dataTypes = groupSet.behaviorVersions.filter(_.isDataType)
             val tests = groupSet.behaviorVersions.filter(_.isTest)
             val actions = groupSet.behaviorVersions.filterNot(ea => ea.isDataType || ea.isTest)
