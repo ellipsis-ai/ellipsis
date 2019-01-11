@@ -1,9 +1,11 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
+import models.accounts.user.User
 import models.behaviors.BotResult
-import models.behaviors.builtins.admin.{AdminLookupEllipsisUserBehavior, AdminLookupSlackUserBehavior, BuiltinAdminBehavior}
+import models.behaviors.builtins.admin.{AdminLookupEllipsisUserBehavior, AdminLookupSlackUserBehavior, AdminSearchCurrentFunctionsBehavior, BuiltinAdminBehavior}
 import models.behaviors.events.Event
+import models.team.Team
 import play.api.Logger
 import services.DefaultServices
 
@@ -37,6 +39,7 @@ object BuiltinBehavior {
   val disableDevModeChannelRegex = s"""(?i)^disable dev mode$$""".r
 
   val adminLookupUserRegex: Regex = s"""(?i)^admin (?:lookup|whois|who is)\\s*(slack|ellipsis|msteams)?\\s*user(?:\\s*id)? (\\S+)(?: on (slack|ellipsis|msteams) team(?:\\s*id)? (\\S+))?$$""".r
+  val adminSearchFunctions: Regex = s"""(?i)^admin search(?:\\s*all)? functions(?:\\s*for)?\\s+([`"'])(.+)\\1$$""".r
 
   def maybeFrom(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BuiltinBehavior]] = {
     if (event.includesBotMention) {
@@ -89,24 +92,24 @@ object BuiltinBehavior {
   private def maybeAdminBuiltinFrom(relevantText: String, event: Event, services: DefaultServices)
                                    (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BuiltinBehavior]] = {
     relevantText match {
-      case adminLookupUserRegex(userIdTypeOrNull, userId, teamIdTypeOrNull, teamIdOrNull) => {
-        maybeAdminLookup(event, services, Option(userIdTypeOrNull), userId, Option(teamIdTypeOrNull), Option(teamIdOrNull))
-      }
+      case adminLookupUserRegex(userIdTypeOrNull, userId, teamIdTypeOrNull, teamIdOrNull) => withAdminAccess(event, services, { () =>
+        maybeAdminLookupUser(event, services, Option(userIdTypeOrNull), userId, Option(teamIdTypeOrNull), Option(teamIdOrNull))
+      })
+      case adminSearchFunctions(_, searchText) => withAdminAccess(event, services, { () =>
+        Some(AdminSearchCurrentFunctionsBehavior(searchText, event, services))
+      })
       case _ => Future.successful(None)
     }
   }
 
-  private def maybeAdminLookup(
-                                event: Event,
-                                services: DefaultServices,
-                                maybeUserIdType: Option[String],
-                                userId: String,
-                                maybeTeamIdType: Option[String],
-                                maybeTeamId: Option[String]
-                              )(
-                                implicit actorSystem: ActorSystem,
-                                ec: ExecutionContext
-                              ): Future[Option[BuiltinAdminBehavior]] = {
+  private def withAdminAccess(
+                               event: Event,
+                               services: DefaultServices,
+                               maybeRunAdminBehavior: () => Option[BuiltinAdminBehavior]
+                             )(
+                               implicit actorSystem: ActorSystem,
+                               ec: ExecutionContext
+                             ): Future[Option[BuiltinAdminBehavior]] = {
     val dataService = services.dataService
     for {
       user <- event.ensureUser(dataService)
@@ -116,7 +119,9 @@ object BuiltinBehavior {
         dataService.users.userDataFor(user, team).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield {
-      if (!isAdmin) {
+      if (isAdmin) {
+        maybeRunAdminBehavior()
+      } else {
         val teamInfo = maybeTeam.map { team => s"team ${team.name} (ID ${team.id})"}.getOrElse(s"team ID ${user.teamId} (NOT FOUND!)")
         Logger.warn(
           s"""User ID ${user.id} on ${teamInfo} attempted to trigger an admin action with a message in channel ${event.maybeChannel.getOrElse("(unknown)")} on ${event.eventContext.description}.
@@ -127,29 +132,38 @@ object BuiltinBehavior {
              |${event.messageText}
              |""".stripMargin)
         None
-      } else {
-        val maybeEllipsisTeamId = if (maybeTeamIdType.contains("ellipsis")) {
-          maybeTeamId
-        } else {
-          None
-        }
-        val maybeSlackTeamId = if (maybeTeamIdType.contains("slack")) {
-          maybeTeamId
-        } else {
-          None
-        }
-
-        if (maybeUserIdType.contains("slack")) {
-          Some(AdminLookupSlackUserBehavior(userId, maybeEllipsisTeamId, maybeSlackTeamId, event, services))
-        } else if (maybeUserIdType.isEmpty || maybeUserIdType.contains("ellipsis")) {
-          Some(AdminLookupEllipsisUserBehavior(userId, event, services))
-          // TODO: other types of IDs
-          //    } else if (idType == "msteams") {
-          //      Some(AdminLookupMsTeamsUserBehavior(userId, event, services))
-        } else {
-          None
-        }
       }
+    }
+  }
+
+  private def maybeAdminLookupUser(
+                                    event: Event,
+                                    services: DefaultServices,
+                                    maybeUserIdType: Option[String],
+                                    userId: String,
+                                    maybeTeamIdType: Option[String],
+                                    maybeTeamId: Option[String]
+                                  ): Option[BuiltinAdminBehavior] = {
+    val maybeEllipsisTeamId = if (maybeTeamIdType.contains("ellipsis")) {
+      maybeTeamId
+    } else {
+      None
+    }
+    val maybeSlackTeamId = if (maybeTeamIdType.contains("slack")) {
+      maybeTeamId
+    } else {
+      None
+    }
+
+    if (maybeUserIdType.contains("slack")) {
+      Some(AdminLookupSlackUserBehavior(userId, maybeEllipsisTeamId, maybeSlackTeamId, event, services))
+    } else if (maybeUserIdType.isEmpty || maybeUserIdType.contains("ellipsis")) {
+      Some(AdminLookupEllipsisUserBehavior(userId, event, services))
+      // TODO: other types of IDs
+      //    } else if (idType == "msteams") {
+      //      Some(AdminLookupMsTeamsUserBehavior(userId, event, services))
+    } else {
+      None
     }
   }
 
