@@ -26,46 +26,27 @@ case class AdminSearchCurrentFunctionsBehavior(searchText: String, event: Event,
     val textToMatch = searchText.trim
     for {
       teams <- dataService.teams.allTeams
-      allBehaviorGroups <- Future.traverse(teams) { team =>
-        dataService.behaviorGroups.allFor(team)
+      currentGroupVersionIds <- dataService.behaviorGroupVersions.allCurrentIds
+      deployedGroupVersionIds <- Future.traverse(teams) { team =>
+        dataService.behaviorGroupDeployments.mostRecentForTeam(team).map(_.map(_.groupVersionId))
       }.map(_.flatten)
-      allTeamsDeployments <- Future.traverse(teams) { team =>
-        dataService.behaviorGroupDeployments.mostRecentForTeam(team)
-      }.map(_.flatten)
-      currentGroupVersionSets <- Future.traverse(allBehaviorGroups) { group =>
-        dataService.behaviorGroupVersions.maybeCurrentFor(group)
-      }.map(_.flatten.map { version =>
-        GroupVersionSet(version, isCurrent = true, isDeployed = allTeamsDeployments.exists(_.groupVersionId == version.id))
-      })
-      oldDeployedGroupVersionSets <- {
-        val nonCurrentDeployedIds = allTeamsDeployments.map(_.groupVersionId).distinct.filterNot { deployedId =>
-          currentGroupVersionSets.exists(current => current.groupVersion.id == deployedId)
-        }
-        Future.traverse(nonCurrentDeployedIds) { groupVersionId =>
-          dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)
-        }.map(_.flatten.map(GroupVersionSet(_, isCurrent = false, isDeployed = true)))
-      }
-      withBehaviorVersionMatches <- {
-        val allSets = currentGroupVersionSets ++ oldDeployedGroupVersionSets
-        Future.traverse(allSets) { set =>
-          dataService.behaviorVersions.allForGroupVersion(set.groupVersion).map { behaviorVersions =>
-            val behaviorVersionMatches = behaviorVersions.filter(_.maybeFunctionBody.exists(_.contains(textToMatch)))
-            set.copy(behaviorVersions = behaviorVersionMatches)
-          }
-        }
-      }
-      allGroupSets <- Future.traverse(withBehaviorVersionMatches) { groupSet =>
-        dataService.libraries.allFor(groupSet.groupVersion).map { libraryVersions =>
-          val libraryMatches = libraryVersions.filter(_.functionBody.contains(textToMatch))
-          groupSet.copy(libraryVersions = libraryMatches)
-        }
-      }
+      allValidGroupIds <- Future.successful((currentGroupVersionIds ++ deployedGroupVersionIds).distinct)
+      matchingBehaviorVersions <- dataService.behaviorVersions.allWithSubstringInGroupVersions(textToMatch, allValidGroupIds)
+      matchingLibraryVersions <- dataService.libraries.allWithSubstringInGroupVersions(textToMatch, allValidGroupIds)
     } yield {
-      val validGroupSets = allGroupSets.filter(groupSet => groupSet.behaviorVersions.nonEmpty || groupSet.libraryVersions.nonEmpty)
-      val matchCount = validGroupSets.foldLeft(0) { (count, teamVersions) =>
+      val groupSets = (matchingBehaviorVersions.map(_.groupVersion) ++ matchingLibraryVersions.map(_.groupVersion)).distinct.map { groupVersion =>
+        GroupVersionSet(
+          groupVersion,
+          currentGroupVersionIds.contains(groupVersion.id),
+          deployedGroupVersionIds.contains(groupVersion.id),
+          matchingBehaviorVersions.filter(_.groupVersion == groupVersion),
+          matchingLibraryVersions.filter(_.groupVersion == groupVersion)
+        )
+      }
+      val matchCount = groupSets.foldLeft(0) { (count, teamVersions) =>
         count + teamVersions.behaviorVersions.length + teamVersions.libraryVersions.length
       }
-      val groupedByTeam = validGroupSets.groupBy(_.groupVersion.team)
+      val groupedByTeam = groupSets.groupBy(_.groupVersion.team)
       val heading = if (matchCount == 1) {
         s"There is one current/deployed function that includes `${searchText}`:"
       } else if (matchCount > 1) {

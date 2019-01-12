@@ -25,6 +25,8 @@ trait BehaviorVersionService {
 
   def allCurrentForTeam(team: Team): Future[Seq[BehaviorVersion]]
 
+  def allWithSubstringInGroupVersions(substring: String, behaviorGroupVersionIds: Seq[String]): Future[Seq[BehaviorVersion]]
+
   def dataTypesForGroupVersionAction(groupVersion: BehaviorGroupVersion)(implicit ec: ExecutionContext): DBIO[Seq[BehaviorVersion]] = {
     allForGroupVersionAction(groupVersion).map { all =>
       all.filter(_.isDataType)

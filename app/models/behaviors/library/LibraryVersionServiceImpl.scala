@@ -14,7 +14,18 @@ import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LibraryVersionsTable(tag: Tag) extends Table[LibraryVersion](tag, "library_versions") {
+case class RawLibraryVersion(
+                              id: String,
+                              libraryId: String,
+                              maybeExportId: Option[String],
+                              name: String,
+                              maybeDescription: Option[String],
+                              functionBody: String,
+                              behaviorGroupVersionId: String,
+                              createdAt: OffsetDateTime
+                            )
+
+class LibraryVersionsTable(tag: Tag) extends Table[RawLibraryVersion](tag, "library_versions") {
 
   def id = column[String]("id", O.PrimaryKey)
   def libraryId = column[String]("library_id")
@@ -26,7 +37,7 @@ class LibraryVersionsTable(tag: Tag) extends Table[LibraryVersion](tag, "library
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * = (id, libraryId, maybeExportId, name, maybeDescription, functionBody, behaviorGroupVersionId, createdAt) <>
-    ((LibraryVersion.apply _).tupled, LibraryVersion.unapply _)
+    ((RawLibraryVersion.apply _).tupled, RawLibraryVersion.unapply _)
 }
 
 class LibraryVersionServiceImpl @Inject() (
@@ -39,7 +50,9 @@ class LibraryVersionServiceImpl @Inject() (
   import LibraryVersionQueries._
 
   def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[LibraryVersion]] = {
-    allForQuery(groupVersion.id).result
+    allForQuery(groupVersion.id).result.map { r =>
+      r.map(tuple2LibraryVersion)
+    }
   }
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[LibraryVersion]] = {
@@ -47,18 +60,15 @@ class LibraryVersionServiceImpl @Inject() (
   }
 
   def findByLibraryIdWithoutAccessCheck(libraryId: String, groupVersion: BehaviorGroupVersion): Future[Option[LibraryVersion]] = {
-    val action = findByLibraryIdQuery(libraryId, groupVersion.id).result.map(_.headOption)
+    val action = findByLibraryIdQuery(libraryId, groupVersion.id).result.map(_.map(tuple2LibraryVersion).headOption)
     dataService.run(action)
   }
 
   def findByLibraryId(libraryId: String, groupVersion: BehaviorGroupVersion, user: User): Future[Option[LibraryVersion]] = {
     for {
       maybeLibraryVersion <- findByLibraryIdWithoutAccessCheck(libraryId, groupVersion)
-      maybeGroupVersion <- maybeLibraryVersion.map { libraryVersion =>
-        dataService.behaviorGroupVersions.findWithoutAccessCheck(libraryVersion.behaviorGroupVersionId)
-      }.getOrElse(Future.successful(None))
-      canAccess <- maybeGroupVersion.map { groupVersion =>
-        dataService.users.canAccess(user, groupVersion.team)
+      canAccess <- maybeLibraryVersion.map { libraryVersion =>
+        dataService.users.canAccess(user, libraryVersion.groupVersion.team)
       }.getOrElse(Future.successful(false))
     } yield {
       if (canAccess) {
@@ -70,7 +80,7 @@ class LibraryVersionServiceImpl @Inject() (
   }
 
   def findAction(id: String): DBIO[Option[LibraryVersion]] = {
-    findQuery(id).result.map(_.headOption)
+    findQuery(id).result.map(_.map(tuple2LibraryVersion).headOption)
   }
 
   def find(id: String): Future[Option[LibraryVersion]] = {
@@ -79,13 +89,27 @@ class LibraryVersionServiceImpl @Inject() (
 
   def findCurrentByLibraryId(libraryId: String): Future[Option[LibraryVersion]] = {
     val action = findCurrentForLibraryIdQuery(libraryId).result.map { r =>
-      r.headOption
+      r.map(tuple2LibraryVersion).headOption
+    }
+    dataService.run(action)
+  }
+
+  def uncompiledAllWithSubstringInGroupsQuery(substring: Rep[String], behaviorGroupVersionIds: Seq[String]) = {
+    allWithGroupVersion.filter { tuple =>
+      tuple._1.functionBody.like(substring) &&
+        tuple._1.behaviorGroupVersionId.inSet(behaviorGroupVersionIds)
+    }
+  }
+
+  def allWithSubstringInGroupVersions(substring: String, behaviorGroupVersionIds: Seq[String]): Future[Seq[LibraryVersion]] = {
+    val action = uncompiledAllWithSubstringInGroupsQuery(s"%${substring}%", behaviorGroupVersionIds).result.map { r =>
+      r.map(tuple2LibraryVersion)
     }
     dataService.run(action)
   }
 
   def createForAction(data: LibraryVersionData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[LibraryVersion] = {
-    val libraryVersion = LibraryVersion(
+    val raw = RawLibraryVersion(
       data.id.getOrElse(IDs.next),
       data.libraryId.getOrElse(IDs.next),
       data.exportId,
@@ -95,7 +119,16 @@ class LibraryVersionServiceImpl @Inject() (
       behaviorGroupVersion.id,
       OffsetDateTime.now
     )
-    (all += libraryVersion).map(_ => libraryVersion)
+    (all += raw).map(_ => LibraryVersion(
+      raw.id,
+      raw.libraryId,
+      raw.maybeExportId,
+      raw.name,
+      raw.maybeDescription,
+      raw.functionBody,
+      behaviorGroupVersion,
+      raw.createdAt
+    ))
   }
 
   def ensureForAction(data: LibraryVersionData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[LibraryVersion] = {
@@ -105,10 +138,10 @@ class LibraryVersionServiceImpl @Inject() (
         val updated = existing.copy(
           name = data.name,
           maybeDescription = data.description,
-          behaviorGroupVersionId = behaviorGroupVersion.id,
+          groupVersion = behaviorGroupVersion,
           functionBody = data.functionBody
         )
-        uncompiledFindQuery(existing.id).update(updated).map { _ => updated }
+        uncompiledRawFindQuery(existing.id).update(updated.toRaw).map { _ => updated }
       }.getOrElse(createForAction(data, behaviorGroupVersion))
     } yield libraryVersion
   }

@@ -2,21 +2,33 @@ package models.behaviors.library
 
 import java.time.OffsetDateTime
 
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+
 case class LibraryVersion(
-                            id: String,
-                            libraryId: String,
-                            maybeExportId: Option[String],
-                            name: String,
-                            maybeDescription: Option[String],
-                            functionBody: String,
-                            behaviorGroupVersionId: String,
-                            createdAt: OffsetDateTime
+                           id: String,
+                           libraryId: String,
+                           maybeExportId: Option[String],
+                           name: String,
+                           maybeDescription: Option[String],
+                           functionBody: String,
+                           groupVersion: BehaviorGroupVersion,
+                           createdAt: OffsetDateTime
                           ) {
 
   val jsName = s"$name.js"
 
   val code = LibraryVersion.codeFor(functionBody)
 
+  def toRaw: RawLibraryVersion = RawLibraryVersion(
+    id,
+    libraryId,
+    maybeExportId,
+    name,
+    maybeDescription,
+    functionBody,
+    groupVersion.id,
+    createdAt
+  )
 }
 
 object LibraryVersion {

@@ -134,6 +134,20 @@ class BehaviorVersionServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def uncompiledAllWithSubstringInGroupsQuery(substring: Rep[String], behaviorGroupVersionIds: Seq[String]) = {
+    allWithGroupVersion.filter {
+      case ((version, _), _) => version.maybeFunctionBody.like(substring) &&
+        version.groupVersionId.inSet(behaviorGroupVersionIds)
+    }
+  }
+
+  def allWithSubstringInGroupVersions(substring: String, behaviorGroupVersionIds: Seq[String]): Future[Seq[BehaviorVersion]] = {
+    val action = uncompiledAllWithSubstringInGroupsQuery(s"%${substring}%", behaviorGroupVersionIds).result.map { r =>
+      r.map(tuple2BehaviorVersion)
+    }
+    dataService.run(action)
+  }
+
   def uncompiledFindQuery(id: Rep[String]) = {
     allWithGroupVersion.filter { case ((version, _), _) => version.id === id }
   }
