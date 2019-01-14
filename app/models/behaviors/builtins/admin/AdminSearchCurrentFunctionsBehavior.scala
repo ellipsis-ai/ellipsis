@@ -25,11 +25,8 @@ case class AdminSearchCurrentFunctionsBehavior(searchText: String, event: Event,
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext ): Future[BotResult] = {
     val textToMatch = searchText.trim
     for {
-      teams <- dataService.teams.allTeams
       currentGroupVersionIds <- dataService.behaviorGroupVersions.allCurrentIds
-      deployedGroupVersionIds <- Future.traverse(teams) { team =>
-        dataService.behaviorGroupDeployments.mostRecentForTeam(team).map(_.map(_.groupVersionId))
-      }.map(_.flatten)
+      deployedGroupVersionIds <- dataService.behaviorGroupDeployments.mostRecentBehaviorGroupVersionIds
       allValidGroupIds <- Future.successful((currentGroupVersionIds ++ deployedGroupVersionIds).distinct)
       matchingBehaviorVersions <- dataService.behaviorVersions.allWithSubstringInGroupVersions(textToMatch, allValidGroupIds)
       matchingLibraryVersions <- dataService.libraries.allWithSubstringInGroupVersions(textToMatch, allValidGroupIds)
