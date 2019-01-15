@@ -95,9 +95,9 @@ class LibraryVersionServiceImpl @Inject() (
   }
 
   def uncompiledAllWithSubstringInGroupsQuery(substring: Rep[String], behaviorGroupVersionIds: Seq[String]) = {
-    allWithGroupVersion.filter { tuple =>
-      tuple._1.functionBody.like(substring) &&
-        tuple._1.behaviorGroupVersionId.inSet(behaviorGroupVersionIds)
+    allWithGroupVersion.filter {
+      case (libraryVersion, _) => libraryVersion.functionBody.like(substring) &&
+        libraryVersion.behaviorGroupVersionId.inSet(behaviorGroupVersionIds)
     }
   }
 

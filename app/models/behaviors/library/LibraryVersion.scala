@@ -5,14 +5,14 @@ import java.time.OffsetDateTime
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 
 case class LibraryVersion(
-                           id: String,
-                           libraryId: String,
-                           maybeExportId: Option[String],
-                           name: String,
-                           maybeDescription: Option[String],
-                           functionBody: String,
-                           groupVersion: BehaviorGroupVersion,
-                           createdAt: OffsetDateTime
+                            id: String,
+                            libraryId: String,
+                            maybeExportId: Option[String],
+                            name: String,
+                            maybeDescription: Option[String],
+                            functionBody: String,
+                            groupVersion: BehaviorGroupVersion,
+                            createdAt: OffsetDateTime
                           ) {
 
   val jsName = s"$name.js"

@@ -1,11 +1,9 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
-import models.accounts.user.User
 import models.behaviors.BotResult
-import models.behaviors.builtins.admin.{AdminLookupEllipsisUserBehavior, AdminLookupSlackUserBehavior, AdminSearchCurrentFunctionsBehavior, BuiltinAdminBehavior}
+import models.behaviors.builtins.admin._
 import models.behaviors.events.Event
-import models.team.Team
 import play.api.Logger
 import services.DefaultServices
 

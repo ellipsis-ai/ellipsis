@@ -27,12 +27,17 @@ object LibraryVersionQueries {
   }
 
   def uncompiledAllForQuery(groupVersionId: Rep[String]) = {
-    allWithGroupVersion.filter(_._1.behaviorGroupVersionId === groupVersionId)
+    allWithGroupVersion.filter {
+      case(lib, _) => lib.behaviorGroupVersionId === groupVersionId
+    }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
   def uncompiledFindByLibraryIdQuery(libraryId: Rep[String], groupVersionId: Rep[String]) = {
-    allWithGroupVersion.filter(_._1.libraryId === libraryId).filter(_._1.behaviorGroupVersionId === groupVersionId)
+    allWithGroupVersion.filter {
+      case(lib, _) => lib.libraryId === libraryId &&
+        lib.behaviorGroupVersionId === groupVersionId
+    }
   }
   val findByLibraryIdQuery = Compiled(uncompiledFindByLibraryIdQuery _)
 
@@ -41,7 +46,9 @@ object LibraryVersionQueries {
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {
-    allWithGroupVersion.filter(_._1.id === id)
+    allWithGroupVersion.filter {
+      case(lib, _) => lib.id === id
+    }
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
