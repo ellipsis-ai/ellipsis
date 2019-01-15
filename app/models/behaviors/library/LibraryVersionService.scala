@@ -21,4 +21,5 @@ trait LibraryVersionService {
 
   def ensureForAction(data: LibraryVersionData, behaviorGroupVersion: BehaviorGroupVersion): DBIO[LibraryVersion]
 
+  def allWithSubstringInGroupVersions(substring: String, behaviorGroupVersionIds: Seq[String]): Future[Seq[LibraryVersion]]
 }

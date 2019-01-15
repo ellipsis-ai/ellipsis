@@ -79,6 +79,10 @@ class BehaviorGroupVersionServiceImpl @Inject() (
     dataService.run(maybeCurrentForAction(group))
   }
 
+  def allCurrentIds: Future[Seq[String]] = {
+    dataService.run(allCurrentIdsQuery.result)
+  }
+
   def maybeFirstForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupVersion]] = {
     firstIdForQuery(group.id).result.flatMap { r =>
       r.headOption.map { firstId =>
