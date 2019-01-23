@@ -1,3 +1,4 @@
+import java.io.{ByteArrayInputStream, File}
 import java.time.OffsetDateTime
 
 import models.IDs
@@ -18,7 +19,6 @@ import support.TestContext
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.sys.process._
-
 
 class AWSLambdaCodeSpec extends PlaySpec with MockitoSugar {
 
@@ -115,10 +115,12 @@ class AWSLambdaCodeSpec extends PlaySpec with MockitoSugar {
       Await.result(builder.build, 20.seconds)
       val code =
         raw"""
-           |const handler = require("./index").handler;
+           |const handler = require('./index').handler;
            |handler(${invocationJson.toString}, {}, (err, res) => console.log(JSON.stringify(res)));
        """.stripMargin
-      val result = Process(Seq("bash", "-c", s"""cd ${builder.dirName} && node -p '${code}'"""), None, "HOME" -> "/tmp").!!.split("\n").head
+      val input =  new ByteArrayInputStream(code.getBytes)
+      val cwd = new File(builder.dirName)
+      val result: String = (Process(Seq("node"), Some(cwd)) #< input).!!
       val jsonResult = Json.parse(result)
       (jsonResult \ "result").as[String] mustBe actionResult
 
