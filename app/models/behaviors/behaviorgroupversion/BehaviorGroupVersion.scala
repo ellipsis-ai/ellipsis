@@ -23,6 +23,7 @@ case class BehaviorGroupVersion(
   val team: Team = group.team
 
   val functionName: String = BehaviorGroupVersion.functionNameFor(id)
+  val dirName: String = s"/tmp/$functionName"
 
   def exportName: String = {
     Option(SafeFileName.forName(name)).filter(_.nonEmpty).getOrElse(id)

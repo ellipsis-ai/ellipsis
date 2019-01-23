@@ -2,7 +2,7 @@ package services
 
 import javax.inject.{Inject, Singleton}
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 

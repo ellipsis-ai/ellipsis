@@ -82,7 +82,7 @@ class AWSLambdaServiceImpl @Inject() (
   }.toList
 
   def createdFileNameFor(groupVersion: BehaviorGroupVersion): String = {
-    dirNameFor(groupVersion.functionName) ++ "/created"
+    groupVersion.dirName ++ "/created"
   }
 
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
@@ -148,10 +148,8 @@ class AWSLambdaServiceImpl @Inject() (
                                  environmentVariables: Seq[EnvironmentVariable],
                                  token: InvocationToken
                                ): JsObject = {
-    val parameterValueData = parameterValues.map { ea => (ea.invocationName, ea.preparedValue) }
     val contextObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, environmentVariables, apiBaseUrl, token)
-    val contextParamData = Seq(CONTEXT_PARAM -> Json.toJson(contextObject))
-    JsObject(parameterValueData ++ contextParamData ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id))))
+    AWSLambdaInvocationJsonBuilder(behaviorVersion, contextObject, parameterValues).build
   }
 
   private def cacheKeyFor(behaviorVersion: BehaviorVersion, payloadData: Seq[(String, JsValue)]): String = {
@@ -305,81 +303,18 @@ class AWSLambdaServiceImpl @Inject() (
   val amazonServiceExceptionRegex = """.*com\.amazonaws\.AmazonServiceException.*""".r
   val resourceNotFoundExceptionRegex = """com\.amazonaws\.services\.lambda\.model\.ResourceNotFoundException.*""".r
 
-  private def hasFileParams(behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])]): Boolean = {
-    behaviorVersionsWithParams.exists { case(_, params) => params.exists(_.input.paramType == FileType) }
-  }
-
-  private def dirNameFor(functionName: String) = s"/tmp/$functionName"
-  private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
-
   private def writeFileNamed(path: String, content: String) = {
     val writer = new PrintWriter(new File(path))
     writer.write(content)
     writer.close()
   }
 
-  private def requiredModulesForFileParams(behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])]): Seq[String] = {
-    if (hasFileParams(behaviorVersionsWithParams)) {
-      Seq("request")
-    } else {
-      Seq()
-    }
-  }
-
-  private def createZipWithModulesFor(
-                                       functionName: String,
-                                       behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
-                                       libraries: Seq[LibraryVersion],
-                                       apiConfigInfo: ApiConfigInfo
-                                     ): Future[Unit] = {
-    val dirName = dirNameFor(functionName)
-    val path = Path(dirName)
-    path.createDirectory()
-
-    writeFileNamed(s"$dirName/index.js", AWSLambdaIndexCodeBuilder(behaviorVersionsWithParams, apiConfigInfo).build)
-
-    val behaviorVersionsDirName = s"$dirName/${BehaviorVersion.dirName}"
-    Path(behaviorVersionsDirName).createDirectory()
-    behaviorVersionsWithParams.foreach { case(behaviorVersion, params) =>
-      writeFileNamed(s"$dirName/${behaviorVersion.jsName}", AWSLambdaBehaviorCodeBuilder(behaviorVersion, params, isForExport = false).build)
-    }
-
-    if (hasFileParams(behaviorVersionsWithParams)) {
-      writeFileNamed(s"$dirName/$FETCH_FUNCTION_FOR_FILE_PARAM_NAME.js", FETCH_FUNCTION_FOR_FILE_PARAM)
-    }
-
-    libraries.foreach { ea =>
-      writeFileNamed(s"$dirName/${ea.jsName}", ea.code)
-    }
-
-    val requiredModulesForBehaviorVersions = RequiredModulesInCode.requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
-    val requiredModules = (requiredModulesForBehaviorVersions ++ requiredModulesForFileParams(behaviorVersionsWithParams)).distinct
-    for {
-      _ <- if (requiredModules.isEmpty) {
-        Future.successful({})
-      } else {
-        Future {
-          blocking(
-            Process(Seq("bash", "-c", s"cd $dirName && npm init -f && npm install ${requiredModules.mkString(" ")}"), None, "HOME" -> "/tmp").!
-          )
-        }
-      }
-      _ <- Future {
-        blocking(
-          Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
-        )
-      }
-    } yield {}
-
-  }
-
   private def getNodeModuleInfoFor(groupVersion: BehaviorGroupVersion): JsValue = {
-    val dirName = dirNameFor(groupVersion.functionName)
     val timeout = OffsetDateTime.now.plusSeconds(10)
     while (timeout.isAfter(OffsetDateTime.now) && !Path(createdFileNameFor(groupVersion)).exists) {
       Thread.sleep(1000)
     }
-    val packageName = s"$dirName/package.json"
+    val packageName = s"${groupVersion.dirName}/package.json"
     if (Path(packageName).exists) {
       try {
         Json.parse(Source.fromFile(packageName).getLines.mkString)
@@ -425,18 +360,14 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private def getZipFor(
-                         functionName: String,
+                         groupVersion: BehaviorGroupVersion,
                          behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                          libraries: Seq[LibraryVersion],
                          apiConfigInfo: ApiConfigInfo
                        ): Future[ByteBuffer] = {
-    createZipWithModulesFor(
-      functionName,
-      behaviorVersionsWithParams,
-      libraries,
-      apiConfigInfo
-    ).map { _ =>
-      val path = Paths.get(zipFileNameFor(functionName))
+    val builder = AWSLambdaZipBuilder(groupVersion, behaviorVersionsWithParams, libraries, apiConfigInfo)
+    builder.build.map { _ =>
+      val path = Paths.get(builder.zipFileName)
       ByteBuffer.wrap(Files.readAllBytes(path))
     }
   }
@@ -510,7 +441,7 @@ class AWSLambdaServiceImpl @Inject() (
       } else {
         for {
           functionCode <- getZipFor(
-              functionName,
+              groupVersion,
               behaviorVersionsWithParams,
               libraries,
               apiConfigInfo
