@@ -5,7 +5,7 @@ import json.UserData
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
-import services.ms_teams.apiModels.{Attachment, File}
+import services.ms_teams.apiModels.{Attachment, File, Image}
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.FileReference
@@ -33,6 +33,7 @@ case class MSTeamsMessageEvent(
 
   val maybeFile: Option[FileReference] = attachments.flatMap {
     case Attachment(_, Some(f: File), _, _) => Some(f)
+    case Attachment("image/*", None, Some(url: String), _) => Some(Image(url, Some(url)))
     case _ => None
   }.headOption
 

@@ -150,7 +150,7 @@ case class SlackApiMethodContext(
     }
   }
 
-  def getToken: Future[String] = Future.successful(botProfile.token)
+  def getFileFetchToken: Future[String] = Future.successful(botProfile.token)
 
   override def scheduleByName(
                                actionName: String,

@@ -42,9 +42,9 @@ case class MSTeamsApiMethodContext(
                    maybeTriggeringMessageId: Option[String]
                  ): Future[RunEvent] = ???
 
-  def getToken: Future[String] = {
+  def getFileFetchToken: Future[String] = {
     val client = services.msTeamsApiService.profileClientFor(botProfile)
-    client.fetchGraphApiToken
+    client.fetchBotFrameworkToken
   }
 
   def printEventCreationError(): Unit = {
