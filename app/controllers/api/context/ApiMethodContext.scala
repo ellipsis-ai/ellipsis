@@ -208,9 +208,10 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
               case _ =>
                 Ok.chunked(r.bodyAsSource).as(contentType)
             }
-            val headers = Seq(
-              r.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption.map(v => (CONTENT_DISPOSITION -> v)))
-            ).flatten
+            val contentDisposition = r.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption).getOrElse {
+              contentDispositionForContentType(contentType)
+            }
+            val headers = Seq((CONTENT_DISPOSITION -> contentDisposition))
             result.withHeaders(headers: _*)
 
           } else {
