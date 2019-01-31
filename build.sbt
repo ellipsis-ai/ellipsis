@@ -44,7 +44,7 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette-persistence" % "5.0.0",
   "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",
   "com.mohiva" %% "play-silhouette-testkit" % "5.0.0" % Test,
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.2.1",
+  "com.typesafe.slick" %% "slick-hikaricp" % "3.2.3",
   "com.typesafe.play" %% "play-slick" % "3.0.3",
   "com.typesafe.play" %% "play-slick-evolutions" % "3.0.3",
   "ai.x" %% "play-json-extensions" % "0.10.0",
