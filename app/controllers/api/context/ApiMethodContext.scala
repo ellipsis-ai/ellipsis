@@ -13,7 +13,7 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
-import play.api.http.HttpEntity
+import play.api.http.{HttpEntity, MimeTypes}
 import play.api.i18n.I18nSupport
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -180,6 +180,12 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
   private def contentDispositionForContentType(contentType: String): String = {
     val extension = """image/(.*)""".r.findFirstMatchIn(contentType).flatMap { r =>
       r.subgroups.headOption
+    }.orElse {
+      if (contentType == MimeTypes.BINARY) {
+        Some("jpg")
+      } else {
+        None
+      }
     }.getOrElse("txt")
     s"""attachment; filename="ellipsis.${extension}""""
   }
@@ -200,7 +206,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
             val contentType =
               r.headers.get(CONTENT_TYPE).
                 flatMap(_.headOption).
-                getOrElse("application/octet-stream")
+                getOrElse(MimeTypes.BINARY)
 
             val result = r.headers.get(CONTENT_LENGTH) match {
               case Some(Seq(length)) =>
