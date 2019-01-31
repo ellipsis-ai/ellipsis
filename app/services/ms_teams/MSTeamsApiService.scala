@@ -54,7 +54,7 @@ trait MSTeamsApiClient {
     }
   }
 
-  private def fetchBotFrameworkToken: Future[String] = {
+  def fetchBotFrameworkToken: Future[String] = {
     val params = preparePostParams(Map(
       "client_id" -> clientId,
       "scope" -> "https://api.botframework.com/.default",

@@ -13,11 +13,12 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
-import play.api.http.HttpEntity
+import play.api.http.{HttpEntity, MimeTypes}
 import play.api.i18n.I18nSupport
 import play.api.libs.json._
-import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.libs.ws.WSClient
 import play.api.mvc._
+import play.mvc.Http
 import services.{DataService, DefaultServices}
 import utils.FileMap
 
@@ -179,53 +180,48 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
   private def contentDispositionForContentType(contentType: String): String = {
     val extension = """image/(.*)""".r.findFirstMatchIn(contentType).flatMap { r =>
       r.subgroups.headOption
+    }.orElse {
+      if (contentType == MimeTypes.BINARY) {
+        Some("jpg")
+      } else {
+        None
+      }
     }.getOrElse("txt")
     s"""attachment; filename="ellipsis.${extension}""""
   }
 
-  private def contentDispositionFor(response: WSResponse, contentType: String, httpHeaders: (String, String), maybeOriginalUrl: Option[String]): Future[String] = {
-    val maybeDispositionFromResponse = response.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption)
-    maybeDispositionFromResponse.map(Future.successful).getOrElse {
-      maybeOriginalUrl.map { originalUrl =>
-        ws.url(originalUrl).withHttpHeaders(httpHeaders).head.map { r =>
-          r.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption).getOrElse {
-            contentDispositionForContentType(contentType)
-          }
-        }
-      }.getOrElse {
-        Future.successful(contentDispositionForContentType(contentType))
-      }
-    }
-  }
-
-  def getToken: Future[String]
+  def getFileFetchToken: Future[String]
 
   def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = {
     fileMap.maybeUrlFor(fileId).map { originalUrl =>
       val maybeThumbnailUrl = fileMap.maybeThumbnailUrlFor(fileId)
       val urlToUse = maybeThumbnailUrl.getOrElse(originalUrl)
       for {
-        token <- getToken
-        httpHeaders <- Future.successful((AUTHORIZATION, s"Bearer ${token}"))
-        result <- ws.url(urlToUse).withHttpHeaders(httpHeaders).get.flatMap { r =>
+        token <- getFileFetchToken
+        httpHeaders <- Future.successful(Seq(
+          (Http.HeaderNames.AUTHORIZATION -> s"Bearer $token")
+        ))
+        result <- ws.url(urlToUse).withHttpHeaders(httpHeaders: _*).withMethod("GET").stream().map { r =>
           if (r.status == 200) {
             val contentType =
               r.headers.get(CONTENT_TYPE).
                 flatMap(_.headOption).
-                getOrElse("application/octet-stream")
+                getOrElse(MimeTypes.BINARY)
 
-            contentDispositionFor(r, contentType, httpHeaders, maybeThumbnailUrl.map(_ => originalUrl)).map { contentDisposition =>
-              val result = r.headers.get(CONTENT_LENGTH) match {
-                case Some(Seq(length)) =>
-                  Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
-                case _ =>
-                  Ok.chunked(r.bodyAsSource).as(contentType)
-              }
-              result.withHeaders(CONTENT_TYPE -> contentType, CONTENT_DISPOSITION -> contentDisposition)
+            val result = r.headers.get(CONTENT_LENGTH) match {
+              case Some(Seq(length)) =>
+                Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
+              case _ =>
+                Ok.chunked(r.bodyAsSource).as(contentType)
             }
+            val contentDisposition = r.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption).getOrElse {
+              contentDispositionForContentType(contentType)
+            }
+            val headers = Seq((CONTENT_DISPOSITION -> contentDisposition))
+            result.withHeaders(headers: _*)
 
           } else {
-            Future.successful(BadGateway)
+            BadGateway
           }
         }
       } yield result

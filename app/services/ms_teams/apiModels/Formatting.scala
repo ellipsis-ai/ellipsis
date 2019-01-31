@@ -25,6 +25,7 @@ object Formatting {
   lazy implicit val adaptiveCardFormat: Format[AdaptiveCard] = Format(adaptiveCardReads, adaptiveCardWrites)
 
   lazy implicit val fileFormat: Format[File] = Jsonx.formatCaseClass[File]
+  lazy implicit val imageFormat: Format[Image] = Jsonx.formatCaseClass[Image]
 
   lazy implicit val unknownAttachmentContentFormat: Format[UnknownAttachmentContent] = Jsonx.formatInline[UnknownAttachmentContent]
 
