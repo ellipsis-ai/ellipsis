@@ -172,12 +172,10 @@ trait BuiltInTextualType extends BuiltInType {
                                       isReminding: Boolean
                                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     super.promptResultForAction(maybePreviousCollectedValue, context, paramState, isReminding).map { superPromptResult =>
+      val callbackId = context.textInputCallbackId
       val eventContext = context.event.eventContext
-      if (eventContext.usesTextInputs) {
-        val callbackId = context.textInputCallbackId
-        val actionList = Seq(
-          eventContext.messageActionTextInputFor(callbackId)
-        )
+      eventContext.maybeMessageActionTextInputFor(callbackId).map { action =>
+        val actionList = Seq(action)
         val actionsGroup = eventContext.messageAttachmentFor(maybeCallbackId = Some(callbackId), actions = actionList)
         TextWithAttachmentsResult(
           superPromptResult.event,
@@ -186,9 +184,7 @@ trait BuiltInTextualType extends BuiltInType {
           superPromptResult.responseType,
           Seq(actionsGroup)
         )
-      } else {
-        superPromptResult
-      }
+      }.getOrElse(superPromptResult)
     }
   }
 

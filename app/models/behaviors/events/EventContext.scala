@@ -42,8 +42,6 @@ sealed trait EventContext {
   val name: String
   val description: String
 
-  val usesTextInputs: Boolean = false
-
   val ellipsisTeamId: String
   val userIdForContext: String
   val teamIdForContext: String
@@ -127,9 +125,9 @@ sealed trait EventContext {
                             options: Seq[MenuItemType]
                           ): MessageActionType
 
-  def messageActionTextInputFor(
-                               name: String
-                               ): MessageActionType
+  def maybeMessageActionTextInputFor(
+                                      name: String
+                                    ): Option[MessageActionType]
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
@@ -397,9 +395,9 @@ case class SlackEventContext(
     SlackMessageMenu(name, text, options)
   }
 
-  def messageActionTextInputFor(
-                                 name: String
-                               ): MessageActionType = ???
+  def maybeMessageActionTextInputFor(
+                                      name: String
+                                    ): Option[MessageActionType] = None
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
@@ -445,8 +443,6 @@ case class MSTeamsEventContext(
 
   def loginInfo: LoginInfo = LoginInfo(Conversation.MS_TEAMS_CONTEXT, info.from.id)
   def otherLoginInfos: Seq[LoginInfo] = info.from.aadObjectId.map(id => LoginInfo(Conversation.MS_AAD_CONTEXT, id)).toSeq
-
-  override val usesTextInputs: Boolean = true
 
   val isDirectMessage: Boolean = {
     info.conversation.conversationType == "personal"
@@ -611,10 +607,10 @@ case class MSTeamsEventContext(
     MSTeamsMessageMenu(name, text, options)
   }
 
-  def messageActionTextInputFor(
-                                 name: String
-                               ): MessageActionType = {
-    MSTeamsMessageTextInput(name)
+  def maybeMessageActionTextInputFor(
+                                      name: String
+                                    ): Option[MessageActionType] = {
+    Some(MSTeamsMessageTextInput(name))
   }
 
   def messageAttachmentFor(
@@ -751,9 +747,9 @@ case class TestEventContext(
     SlackMessageMenu(name, text, options)
   }
 
-  def messageActionTextInputFor(
-                                 name: String
-                               ): MessageActionType = ???
+  def maybeMessageActionTextInputFor(
+                                       name: String
+                                     ): Option[MessageActionType] = None
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
