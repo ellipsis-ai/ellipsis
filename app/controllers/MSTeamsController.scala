@@ -178,17 +178,18 @@ class MSTeamsController @Inject() (
         } yield maybeTs
       }
     }
-    def isForDataTypeChoiceForDoneConversation: Future[Boolean] = {
-      maybeKeyMatching(DATA_TYPE_CHOICE).map { key =>
-        maybeConversationIdForCallbackId(DATA_TYPE_CHOICE, key).map { convoId =>
+    private def isForKeyForDoneConversations(keyName: String): Future[Boolean] = {
+      maybeKeyMatching(keyName).map { key =>
+        maybeConversationIdForCallbackId(keyName, key).map { convoId =>
           dataService.conversations.find(convoId).map { maybeConvo =>
             maybeConvo.exists(_.isDone)
           }
         }.getOrElse(Future.successful(false))
       }.getOrElse(Future.successful(false))
     }
-    def isForYesNoForDoneConversation: Future[Boolean] = Future.successful(false)
-    def isForTextInputForDoneConversation: Future[Boolean] = Future.successful(false)
+    def isForDataTypeChoiceForDoneConversation: Future[Boolean] = isForKeyForDoneConversations(DATA_TYPE_CHOICE)
+    def isForYesNoForDoneConversation: Future[Boolean] = isForKeyForDoneConversations(YES_NO_CHOICE)
+    def isForTextInputForDoneConversation: Future[Boolean] = isForKeyForDoneConversations(TEXT_INPUT)
     def isIncorrectTeam(botProfile: BotProfileType): Future[Boolean] = Future.successful(false)
     def isIncorrectUserTryingDataTypeChoice: Boolean = false
     def isIncorrectUserTryingYesNo: Boolean = false
