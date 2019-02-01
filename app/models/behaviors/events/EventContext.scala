@@ -747,9 +747,9 @@ case class TestEventContext(
     SlackMessageMenu(name, text, options)
   }
 
-  def messageActionTextInputFor(
-                                 name: String
-                               ): MessageActionType = ???
+  def maybeMessageActionTextInputFor(
+                                       name: String
+                                     ): Option[MessageActionType] = None
 
   def messageAttachmentFor(
                             maybeText: Option[String] = None,
