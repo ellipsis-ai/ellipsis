@@ -30,14 +30,16 @@ case class NoMediumApiMethodContext(
   val maybeTeam: Option[Team] = Some(team)
   val mediumText: String = "requests with no target medium"
 
+  val requiresChannel: Boolean = false
+
   def getFileFetchToken: Future[String] = Future.successful("no medium, no token")
 
-  def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType]): Future[Option[TestMessageEvent]] = {
+  def maybeBaseMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[TestMessageEvent]] = {
     Future.successful(Some(TestMessageEvent(TestEventContext(user, team), message, includesBotMention = true)))
   }
 
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeOriginalMessageId: Option[String]): Future[Option[Event]] = {
-    maybeBaseMessageEventFor(message, channel, maybeOriginalEventType).map { maybeBaseEvent =>
+  def maybeMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType], maybeOriginalMessageId: Option[String]): Future[Option[Event]] = {
+    maybeBaseMessageEventFor(message, maybeChannel, maybeOriginalEventType).map { maybeBaseEvent =>
       maybeBaseEvent.map { messageEvent =>
         val event: Event = maybeScheduledMessage.map { scheduledMessage =>
           ScheduledMessageTestEvent(messageEvent, scheduledMessage)
@@ -47,27 +49,27 @@ case class NoMediumApiMethodContext(
     }
   }
 
-  def runEventFor(
+  def maybeRunEventFor(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
-                   channel: String,
+                   maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[TestRunEvent] = {
-    Future.successful(
+                 ): Future[Option[Event]] = {
+    Future.successful(Some(
       TestRunEvent(
         TestEventContext(user, team),
         behaviorVersion,
         argumentsMap
       )
-    )
+    ))
   }
 
   def printEventCreationError(): Unit = {
     Logger.error(
       s"""Event creation likely failed for API no-medium context:
          |
-           |User ID: ${user.id}
+         |User ID: ${user.id}
          |Team ID: ${team.id}
          |""".stripMargin
     )

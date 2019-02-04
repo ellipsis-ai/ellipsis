@@ -53,7 +53,7 @@ class APIController @Inject() (
         )(RunActionArgumentInfo.apply)(RunActionArgumentInfo.unapply)
       ),
       "responseContext" -> nonEmptyText,
-      "channel" -> nonEmptyText,
+      "channel" -> optional(nonEmptyText),
       "token" -> nonEmptyText,
       "originalEventType" -> optional(nonEmptyText),
       "originalMessageId" -> optional(nonEmptyText)
@@ -68,13 +68,19 @@ class APIController @Inject() (
       info => {
         val eventualResult = for {
           context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
-          result <- info.actionName.map { name =>
-            context.runByName(name, info)
-          }.getOrElse {
-            info.trigger.map { trigger =>
-              context.runByTrigger(trigger, info)
-            }.getOrElse {
-              Future.successful(responder.badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
+          result <- {
+            if (context.requiresChannel && info.maybeChannel.isEmpty) {
+              Future.successful(responder.badRequest(Some(APIErrorData(s"To run actions for ${context.mediumText}, `channel` must be set", None)), None, Json.toJson(info)))
+            } else {
+              info.actionName.map { name =>
+                context.runByName(name, info)
+              }.getOrElse {
+                info.trigger.map { trigger =>
+                  context.runByTrigger(trigger, info)
+                }.getOrElse {
+                  Future.successful(responder.badRequest(Some(APIErrorData(actionNameAndTriggerError, None)), None, Json.toJson(info)))
+                }
+              }
             }
           }
         } yield result
@@ -220,7 +226,7 @@ class APIController @Inject() (
       info => {
         val eventualResult = for {
           context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
-          maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType), None)
+          maybeEvent <- context.maybeMessageEventFor(info.message, Some(info.channel), EventType.maybeFrom(info.originalEventType), None)
           result <- context.runBehaviorFor(maybeEvent, Right(info.message))
         } yield result
 
@@ -249,7 +255,7 @@ class APIController @Inject() (
       info => {
         val eventualResult = for {
           context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
-          maybeEvent <- context.maybeMessageEventFor(info.message, info.channel, EventType.maybeFrom(info.originalEventType), None)
+          maybeEvent <- context.maybeMessageEventFor(info.message, Some(info.channel), EventType.maybeFrom(info.originalEventType), None)
           result <- maybeEvent.map { event =>
             val botResult = SimpleTextResult(event, None, info.message, responseType = Normal, shouldInterrupt = false)
             botResultService.sendIn(botResult, None).map { _ =>

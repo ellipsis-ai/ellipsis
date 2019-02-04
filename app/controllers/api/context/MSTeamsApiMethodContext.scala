@@ -32,15 +32,17 @@ case class MSTeamsApiMethodContext(
 
   val mediumText: String = "MS Teams"
 
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[Event]] = ???
+  val requiresChannel: Boolean = true
 
-  def runEventFor(
+  def maybeMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[Event]] = ???
+
+  def maybeRunEventFor(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
-                   channel: String,
+                   maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[RunEvent] = ???
+                 ): Future[Option[Event]] = ???
 
   def getFileFetchToken: Future[String] = {
     val client = services.msTeamsApiService.profileClientFor(botProfile)
