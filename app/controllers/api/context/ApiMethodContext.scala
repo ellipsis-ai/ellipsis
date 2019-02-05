@@ -70,7 +70,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                    maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[Option[Event]]
+                 ): Future[Option[RunEvent]]
 
   def maybeRunEventForName(
                             actionName: String,

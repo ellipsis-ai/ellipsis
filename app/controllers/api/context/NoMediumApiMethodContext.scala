@@ -55,7 +55,7 @@ case class NoMediumApiMethodContext(
                    maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[Option[Event]] = {
+                 ): Future[Option[TestRunEvent]] = {
     Future.successful(Some(
       TestRunEvent(
         TestEventContext(user, team),

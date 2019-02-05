@@ -8,6 +8,7 @@ import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events._
+import models.behaviors.events.ms_teams.MSTeamsRunEvent
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
@@ -42,7 +43,7 @@ case class MSTeamsApiMethodContext(
                    maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[Option[Event]] = ???
+                 ): Future[Option[MSTeamsRunEvent]] = ???
 
   def getFileFetchToken: Future[String] = {
     val client = services.msTeamsApiService.profileClientFor(botProfile)

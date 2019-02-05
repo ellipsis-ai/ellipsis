@@ -96,7 +96,7 @@ case class SlackApiMethodContext(
                    maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[Option[Event]] = {
+                 ): Future[Option[SlackRunEvent]] = {
     for {
       maybeChannelToUse <- maybeSlackChannelIdFor(maybeChannel).map { maybeSlackChannelId =>
         maybeSlackChannelId.orElse(maybeChannel)
