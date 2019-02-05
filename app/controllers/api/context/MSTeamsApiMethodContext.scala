@@ -100,7 +100,7 @@ object MSTeamsApiMethodContext {
     } yield {
       for {
         botProfile <- maybeBotProfile
-        slackProfile <- maybeProfile
+        slackProfile <- maybeProfile // TODO: this is not a Slack Profile :D
       } yield {
         MSTeamsApiMethodContext(
           maybeInvocationToken,

@@ -122,7 +122,14 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
     for {
       maybeOriginatingBehaviorVersion <- maybeOriginatingBehaviorVersion
       maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
-      maybeEvent <- maybeRunEventForName(actionName, info.argumentsMap, info.maybeChannel, info.originalEventType.flatMap(EventType.find), maybeOriginatingBehaviorVersion, info.originalMessageId)
+      maybeEvent <- maybeRunEventForName(
+        actionName,
+        info.argumentsMap,
+        info.maybeChannel,
+        info.originalEventType.flatMap(EventType.find),
+        maybeOriginatingBehaviorVersion,
+        info.originalMessageId
+      )
       result <- (for {
         originatingBehaviorVersion <- maybeOriginatingBehaviorVersion
         behaviorVersion <- maybeBehaviorVersion

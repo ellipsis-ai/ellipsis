@@ -14,6 +14,8 @@ object ApiMethodContextBuilder {
                  services: DefaultServices,
                  responder: APIResponder
                )(implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[ApiMethodContext] = {
+    // TODO: This method uses subtle implicit logic to figure out which kind of context we're in
+    // It should instead use the responseContext parameter sent by the client
     SlackApiMethodContext.maybeCreateFor(token, services, responder).flatMap { maybeSlackMethodContext: Option[ApiMethodContext] =>
       maybeSlackMethodContext.map(Future.successful).getOrElse {
         MSTeamsApiMethodContext.maybeCreateFor(token, services, responder).flatMap { maybeSlackMethodContext: Option[ApiMethodContext] =>

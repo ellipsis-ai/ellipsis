@@ -70,7 +70,7 @@ class APIController @Inject() (
           context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
           result <- {
             if (context.requiresChannel && info.maybeChannel.isEmpty) {
-              Future.successful(responder.badRequest(Some(APIErrorData(s"To run actions for ${context.mediumText}, `channel` must be set", None)), None, Json.toJson(info)))
+              Future.successful(responder.badRequest(Some(APIErrorData(s"To run actions for ${context.mediumText}, `channel` must be set", Some("channel"))), None, Json.toJson(info)))
             } else {
               info.actionName.map { name =>
                 context.runByName(name, info)
