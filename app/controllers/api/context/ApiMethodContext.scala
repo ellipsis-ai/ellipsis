@@ -40,6 +40,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
   val maybeScheduledMessage: Option[ScheduledMessage]
   val maybeTeam: Option[Team]
   val isInvokedExternally: Boolean
+  val requiresChannel: Boolean
 
   def maybeOriginatingBehaviorVersion: Future[Option[BehaviorVersion]] = {
     maybeInvocationToken.map { invocationToken =>
@@ -56,20 +57,25 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
     } yield maybeBehaviorVersion
   }
 
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeOriginalMessageId: Option[String]): Future[Option[Event]]
+  def maybeMessageEventFor(
+                            message: String,
+                            maybeChannel: Option[String],
+                            maybeOriginalEventType: Option[EventType],
+                            maybeOriginalMessageId: Option[String]
+                          ): Future[Option[Event]]
 
-  def runEventFor(
+  def maybeRunEventFor(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
-                   channel: String,
+                   maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[Event]
+                 ): Future[Option[RunEvent]]
 
   def maybeRunEventForName(
                             actionName: String,
                             argumentsMap: Map[String, String],
-                            channel: String,
+                            maybeChannel: Option[String],
                             maybeOriginalEventType: Option[EventType],
                             maybeOriginatingBehaviorVersion: Option[BehaviorVersion],
                             maybeOriginalMessageId: Option[String]
@@ -77,7 +83,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
     for {
       maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
       maybeEvent <- maybeBehaviorVersion.map { behaviorVersion =>
-        runEventFor(behaviorVersion, argumentsMap, channel, maybeOriginalEventType, maybeOriginalMessageId).map(Some(_))
+        maybeRunEventFor(behaviorVersion, argumentsMap, maybeChannel, maybeOriginalEventType, maybeOriginalMessageId)
       }.getOrElse(Future.successful(None))
     } yield maybeEvent
   }
@@ -119,7 +125,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
       maybeEvent <- maybeRunEventForName(
         actionName,
         info.argumentsMap,
-        info.channel,
+        info.maybeChannel,
         info.originalEventType.flatMap(EventType.find),
         maybeOriginatingBehaviorVersion,
         info.originalMessageId
@@ -140,12 +146,13 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                     info: RunActionInfo
                   )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
-      maybeEvent <- maybeMessageEventFor(trigger, info.channel, EventType.maybeFrom(info.originalEventType), info.originalMessageId)
+      maybeEvent <- maybeMessageEventFor(trigger, info.maybeChannel, EventType.maybeFrom(info.originalEventType), info.originalMessageId)
       result <- runBehaviorFor(maybeEvent, Right(trigger))
     } yield result
   }
 
   val mediumText: String
+
   def notSupportedResult(apiMethod: String, details: JsValue)(implicit r: Request[AnyContent]): Future[Result] = {
     val message = s"This API method ($apiMethod) is not supported for ${mediumText}"
     Future.successful(responder.badRequest(Some(APIErrorData(message, None)), None, details))

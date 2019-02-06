@@ -5,7 +5,7 @@ case class RunActionInfo(
                           trigger: Option[String],
                           arguments: Seq[RunActionArgumentInfo],
                           responseContext: String,
-                          channel: String,
+                          maybeChannel: Option[String],
                           token: String,
                           originalEventType: Option[String],
                           originalMessageId: Option[String]

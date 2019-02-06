@@ -8,6 +8,7 @@ import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events._
+import models.behaviors.events.ms_teams.MSTeamsRunEvent
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
@@ -32,15 +33,17 @@ case class MSTeamsApiMethodContext(
 
   val mediumText: String = "MS Teams"
 
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[Event]] = ???
+  val requiresChannel: Boolean = true
 
-  def runEventFor(
+  def maybeMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[Event]] = ???
+
+  def maybeRunEventFor(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
-                   channel: String,
+                   maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[RunEvent] = ???
+                 ): Future[Option[MSTeamsRunEvent]] = ???
 
   def getFileFetchToken: Future[String] = {
     val client = services.msTeamsApiService.profileClientFor(botProfile)
@@ -98,7 +101,7 @@ object MSTeamsApiMethodContext {
     } yield {
       for {
         botProfile <- maybeBotProfile
-        slackProfile <- maybeProfile
+        slackProfile <- maybeProfile // TODO: this is not a Slack Profile :D
       } yield {
         MSTeamsApiMethodContext(
           maybeInvocationToken,

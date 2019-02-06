@@ -23,6 +23,7 @@ import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.recurrence.Daily
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
+import models.behaviors.testing.TestMessageEvent
 import models.behaviors.{BotResult, BotResultService, SimpleTextResult}
 import models.team.Team
 import org.mockito.Matchers._
@@ -49,7 +50,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
                           event: Event
                         )
 
-  def setUpMocksFor(
+  def setUpMocksForSlack(
                      team: Team,
                      user: User,
                      isTokenValid: Boolean,
@@ -119,6 +120,54 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     token
   }
 
+  def setupMocksForNoMedium(
+                             team: Team,
+                             user: User,
+                             isTokenValid: Boolean,
+                             maybeTokenBehaviorId: Option[String],
+                             app: Application,
+                             eventHandler: EventHandler,
+                             dataService: DataService,
+                             cacheService: CacheService,
+                             botResultService: BotResultService,
+                             now: OffsetDateTime = OffsetDateTime.now
+                           )(implicit ec: ExecutionContext) = {
+    val token = IDs.next
+    when(dataService.apiTokens.find(token)).thenReturn(Future.successful(None))
+    val behaviorId = maybeTokenBehaviorId.getOrElse(IDs.next)
+    val maybeInvocationToken = if (isTokenValid) {
+      Some(InvocationToken(token, user.id, behaviorId, None, Some(team.id), now))
+    } else {
+      None
+    }
+    val maybeUserForToken = maybeInvocationToken.map(_ => user)
+    when(dataService.invocationTokens.findNotExpired(token)).thenReturn(Future.successful(maybeInvocationToken))
+    when(dataService.users.findForInvocationToken(token)).thenReturn(Future.successful(maybeUserForToken))
+    when(dataService.teams.find(user.teamId)).thenReturn(Future.successful(Some(team)))
+    when(dataService.apiTokens.maybeUserForApiToken(token)).thenReturn(Future.successful(maybeUserForToken))
+    val apiController = app.injector.instanceOf(classOf[APIController])
+    implicit val actorSystem = apiController.actorSystem
+
+    val event = TestMessageEvent(
+      TestEventContext(user, team),
+      "foo",
+      includesBotMention = true
+    )
+    when(dataService.slackBotProfiles.allForSlackTeamId(any[String])).thenReturn(Future.successful(Seq()))
+    val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)
+    val slackProfile = SlackProfile(SlackUserTeamIds(defaultSlackTeamId), loginInfo, None)
+    when(dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(Some(slackProfile)))
+    when(dataService.users.maybeMSTeamsProfileFor(user)).thenReturn(Future.successful(None))
+    when(dataService.msTeamsBotProfiles.find(any[String])).thenReturn(Future.successful(None))
+
+    when(dataService.conversations.allOngoingFor(event.eventContext, None)).thenReturn(Future.successful(Seq()))
+    when(eventHandler.handle(any[Event], org.mockito.Matchers.eq(None))).thenReturn(Future.successful(Seq(SimpleTextResult(event, None, "result", responseType = Normal))))
+
+    when(botResultService.sendIn(any[BotResult], any[Option[Boolean]])(any[ActorSystem])).thenReturn(Future.successful(None))
+
+    token
+  }
+
   val defaultContext = "slack"
   val defaultChannel = "C1234567"
   val defaultSlackTeamId = "T1234567"
@@ -149,7 +198,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 for invalid token" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = postMessageBodyFor("foo", defaultChannel, token)
         val request = FakeRequest(controllers.api.routes.APIController.postMessage()).withJsonBody(body)
         val result = route(app, request).get
@@ -161,7 +210,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = true, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = postMessageBodyFor("foo", defaultChannel, token)
         val request = FakeRequest(controllers.api.routes.APIController.postMessage()).withJsonBody(body)
         val result = route(app, request).get
@@ -184,12 +233,13 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
   def runActionBodyFor(
                         maybeActionName: Option[String],
                         maybeTrigger: Option[String],
-                        channel: String,
-                        token: String
+                        maybeChannel: Option[String],
+                        token: String,
+                        maybeResponseContext: Option[String] = None
                       ): JsValue = {
     var elements = Seq(
-      ("responseContext", JsString(defaultContext)),
-      ("channel", JsString(channel)),
+      ("responseContext", JsString(maybeResponseContext.getOrElse(defaultContext))),
+      ("channel", maybeChannel.map(JsString(_)).getOrElse(JsNull)),
       ("token", JsString(token))
     )
     maybeActionName.foreach { actionName =>
@@ -206,8 +256,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 for invalid token" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
-        val body = runActionBodyFor(Some("foo"), None, defaultChannel, token)
+        val token = setUpMocksForSlack(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val body = runActionBodyFor(Some("foo"), None, Some(defaultChannel), token)
         val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
@@ -220,9 +270,9 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
 
-        val body = runActionBodyFor(None, None, defaultChannel, token)
+        val body = runActionBodyFor(None, None, Some(defaultChannel), token)
         val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
@@ -234,13 +284,27 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
 
-        val body = runActionBodyFor(Some("foo"), Some("bar"), defaultChannel, token)
+        val body = runActionBodyFor(Some("foo"), Some("bar"), Some(defaultChannel), token)
         val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe BAD_REQUEST
         maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("One and only one of actionName and trigger must be set", None))
+      }
+    }
+
+    "400 when channel is missing for Slack" in new ControllerTestContext {
+      running(app) {
+        val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
+        val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+
+        val body = runActionBodyFor(Some("foo"), None, None, token)
+        val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
+        val result = route(app, request).get
+        status(result) mustBe BAD_REQUEST
+        maybeErrorFrom(contentAsJson(result)) mustEqual Some(APIErrorData("To run actions for Slack, `channel` must be set", Some("channel")))
       }
     }
 
@@ -251,13 +315,43 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
         val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val actionName = "foo"
         when(dataService.behaviorVersions.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
         when(dataService.behaviorVersions.findWithoutAccessCheck(originatingBehaviorVersion.id)).thenReturn(Future.successful(Some(originatingBehaviorVersion)))
         when(dataService.behaviorVersions.findByName(actionName, groupVersion)).thenReturn(Future.successful(Some(targetBehaviorVersion)))
 
-        val body = runActionBodyFor(Some(actionName), None, defaultChannel, token)
+        val body = runActionBodyFor(Some(actionName), None, Some(defaultChannel), token)
+        val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
+        val result = route(app, request).get
+        status(result) mustBe OK
+        val resultJson = contentAsJson(result)
+        resultJson.validate[Seq[String]] match {
+          case JsSuccess(data, jsPath) => {
+            data must have length 1
+            data.head mustBe "result"
+          }
+          case JsError(e) => {
+            assert(false, "Result didn't validate")
+          }
+        }
+      }
+    }
+
+    "respond with a valid result for actionName without channel for NoMediumApiContext" in new ControllerTestContext {
+      running(app) {
+        val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
+        val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
+        val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
+        val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
+        val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
+        val token = setupMocksForNoMedium(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, botResultService)
+        val actionName = "foo"
+        when(dataService.behaviorVersions.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
+        when(dataService.behaviorVersions.findWithoutAccessCheck(originatingBehaviorVersion.id)).thenReturn(Future.successful(Some(originatingBehaviorVersion)))
+        when(dataService.behaviorVersions.findByName(actionName, groupVersion)).thenReturn(Future.successful(Some(targetBehaviorVersion)))
+
+        val body = runActionBodyFor(Some(actionName), None, Some(defaultChannel), token, Some("test"))
         val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
@@ -278,10 +372,10 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val trigger = "foo"
 
-        val body = runActionBodyFor(None, Some(trigger), defaultChannel, token)
+        val body = runActionBodyFor(None, Some(trigger), Some(defaultChannel), token)
         val request = FakeRequest(controllers.api.routes.APIController.runAction()).withJsonBody(body)
         val result = route(app, request).get
         status(result) mustBe OK
@@ -305,7 +399,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 for invalid token" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = postMessageBodyFor("foo", defaultChannel, token)
         val request = FakeRequest(controllers.api.routes.APIController.say()).withJsonBody(body)
         val result = route(app, request).get
@@ -317,7 +411,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "respond with a valid result" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = true, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val message = "foo"
         val body = postMessageBodyFor(message, defaultChannel, token)
         val request = FakeRequest(controllers.api.routes.APIController.say()).withJsonBody(body)
@@ -363,7 +457,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 for invalid token" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = scheduleActionBodyFor(Some("foo"), None, defaultChannel, "every day at noon", token)
         val request = FakeRequest(controllers.api.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
@@ -375,7 +469,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 when neither actionName nor trigger is supplied" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = scheduleActionBodyFor(None, None, defaultChannel, "every day at noon", token)
         val request = FakeRequest(controllers.api.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
@@ -386,7 +480,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 when both actionName and trigger are supplied" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = scheduleActionBodyFor(Some("foo"), Some("bar"), defaultChannel, "every day at noon", token)
         val request = FakeRequest(controllers.api.routes.APIController.scheduleAction()).withJsonBody(body)
         val result = route(app, request).get
@@ -402,7 +496,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
         val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val actionName = "foo"
 
         val recurrenceString = "every day at noon"
@@ -444,7 +538,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val trigger = "foo"
         val recurrenceString = "every day at noon"
         when(dataService.users.ensureUserFor(any[LoginInfo], any[Seq[LoginInfo]], anyString)).thenReturn(Future.successful(user))
@@ -505,7 +599,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 for invalid token" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = unscheduleActionBodyFor(Some("foo"), None, None, None, token)
         val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
@@ -517,7 +611,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 for neither actionName nor trigger" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = unscheduleActionBodyFor(None, None, None, None, token)
         val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
@@ -528,7 +622,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 for both actionName and trigger" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = unscheduleActionBodyFor(Some("foo"), Some("bar"), None, None, token)
         val request = FakeRequest(controllers.api.routes.APIController.unscheduleAction()).withJsonBody(body)
         val result = route(app, request).get
@@ -544,7 +638,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
         val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val actionName = "foo"
 
         when(dataService.behaviorVersions.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
@@ -567,7 +661,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
       val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
       val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
-      val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+      val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
       val actionName = "foo"
 
       when(dataService.behaviorVersions.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
@@ -589,7 +683,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
         val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val actionName = "foo"
 
         when(dataService.behaviorVersions.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
@@ -628,7 +722,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
         val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
         val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehaviorVersion.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val actionName = "foo"
 
         when(dataService.behaviorVersions.findWithoutAccessCheck(any[String])).thenReturn(Future.successful(None))
@@ -651,7 +745,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val group = BehaviorGroup(IDs.next, None, team, OffsetDateTime.now)
         val originatingBehavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(originatingBehavior.id), app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val trigger = "foo"
         when(dataService.users.ensureUserFor(any[LoginInfo], any[Seq[LoginInfo]], anyString)).thenReturn(Future.successful(user))
         val scheduledMessage = ScheduledMessage(
@@ -685,7 +779,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
 
     "400 for invalid token" in new ControllerTestContext {
       running(app) {
-        val token = setUpMocksFor(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
+        val token = setUpMocksForSlack(team, user, isTokenValid = false, None, app, eventHandler, dataService, cacheService, slackEventService, botResultService)
         val body = JsObject(Seq(
           ("token", JsString(token))
         ))
@@ -701,7 +795,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val tokenBehaviorId = IDs.next
         val now = OffsetDateTime.now
-        val token = setUpMocksFor(team, user, isTokenValid = true, Some(tokenBehaviorId), app, eventHandler, dataService, cacheService, slackEventService, botResultService, now)
+        val token = setUpMocksForSlack(team, user, isTokenValid = true, Some(tokenBehaviorId), app, eventHandler, dataService, cacheService, slackEventService, botResultService, now)
         val invocationToken = InvocationToken(token, defaultSlackUserId, tokenBehaviorId, None, Some(defaultSlackTeamId), now)
         val newToken = APIToken(IDs.next, IDs.next, user.id, None, isOneTime = false, isRevoked = false, None, OffsetDateTime.now)
         when(dataService.apiTokens.createFor(invocationToken, None, false)).thenReturn(Future.successful(newToken))
