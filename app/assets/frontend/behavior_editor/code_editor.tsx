@@ -133,12 +133,20 @@ class CodeEditor extends React.Component<Props> {
       fontSize: EDITOR_FONT_SIZE,
       lineHeight: EDITOR_LINE_HEIGHT,
       fontFamily: "Source Code Pro",
+      hover: {
+        delay: 500
+      },
       lineNumbers: (lineNumber: number) => String(lineNumber + this.props.firstLineNumber - 1),
       minimap: {
         enabled: false
       },
+      parameterHints: {
+        enabled: false
+      },
+      quickSuggestionsDelay: 500,
+      roundedSelection: false,
       wordWrap: this.wordWrapOptionFor(this.props.lineWrapping),
-      scrollBeyondLastLine: false,
+      scrollBeyondLastLine: false
     }, this.props.monacoOptions);
   }
 
