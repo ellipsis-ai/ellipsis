@@ -188,7 +188,7 @@ class BehaviorEditor extends React.Component<Props, State> {
 
     this.resetNotificationsEventually = debounce(() => {
       this.resetNotificationsImmediately();
-    }, 500);
+    }, 1000);
 
     this.state = {
       group: this.props.group,
@@ -452,21 +452,23 @@ class BehaviorEditor extends React.Component<Props, State> {
   }
 
   buildEnvVarNotifications(): Array<EnvVarMissingNotificationData> {
-    const selectedBehavior = this.getSelectedBehavior();
+    const group = this.getBehaviorGroup();
+    const editables = ([] as Array<Editable>).concat(group.behaviorVersions, group.libraryVersions);
     const existingEnvVars = this.getEnvVariables();
-    if (selectedBehavior) {
-      return selectedBehavior.getEnvVarNamesInFunction().filter((varName) => {
+    const allUnSetEnvVars: Set<string> = new Set();
+    editables.forEach((editable) => {
+      const unSetEnvVars = editable.getEnvVarNamesInFunction().filter((varName) => {
         const existingVar = existingEnvVars.find((ea) => ea.name === varName);
         return !existingVar || !existingVar.isAlreadySavedWithValue;
-      }).map((varName) => new EnvVarMissingNotificationData({
-        environmentVariableName: varName,
-        onClick: () => {
-          this.showEnvVariableSetter(varName);
-        }
-      }));
-    } else {
-      return [];
-    }
+      });
+      unSetEnvVars.forEach((ea) => allUnSetEnvVars.add(ea));
+    });
+    return Array.from(allUnSetEnvVars).map((varName) => new EnvVarMissingNotificationData({
+      environmentVariableName: varName,
+      onClick: () => {
+        this.showEnvVariableSetter(varName);
+      }
+    }));
   }
 
   getRequiredAWSConfigsWithNoMatchingAWSConfig(): Array<RequiredAWSConfig> {
