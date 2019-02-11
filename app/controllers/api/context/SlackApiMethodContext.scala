@@ -42,37 +42,45 @@ case class SlackApiMethodContext(
 
   val mediumText: String = "Slack"
 
-  def maybeSlackChannelIdFor(channel: String): Future[Option[String]] = {
-    dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
+  val requiresChannel: Boolean = true
+
+  def maybeSlackChannelIdFor(maybeChannel: Option[String]): Future[Option[String]] = {
+    maybeChannel.map { channel =>
+      dataService.slackBotProfiles.channelsFor(botProfile).maybeIdFor(channel)
+    }.getOrElse(Future.successful(None))
   }
 
-  def messageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[SlackMessageEvent] = {
-    maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
-      SlackMessageEvent(
-        SlackEventContext(
-          botProfile,
-          maybeSlackChannelId.getOrElse(channel),
+  def maybeBaseMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[SlackMessageEvent]] = {
+    maybeSlackChannelIdFor(maybeChannel).map { maybeSlackChannelId =>
+      val maybeChannelToUse = maybeSlackChannelId.orElse(maybeChannel)
+      maybeChannelToUse.map { channel =>
+        SlackMessageEvent(
+          SlackEventContext(
+            botProfile,
+            maybeSlackChannelId.getOrElse(channel),
+            None,
+            slackProfile.loginInfo.providerKey
+          ),
+          SlackMessage.fromUnformattedText(message, botProfile),
           None,
-          slackProfile.loginInfo.providerKey
-        ),
-        SlackMessage.fromUnformattedText(message, botProfile),
-        None,
-        maybeMessageTs.getOrElse(SlackTimestamp.now),
-        maybeOriginalEventType,
-        isUninterruptedConversation = false,
-        isEphemeral = false,
-        None,
-        beQuiet = false
-      )
+          maybeMessageTs.getOrElse(SlackTimestamp.now),
+          maybeOriginalEventType,
+          isUninterruptedConversation = false,
+          isEphemeral = false,
+          None,
+          beQuiet = false
+        )
+      }
     }
   }
 
-  def maybeBaseMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[SlackMessageEvent]] = {
-    messageEventFor(message, channel, maybeOriginalEventType, maybeMessageTs).map(Some(_))
-  }
-
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[Event]] = {
-    maybeBaseMessageEventFor(message, channel, maybeOriginalEventType, maybeMessageTs).map { maybeBaseEvent =>
+  def maybeMessageEventFor(
+                            message: String,
+                            maybeChannel: Option[String],
+                            maybeOriginalEventType: Option[EventType],
+                            maybeMessageTs: Option[String]
+                          ): Future[Option[Event]] = {
+    maybeBaseMessageEventFor(message, maybeChannel, maybeOriginalEventType, maybeMessageTs).map { maybeBaseEvent =>
       maybeBaseEvent.map { messageEvent =>
         val event: Event = maybeScheduledMessage.map { scheduledMessage =>
           ScheduledMessageSlackEvent(messageEvent, scheduledMessage)
@@ -82,28 +90,34 @@ case class SlackApiMethodContext(
     }
   }
 
-  def runEventFor(
+  def maybeRunEventFor(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
-                   channel: String,
+                   maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[SlackRunEvent] = {
-    maybeSlackChannelIdFor(channel).map { maybeSlackChannelId =>
-      SlackRunEvent(
-        SlackEventContext(
-          botProfile,
-          maybeSlackChannelId.getOrElse(channel),
+                 ): Future[Option[SlackRunEvent]] = {
+    for {
+      maybeChannelToUse <- maybeSlackChannelIdFor(maybeChannel).map { maybeSlackChannelId =>
+        maybeSlackChannelId.orElse(maybeChannel)
+      }
+    } yield {
+      maybeChannelToUse.map { channel =>
+        SlackRunEvent(
+          SlackEventContext(
+            botProfile,
+            channel,
+            None,
+            slackProfile.loginInfo.providerKey
+          ),
+          behaviorVersion,
+          argumentsMap,
+          maybeOriginalEventType,
+          isEphemeral = false,
           None,
-          slackProfile.loginInfo.providerKey
-        ),
-        behaviorVersion,
-        argumentsMap,
-        maybeOriginalEventType,
-        isEphemeral = false,
-        None,
-        maybeTriggeringMessageId
-      )
+          maybeTriggeringMessageId
+        )
+      }
     }
   }
 
@@ -157,7 +171,7 @@ case class SlackApiMethodContext(
                                info: ScheduleActionInfo
                              )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
-      maybeSlackChannelId <- maybeSlackChannelIdFor(info.channel)
+      maybeSlackChannelId <- maybeSlackChannelIdFor(Some(info.channel))
       maybeOriginatingBehaviorVersion <- maybeOriginatingBehaviorVersion
       maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
       result <- (for {
@@ -204,7 +218,7 @@ case class SlackApiMethodContext(
                                   info: ScheduleActionInfo
                                 )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
-      maybeSlackChannelId <- maybeSlackChannelIdFor(info.channel)
+      maybeSlackChannelId <- maybeSlackChannelIdFor(Some(info.channel))
       maybeScheduled <- (for {
         team <- maybeTeam
         user <- maybeUser
@@ -238,7 +252,7 @@ case class SlackApiMethodContext(
                                )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
       maybeSlackChannelId <- info.channel.map { channel =>
-        maybeSlackChannelIdFor(channel)
+        maybeSlackChannelIdFor(Some(channel))
       }.getOrElse(Future.successful(info.channel))
       maybeOriginatingBehaviorVersion <- maybeOriginatingBehaviorVersion
       maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
@@ -285,7 +299,7 @@ case class SlackApiMethodContext(
                                   )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
       maybeSlackChannelId <- info.channel.map { channel =>
-        maybeSlackChannelIdFor(channel)
+        maybeSlackChannelIdFor(Some(channel))
       }.getOrElse(Future.successful(info.channel))
       maybeUser <- info.userId.map { userId =>
         dataService.users.find(userId)
@@ -352,7 +366,7 @@ case class SlackApiMethodContext(
     Logger.error(
       s"""Event creation likely failed for API context:
          |
-           |Slack bot profile ID: ${botProfile.userId}
+         |Slack bot profile ID: ${botProfile.userId}
          |Slack user profile ID: ${slackProfile.loginInfo.providerID}
          |""".stripMargin
     )

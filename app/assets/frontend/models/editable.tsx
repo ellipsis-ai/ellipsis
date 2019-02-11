@@ -125,6 +125,22 @@ abstract class Editable implements EditableInterface {
         this.getDescription().toLowerCase().includes(lowercase);
     }
 
+    getFunctionBody(): string {
+      return this.functionBody || "";
+    }
+
+    getEnvVarNamesInFunction(): Array<string> {
+      const vars: Set<string> = new Set();
+      const body = this.getFunctionBody();
+      const matches = body.match(/ellipsis\.env\.([A-Z_][0-9A-Z_]*)/g);
+      if (matches) {
+        matches.forEach((match) => {
+          vars.add(match.replace(/^ellipsis\.env\./, ""));
+        });
+      }
+      return Array.from(vars);
+    }
+
     abstract getPersistentId(): string
 
     abstract buildUpdatedGroupFor<T extends EditableInterface>(group: BehaviorGroup, props: Partial<T>): BehaviorGroup

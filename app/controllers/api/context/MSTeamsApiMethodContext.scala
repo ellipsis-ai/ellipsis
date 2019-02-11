@@ -34,40 +34,46 @@ case class MSTeamsApiMethodContext(
 
   val mediumText: String = "MS Teams"
 
-  def maybeMessageEventFor(message: String, channel: String, maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[Event]] = ???
+  val requiresChannel: Boolean = true
 
-  def runEventFor(
+  def maybeMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[Event]] = ???
+
+  def maybeRunEventFor(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
-                   channel: String,
+                   maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[RunEvent] = {
+                 ): Future[Option[MSTeamsRunEvent]] = {
     val client = services.msTeamsApiService.profileClientFor(botProfile)
     client.getApplicationInfo.map { maybeAppInfo =>
-      println(maybeAppInfo)
-      MSTeamsRunEvent(
-        MSTeamsEventContext(
-          botProfile,
-          FirstMessageInfo(
-            MessageParticipantInfo(profile.msTeamsUserId, "", None),
-            MessageParticipantInfo(client.botIdWithPrefix, maybeAppInfo.get.displayName, None),
-            ChannelDataInfo(
-              None,
-              Some(TenantInfo(botProfile.tenantId)),
-              Some(ChannelDataChannel(channel, None)),
-              Some(ChannelDataTeam(botProfile.teamIdForContext, None))
-            ),
-            "personal"
-          )
-        ),
-        behaviorVersion,
-        argumentsMap,
-        maybeOriginalEventType,
-        isEphemeral = false,
-        None,
-        maybeTriggeringMessageId
-      )
+      for {
+        appInfo <- maybeAppInfo
+        channel <- maybeChannel
+      } yield {
+        MSTeamsRunEvent(
+          MSTeamsEventContext(
+            botProfile,
+            FirstMessageInfo(
+              MessageParticipantInfo(profile.msTeamsUserId, "", None),
+              MessageParticipantInfo(client.botIdWithPrefix, appInfo.displayName, None),
+              ChannelDataInfo(
+                None,
+                Some(TenantInfo(botProfile.tenantId)),
+                Some(ChannelDataChannel(channel, None)),
+                Some(ChannelDataTeam(botProfile.teamIdForContext, None))
+              ),
+              "personal"
+            )
+          ),
+          behaviorVersion,
+          argumentsMap,
+          maybeOriginalEventType,
+          isEphemeral = false,
+          None,
+          maybeTriggeringMessageId
+        )
+      }
     }
   }
 
@@ -127,7 +133,7 @@ object MSTeamsApiMethodContext {
     } yield {
       for {
         botProfile <- maybeBotProfile
-        slackProfile <- maybeProfile
+        slackProfile <- maybeProfile // TODO: this is not a Slack Profile :D
       } yield {
         MSTeamsApiMethodContext(
           maybeInvocationToken,
