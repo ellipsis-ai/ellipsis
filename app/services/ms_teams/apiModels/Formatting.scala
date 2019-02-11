@@ -95,4 +95,7 @@ object Formatting {
   lazy implicit val mailBoxSettingsFormat: Format[MailBoxSettings] = Json.format[MailBoxSettings]
   lazy implicit val userFormat: Format[MSTeamsUser] = Json.format[MSTeamsUser]
 
+  lazy implicit val memberDetailsFormat: Format[MemberDetails] = Json.format[MemberDetails]
+  lazy implicit val firstMessagePayloadFormat: Format[FirstMessagePayload] = Json.format[FirstMessagePayload]
+
 }

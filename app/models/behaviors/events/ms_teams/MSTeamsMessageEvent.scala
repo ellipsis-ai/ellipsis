@@ -60,7 +60,7 @@ case class MSTeamsMessageEvent(
 
   val messageText: String = message
 
-  val botMentionRegex = s"""(?:<at>${eventContext.info.recipient.name}</at>)*(?:<span itemscope="" itemtype="http://schema.skype.com/Mention" itemid="\\d+">${eventContext.info.recipient.name}</span>)*"""
+  val botMentionRegex = s"""(?:<at>${eventContext.info.botParticipant.name}</at>)*(?:<span itemscope="" itemtype="http://schema.skype.com/Mention" itemid="\\d+">${eventContext.info.botParticipant.name}</span>)*"""
 
   override val relevantMessageText: String = {
     message.replaceAll(botMentionRegex, "").trim

@@ -22,7 +22,7 @@ object ResponseInfo {
   def newForMessage(
                      from: MessageParticipantInfo,
                      conversation: ConversationAccount,
-                     recipient: MessageParticipantInfo,
+                     maybeRecipient: Option[MessageParticipantInfo],
                      text: String,
                      textFormat: String,
                      maybeReplyToId: Option[String],
@@ -32,7 +32,7 @@ object ResponseInfo {
     val collector = new MentionCollector()
     node.accept(collector)
     val mentionStrings = collector.mentionStrings
-    val entities = Seq(from.toMentionEntity, recipient.toMentionEntity).flatMap{ ea =>
+    val entities = Seq(Some(from.toMentionEntity), maybeRecipient.map(_.toMentionEntity)).flatten.flatMap{ ea =>
       if (mentionStrings.contains(ea.text)) {
         Some(ea)
       } else {
@@ -43,7 +43,7 @@ object ResponseInfo {
       "message",
       from,
       conversation,
-      Some(recipient),
+      maybeRecipient,
       Some(text),
       Some(textFormat),
       maybeReplyToId,

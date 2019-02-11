@@ -19,7 +19,7 @@ import models.team.Team
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import services.caching.SlackMessagePermalinkCacheKey
-import services.ms_teams.apiModels.ActivityInfo
+import services.ms_teams.apiModels.{ActivityInfo, EventInfo}
 import services.slack.SlackApiError
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -425,7 +425,7 @@ object SlackEventContext {
 
 case class MSTeamsEventContext(
                               profile: MSTeamsBotProfile,
-                              info: ActivityInfo
+                              info: EventInfo
                               ) extends EventContext {
 
   override type MessageAttachmentType = MSTeamsMessageAttachment
@@ -436,21 +436,17 @@ case class MSTeamsEventContext(
 
   val name: String = MSTeamsContext.name
   val description: String = MSTeamsContext.description
-  val userIdForContext: String = info.from.id
+  val userIdForContext: String = info.userIdForContext
   val teamIdForContext: String = profile.teamIdForContext
   val ellipsisTeamId: String = profile.teamId
-  val botUserIdForContext: String = info.recipient.id
+  val botUserIdForContext: String = info.botUserIdForContext
 
-  def loginInfo: LoginInfo = LoginInfo(Conversation.MS_TEAMS_CONTEXT, info.from.id)
-  def otherLoginInfos: Seq[LoginInfo] = info.from.aadObjectId.map(id => LoginInfo(Conversation.MS_AAD_CONTEXT, id)).toSeq
+  def loginInfo: LoginInfo = LoginInfo(Conversation.MS_TEAMS_CONTEXT, info.userIdForContext)
+  def otherLoginInfos: Seq[LoginInfo] = info.aadObjectId.map(id => LoginInfo(Conversation.MS_AAD_CONTEXT, id)).toSeq
 
-  val isDirectMessage: Boolean = {
-    info.conversation.conversationType == "personal"
-  }
-  val isPublicChannel: Boolean = {
-    info.conversation.conversationType == "channel"
-  }
-  val channel: String = info.conversation.id
+  val isDirectMessage: Boolean = info.isDirectMessage
+  val isPublicChannel: Boolean = info.isPublicChannel
+  val channel: String = info.channel
   val maybeChannel: Option[String] = Some(channel)
 
   val fallbackBotPrefix: String = "EllipsisAi"
@@ -461,7 +457,7 @@ case class MSTeamsEventContext(
 
   def maybeUserIdForContext: Option[String] = Some(userIdForContext)
 
-  def maybeThreadId: Option[String] = Some(info.conversation.id)
+  def maybeThreadId: Option[String] = Some(info.channel)
 
   def eventualMaybeDMChannel(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(None)
@@ -482,7 +478,7 @@ case class MSTeamsEventContext(
   }
 
   def maybeChannelDataForAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Channel]] = {
-    DBIO.successful(Some(Channel(channel, info.conversation.name, None, None))) // TODO: flesh this out
+    DBIO.successful(Some(Channel(channel, info.channelName, None, None))) // TODO: flesh this out
   }
 
   def maybeChannelForSendAction(
@@ -493,7 +489,7 @@ case class MSTeamsEventContext(
     DBIO.successful(None)
   }
 
-  val maybeResponseUrl: Option[String] = Some(info.responseUrl)
+  val maybeResponseUrl: Option[String] = info.maybeResponseUrl
 
   def sendMessage(
                    event: Event,
