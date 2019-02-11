@@ -139,19 +139,39 @@ case class MSTeamsMessageSender(
           maybeReplyToId,
           maybeAttachments
         )
-        client.postToResponseUrl(activityInfo.responseUrlFor(conversation.id, maybeReplyToId), Json.toJson(response)).recover(postErrorRecovery(activityInfo, text))
+        client.postToResponseUrl(
+          activityInfo.responseUrlFor(conversation.id, maybeReplyToId),
+          Json.toJson(response)
+        ).recover(postErrorRecovery(activityInfo.conversation.id, text))
       }
       case firstMessageInfo: FirstMessageInfo => {
         val botParticipant = firstMessageInfo.botParticipant
-        client.postNewMessage(
-          firstMessageInfo.serviceUrl,
-          FirstMessagePayload(
-            MemberDetails.fromParticipant(botParticipant),
-            isGroup = false,
-            firstMessageInfo.maybeUserParticipant.map(MemberDetails.fromParticipant).toSeq,
-            firstMessageInfo.channelData.copy(channel = None, team = None)
+        for {
+          convoId <- client.startConversation(
+            firstMessageInfo.serviceUrl,
+            StartConversationPayload(
+              MemberDetails.fromParticipant(botParticipant),
+              isGroup = false,
+              firstMessageInfo.maybeUserParticipant.map(MemberDetails.fromParticipant).toSeq,
+              firstMessageInfo.channelData.copy(channel = None, team = None)
+            )
           )
-        )
+          result <- {
+            val response = ResponseInfo.newForMessage(
+              firstMessageInfo.botParticipant,
+              ConversationAccount(convoId, Some(firstMessageInfo.isPublicChannel), None, firstMessageInfo.conversationType),
+              firstMessageInfo.maybeUserParticipant,
+              text,
+              "markdown",
+              maybeReplyToId,
+              maybeAttachments
+            )
+            client.postToResponseUrl(
+              s"${firstMessageInfo.serviceUrl}/v3/conversations/$convoId/activities",
+              Json.toJson(response)
+            ).recover(postErrorRecovery(convoId, text))
+          }
+        } yield result
       }
     }
   }
@@ -267,8 +287,8 @@ case class MSTeamsMessageSender(
     } yield maybeLastTs
   }
 
-  private def postErrorRecovery[U](info: ActivityInfo, text: String): PartialFunction[Throwable, U] = {
-    case t: Throwable => throw MSTeamsMessageSenderException(t, info.conversation.id, teamIdForContext, user, text)
+  private def postErrorRecovery[U](convoId: String, text: String): PartialFunction[Throwable, U] = {
+    case t: Throwable => throw MSTeamsMessageSenderException(t, convoId, teamIdForContext, user, text)
   }
 }
 
