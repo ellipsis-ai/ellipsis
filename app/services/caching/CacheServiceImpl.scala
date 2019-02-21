@@ -18,7 +18,7 @@ import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events._
 import models.behaviors.events.slack.{SlackFile, SlackMessage, SlackMessageEvent}
 import play.api.Logger
-import play.api.cache.SyncCacheApi
+import play.api.cache.{AsyncCacheApi, SyncCacheApi}
 import play.api.libs.json._
 import sangria.schema.Schema
 import services.ms_teams.apiModels.{Application, MSTeamsUser}
@@ -53,7 +53,7 @@ case class InvokeResultData(
 
 @Singleton
 class CacheServiceImpl @Inject() (
-                                   cache: SyncCacheApi, // TODO: change to async
+                                   cache: AsyncCacheApi,
                                    slackEventServiceProvider: Provider[SlackEventService],
                                    msTeamsApiServiceProvider: Provider[MSTeamsApiService],
                                    implicit val ec: ExecutionContext,
@@ -79,22 +79,24 @@ class CacheServiceImpl @Inject() (
   val defaultStorageSchemaExpiry: Duration = 10.seconds
   val dataTypeBotResultsExpiry: Duration = 24.hours
 
-  def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Unit = {
+  def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Future[Unit] = {
     if (key.getBytes().length <= MAX_KEY_LENGTH) {
-      cache.set(key, value, expiration)
+      cache.set(key, value, expiration).map(_ => {})
+    } else {
+      Future.successful({})
     }
   }
 
-  def get[T : ClassTag](key: String): Option[T] = {
+  def get[T : ClassTag](key: String): Future[Option[T]] = {
     if (key.getBytes().length <= MAX_KEY_LENGTH) {
       cache.get[T](key)
     } else {
-      None
+      Future.successful(None)
     }
   }
 
-  def hasKey(key: String): Boolean = {
-    cache.get(key).isDefined
+  def hasKey(key: String): Future[Boolean] = {
+    cache.get(key).map(_.isDefined)
   }
 
   def remove(key: String) = {
@@ -124,28 +126,30 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def getEvent(key: String): Option[SlackMessageEvent] = {
-    get[JsValue](key).flatMap { eventJson =>
-      eventJson.validate[SlackMessageEventData] match {
-        case JsSuccess(event, _) => {
-          Some(SlackMessageEvent(
-            SlackEventContext(
-              event.profile,
-              event.channel,
-              event.maybeThreadId,
-              event.user
-            ),
-            event.message,
-            event.maybeFile,
-            event.ts,
-            EventType.maybeFrom(event.maybeOriginalEventType),
-            event.isUninterruptedConversation,
-            event.isEphemeral,
-            event.maybeResponseUrl,
-            event.beQuiet
-          ))
+  def getEvent(key: String): Future[Option[SlackMessageEvent]] = {
+    get[JsValue](key).map { maybeValue =>
+      maybeValue.flatMap { eventJson =>
+        eventJson.validate[SlackMessageEventData] match {
+          case JsSuccess(event, _) => {
+            Some(SlackMessageEvent(
+              SlackEventContext(
+                event.profile,
+                event.channel,
+                event.maybeThreadId,
+                event.user
+              ),
+              event.message,
+              event.maybeFile,
+              event.ts,
+              EventType.maybeFrom(event.maybeOriginalEventType),
+              event.isUninterruptedConversation,
+              event.isEphemeral,
+              event.maybeResponseUrl,
+              event.beQuiet
+            ))
+          }
+          case JsError(_) => None
         }
-        case JsError(_) => None
       }
     }
   }
@@ -157,18 +161,20 @@ class CacheServiceImpl @Inject() (
     set(key, Json.toJson(data), expiration)
   }
 
-  def getInvokeResult(key: String): Option[InvokeResult] = {
-    get[JsValue](key).flatMap { json =>
-      json.validate[InvokeResultData] match {
-        case JsSuccess(result, _) => {
-          Logger.info(s"Found cached InvokeResult for $key")
-          Some(
-            new InvokeResult().
-              withStatusCode(result.statusCode).
-              withLogResult(result.logResult).
-              withPayload(ByteBuffer.wrap(result.payload)))
+  def getInvokeResult(key: String): Future[Option[InvokeResult]] = {
+    get[JsValue](key).map { maybeValue =>
+      maybeValue.flatMap { json =>
+        json.validate[InvokeResultData] match {
+          case JsSuccess(result, _) => {
+            Logger.info(s"Found cached InvokeResult for $key")
+            Some(
+              new InvokeResult().
+                withStatusCode(result.statusCode).
+                withLogResult(result.logResult).
+                withPayload(ByteBuffer.wrap(result.payload)))
+          }
+          case JsError(_) => None
         }
-        case JsError(_) => None
       }
     }
   }
@@ -177,11 +183,13 @@ class CacheServiceImpl @Inject() (
     set(key, Json.toJson(values), expiration)
   }
 
-  def getValidValues(key: String): Option[Seq[ValidValue]] = {
-    get[JsValue](key).flatMap { json =>
-      json.validate[Seq[ValidValue]] match {
-        case JsSuccess(values, jsPath) => Some(values)
-        case JsError(err) => None
+  def getValidValues(key: String): Future[Option[Seq[ValidValue]]] = {
+    get[JsValue](key).map { maybeValue =>
+      maybeValue.flatMap { json =>
+        json.validate[Seq[ValidValue]] match {
+          case JsSuccess(values, jsPath) => Some(values)
+          case JsError(err) => None
+        }
       }
     }
   }
@@ -192,7 +200,7 @@ class CacheServiceImpl @Inject() (
     key
   }
 
-  def getSlackActionValue(key: String): Option[String] = {
+  def getSlackActionValue(key: String): Future[Option[String]] = {
     get[String](key)
   }
 
@@ -235,14 +243,16 @@ class CacheServiceImpl @Inject() (
     set(fallbackSlackUserCacheKey(slackUserId, slackTeamId), Json.toJson(slackUser))
   }
 
-  def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Option[SlackUser] = {
+  def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Future[Option[SlackUser]] = {
     val key = fallbackSlackUserCacheKey(slackUserId, slackTeamId)
-    get[JsValue](key).flatMap { json =>
-      json.validate[SlackUser] match {
-        case JsSuccess(slackUser, _) => Some(slackUser)
-        case JsError(_) => {
-          remove(key)
-          None
+    get[JsValue](key).map { maybeValue =>
+      maybeValue.flatMap { json =>
+        json.validate[SlackUser] match {
+          case JsSuccess(slackUser, _) => Some(slackUser)
+          case JsError(_) => {
+            remove(key)
+            None
+          }
         }
       }
     }
@@ -276,11 +286,13 @@ class CacheServiceImpl @Inject() (
     set(groupVersionDataKey(data.id), Json.toJson(data))
   }
 
-  def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = {
-    get[JsValue](groupVersionDataKey(groupVersionId)).flatMap { json =>
-      json.validate[ImmutableBehaviorGroupVersionData] match {
-        case JsSuccess(data, _) => Some(data)
-        case JsError(_) => None
+  def getBehaviorGroupVersionData(groupVersionId: String): Future[Option[ImmutableBehaviorGroupVersionData]] = {
+    get[JsValue](groupVersionDataKey(groupVersionId)).map { maybeValue =>
+      maybeValue.flatMap { json =>
+        json.validate[ImmutableBehaviorGroupVersionData] match {
+          case JsSuccess(data, _) => Some(data)
+          case JsError(_) => None
+        }
       }
     }
   }
@@ -289,11 +301,11 @@ class CacheServiceImpl @Inject() (
     s"team-$teamId-bot-name-v1"
   }
 
-  def cacheBotName(name: String, teamId: String): Unit = {
+  def cacheBotName(name: String, teamId: String): Future[Unit] = {
     set(botNameKey(teamId), name, Duration.Inf)
   }
 
-  def getBotName(teamId: String): Option[String] = {
+  def getBotName(teamId: String): Future[Option[String]] = {
     get(botNameKey(teamId))
   }
 
@@ -309,7 +321,7 @@ class CacheServiceImpl @Inject() (
     remove(lastConversationIdKey(teamId, channelId))
   }
 
-  def getLastConversationId(teamId: String, channelId: String): Option[String] = {
+  def getLastConversationId(teamId: String, channelId: String): Future[Option[String]] = {
     get(lastConversationIdKey(teamId, channelId))
   }
 
@@ -317,16 +329,19 @@ class CacheServiceImpl @Inject() (
     s"conversation-${conversationId}-messageUserDataList-v1"
   }
 
-  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Unit = {
-    val maybeExisting = getMessageUserDataList(conversationId)
-    set(cacheKeyForMessageUserDataList(conversationId), Json.toJson(maybeExisting.getOrElse(Seq()) ++ messageUserDataList), Duration.Inf)
+  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Future[Unit] = {
+    getMessageUserDataList(conversationId).flatMap { maybeExisting =>
+      set(cacheKeyForMessageUserDataList(conversationId), Json.toJson(maybeExisting.getOrElse(Seq()) ++ messageUserDataList), Duration.Inf)
+    }
   }
 
-  def getMessageUserDataList(conversationId: String): Option[Seq[UserData]] = {
-    get[JsValue](cacheKeyForMessageUserDataList(conversationId)).flatMap { json =>
-      json.validate[Seq[UserData]] match {
-        case JsSuccess(data, _) => Some(data)
-        case JsError(_) => None
+  def getMessageUserDataList(conversationId: String): Future[Option[Seq[UserData]]] = {
+    get[JsValue](cacheKeyForMessageUserDataList(conversationId)).map { maybeValue =>
+      maybeValue.flatMap { json =>
+        json.validate[Seq[UserData]] match {
+          case JsSuccess(data, _) => Some(data)
+          case JsError(_) => None
+        }
       }
     }
   }
@@ -344,7 +359,7 @@ class CacheServiceImpl @Inject() (
     set(cacheKeyForSlackUserIsOnBotTeam(slackUserId, slackBotProfile, maybeEnterpriseId), userIsOnTeam, duration)
   }
 
-  def getSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Option[Boolean] = {
+  def getSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Future[Option[Boolean]] = {
     get[Boolean](cacheKeyForSlackUserIsOnBotTeam(slackUserId, slackBotProfile, maybeEnterpriseId))
   }
 

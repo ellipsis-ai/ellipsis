@@ -539,14 +539,12 @@ class SlackController @Inject() (
 
   case class ActionSelectOptionInfo(text: Option[String], value: String)
   case class ActionTriggeredInfo(name: String, value: Option[String], selected_options: Option[Seq[ActionSelectOptionInfo]]) {
-    val maybeValue: Option[String] = {
-      value.flatMap { v =>
-        try {
-          cacheService.getSlackActionValue(v)
-        } catch {
+    def maybeValue: Future[Option[String]] = {
+      value.map { v =>
+        cacheService.getSlackActionValue(v).recover {
           case e: IllegalArgumentException => None
         }
-      }.orElse(value)
+      }.getOrElse(Future.successful(value))
     }
   }
   case class ActionInfo(
@@ -885,37 +883,43 @@ class SlackController @Inject() (
       dataService.slackBotProfiles.allForSlackTeamId(slackTeamIdForBot).map(_.headOption)
     }
 
-    def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
-      actions.find(_.name == SHOW_BEHAVIOR_GROUP_HELP).flatMap {
-        _.maybeValue.map(HelpGroupSearchValue.fromString)
-      }
+    def maybeHelpForSkillIdWithMaybeSearch: Future[Option[HelpGroupSearchValue]] = {
+      val maybeAction = actions.find(_.name == SHOW_BEHAVIOR_GROUP_HELP)
+      maybeAction.map { action =>
+        action.maybeValue.map { maybeValue =>
+          maybeValue.map(HelpGroupSearchValue.fromString)
+        }
+      }.getOrElse(Future.successful(None))
     }
 
-    def maybeActionListForSkillId: Option[HelpGroupSearchValue] = {
-      actions.find(_.name == LIST_BEHAVIOR_GROUP_ACTIONS).flatMap {
-        _.maybeValue.map(HelpGroupSearchValue.fromString)
-      }
+    def maybeActionListForSkillId: Future[Option[HelpGroupSearchValue]] = {
+      val maybeAction = actions.find(_.name == LIST_BEHAVIOR_GROUP_ACTIONS)
+      maybeAction.map { action =>
+        action.maybeValue.map { maybeValue =>
+          maybeValue.map(HelpGroupSearchValue.fromString)
+        }
+      }.getOrElse(Future.successful(None))
     }
 
-    def maybeDataTypeChoice: Option[String] = {
+    def maybeDataTypeChoice: Future[Option[String]] = {
       val maybeSlackUserId = maybeUserIdForCallbackId(DATA_TYPE_CHOICE, callback_id)
-      maybeSlackUserId.flatMap { slackUserId =>
+      val maybeAction = maybeSlackUserId.flatMap { slackUserId =>
         if (user.id == slackUserId) {
-          val maybeAction = actions.headOption
-          val maybeValue = maybeAction.flatMap(_.maybeValue)
-          maybeValue.orElse {
-            for {
-              selectedOptions <- maybeAction.map(_.selected_options)
-              firstOption <- selectedOptions.map(_.headOption)
-              response <- firstOption.map(_.value)
-            } yield {
-              response
-            }
-          }
+          actions.headOption
         } else {
           None
         }
       }
+      maybeAction.map { action =>
+        action.maybeValue.map { maybeValue =>
+          maybeValue.orElse {
+            for {
+              selectedOptions <- action.selected_options
+              firstOption <- selectedOptions.headOption
+            } yield firstOption.value
+          }
+        }
+      }.getOrElse(Future.successful(None))
     }
 
     val maybeUserIdForDataTypeChoice: Option[String] = maybeUserIdForCallbackId(DATA_TYPE_CHOICE, callback_id)
@@ -934,32 +938,42 @@ class SlackController @Inject() (
       }.getOrElse(Future.successful(false))
     }
 
-    def maybeHelpIndexAt: Option[Int] = {
-      actions.find { info => info.name == SHOW_HELP_INDEX }.map { _.maybeValue.map { value =>
-        try {
-          value.toInt
-        } catch {
-          case _: NumberFormatException => 0
+    def maybeHelpIndexAt: Future[Option[Int]] = {
+      val maybeAction = actions.find { info => info.name == SHOW_HELP_INDEX }
+      maybeAction.map { action =>
+        action.maybeValue.map { maybeValue =>
+          maybeValue.map { value =>
+            try {
+              value.toInt
+            } catch {
+              case _: NumberFormatException => 0
+            }
+          }.orElse(Some(0))
         }
-      }.getOrElse(0) }
+      }.getOrElse(Future.successful(None))
     }
 
     val maybeConfirmContinueConversationId: Option[String] = maybeConversationIdForCallbackId(CONFIRM_CONTINUE_CONVERSATION, callback_id)
 
     val maybeConfirmContinueConversationUserId: Option[String] = maybeUserIdForCallbackId(CONFIRM_CONTINUE_CONVERSATION, callback_id)
 
-    def maybeConfirmContinueConversationAnswer: Option[Boolean] = {
-      actions.find(_.name == callback_id).flatMap { action =>
-        action.maybeValue.filter(v => v == YES || v == NO).map(_ == YES)
-      }
+    def maybeConfirmContinueConversationAnswer: Future[Option[Boolean]] = {
+      val maybeAction = actions.find(_.name == callback_id)
+      maybeAction.map { action =>
+        action.maybeValue.map { maybeValue =>
+          maybeValue.filter(v => v == YES || v == NO).map(_ == YES)
+        }
+      }.getOrElse(Future.successful(None))
     }
 
-    val maybeConfirmContinueConversationResponse: Option[ConfirmContinueConversationResponse] = {
-      for {
-        conversationId <- maybeConfirmContinueConversationId
-        userId <- maybeConfirmContinueConversationUserId
-        value <- maybeConfirmContinueConversationAnswer
-      } yield ConfirmContinueConversationResponse(value, conversationId, userId)
+    def maybeConfirmContinueConversationResponse: Future[Option[ConfirmContinueConversationResponse]] = {
+      maybeConfirmContinueConversationAnswer.map { maybeConfirmContinueConversationAnswerValue =>
+        for {
+          conversationId <- maybeConfirmContinueConversationId
+          userId <- maybeConfirmContinueConversationUserId
+          value <- maybeConfirmContinueConversationAnswerValue
+        } yield ConfirmContinueConversationResponse(value, conversationId, userId)
+      }
     }
 
     val maybeStopConversationId: Option[String] = maybeConversationIdForCallbackId(STOP_CONVERSATION, callback_id)
@@ -973,41 +987,49 @@ class SlackController @Inject() (
       } yield StopConversationResponse(conversationId, userId)
     }
 
-    def maybeHelpRunBehaviorVersionId: Option[String] = {
+    def maybeHelpRunBehaviorVersionId: Future[Option[String]] = {
       val maybeAction = actions.find(_.name == BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION)
-      val maybeValue = maybeAction.flatMap(_.maybeValue)
-      maybeValue.orElse {
-        for {
-          selectedOptions <- maybeAction.map(_.selected_options)
-          firstOption <- selectedOptions.map(_.headOption)
-          behaviorId <- firstOption.map(_.value)
-        } yield {
-          behaviorId
-        }
-      }
-    }
-
-    def maybeSelectedActionChoice: Option[ActionChoice] = {
-      val maybeAction = actions.find(_.name == ACTION_CHOICE)
-      maybeAction.flatMap(_.maybeValue).flatMap { value =>
-        Try(Json.parse(value)) match {
-          case Success(json) => json.asOpt[ActionChoice]
-          case Failure(_) => None
-        }
-      }
-    }
-
-    def maybeYesNoAnswer: Option[String] = {
-      val maybeSlackUserId = maybeUserIdForCallbackId(YES_NO_CHOICE, callback_id)
-      maybeSlackUserId.flatMap { slackUserId =>
-        if (user.id == slackUserId) {
-          actions.find(_.name == callback_id).flatMap { action =>
-            action.maybeValue.filter(v => v == YES || v == NO)
+      maybeAction.map { action =>
+        action.maybeValue.map { maybeValue =>
+          maybeValue.orElse {
+            for {
+              selectedOptions <- maybeAction.map(_.selected_options)
+              firstOption <- selectedOptions.map(_.headOption)
+              behaviorId <- firstOption.map(_.value)
+            } yield {
+              behaviorId
+            }
           }
+        }
+      }.getOrElse(Future.successful(None))
+    }
+
+    def maybeSelectedActionChoice: Future[Option[ActionChoice]] = {
+      val maybeAction = actions.find(_.name == ACTION_CHOICE)
+      maybeAction.map { action =>
+        action.maybeValue.map { maybeValue =>
+          maybeValue.flatMap { value =>
+            Try(Json.parse(value)) match {
+              case Success(json) => json.asOpt[ActionChoice]
+              case Failure(_) => None
+            }
+          }
+        }
+      }.getOrElse(Future.successful(None))
+    }
+
+    def maybeYesNoAnswer: Future[Option[String]] = {
+      val maybeSlackUserId = maybeUserIdForCallbackId(YES_NO_CHOICE, callback_id)
+      val maybeAction = maybeSlackUserId.flatMap { slackUserId =>
+        if (user.id == slackUserId) {
+          actions.find(_.name == callback_id)
         } else {
           None
         }
       }
+      maybeAction.map { action =>
+        action.maybeValue
+      }.getOrElse(Future.successful(None))
     }
 
     def maybeTextInputAnswer: Option[String] = None
@@ -1131,11 +1153,13 @@ class SlackController @Inject() (
         Json.parse(unescapedPayload).validate[SlackActionsTriggeredInfo] match {
           case JsSuccess(info, _) => {
             if (info.isValid) {
-              info.maybeBotProfile.flatMap { maybeBotProfile =>
-                (for {
-                  botProfile <- maybeBotProfile
-                  result <- maybePermissionResultFor(info, botProfile)
-                } yield result).getOrElse(Future.successful(Ok("")))
+              for {
+                maybeBotProfile <- info.maybeBotProfile
+                maybeResult <- maybeBotProfile.map { botProfile =>
+                  maybePermissionResultFor(info, botProfile)
+                }.getOrElse(Future.successful(None))
+              } yield {
+                maybeResult.getOrElse(Ok(""))
               }
             } else {
               Future.successful(Forbidden("Bad token"))

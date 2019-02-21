@@ -114,9 +114,12 @@ class ApplicationController @Inject() (
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
         BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
       }).map(_.flatten)
+      publishedData <- teamAccess.maybeTargetTeam.map { team =>
+        val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
+        fetcher.result
+      }.getOrElse(Future.successful(Seq()))
     } yield teamAccess.maybeTargetTeam.map { team =>
-      val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
-      Ok(Json.toJson(fetcher.result))
+      Ok(Json.toJson(publishedData))
     }.getOrElse {
       val message = maybeTeamId.map { teamId =>
         s"You can't access this for team ${teamId}"
@@ -197,12 +200,14 @@ class ApplicationController @Inject() (
       }.getOrElse {
         Future.successful(None)
       }
-    } yield {
-      maybeInstalledGroupData.map { installedGroupData =>
-        val publishedGroupData = teamAccess.maybeTargetTeam.map { team =>
+      publishedGroupData <- maybeInstalledGroupData.map { installedGroupData =>
+        teamAccess.maybeTargetTeam.map { team =>
           val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, installedGroupData, githubService, services, ec)
           fetcher.result
-        }.getOrElse(Seq())
+        }.getOrElse(Future.successful(Seq()))
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      maybeInstalledGroupData.map { installedGroupData =>
         val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
         Ok(Json.toJson(matchResults.map(_.item)).toString)
       }.getOrElse {

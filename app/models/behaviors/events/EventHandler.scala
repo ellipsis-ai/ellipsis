@@ -162,13 +162,15 @@ class EventHandler @Inject() (
         userDataList <- event.messageUserDataList(services)
         _ <- Future.successful(cacheService.cacheMessageUserDataList(userDataList.toSeq, conversation.id))
         result <- dataService.run(dataService.parentConversations.rootForAction(conversation)).flatMap { root =>
-          val isUninterrupted = event.maybeThreadId.isDefined || cacheService.eventHasLastConversationId(event, root.id)
-          if (event.maybeThreadId.isEmpty) {
-            cacheService.updateLastConversationIdFor(event, root.id)
+          cacheService.eventHasLastConversationId(event, root.id).flatMap { hasLastConvoId =>
+            val isUninterrupted = event.maybeThreadId.isDefined || hasLastConvoId
+            if (event.maybeThreadId.isEmpty) {
+              cacheService.updateLastConversationIdFor(event, root.id)
+            }
+            handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
+              event.withOriginalEventType(eventType, isUninterrupted)
+            }.getOrElse(event)).map(Seq(_))
           }
-          handleInConversation(conversation, conversation.maybeOriginalEventType.map { eventType =>
-            event.withOriginalEventType(eventType, isUninterrupted)
-          }.getOrElse(event)).map(Seq(_))
         }
       } yield result
     }.getOrElse {

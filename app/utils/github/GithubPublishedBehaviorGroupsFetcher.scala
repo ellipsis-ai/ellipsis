@@ -4,7 +4,7 @@ import json._
 import models.team.Team
 import services.{DefaultServices, GithubService}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 case class GithubPublishedBehaviorGroupsFetcher(
                                                   team: Team,
@@ -15,10 +15,11 @@ case class GithubPublishedBehaviorGroupsFetcher(
                                                   implicit val ec: ExecutionContext
                                                 ) {
 
-  def result: Seq[BehaviorGroupData] = {
-    val commits = GithubSkillCommitsFetcher(team, maybeBranch, alreadyInstalled, githubService, services, ec).result
-    commits.map { ea =>
-      GithubSingleCommitFetcher(team, ea.owner, ea.repoName, ea.commitId, maybeBranch, None, githubService, services, ec).result
+  def result: Future[Seq[BehaviorGroupData]] = {
+    GithubSkillCommitsFetcher(team, maybeBranch, alreadyInstalled, githubService, services, ec).result.flatMap { commits =>
+      Future.sequence(commits.map { ea =>
+        GithubSingleCommitFetcher(team, ea.owner, ea.repoName, ea.commitId, maybeBranch, None, githubService, services, ec).result
+      })
     }
   }
 

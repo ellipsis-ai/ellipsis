@@ -14,35 +14,37 @@ import services.ms_teams.ChannelWithTeam
 import services.ms_teams.apiModels.{Application, MSTeamsUser}
 import services.slack.apiModels.SlackUser
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
 trait CacheService {
 
-  def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Unit
+  implicit val ec: ExecutionContext
 
-  def get[T : ClassTag](key: String): Option[T]
+  def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Future[Unit]
 
-  def hasKey(key: String): Boolean
+  def get[T : ClassTag](key: String): Future[Option[T]]
+
+  def hasKey(key: String): Future[Boolean]
 
   def remove(key: String)
 
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit
 
-  def getEvent(key: String): Option[SlackMessageEvent]
+  def getEvent(key: String): Future[Option[SlackMessageEvent]]
 
   def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Unit
 
-  def getInvokeResult(key: String): Option[InvokeResult]
+  def getInvokeResult(key: String): Future[Option[InvokeResult]]
 
   def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Unit
 
-  def getValidValues(key: String): Option[Seq[ValidValue]]
+  def getValidValues(key: String): Future[Option[Seq[ValidValue]]]
 
   def cacheSlackActionValue(value: String, expiration: Duration = Duration.Inf): String
 
-  def getSlackActionValue(key: String): Option[String]
+  def getSlackActionValue(key: String): Future[Option[String]]
 
   def getDefaultStorageSchema(key: DefaultStorageSchemaCacheKey, dataFn: DefaultStorageSchemaCacheKey => Future[Schema[DefaultStorageItemService, Any]]): Future[Schema[DefaultStorageItemService, Any]]
 
@@ -59,7 +61,7 @@ trait CacheService {
 
   def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Unit
 
-  def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Option[SlackUser]
+  def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Future[Option[SlackUser]]
 
   def getMSTeamsApplicationData(teamIdForContext: String, dataFn: String => Future[Option[Application]]): Future[Option[Application]]
 
@@ -69,22 +71,22 @@ trait CacheService {
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
 
-  def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData]
+  def getBehaviorGroupVersionData(groupVersionId: String): Future[Option[ImmutableBehaviorGroupVersionData]]
 
-  def cacheBotName(name: String, teamId: String): Unit
+  def cacheBotName(name: String, teamId: String): Future[Unit]
 
-  def getBotName(teamId: String): Option[String]
+  def getBotName(teamId: String): Future[Option[String]]
 
   def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Unit
 
   def clearLastConversationId(teamId: String, channelId: String): Unit
 
-  def getLastConversationId(teamId: String, channelId: String): Option[String]
+  def getLastConversationId(teamId: String, channelId: String): Future[Option[String]]
 
-  def eventHasLastConversationId(event: Event, conversationId: String): Boolean = {
-    event.maybeChannel.exists { channel =>
-      getLastConversationId(event.ellipsisTeamId, channel).contains(conversationId)
-    }
+  def eventHasLastConversationId(event: Event, conversationId: String): Future[Boolean] = {
+    event.maybeChannel.map { channel =>
+      getLastConversationId(event.ellipsisTeamId, channel).map(_.contains(conversationId))
+    }.getOrElse(Future.successful(false))
   }
 
   def updateLastConversationIdFor(event: Event, conversationId: String): Unit = {
@@ -93,13 +95,13 @@ trait CacheService {
     }
   }
 
-  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Unit
+  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Future[Unit]
 
-  def getMessageUserDataList(conversationId: String): Option[Seq[UserData]]
+  def getMessageUserDataList(conversationId: String): Future[Option[Seq[UserData]]]
 
   def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit
 
-  def getSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Option[Boolean]
+  def getSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Future[Option[Boolean]]
 
   def getSlackPermalinkForMessage(key: SlackMessagePermalinkCacheKey, dataFn: SlackMessagePermalinkCacheKey => Future[Option[String]]): Future[Option[String]]
 }

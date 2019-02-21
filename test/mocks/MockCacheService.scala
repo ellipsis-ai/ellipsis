@@ -23,29 +23,29 @@ import scala.reflect.ClassTag
 
 class MockCacheService extends CacheService with MockitoSugar {
 
-  def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Unit = {}
+  def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Future[Unit] = Future.successful({})
 
-  def get[T : ClassTag](key: String): Option[T] = None
+  def get[T : ClassTag](key: String): Future[Option[T]] = Future.successful(None)
 
-  def hasKey(key: String): Boolean = false
+  def hasKey(key: String): Future[Boolean] = Future.successful(false)
 
   def remove(key: String) = {}
 
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {}
 
-  def getEvent(key: String): Option[SlackMessageEvent] = None
+  def getEvent(key: String): Future[Option[SlackMessageEvent]] = Future.successful(None)
 
   def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Unit = {}
 
-  def getInvokeResult(key: String): Option[InvokeResult] = None
+  def getInvokeResult(key: String): Future[Option[InvokeResult]] = Future.successful(None)
 
   def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Unit = {}
 
-  def getValidValues(key: String): Option[Seq[ValidValue]] = None
+  def getValidValues(key: String): Future[Option[Seq[ValidValue]]] = Future.successful(None)
 
   def cacheSlackActionValue(value: String, expiration: Duration = Duration.Inf): String = IDs.next
 
-  def getSlackActionValue(key: String): Option[String] = None
+  def getSlackActionValue(key: String): Future[Option[String]] = Future.successful(None)
 
   def getDefaultStorageSchema(key: DefaultStorageSchemaCacheKey, dataFn: DefaultStorageSchemaCacheKey => Future[Schema[DefaultStorageItemService, Any]]): Future[Schema[DefaultStorageItemService, Any]] = dataFn(key)
 
@@ -65,7 +65,7 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Unit = {}
 
-  def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Option[SlackUser] = None
+  def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Future[Option[SlackUser]] = Future.successful(None)
 
   def getMSTeamsApplicationData(teamIdForContext: String, dataFn: String => Future[Option[Application]]): Future[Option[Application]] = dataFn(teamIdForContext)
 
@@ -75,25 +75,25 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {}
 
-  def getBehaviorGroupVersionData(groupVersionId: String): Option[ImmutableBehaviorGroupVersionData] = None
+  def getBehaviorGroupVersionData(groupVersionId: String): Future[Option[ImmutableBehaviorGroupVersionData]] = Future.successful(None)
 
-  def cacheBotName(name: String, teamId: String): Unit = {}
+  def cacheBotName(name: String, teamId: String): Future[Unit] = Future.successful({})
 
-  def getBotName(teamId: String): Option[String] = Some("MockBot")
+  def getBotName(teamId: String): Future[Option[String]] = Future.successful(Some("MockBot"))
 
   def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Unit = {}
 
   def clearLastConversationId(teamId: String, channelId: String): Unit = {}
 
-  def getLastConversationId(teamId: String, channelId: String): Option[String] = None
+  def getLastConversationId(teamId: String, channelId: String): Future[Option[String]] = Future.successful(None)
 
-  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Unit = {}
+  def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Future[Unit] = Future.successful({})
 
-  def getMessageUserDataList(conversationId: String): Option[Seq[UserData]] = None
+  def getMessageUserDataList(conversationId: String): Future[Option[Seq[UserData]]] = Future.successful(None)
 
   def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit = {}
 
-  def getSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Option[Boolean] = None
+  def getSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Future[Option[Boolean]] = Future.successful(None)
 
   def getSlackPermalinkForMessage(key: SlackMessagePermalinkCacheKey, dataFn: SlackMessagePermalinkCacheKey => Future[Option[String]]): Future[Option[String]] = dataFn(key)
 }

@@ -230,7 +230,8 @@ object BehaviorGroupData {
                 cacheService: CacheService
               )(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
     for {
-      immutableData <- cacheService.getBehaviorGroupVersionData(version.id).map(Future.successful).getOrElse {
+      maybeCachedData <- cacheService.getBehaviorGroupVersionData(version.id)
+      immutableData <- maybeCachedData.map(Future.successful).getOrElse {
         for {
           behaviors <- dataService.behaviors.allForGroup(version.group)
           versionsData <- Future.sequence(behaviors.map { ea =>

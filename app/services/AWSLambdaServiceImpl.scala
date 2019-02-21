@@ -160,12 +160,12 @@ class AWSLambdaServiceImpl @Inject() (
   private def maybeCachedResultFor(
                                     behaviorVersion: BehaviorVersion,
                                     payloadData: Seq[(String, JsValue)]
-                                  ): Option[InvokeResult] = {
+                                  ): Future[Option[InvokeResult]] = {
     if (behaviorVersion.canBeMemoized) {
       val cacheKey = cacheKeyFor(behaviorVersion, payloadData)
       cacheService.getInvokeResult(cacheKey)
     } else {
-      None
+      Future.successful(None)
     }
   }
 
@@ -181,19 +181,21 @@ class AWSLambdaServiceImpl @Inject() (
                             defaultServices: DefaultServices
                           ): DBIO[BotResult] = {
     DBIO.from {
-      maybeCachedResultFor(behaviorVersion, payloadData).map(Future.successful).getOrElse {
-        Logger.info(s"running lambda function for ${behaviorVersion.id}")
-        val invokeRequest =
-          new InvokeRequest().
-            withLogType(LogType.Tail).
-            withFunctionName(behaviorVersion.groupVersion.functionName).
-            withInvocationType(InvocationType.RequestResponse).
-            withPayload(invocationJson.toString())
-        JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
-          if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
-            cacheService.cacheInvokeResult(cacheKeyFor(behaviorVersion, payloadData), res)
+      maybeCachedResultFor(behaviorVersion, payloadData).flatMap { maybeCached =>
+        maybeCached.map(Future.successful).getOrElse {
+          Logger.info(s"running lambda function for ${behaviorVersion.id}")
+          val invokeRequest =
+            new InvokeRequest().
+              withLogType(LogType.Tail).
+              withFunctionName(behaviorVersion.groupVersion.functionName).
+              withInvocationType(InvocationType.RequestResponse).
+              withPayload(invocationJson.toString())
+          JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
+            if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
+              cacheService.cacheInvokeResult(cacheKeyFor(behaviorVersion, payloadData), res)
+            }
+            res
           }
-          res
         }
       }.map(successFn).recoverWith {
         case e: java.util.concurrent.ExecutionException => {

@@ -5,9 +5,12 @@ import javax.inject.Inject
 import models.IDs
 import services.caching.CacheService
 
+import scala.concurrent.{ExecutionContext, Future}
+
 @Singleton
 class FileMap @Inject()(
-                          val cacheService: CacheService
+                          val cacheService: CacheService,
+                          implicit val ec: ExecutionContext
                         ) {
 
   private def keyFor(fileId: String): String = s"file-map-$fileId"
@@ -22,19 +25,23 @@ class FileMap @Inject()(
     fileId
   }
 
-  def maybeUrlFor(fileId: String): Option[String] = {
-    try {
-      cacheService.get[String](keyFor(fileId))
-    } catch {
+  def maybeUrlFor(fileId: String): Future[Option[String]] = {
+    cacheService.get[String](keyFor(fileId)).recover {
       case e: IllegalArgumentException => None
     }
   }
 
-  def maybeThumbnailUrlFor(fileId: String): Option[String] = {
-    try {
-      cacheService.get[String](thumbnailKeyFor(fileId))
-    } catch {
+  def maybeThumbnailUrlFor(fileId: String): Future[Option[String]] = {
+    cacheService.get[String](thumbnailKeyFor(fileId)).recover {
       case e: IllegalArgumentException => None
+    }
+  }
+
+  def maybeUrlToUseFor(fileId: String): Future[Option[String]] = {
+    maybeThumbnailUrlFor(fileId).flatMap { maybeUrl =>
+      maybeUrl.map(url => Future.successful(Some(url))).getOrElse {
+        maybeUrlFor(fileId)
+      }
     }
   }
 
