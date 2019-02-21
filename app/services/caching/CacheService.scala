@@ -20,8 +20,6 @@ import scala.reflect.ClassTag
 
 trait CacheService {
 
-  implicit val ec: ExecutionContext
-
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Future[Unit]
 
   def get[T : ClassTag](key: String): Future[Option[T]]
@@ -83,7 +81,7 @@ trait CacheService {
 
   def getLastConversationId(teamId: String, channelId: String): Future[Option[String]]
 
-  def eventHasLastConversationId(event: Event, conversationId: String): Future[Boolean] = {
+  def eventHasLastConversationId(event: Event, conversationId: String)(implicit ec: ExecutionContext): Future[Boolean] = {
     event.maybeChannel.map { channel =>
       getLastConversationId(event.ellipsisTeamId, channel).map(_.contains(conversationId))
     }.getOrElse(Future.successful(false))
