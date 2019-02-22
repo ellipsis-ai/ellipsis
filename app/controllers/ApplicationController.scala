@@ -114,11 +114,11 @@ class ApplicationController @Inject() (
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
         BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
       }).map(_.flatten)
-      publishedData <- teamAccess.maybeTargetTeam.map { team =>
+      maybePublishedData <- teamAccess.maybeTargetTeam.map { team =>
         val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
-        fetcher.result
-      }.getOrElse(Future.successful(Seq()))
-    } yield teamAccess.maybeTargetTeam.map { team =>
+        fetcher.result.map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield maybePublishedData.map { publishedData =>
       Ok(Json.toJson(publishedData))
     }.getOrElse {
       val message = maybeTeamId.map { teamId =>
