@@ -541,8 +541,10 @@ class SlackController @Inject() (
   case class ActionTriggeredInfo(name: String, value: Option[String], selected_options: Option[Seq[ActionSelectOptionInfo]]) {
     def maybeValue: Future[Option[String]] = {
       value.map { v =>
-        cacheService.getSlackActionValue(v).recover {
-          case e: IllegalArgumentException => None
+        cacheService.getSlackActionValue(v).map { maybeV =>
+          maybeV.orElse(value)
+        }.recover {
+          case e: IllegalArgumentException => value
         }
       }.getOrElse(Future.successful(value))
     }

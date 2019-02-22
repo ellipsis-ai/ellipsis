@@ -2,6 +2,7 @@ package services.caching
 
 import java.nio.ByteBuffer
 
+import akka.Done
 import akka.actor.ActorSystem
 import akka.http.caching.LfuCache
 import akka.http.caching.scaladsl.{Cache, CachingSettings}
@@ -18,7 +19,7 @@ import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events._
 import models.behaviors.events.slack.{SlackFile, SlackMessage, SlackMessageEvent}
 import play.api.Logger
-import play.api.cache.{AsyncCacheApi, SyncCacheApi}
+import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import sangria.schema.Schema
 import services.ms_teams.apiModels.{Application, MSTeamsUser}
@@ -81,7 +82,13 @@ class CacheServiceImpl @Inject() (
 
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Future[Unit] = {
     if (key.getBytes().length <= MAX_KEY_LENGTH) {
-      cache.set(key, value, expiration).map(_ => {})
+      // Even though the underlying cache set returns a scala future, the key validation exception
+      // doesn't fail it; instead it throws an exception in the java library. Here we try to fix this.
+      try {
+        cache.set(key, value, expiration).map(_ => {})
+      } catch {
+        case e: Throwable => Future.failed(e)
+      }
     } else {
       Future.successful({})
     }
@@ -89,7 +96,13 @@ class CacheServiceImpl @Inject() (
 
   def get[T : ClassTag](key: String): Future[Option[T]] = {
     if (key.getBytes().length <= MAX_KEY_LENGTH) {
-      cache.get[T](key)
+      // Even though the underlying cache get returns a scala future, the key validation exception
+      // doesn't fail it; instead it throws an exception in the java library. Here we try to fix this.
+      try {
+        cache.get[T](key)
+      } catch {
+        case e: Throwable => Future.failed(e)
+      }
     } else {
       Future.successful(None)
     }
@@ -99,11 +112,11 @@ class CacheServiceImpl @Inject() (
     cache.get(key).map(_.isDefined)
   }
 
-  def remove(key: String) = {
+  def remove(key: String): Future[Done] = {
     cache.remove(key)
   }
 
-  def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit = {
+  def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Future[Unit] = {
     event match {
       case ev: SlackMessageEvent => {
         val eventData = SlackMessageEventData(
@@ -122,7 +135,7 @@ class CacheServiceImpl @Inject() (
         )
         set(key, Json.toJson(eventData), expiration)
       }
-      case _ =>
+      case _ => Future.successful({})
     }
   }
 
@@ -156,7 +169,7 @@ class CacheServiceImpl @Inject() (
 
   implicit val invokeResultDataFormat = Json.format[InvokeResultData]
 
-  def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Unit = {
+  def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Future[Unit] = {
     val data = InvokeResultData(invokeResult.getStatusCode, invokeResult.getLogResult, invokeResult.getPayload.array())
     set(key, Json.toJson(data), expiration)
   }
@@ -179,7 +192,7 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Unit = {
+  def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Future[Unit] = {
     set(key, Json.toJson(values), expiration)
   }
 
@@ -194,10 +207,9 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheSlackActionValue(value: String, expiration: Duration): String = {
+  def cacheSlackActionValue(value: String, expiration: Duration): Future[String] = {
     val key = s"slack-action-value-${IDs.next}"
-    set(key, value, expiration)
-    key
+    set(key, value, expiration).map(_ => key)
   }
 
   def getSlackActionValue(key: String): Future[Option[String]] = {
@@ -239,7 +251,7 @@ class CacheServiceImpl @Inject() (
     s"fallbackCacheForSlackUserId-${slackUserId}-slackTeamId-${slackTeamId}-v1"
   }
 
-  def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser) = {
+  def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Future[Unit] = {
     set(fallbackSlackUserCacheKey(slackUserId, slackTeamId), Json.toJson(slackUser))
   }
 
@@ -282,7 +294,7 @@ class CacheServiceImpl @Inject() (
     s"ImmutableBehaviorGroupVersionData-v1-${versionId}"
   }
 
-  def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit = {
+  def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Future[Unit] = {
     set(groupVersionDataKey(data.id), Json.toJson(data))
   }
 
@@ -313,12 +325,12 @@ class CacheServiceImpl @Inject() (
     s"team-$teamId-channel-$channelId-lastConversationId-v1"
   }
 
-  def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Unit = {
-    set(lastConversationIdKey(teamId, channelId), conversationId)
+  def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Future[Unit] = {
+    set(lastConversationIdKey(teamId, channelId), conversationId).map(_ => {})
   }
 
-  def clearLastConversationId(teamId: String, channelId: String): Unit = {
-    remove(lastConversationIdKey(teamId, channelId))
+  def clearLastConversationId(teamId: String, channelId: String): Future[Unit] = {
+    remove(lastConversationIdKey(teamId, channelId)).map(_ => {})
   }
 
   def getLastConversationId(teamId: String, channelId: String): Future[Option[String]] = {
@@ -350,7 +362,7 @@ class CacheServiceImpl @Inject() (
     s"slackUserId-${slackUserId}-${maybeEnterpriseId.map(enterpriseId => s"fromEnterpriseGridId-${enterpriseId}-")}isOnSlackTeamId-${profile.slackTeamId}"
   }
 
-  def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit = {
+  def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Future[Unit] = {
     val duration = if (maybeEnterpriseId.isDefined) {
       10.seconds // On enterprise grid Slack, a user's team(s) can change at any time
     } else {

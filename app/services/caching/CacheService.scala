@@ -1,5 +1,6 @@
 package services.caching
 
+import akka.Done
 import com.amazonaws.services.lambda.model.InvokeResult
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
@@ -26,21 +27,21 @@ trait CacheService {
 
   def hasKey(key: String): Future[Boolean]
 
-  def remove(key: String)
+  def remove(key: String): Future[Done]
 
-  def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Unit
+  def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Future[Unit]
 
   def getEvent(key: String): Future[Option[SlackMessageEvent]]
 
-  def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Unit
+  def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Future[Unit]
 
   def getInvokeResult(key: String): Future[Option[InvokeResult]]
 
-  def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Unit
+  def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Future[Unit]
 
   def getValidValues(key: String): Future[Option[Seq[ValidValue]]]
 
-  def cacheSlackActionValue(value: String, expiration: Duration = Duration.Inf): String
+  def cacheSlackActionValue(value: String, expiration: Duration = Duration.Inf): Future[String]
 
   def getSlackActionValue(key: String): Future[Option[String]]
 
@@ -57,7 +58,7 @@ trait CacheService {
                                dataFn: SlackUserDataByEmailCacheKey => Future[Option[SlackUserData]]
                              ): Future[Option[SlackUserData]]
 
-  def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Unit
+  def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Future[Unit]
 
   def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Future[Option[SlackUser]]
 
@@ -67,7 +68,7 @@ trait CacheService {
 
   def getMSTeamsUser(key: String, dataFn: String => Future[Option[MSTeamsUser]]): Future[Option[MSTeamsUser]]
 
-  def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Unit
+  def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Future[Unit]
 
   def getBehaviorGroupVersionData(groupVersionId: String): Future[Option[ImmutableBehaviorGroupVersionData]]
 
@@ -75,9 +76,9 @@ trait CacheService {
 
   def getBotName(teamId: String): Future[Option[String]]
 
-  def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Unit
+  def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Future[Unit]
 
-  def clearLastConversationId(teamId: String, channelId: String): Unit
+  def clearLastConversationId(teamId: String, channelId: String): Future[Unit]
 
   def getLastConversationId(teamId: String, channelId: String): Future[Option[String]]
 
@@ -87,17 +88,17 @@ trait CacheService {
     }.getOrElse(Future.successful(false))
   }
 
-  def updateLastConversationIdFor(event: Event, conversationId: String): Unit = {
-    event.maybeChannel.foreach { channel =>
+  def updateLastConversationIdFor(event: Event, conversationId: String): Future[Unit] = {
+    event.maybeChannel.map { channel =>
       cacheLastConversationId(event.ellipsisTeamId, channel, conversationId)
-    }
+    }.getOrElse(Future.successful({}))
   }
 
   def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Future[Unit]
 
   def getMessageUserDataList(conversationId: String): Future[Option[Seq[UserData]]]
 
-  def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Unit
+  def cacheSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String], userIsOnTeam: Boolean): Future[Unit]
 
   def getSlackUserIsValidForBotTeam(slackUserId: String, slackBotProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Future[Option[Boolean]]
 
