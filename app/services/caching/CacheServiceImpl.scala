@@ -318,7 +318,7 @@ class CacheServiceImpl @Inject() (
   }
 
   def getBotName(teamId: String): Future[Option[String]] = {
-    get(botNameKey(teamId))
+    get[String](botNameKey(teamId))
   }
 
   private def lastConversationIdKey(teamId: String, channelId: String): String = {
