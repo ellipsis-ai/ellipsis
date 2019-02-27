@@ -153,6 +153,19 @@ trait MSTeamsApiClient {
     } yield result
   }
 
+  def startConversation(serviceUrl: String, value: StartConversationPayload): Future[String] = {
+    for {
+      token <- fetchBotFrameworkToken
+      result <- ws.
+        url(s"$serviceUrl/v3/conversations").
+        withHttpHeaders(headersFor(token): _*).
+        post(Json.toJson(value))
+    } yield {
+      val json = responseToJson(result, Some("id"))
+      (json \ "id").as[String]
+    }
+  }
+
   def postToResponseUrl(responseUrl: String, value: JsValue): Future[String] = {
     Logger.info(s"MSTeamsApiClient posting response to $responseUrl with value:\n\n${Json.prettyPrint(value)}")
     for {
@@ -375,8 +388,9 @@ trait MSTeamsApiClient {
   }
 
   val userIdForContext = services.configuration.get[String]("silhouette.ms_teams.clientID")
+  val botIdWithPrefix: String = s"28:${userIdForContext}"
 
-  def botDMDeepLink: String = s"https://teams.microsoft.com/l/chat/0/0?users=28:${userIdForContext}"
+  def botDMDeepLink: String = s"https://teams.microsoft.com/l/chat/0/0?users=${botIdWithPrefix}"
 
 }
 

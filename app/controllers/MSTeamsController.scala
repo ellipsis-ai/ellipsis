@@ -296,9 +296,9 @@ class MSTeamsController @Inject() (
         replyToId.map { rtid =>
           val client = apiService.profileClientFor(botProfile)
           val updated = ResponseInfo.newForMessage(
-            from = recipient,
+            recipient,
             conversation,
-            recipient = from,
+            Some(from),
             maybeResultText.getOrElse("updated"),
             "markdown",
             Some(rtid),

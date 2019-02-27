@@ -14,6 +14,7 @@ import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
 import play.api.Logger
 import services.DefaultServices
+import services.ms_teams.apiModels._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -43,7 +44,38 @@ case class MSTeamsApiMethodContext(
                    maybeChannel: Option[String],
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
-                 ): Future[Option[MSTeamsRunEvent]] = ???
+                 ): Future[Option[MSTeamsRunEvent]] = {
+    val client = services.msTeamsApiService.profileClientFor(botProfile)
+    client.getApplicationInfo.map { maybeAppInfo =>
+      for {
+        appInfo <- maybeAppInfo
+        channel <- maybeChannel
+      } yield {
+        MSTeamsRunEvent(
+          MSTeamsEventContext(
+            botProfile,
+            FirstMessageInfo(
+              MessageParticipantInfo(profile.msTeamsUserId, "", None),
+              MessageParticipantInfo(client.botIdWithPrefix, appInfo.displayName, None),
+              ChannelDataInfo(
+                None,
+                Some(TenantInfo(botProfile.tenantId)),
+                Some(ChannelDataChannel(channel, None)),
+                Some(ChannelDataTeam(botProfile.teamIdForContext, None))
+              ),
+              "personal"
+            )
+          ),
+          behaviorVersion,
+          argumentsMap,
+          maybeOriginalEventType,
+          isEphemeral = false,
+          None,
+          maybeTriggeringMessageId
+        )
+      }
+    }
+  }
 
   def getFileFetchToken: Future[String] = {
     val client = services.msTeamsApiService.profileClientFor(botProfile)

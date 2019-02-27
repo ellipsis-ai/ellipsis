@@ -301,7 +301,7 @@ class UserServiceImpl @Inject() (
 
   def maybeMSTeamsProfileFor(user: User): Future[Option[MSTeamsProfile]] = {
     for {
-      maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSAzureActiveDirectoryFor(user)
+      maybeLinkedAccount <- dataService.linkedAccounts.maybeForMSTeamsFor(user)
       maybeBotProfile <- dataService.msTeamsBotProfiles.allFor(user.teamId).map(_.headOption)
     } yield {
       for {
