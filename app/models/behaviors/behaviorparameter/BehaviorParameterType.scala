@@ -394,13 +394,13 @@ object FileType extends BuiltInType {
     super.questionTextFor(context, paramCount, maybeRoot) ++ """ (or type "none" if you don't have one)"""
   }
 
-  private def alreadyHasFile(text: String, context: BehaviorParameterContext): Boolean = {
-    context.services.fileMap.maybeUrlFor(text).nonEmpty
+  private def alreadyHasFile(text: String, context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
+    context.services.fileMap.maybeUrlFor(text).map(_.nonEmpty)
   }
 
   def isValidAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Boolean] = {
-    DBIO.successful {
-      alreadyHasFile(text, context) || context.event.hasFile || isIntentionallyEmpty(text)
+    DBIO.from(alreadyHasFile(text, context)).map { alreadyHasFile =>
+      alreadyHasFile || context.event.hasFile || isIntentionallyEmpty(text)
     }
   }
 
@@ -481,13 +481,18 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   override val mayRequireTypedAnswer: Boolean = true
 
-  def resolvedValueForAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[String]] = {
-    cachedValidValueFor(text, context).map { vv =>
-      DBIO.successful(Some(vv))
-    }.getOrElse {
-      getMatchForAction(text, context)
-    }.map { maybeValidValue =>
-      maybeValidValue.map(v => Json.toJson(v).toString)
+  def resolvedValueForAction(
+                              text: String,
+                              context: BehaviorParameterContext
+                            )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[String]] = {
+    DBIO.from(cachedValidValueFor(text, context)).flatMap { maybeCachedVV =>
+      maybeCachedVV.map { vv =>
+        DBIO.successful(Some(vv))
+      }.getOrElse {
+        getMatchForAction(text, context)
+      }.map { maybeValidValue =>
+        maybeValidValue.map(v => Json.toJson(v).toString)
+      }
     }
   }
 
@@ -525,52 +530,72 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  def maybeValidValuesForAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
+  def maybeValidValuesForAction(
+                                 text: String,
+                                 context: BehaviorParameterContext
+                               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
     maybeValidValueForText(text).map { validValue =>
       maybeValidValueForSavedAnswerAction(validValue, context).map(_.toSeq)
     }.getOrElse {
-      if (isCollectingOther(context)) {
-        DBIO.successful(Seq(ValidValue(BehaviorParameterType.otherId, text, Json.obj())))
-      } else {
-        cachedValidValueFor(text, context).map { v =>
-          DBIO.successful(Seq(v))
-        }.getOrElse {
-          getValidValuesAction(Some(text), context)
+      DBIO.from(isCollectingOther(context)).flatMap { isCollectingOther =>
+        if (isCollectingOther) {
+          DBIO.successful(Seq(ValidValue(BehaviorParameterType.otherId, text, Json.obj())))
+        } else {
+          DBIO.from(cachedValidValueFor(text, context)).flatMap { maybeCachedVV =>
+            maybeCachedVV.map { v =>
+              DBIO.successful(Seq(v))
+            }.getOrElse {
+              getValidValuesAction(Some(text), context)
+            }
+          }
         }
       }
     }
   }
 
-  private def cachedValuesFor(context: BehaviorParameterContext): Option[Seq[ValidValue]] = {
-    for {
-      conversation <- context.maybeConversation
-      values <- context.cacheService.getValidValues(valuesListCacheKeyFor(conversation, context.parameter))
-    } yield values
+  private def cachedValuesFor(context: BehaviorParameterContext): Future[Option[Seq[ValidValue]]] = {
+    context.maybeConversation.map { conversation =>
+      context.cacheService.getValidValues(valuesListCacheKeyFor(conversation, context.parameter))
+    }.getOrElse(Future.successful(None))
   }
 
-  private def cachedValidValueAtIndex(text: String, context: BehaviorParameterContext): Option[ValidValue] = {
-    for {
-      values <- cachedValuesFor(context)
-      value <- try {
-        val index = text.toInt - 1
-        Some(values(index))
-      } catch {
-        case e: NumberFormatException => None
-        case e: IndexOutOfBoundsException => None
+  private def cachedValidValueAtIndex(
+                                       text: String,
+                                       context: BehaviorParameterContext
+                                     )(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
+    cachedValuesFor(context).map { maybeValues =>
+      maybeValues.flatMap { values =>
+        try {
+          val index = text.toInt - 1
+          Some(values(index))
+        } catch {
+          case e: NumberFormatException => None
+          case e: IndexOutOfBoundsException => None
+        }
       }
-    } yield value
+    }
   }
 
-  private def cachedValidValueForLabel(text: String, context: BehaviorParameterContext): Option[ValidValue] = {
-    for {
-      values <- cachedValuesFor(context)
-      value <- values.find((ea) => textMatchesLabel(text, ea.label, context))
-    } yield value
+  private def cachedValidValueForLabel(
+                                        text: String,
+                                        context: BehaviorParameterContext
+                                      )(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
+    cachedValuesFor(context).map { maybeValues =>
+      maybeValues.flatMap { values =>
+        values.find((ea) => textMatchesLabel(text, ea.label, context))
+      }
+    }
   }
 
-  private def cachedValidValueFor(text: String, context: BehaviorParameterContext): Option[ValidValue] = {
-    cachedValidValueAtIndex(text, context).
-      orElse(cachedValidValueForLabel(text, context))
+  private def cachedValidValueFor(
+                                   text: String,
+                                   context: BehaviorParameterContext
+                                 )(implicit ec: ExecutionContext): Future[Option[ValidValue]] = {
+    cachedValidValueAtIndex(text, context).flatMap { maybeAtIndex =>
+      maybeAtIndex.map(v => Future.successful(Some(v))).getOrElse {
+        cachedValidValueForLabel(text, context)
+      }
+    }
   }
 
   def prepareForInvocation(
@@ -875,10 +900,10 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     promptResultWithValidValues(validValues, context)
   }
 
-  private def isCollectingOther(context: BehaviorParameterContext): Boolean = {
-    maybeCollectingOtherCacheKeyFor(context).exists { key =>
+  private def isCollectingOther(context: BehaviorParameterContext): Future[Boolean] = {
+    maybeCollectingOtherCacheKeyFor(context).map { key =>
       context.cacheService.hasKey(key)
-    }
+    }.getOrElse(Future.successful(false))
   }
 
   override def promptResultForAction(
@@ -888,17 +913,19 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                isReminding: Boolean
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     if (dataTypeConfig.usesCode) {
-      if (isCollectingOther(context)) {
-        promptResultForOtherCaseAction(context)
-      } else {
-        for {
-          initialResult <- getValidValuesResultAction(maybePreviousCollectedValue, context)
-          result <- if (initialResult.maybeConversation.isDefined) {
-            DBIO.successful(initialResult)
-          } else {
-            promptResultWithValidValuesResult(initialResult, context)
-          }
-        } yield result
+      DBIO.from(isCollectingOther(context)).flatMap { isCollectingOther =>
+        if (isCollectingOther) {
+          promptResultForOtherCaseAction(context)
+        } else {
+          for {
+            initialResult <- getValidValuesResultAction(maybePreviousCollectedValue, context)
+            result <- if (initialResult.maybeConversation.isDefined) {
+              DBIO.successful(initialResult)
+            } else {
+              promptResultWithValidValuesResult(initialResult, context)
+            }
+          } yield result
+        }
       }
     } else {
       for {
@@ -924,21 +951,29 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                       paramState: ParamCollectionState,
                                       context: BehaviorParameterContext
                                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Unit] = {
-    if (!isCollectingOther(context) && isOther(context) && context.maybeConversation.isDefined) {
-      maybeCollectingOtherCacheKeyFor(context).foreach { key =>
-        context.cacheService.set(key, "true", 5.minutes)
+    for {
+      isCollectingOther <- DBIO.from(isCollectingOther(context))
+      isOther <- DBIO.from(isOther(context))
+      result <- {
+        if (!isCollectingOther && isOther && context.maybeConversation.isDefined) {
+          maybeCollectingOtherCacheKeyFor(context).foreach { key =>
+            context.cacheService.set(key, "true", 5.minutes)
+          }
+          DBIO.successful({})
+        } else if (isRequestingStartAgain(context)) {
+          clearCollectedValuesForAction(context)
+        } else {
+          super.handleCollectedAction(event, paramState, context)
+        }
       }
-      DBIO.successful({})
-    } else if (isRequestingStartAgain(context)) {
-      clearCollectedValuesForAction(context)
-    } else {
-      super.handleCollectedAction(event, paramState, context)
-    }
+    } yield result
   }
 
-  def isOther(context: BehaviorParameterContext): Boolean = {
-    cachedValidValueFor(context.event.relevantMessageText, context).exists { v =>
-      v.id.toLowerCase == BehaviorParameterType.otherId
+  def isOther(context: BehaviorParameterContext)(implicit ec: ExecutionContext): Future[Boolean] = {
+    cachedValidValueFor(context.event.relevantMessageText, context).map { maybeCached =>
+      maybeCached.exists { v =>
+        v.id.toLowerCase == BehaviorParameterType.otherId
+      }
     }
   }
 

@@ -142,16 +142,17 @@ class MSTeamsBotProfileServiceImpl @Inject() (
   def maybeNameFor(botProfile: MSTeamsBotProfile): Future[Option[String]] = {
     val teamId = botProfile.teamId
     val botDebugInfo = s"MS Teams bot for team ID ${botProfile.teamIdForContext} for Ellipsis team ID ${teamId}"
-    eventService.maybeApplicationDataFor(botProfile).map { maybeAppData =>
+    eventService.maybeApplicationDataFor(botProfile).flatMap { maybeAppData =>
       maybeAppData.map { appData =>
         val name = appData.displayName
-        cacheService.cacheBotName(name, teamId)
-        name
-      }.orElse {
+        cacheService.cacheBotName(name, teamId).map { _ =>
+          Some(name)
+        }
+      }.getOrElse {
         Logger.error(s"No bot user data returned from MS Teams API for ${botDebugInfo}; using fallback cache")
         cacheService.getBotName(teamId)
       }
-    }.recover {
+    }.recoverWith {
       case e: InvalidResponseException => {
         Logger.warn(s"Couldn’t retrieve bot user data from MS Teams API for ${botDebugInfo} because of an invalid/error response; using fallback cache", e)
         cacheService.getBotName(teamId)

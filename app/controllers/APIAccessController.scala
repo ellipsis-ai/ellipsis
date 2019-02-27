@@ -46,27 +46,34 @@ class APIAccessController @Inject() (
 
   private def maybeResultWithMagicLinkFor(
                                       invocationId: String
-                                    )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[Future[Result]] = {
-    cacheService.getEvent(invocationId).map { event =>
-      eventHandler.handle(event, None).map { results =>
-        results.map(ea => botResultService.sendIn(ea, None))
-        Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.eventContext.name}."))
-      }
+                                    )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Option[Result]] = {
+    for {
+      maybeEvent <- cacheService.getEvent(invocationId)
+      maybeResult <- maybeEvent.map { event =>
+        eventHandler.handle(event, None).map { results =>
+          results.map(ea => botResultService.sendIn(ea, None))
+          Some(Redirect(routes.APIAccessController.authenticated(s"There should now be a response in ${event.eventContext.name}.")))
+        }
+      }.getOrElse(Future.successful(None))
+    } yield maybeResult
+  }
+
+  private def fallbackResultFor(maybeRedirectAfterAuth: Option[String]): Result = {
+    val redirect = maybeRedirectAfterAuth.getOrElse {
+      routes.APIAccessController.authenticated(s"You are now authenticated and can try again.").toString
     }
+    Redirect(redirect)
   }
 
   private def resultWithToken(
                                 maybeInvocationId: Option[String],
                                 maybeRedirectAfterAuth: Option[String]
                              )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-    maybeInvocationId.flatMap { invocationId =>
-      maybeResultWithMagicLinkFor(invocationId)
-    }.getOrElse {
-      val redirect = maybeRedirectAfterAuth.getOrElse {
-        routes.APIAccessController.authenticated(s"You are now authenticated and can try again.").toString
+    maybeInvocationId.map { invocationId =>
+      maybeResultWithMagicLinkFor(invocationId).map { maybeResult =>
+        maybeResult.getOrElse(fallbackResultFor(maybeRedirectAfterAuth))
       }
-      Future.successful(Redirect(redirect))
-    }
+    }.getOrElse(Future.successful(fallbackResultFor(maybeRedirectAfterAuth)))
   }
 
   private def resultForStep1(

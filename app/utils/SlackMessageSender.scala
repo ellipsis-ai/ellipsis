@@ -92,51 +92,57 @@ case class SlackMessageSender(
                                beQuiet: Boolean
                              ) {
 
-  val choicesAttachments: Seq[SlackMessageAttachment] = {
+  def choicesAttachments(implicit ec: ExecutionContext): Future[Seq[SlackMessageAttachment]] = {
     if (choices.isEmpty) {
-      Seq()
+      Future.successful(Seq())
     } else {
-      val actionList = choices.zipWithIndex.map { case(ea, i) =>
+      Future.sequence(choices.zipWithIndex.map { case(ea, i) =>
         val value = Json.toJson(ea).toString()
-        val valueToUse = if (value.length > SlackMessageSender.MAX_ACTION_VALUE_CHARS) {
+        val eventualValueToUse = if (value.length > SlackMessageSender.MAX_ACTION_VALUE_CHARS) {
           services.cacheService.cacheSlackActionValue(value)
         } else {
-          value
+          Future.successful(value)
         }
-        SlackMessageActionButton(ACTION_CHOICE, ea.label, valueToUse)
+        eventualValueToUse.map { valueToUse =>
+          SlackMessageActionButton(ACTION_CHOICE, ea.label, valueToUse)
+        }
+      }).map { actionList =>
+        Seq(slack.SlackMessageAttachment(
+          None,
+          None,
+          None,
+          None,
+          Some(Color.BLUE_LIGHTER),
+          Some(ACTION_CHOICES),
+          actionList
+        ))
       }
-      Seq(slack.SlackMessageAttachment(
-        None,
-        None,
-        None,
-        None,
-        Some(Color.BLUE_LIGHTER),
-        Some(ACTION_CHOICES),
-        actionList
-      ))
+
     }
   }
 
-  val attachmentsToUse = {
-    val groups = attachments ++ choicesAttachments
-    if (developerContext.isForUndeployedBehaviorVersion) {
-      val baseUrl = configuration.get[String]("application.apiBaseUrl")
-      val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
-      val link = s"[development]($baseUrl$path)"
-      groups ++ Seq(SlackMessageAttachment(Some(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7"), None, None))
-    } else if (developerContext.hasUndeployedBehaviorVersionForAuthor) {
-      val baseUrl = configuration.get[String]("application.apiBaseUrl")
-      val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
-      val link = s"[dev mode]($baseUrl$path)"
-      groups ++ Seq(
-        SlackMessageAttachment(
-          Some(s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link."),
-          None,
-          None
+  def attachmentsToUse(implicit ec: ExecutionContext): Future[Seq[MessageAttachment]] = {
+    choicesAttachments.map { choices =>
+      val groups = attachments ++ choices
+      if (developerContext.isForUndeployedBehaviorVersion) {
+        val baseUrl = configuration.get[String]("application.apiBaseUrl")
+        val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
+        val link = s"[development]($baseUrl$path)"
+        groups ++ Seq(SlackMessageAttachment(Some(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7"), None, None))
+      } else if (developerContext.hasUndeployedBehaviorVersionForAuthor) {
+        val baseUrl = configuration.get[String]("application.apiBaseUrl")
+        val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
+        val link = s"[dev mode]($baseUrl$path)"
+        groups ++ Seq(
+          SlackMessageAttachment(
+            Some(s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link."),
+            None,
+            None
+          )
         )
-      )
-    } else {
-      groups
+      } else {
+        groups
+      }
     }
   }
 
@@ -300,11 +306,13 @@ case class SlackMessageSender(
 
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, userDataList)
-    val attachments = attachmentsToUse.flatMap {
-      case a: SlackMessageAttachment => Some(a.underlying)
-      case _ => None
-    }
     for {
+      attachments <- attachmentsToUse.map { att =>
+        att.flatMap {
+          case a: SlackMessageAttachment => Some(a.underlying)
+          case _ => None
+        }
+      }
       _ <- sendPreamble(formattedText)
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles

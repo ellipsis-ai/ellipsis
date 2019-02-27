@@ -200,39 +200,40 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
   def getFileFetchToken: Future[String]
 
   def fetchFileResultFor(fileId: String)(implicit r: Request[AnyContent]): Future[Result] = {
-    fileMap.maybeUrlFor(fileId).map { originalUrl =>
-      val maybeThumbnailUrl = fileMap.maybeThumbnailUrlFor(fileId)
-      val urlToUse = maybeThumbnailUrl.getOrElse(originalUrl)
-      for {
-        token <- getFileFetchToken
-        httpHeaders <- Future.successful(Seq(
-          (Http.HeaderNames.AUTHORIZATION -> s"Bearer $token")
-        ))
-        result <- ws.url(urlToUse).withHttpHeaders(httpHeaders: _*).withMethod("GET").stream().map { r =>
-          if (r.status == 200) {
-            val contentType =
-              r.headers.get(CONTENT_TYPE).
-                flatMap(_.headOption).
-                getOrElse(MimeTypes.BINARY)
+    fileMap.maybeUrlToUseFor(fileId).flatMap { maybeUrl =>
+      maybeUrl.map { urlToUse =>
+        for {
+          token <- getFileFetchToken
+          httpHeaders <- Future.successful(Seq(
+            (Http.HeaderNames.AUTHORIZATION -> s"Bearer $token")
+          ))
+          result <- ws.url(urlToUse).withHttpHeaders(httpHeaders: _*).withMethod("GET").stream().map { r =>
+            if (r.status == 200) {
+              val contentType =
+                r.headers.get(CONTENT_TYPE).
+                  flatMap(_.headOption).
+                  getOrElse(MimeTypes.BINARY)
 
-            val result = r.headers.get(CONTENT_LENGTH) match {
-              case Some(Seq(length)) =>
-                Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
-              case _ =>
-                Ok.chunked(r.bodyAsSource).as(contentType)
-            }
-            val contentDisposition = r.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption).getOrElse {
-              contentDispositionForContentType(contentType)
-            }
-            val headers = Seq((CONTENT_DISPOSITION -> contentDisposition))
-            result.withHeaders(headers: _*)
+              val result = r.headers.get(CONTENT_LENGTH) match {
+                case Some(Seq(length)) =>
+                  Ok.sendEntity(HttpEntity.Streamed(r.bodyAsSource, Some(length.toLong), Some(contentType)))
+                case _ =>
+                  Ok.chunked(r.bodyAsSource).as(contentType)
+              }
+              val contentDisposition = r.headers.get(CONTENT_DISPOSITION).flatMap(_.headOption).getOrElse {
+                contentDispositionForContentType(contentType)
+              }
+              val headers = Seq((CONTENT_DISPOSITION -> contentDisposition))
+              result.withHeaders(headers: _*)
 
-          } else {
-            BadGateway
+            } else {
+              BadGateway
+            }
           }
-        }
-      } yield result
-    }.getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
+        } yield result
+      }.getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
+    }
+
   }
 
 }

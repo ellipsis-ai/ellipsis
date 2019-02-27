@@ -568,20 +568,19 @@ self.MonacoEnvironment = {
           oauth2Applications <- teamAccess.maybeTargetTeam.map { team =>
             dataService.oauth2Applications.allUsableFor(team)
           }.getOrElse(Future.successful(Seq()))
-        } yield {
-          maybeBehaviorGroup.map { group =>
+          result <- maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
               val fetcher = GithubSingleBehaviorGroupFetcher(group.team, info.owner, info.repo, profile.token, info.branch, maybeExistingGroupData, githubService, services, ec)
-              try {
-                val groupData = fetcher.result.copyWithApiApplicationsIfAvailable(oauth1Applications ++ oauth2Applications)
+              fetcher.result.map { fetchedData =>
+                val groupData = fetchedData.copyWithApiApplicationsIfAvailable(oauth1Applications ++ oauth2Applications)
                 Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
-              } catch {
+              }.recover {
                 case e: GithubResultFromDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
                 case e: GithubFetchDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, None, None))
               }
-            }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
-          }.getOrElse(NotFound(s"Skill with ID ${info.behaviorGroupId} not found"))
-        }
+            }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
+          }.getOrElse(Future.successful(NotFound(s"Skill with ID ${info.behaviorGroupId} not found")))
+        } yield result
       }
     )
   }
@@ -615,20 +614,19 @@ self.MonacoEnvironment = {
             dataService.githubProfiles.find(linked.loginInfo)
           }.getOrElse(Future.successful(None))
           teamAccess <- dataService.users.teamAccessFor(user, Some(info.teamId))
-        } yield {
-          teamAccess.maybeTargetTeam.map { team =>
+          result <- teamAccess.maybeTargetTeam.map { team =>
             maybeGithubProfile.map { profile =>
               val fetcher = GithubSingleBehaviorGroupFetcher(team, info.owner, info.repo, profile.token, info.branch, None, githubService, services, ec)
-              try {
-                val groupData = fetcher.result.copy(id = Some(IDs.next))
+              fetcher.result.map { fetchedData =>
+                val groupData = fetchedData.copy(id = Some(IDs.next))
                 Ok(Json.toJson(UpdateFromGithubSuccessResponse(groupData)))
-              } catch {
+              }.recover {
                 case e: GithubResultFromDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
                 case e: GithubFetchDataException => Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, None, None))
               }
-            }.getOrElse(Unauthorized(s"User is not correctly authed with GitHub"))
-          }.getOrElse(NotFound(s"Team ID ${info.teamId} not found"))
-        }
+            }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
+          }.getOrElse(Future.successful(NotFound(s"Team ID ${info.teamId} not found")))
+        } yield result
       }
     )
   }
@@ -671,34 +669,38 @@ self.MonacoEnvironment = {
           }.getOrElse(Future.successful(None))
           maybeBehaviorGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
           _ <- dataService.linkedGithubRepos.maybeSetCurrentBranch(maybeBehaviorGroup, info.branch)
+          maybeCommitterInfo <- maybeGithubProfile.map { profile =>
+            GithubCommitterInfoFetcher(user, profile.token, githubService, services, ec).result.map(Some(_))
+          }.getOrElse(Future.successful(None))
           result <- maybeBehaviorGroup.map { group =>
             maybeGithubProfile.map { profile =>
-              val committerInfo = GithubCommitterInfoFetcher(user, profile.token, githubService, services, ec).result
-              val branch = info.branch.getOrElse("master")
-              val pusher =
-                GithubPusher(
-                  info.owner,
-                  info.repo,
-                  branch,
-                  info.commitMessage,
-                  profile.token,
-                  committerInfo,
-                  group,
-                  user,
-                  services,
-                  None,
-                  ec
-                )
-              pusher.run.map { r =>
-                Ok(Json.toJson(PushToGithubSuccessResponse(PushToGithubSuccessData(branch))))
-              }.recover {
-                case e: GitPushException => {
-                  Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
+              maybeCommitterInfo.map { committerInfo =>
+                val branch = info.branch.getOrElse("master")
+                val pusher =
+                  GithubPusher(
+                    info.owner,
+                    info.repo,
+                    branch,
+                    info.commitMessage,
+                    profile.token,
+                    committerInfo,
+                    group,
+                    user,
+                    services,
+                    None,
+                    ec
+                  )
+                pusher.run.map { r =>
+                  Ok(Json.toJson(PushToGithubSuccessResponse(PushToGithubSuccessData(branch))))
+                }.recover {
+                  case e: GitPushException => {
+                    Ok(GithubActionErrorResponse.jsonFrom(e.getMessage, Some(e.exceptionType.toString), Some(e.details)))
+                  }
+                  case e: GitCommandException => {
+                    BadRequest(e.getMessage)
+                  }
                 }
-                case e: GitCommandException => {
-                  BadRequest(e.getMessage)
-                }
-              }
+              }.getOrElse(Future.successful(Unauthorized(s"Failed to fetch committer info from GitHub")))
             }.getOrElse(Future.successful(Unauthorized(s"User is not correctly authed with GitHub")))
           }.getOrElse(Future.successful(NotFound(s"Skill with ID ${info.behaviorGroupId} not found")))
         } yield result

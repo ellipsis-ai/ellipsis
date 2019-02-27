@@ -73,16 +73,17 @@ class SlackEventServiceImpl @Inject()(
             cacheService.cacheFallbackSlackUser(slackUserId, slackTeamId, slackUser)
           }
           maybeSlackUser
-        }.recover {
+        }.recoverWith {
           case e: InvalidResponseException => {
             Logger.error(s"Invalid response while fetching user info for Slack user ID ${slackUserId} on Slack team ${slackTeamId}. Trying fallback cache...", e)
-            val maybeSlackUser = cacheService.getFallbackSlackUser(slackUserId, slackTeamId)
-            if (maybeSlackUser.isDefined) {
-              Logger.error(s"Slack user ID ${slackUserId} on Slack team ${slackTeamId} found in fallback cache")
-              maybeSlackUser
-            } else {
-              Logger.error(s"Slack user ID ${slackUserId} on Slack team ${slackTeamId} not found in fallback cache. Giving up.")
-              throw e
+            cacheService.getFallbackSlackUser(slackUserId, slackTeamId).map { maybeSlackUser =>
+              if (maybeSlackUser.isDefined) {
+                Logger.error(s"Slack user ID ${slackUserId} on Slack team ${slackTeamId} found in fallback cache")
+                maybeSlackUser
+              } else {
+                Logger.error(s"Slack user ID ${slackUserId} on Slack team ${slackTeamId} not found in fallback cache. Giving up.")
+                throw e
+              }
             }
           }
         }
@@ -119,14 +120,16 @@ class SlackEventServiceImpl @Inject()(
   }
 
   def isUserValidForBot(slackUserId: String, botProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Future[Boolean] = {
-    cacheService.getSlackUserIsValidForBotTeam(slackUserId, botProfile, maybeEnterpriseId).map(Future.successful).getOrElse {
-      for {
-        maybeUserData <- maybeSlackUserDataFor(slackUserId, clientFor(botProfile), _ => None)
-      } yield {
-        maybeUserData.exists { userData =>
-          val userIsValid = userData.canTriggerBot(botProfile, maybeEnterpriseId)
-          cacheService.cacheSlackUserIsValidForBotTeam(slackUserId, botProfile, maybeEnterpriseId, userIsValid)
-          userIsValid
+    cacheService.getSlackUserIsValidForBotTeam(slackUserId, botProfile, maybeEnterpriseId).flatMap { maybeCachedValid =>
+      maybeCachedValid.map(Future.successful).getOrElse {
+        for {
+          maybeUserData <- maybeSlackUserDataFor(slackUserId, clientFor(botProfile), _ => None)
+        } yield {
+          maybeUserData.exists { userData =>
+            val userIsValid = userData.canTriggerBot(botProfile, maybeEnterpriseId)
+            cacheService.cacheSlackUserIsValidForBotTeam(slackUserId, botProfile, maybeEnterpriseId, userIsValid)
+            userIsValid
+          }
         }
       }
     }
