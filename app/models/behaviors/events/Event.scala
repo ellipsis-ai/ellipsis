@@ -106,10 +106,14 @@ trait Event {
   }
 
   def messageUserDataListAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
-    messageUserDataListAction(services).map { list =>
-      list ++ maybeConversation.flatMap { conversation =>
-        services.cacheService.getMessageUserDataList(conversation.id)
-      }.getOrElse(Seq.empty)
+    messageUserDataListAction(services).flatMap { list =>
+      maybeConversation.map { conversation =>
+        DBIO.from(services.cacheService.getMessageUserDataList(conversation.id).map { maybeList =>
+          maybeList.getOrElse(Seq.empty)
+        })
+      }.getOrElse(DBIO.successful(Seq.empty)).map { convoUserList =>
+        list ++ convoUserList
+      }
     }
   }
 

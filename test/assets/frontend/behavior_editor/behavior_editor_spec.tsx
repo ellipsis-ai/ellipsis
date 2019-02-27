@@ -37,16 +37,15 @@ global.fetch = jest.fn(function() {
   return new Promise(() => {})
 });
 
-jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
-jsRoutes.controllers.BehaviorEditorController.save = jest.fn(() => ({ url: '/mock_save' }));
-jsRoutes.controllers.BehaviorEditorController.newGroup = jest.fn(() => ({ url: '/mock_new_skill' }));
-jsRoutes.controllers.ApplicationController.index = jest.fn(() => ({ url: '/mock_index' }));
-jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = jest.fn(() => ({ url: '/mock_delete_behavior_group' }));
-jsRoutes.controllers.BehaviorEditorController.edit = jest.fn(() => ({ url: '/mock_edit' }));
-jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor = jest.fn(() => ({ url: '/mock_node_module_versions_for' }));
-jsRoutes.controllers.BehaviorEditorController.testResults = jest.fn(() => ({ url: '/mock_behavior_test_results' }));
-jsRoutes.controllers.SocialAuthController.authenticateGithub = jest.fn(() => ({ url: '/mock_authenticate_github' }));
-jsRoutes.controllers.BehaviorEditorController.versionInfoFor = jest.fn(() => ({ url: '/mock_version_info' }));
+jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/mock_edit', method: "get", absoluteURL: () => "" });
+jsRoutes.controllers.BehaviorEditorController.save = () => ({ url: '/mock_save', method: "post", absoluteURL: () => "" });
+jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/mock_new_skill', method: "post", absoluteURL: () => "" });
+jsRoutes.controllers.ApplicationController.index = () => ({ url: '/mock_index', method: "get", absoluteURL: () => "" });
+jsRoutes.controllers.ApplicationController.deleteBehaviorGroups = () => ({ url: '/mock_delete_behavior_group', method: "post", absoluteURL: () => "" });
+jsRoutes.controllers.BehaviorEditorController.nodeModuleVersionsFor = () => ({ url: '/mock_node_module_versions_for', method: "post", absoluteURL: () => "" });
+jsRoutes.controllers.BehaviorEditorController.testResults = () => ({ url: '/mock_behavior_test_results', method: "post", absoluteURL: () => "" });
+jsRoutes.controllers.SocialAuthController.authenticateGithub = () => ({ url: '/mock_authenticate_github', method: "post", absoluteURL: () => "" });
+jsRoutes.controllers.BehaviorEditorController.versionInfoFor = () => ({ url: '/mock_version_info', method: "get", absoluteURL: () => "" });
 
 describe('BehaviorEditor', () => {
   const normalResponseType = "Normal";

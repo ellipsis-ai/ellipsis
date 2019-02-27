@@ -193,30 +193,32 @@ class MSTeamsController @Inject() (
     def isIncorrectTeam(botProfile: BotProfileType): Future[Boolean] = Future.successful(false)
     def isIncorrectUserTryingDataTypeChoice: Boolean = false
     def isIncorrectUserTryingYesNo: Boolean = false
-    def maybeActionListForSkillId: Option[HelpGroupSearchValue] = {
-      maybeValueResultMatching(LIST_BEHAVIOR_GROUP_ACTIONS).flatMap(_.asOpt[String]).map(HelpGroupSearchValue.fromString)
+    def maybeActionListForSkillId: Future[Option[HelpGroupSearchValue]] = {
+      Future.successful(maybeValueResultMatching(LIST_BEHAVIOR_GROUP_ACTIONS).flatMap(_.asOpt[String]).map(HelpGroupSearchValue.fromString))
     }
-    val maybeConfirmContinueConversationResponse: Option[ConfirmContinueConversationResponse] = None
-    def maybeDataTypeChoice: Option[String] = maybeValueResultMatching(DATA_TYPE_CHOICE).flatMap(_.asOpt[String])
-    def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue] = {
-      maybeValueResultMatching(SHOW_BEHAVIOR_GROUP_HELP).flatMap(_.asOpt[String]).map(HelpGroupSearchValue.fromString)
+    val maybeConfirmContinueConversationResponse: Future[Option[ConfirmContinueConversationResponse]] = Future.successful(None)
+    def maybeDataTypeChoice: Future[Option[String]] = Future.successful(maybeValueResultMatching(DATA_TYPE_CHOICE).flatMap(_.asOpt[String]))
+    def maybeHelpForSkillIdWithMaybeSearch: Future[Option[HelpGroupSearchValue]] = {
+      Future.successful(maybeValueResultMatching(SHOW_BEHAVIOR_GROUP_HELP).flatMap(_.asOpt[String]).map(HelpGroupSearchValue.fromString))
     }
-    def maybeHelpIndexAt: Option[Int] = {
-      maybeValueResultMatching(SHOW_HELP_INDEX).map { value =>
-        value.asOpt[String].map { idx =>
-          try {
-            idx.toInt
-          } catch {
-            case _: NumberFormatException => 0
-          }
-        }.getOrElse(0)
-      }
+    def maybeHelpIndexAt: Future[Option[Int]] = {
+      Future.successful(
+        maybeValueResultMatching(SHOW_HELP_INDEX).map { value =>
+          value.asOpt[String].map { idx =>
+            try {
+              idx.toInt
+            } catch {
+              case _: NumberFormatException => 0
+            }
+          }.getOrElse(0)
+        }
+      )
     }
-    def maybeHelpRunBehaviorVersionId: Option[String] = maybeValueResultMatching(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION).flatMap(_.asOpt[String])
-    def maybeSelectedActionChoice: Option[ActionChoice] = maybeValueResultMatching(ACTION_CHOICE).flatMap(_.asOpt[ActionChoice])
+    def maybeHelpRunBehaviorVersionId: Future[Option[String]] = Future.successful(maybeValueResultMatching(BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION).flatMap(_.asOpt[String]))
+    def maybeSelectedActionChoice: Future[Option[ActionChoice]] = Future.successful(maybeValueResultMatching(ACTION_CHOICE).flatMap(_.asOpt[ActionChoice]))
     val maybeStopConversationResponse: Option[StopConversationResponse] = None
     val maybeUserIdForDataTypeChoice: Option[String] = None
-    def maybeYesNoAnswer: Option[String] = maybeValueResultMatching(YES_NO_CHOICE).flatMap(_.asOpt[String])
+    def maybeYesNoAnswer: Future[Option[String]] = Future.successful(maybeValueResultMatching(YES_NO_CHOICE).flatMap(_.asOpt[String]))
     def maybeTextInputAnswer: Option[String] = maybeValueResultMatching(TEXT_INPUT).flatMap(_.asOpt[String])
     def onEvent(event: Event): Future[Unit] = Future.successful({})
     def processTriggerableAndActiveActionChoice(
@@ -347,8 +349,10 @@ class MSTeamsController @Inject() (
     for {
       maybeProfile <- info.maybeTenantId.map(id => dataService.msTeamsBotProfiles.find(id)).getOrElse(Future.successful(None))
       _ <- maybeProfile.map { profile =>
-        maybePermissionResultFor(info, profile).getOrElse {
-          processMessageEventsFor(info, profile)
+        maybePermissionResultFor(info, profile).flatMap { maybeResult =>
+          maybeResult.map(r => Future.successful({})).getOrElse {
+            processMessageEventsFor(info, profile)
+          }
         }
       }.getOrElse(Future.successful({}))
     } yield {}

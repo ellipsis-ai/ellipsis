@@ -53,21 +53,25 @@ trait GithubFetcher[T] {
     Await.result(fetch, 20.seconds)
   }
 
-  def get: JsValue = {
+  def get: Future[JsValue] = {
     if (shouldTryCache) {
-      cacheService.get(cacheKey).getOrElse {
-        try {
-          val fetched = blockingFetch
-          if (isCacheable(fetched)) {
-            cacheService.set(cacheKey, fetched, cacheTimeout)
+      cacheService.get[JsValue](cacheKey).flatMap { maybeValue =>
+        maybeValue.map(v => Future.successful(v)).getOrElse {
+          try {
+            fetch.flatMap { fetched =>
+              if (isCacheable(fetched)) {
+                cacheService.set(cacheKey, fetched, cacheTimeout).map(_ => fetched)
+              } else {
+                Future.successful(fetched)
+              }
+            }
+          } catch {
+            case ex: GithubApiException => Future.successful(JsArray())
           }
-          fetched
-        } catch {
-          case ex: GithubApiException => JsArray()
         }
       }
     } else {
-      blockingFetch
+      fetch
     }
   }
 
@@ -90,6 +94,6 @@ trait GithubFetcher[T] {
     }
   }
 
-  def result: T = resultFromNonErrorResponse(get)
+  def result: Future[T] = get.map(resultFromNonErrorResponse)
 
 }

@@ -47,7 +47,7 @@ trait ChatPlatformController {
                                   actionChoice: ActionChoice,
                                   maybeGroupVersion: Option[BehaviorGroupVersion]
                                 ): Future[Unit]
-    def maybeSelectedActionChoice: Option[ActionChoice]
+    def maybeSelectedActionChoice: Future[Option[ActionChoice]]
     def updateActionsMessageFor(
                                  maybeResultText: Option[String],
                                  shouldRemoveActions: Boolean,
@@ -57,11 +57,11 @@ trait ChatPlatformController {
     def inputChoiceResultFor(value: String, maybeResultText: Option[String])(implicit request: Request[AnyContent]): Future[Unit]
 
     def isIncorrectUserTryingDataTypeChoice: Boolean
-    def maybeDataTypeChoice: Option[String]
+    def maybeDataTypeChoice: Future[Option[String]]
     def isForDataTypeChoiceForDoneConversation: Future[Boolean]
 
     def isIncorrectUserTryingYesNo: Boolean
-    def maybeYesNoAnswer: Option[String]
+    def maybeYesNoAnswer: Future[Option[String]]
     def isForYesNoForDoneConversation: Future[Boolean]
 
     def maybeTextInputAnswer: Option[String]
@@ -76,21 +76,21 @@ trait ChatPlatformController {
                                 beQuiet: Boolean
                               ): Future[Option[String]]
 
-    def maybeHelpIndexAt: Option[Int]
+    def maybeHelpIndexAt: Future[Option[Int]]
 
     def findButtonLabelForNameAndValue(name: String, value: String): Option[String]
 
-    def maybeHelpForSkillIdWithMaybeSearch: Option[HelpGroupSearchValue]
+    def maybeHelpForSkillIdWithMaybeSearch: Future[Option[HelpGroupSearchValue]]
 
-    def maybeActionListForSkillId: Option[HelpGroupSearchValue]
+    def maybeActionListForSkillId: Future[Option[HelpGroupSearchValue]]
 
-    val maybeConfirmContinueConversationResponse: Option[ConfirmContinueConversationResponse]
+    def maybeConfirmContinueConversationResponse: Future[Option[ConfirmContinueConversationResponse]]
 
     val maybeStopConversationResponse: Option[StopConversationResponse]
 
     def findOptionLabelForValue(value: String): Option[String]
 
-    def maybeHelpRunBehaviorVersionId: Option[String]
+    def maybeHelpRunBehaviorVersionId: Future[Option[String]]
 
   }
 
@@ -125,9 +125,9 @@ trait ChatPlatformController {
 
   trait ActionPermissionType[T <: ActionPermission] {
 
-    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[T]]
+    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[T]]
 
-    def maybeResultFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[Result]] = {
+    def maybeResultFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[Result]] = {
       maybeFor(info, botProfile).map(_.map(_.result))
     }
 
@@ -169,9 +169,11 @@ trait ChatPlatformController {
 
   object ActionChoicePermission extends ActionPermissionType[ActionChoicePermission] {
 
-    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[ActionChoicePermission]] = {
-      info.maybeSelectedActionChoice.map { actionChoice =>
-        buildFor(actionChoice, info, botProfile)
+    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[ActionChoicePermission]] = {
+      info.maybeSelectedActionChoice.flatMap { maybeActionChoice =>
+        maybeActionChoice.map { actionChoice =>
+          buildFor(actionChoice, info, botProfile).map(Some(_))
+        }.getOrElse(Future.successful(None))
       }
     }
 
@@ -245,9 +247,11 @@ trait ChatPlatformController {
 
   object DataTypeChoicePermission extends ActionPermissionType[DataTypeChoicePermission] {
 
-    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[DataTypeChoicePermission]] = {
-      info.maybeDataTypeChoice.map { choice =>
-        buildFor(choice, info, botProfile)
+    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[DataTypeChoicePermission]] = {
+      info.maybeDataTypeChoice.flatMap { maybeChoice =>
+        maybeChoice.map { choice =>
+          buildFor(choice, info, botProfile).map(Some(_))
+        }.getOrElse(Future.successful(None))
       }
     }
 
@@ -277,9 +281,11 @@ trait ChatPlatformController {
 
   object YesNoChoicePermission extends ActionPermissionType[YesNoChoicePermission] {
 
-    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[YesNoChoicePermission]] = {
-      info.maybeYesNoAnswer.map { value =>
-        buildFor(value, info, botProfile)
+    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[YesNoChoicePermission]] = {
+      info.maybeYesNoAnswer.flatMap { maybeValue =>
+        maybeValue.map { value =>
+          buildFor(value, info, botProfile).map(Some(_))
+        }.getOrElse(Future.successful(None))
       }
     }
 
@@ -310,10 +316,10 @@ trait ChatPlatformController {
 
   object TextInputPermission extends ActionPermissionType[TextInputPermission] {
 
-    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[TextInputPermission]] = {
+    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[TextInputPermission]] = {
       info.maybeTextInputAnswer.map { value =>
-        buildFor(value, info, botProfile)
-      }
+        buildFor(value, info, botProfile).map(Some(_))
+      }.getOrElse(Future.successful(None))
     }
 
     def buildFor(value: String, info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[TextInputPermission] = {
@@ -353,7 +359,7 @@ trait ChatPlatformController {
 
   trait HelpPermissionType[T <: HelpPermission, V] extends ActionPermissionType[T] {
 
-    def maybeValueFor(info: ActionsTriggeredInfoType): Option[V]
+    def maybeValueFor(info: ActionsTriggeredInfoType): Future[Option[V]]
     def buildFor(
                   value: V,
                   info: ActionsTriggeredInfoType,
@@ -361,9 +367,11 @@ trait ChatPlatformController {
                   botProfile: BotProfileType
                 )(implicit request:  Request[AnyContent]): T
 
-    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[T]] = {
-      maybeValueFor(info).map { v =>
-        buildFor(v, info, botProfile)
+    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[T]] = {
+      maybeValueFor(info).flatMap { maybeValue =>
+        maybeValue.map { v =>
+          buildFor(v, info, botProfile).map(Some(_))
+        }.getOrElse(Future.successful(None))
       }
     }
 
@@ -406,7 +414,7 @@ trait ChatPlatformController {
 
   object HelpIndexPermission extends HelpPermissionType[HelpIndexPermission, Int] {
 
-    def maybeValueFor(info: ActionsTriggeredInfoType): Option[Int] = info.maybeHelpIndexAt
+    def maybeValueFor(info: ActionsTriggeredInfoType): Future[Option[Int]] = info.maybeHelpIndexAt
     def buildFor(
                   value: Int,
                   info: ActionsTriggeredInfoType,
@@ -454,7 +462,7 @@ trait ChatPlatformController {
 
   object HelpForSkillPermission extends HelpPermissionType[HelpForSkillPermission, HelpGroupSearchValue] {
 
-    def maybeValueFor(info: ActionsTriggeredInfoType): Option[HelpGroupSearchValue] = info.maybeHelpForSkillIdWithMaybeSearch
+    def maybeValueFor(info: ActionsTriggeredInfoType): Future[Option[HelpGroupSearchValue]] = info.maybeHelpForSkillIdWithMaybeSearch
     def buildFor(
                   value: HelpGroupSearchValue,
                   info: ActionsTriggeredInfoType,
@@ -498,7 +506,7 @@ trait ChatPlatformController {
 
   object HelpListAllActionsPermission extends HelpPermissionType[HelpListAllActionsPermission, HelpGroupSearchValue] {
 
-    def maybeValueFor(info: ActionsTriggeredInfoType): Option[HelpGroupSearchValue] = info.maybeActionListForSkillId
+    def maybeValueFor(info: ActionsTriggeredInfoType): Future[Option[HelpGroupSearchValue]] = info.maybeActionListForSkillId
     def buildFor(
                   value: HelpGroupSearchValue,
                   info: ActionsTriggeredInfoType,
@@ -545,25 +553,30 @@ trait ChatPlatformController {
     val correctUserId: String = response.userId
 
     def continue(conversation: Conversation): Future[Unit] = {
-      dataService.conversations.touch(conversation).flatMap { _ =>
-        cacheService.getEvent(conversation.pendingEventKey).map { event =>
+      for {
+        _ <- dataService.conversations.touch(conversation)
+        maybeEvent <- cacheService.getEvent(conversation.pendingEventKey)
+        _ <- maybeEvent.map { event =>
           info.onEvent(event)
         }.getOrElse(Future.successful({}))
-      }
+      } yield {}
     }
 
     def dontContinue(conversation: Conversation): Future[Unit] = {
-      dataService.conversations.background(conversation, "OK, on to the next thing.", includeUsername = false).flatMap { _ =>
-        cacheService.getEvent(conversation.pendingEventKey).map { event =>
-          services.eventHandler.handle(event, None).flatMap { results =>
-            Future.sequence(
-              results.map(result => services.botResultService.sendIn(result, None).map { _ =>
-                Logger.info(event.logTextFor(result, None))
-              })
-            )
-          }.map(_ => {})
-        }.getOrElse(Future.successful({}))
-      }
+      for {
+        _ <- dataService.conversations.background(conversation, "OK, on to the next thing.", includeUsername = false)
+        maybeEvent <- cacheService.getEvent(conversation.pendingEventKey)
+        results <- maybeEvent.map { event =>
+          services.eventHandler.handle(event, None)
+        }.getOrElse(Future.successful(Seq()))
+        _ <- Future.sequence(
+          results.map(result => services.botResultService.sendIn(result, None).map { _ =>
+            maybeEvent.foreach { event =>
+              Logger.info(event.logTextFor(result, None))
+            }
+          })
+        )
+      } yield {}
     }
 
     def runForCorrectUser(): Unit = {
@@ -581,9 +594,11 @@ trait ChatPlatformController {
 
   object ConfirmContinueConversationPermission extends ActionPermissionType[ConfirmContinueConversationPermission] {
 
-    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[ConfirmContinueConversationPermission]] = {
-      info.maybeConfirmContinueConversationResponse.map { response =>
-        buildFor(response, info)
+    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[ConfirmContinueConversationPermission]] = {
+      info.maybeConfirmContinueConversationResponse.flatMap { maybeResponse =>
+        maybeResponse.map { response =>
+          buildFor(response, info).map(Some(_))
+        }.getOrElse(Future.successful(None))
       }
     }
 
@@ -619,10 +634,10 @@ trait ChatPlatformController {
 
   object StopConversationPermission extends ActionPermissionType[StopConversationPermission] {
 
-    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[StopConversationPermission]] = {
+    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[StopConversationPermission]] = {
       info.maybeStopConversationResponse.map { response =>
-        buildFor(response, info)
-      }
+        buildFor(response, info).map(Some(_))
+      }.getOrElse(Future.successful(None))
     }
 
     def buildFor(response: StopConversationResponse, info: ActionsTriggeredInfoType)(implicit request: Request[AnyContent]): Future[StopConversationPermission] = {
@@ -703,9 +718,11 @@ trait ChatPlatformController {
 
   object HelpRunBehaviorVersionPermission extends ActionPermissionType[HelpRunBehaviorVersionPermission] {
 
-    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[HelpRunBehaviorVersionPermission]] = {
-      info.maybeHelpRunBehaviorVersionId.map { behaviorVersionId =>
-        buildFor(behaviorVersionId, info, botProfile)
+    def maybeFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[HelpRunBehaviorVersionPermission]] = {
+      info.maybeHelpRunBehaviorVersionId.flatMap { maybeBehaviorVersionId =>
+        maybeBehaviorVersionId.map { behaviorVersionId =>
+          buildFor(behaviorVersionId, info, botProfile).map(Some(_))
+        }.getOrElse(Future.successful(None))
       }
     }
 
@@ -744,18 +761,34 @@ trait ChatPlatformController {
 
   }
 
-  def maybePermissionResultFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Option[Future[Result]] = {
-    DataTypeChoicePermission.maybeResultFor(info, botProfile).orElse {
-      TextInputPermission.maybeResultFor(info, botProfile).orElse {
-        YesNoChoicePermission.maybeResultFor(info, botProfile).orElse {
-          ActionChoicePermission.maybeResultFor(info, botProfile).orElse {
-            HelpIndexPermission.maybeResultFor(info, botProfile).orElse {
-              HelpForSkillPermission.maybeResultFor(info, botProfile).orElse {
-                HelpListAllActionsPermission.maybeResultFor(info, botProfile).orElse {
-                  ConfirmContinueConversationPermission.maybeResultFor(info, botProfile).orElse {
-                    StopConversationPermission.maybeResultFor(info, botProfile).orElse {
-                      HelpRunBehaviorVersionPermission.maybeResultFor(info, botProfile).orElse {
-                        None
+  def maybePermissionResultFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[Result]] = {
+    DataTypeChoicePermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
+      maybeResult.map(r => Future.successful(Some(r))).getOrElse {
+        TextInputPermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
+          maybeResult.map(r => Future.successful(Some(r))).getOrElse {
+            YesNoChoicePermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
+              maybeResult.map(r => Future.successful(Some(r))).getOrElse {
+                ActionChoicePermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
+                  maybeResult.map(r => Future.successful(Some(r))).getOrElse {
+                    HelpIndexPermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
+                      maybeResult.map(r => Future.successful(Some(r))).getOrElse {
+                        HelpForSkillPermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
+                          maybeResult.map(r => Future.successful(Some(r))).getOrElse {
+                            HelpListAllActionsPermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
+                              maybeResult.map(r => Future.successful(Some(r))).getOrElse {
+                                ConfirmContinueConversationPermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
+                                  maybeResult.map(r => Future.successful(Some(r))).getOrElse {
+                                    StopConversationPermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
+                                      maybeResult.map(r => Future.successful(Some(r))).getOrElse {
+                                        HelpRunBehaviorVersionPermission.maybeResultFor(info, botProfile)
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
                       }
                     }
                   }

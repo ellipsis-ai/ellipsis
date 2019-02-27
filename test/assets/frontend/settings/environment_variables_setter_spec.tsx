@@ -36,13 +36,15 @@ describe('EnvironmentVariableSetter', () => {
       setter.setState = jest.fn();
       setter.getNewVars = jest.fn(() => [{
         name: "OLD_NAME",
-        value: "old value"
+        value: "old value",
+        isAlreadySavedWithValue: true
       }]);
       setter.setNewVarIndexName(0, "tada wow");
       expect(setter.setState).toBeCalledWith({
         newVars: [{
           name: "TADA_WOW",
-          value: "old value"
+          value: "old value",
+          isAlreadySavedWithValue: true
         }]
       });
     });

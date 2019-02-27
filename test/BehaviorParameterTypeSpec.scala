@@ -3,13 +3,14 @@ import java.time.{OffsetDateTime, ZoneId}
 
 import models.IDs
 import models.behaviors.behaviorparameter._
-import models.behaviors.events.slack.SlackFile
 import models.behaviors.events.slack.SlackMessageEvent
 import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import play.api.libs.json._
 import support.{DBSpec, TestContext}
+
+import scala.concurrent.Future
 
 class BehaviorParameterTypeSpec extends DBSpec {
 
@@ -99,7 +100,7 @@ class BehaviorParameterTypeSpec extends DBSpec {
       val context = mock[BehaviorParameterContext]
       when(context.event).thenReturn(event)
       when(context.services).thenReturn(services)
-      when(fileMap.maybeUrlFor(anyString)).thenReturn(None)
+      when(fileMap.maybeUrlFor(anyString)).thenReturn(Future.successful(None))
       runNow(FileType.isValidAction("none", context)) mustBe true
       runNow(FileType.isValidAction("wtfbbq", context)) mustBe false
     }
@@ -110,7 +111,7 @@ class BehaviorParameterTypeSpec extends DBSpec {
       val context = mock[BehaviorParameterContext]
       when(context.event).thenReturn(event)
       when(context.services).thenReturn(services)
-      when(fileMap.maybeUrlFor(anyString)).thenReturn(None)
+      when(fileMap.maybeUrlFor(anyString)).thenReturn(Future.successful(None))
       runNow(FileType.isValidAction("none", context)) mustBe true
       runNow(FileType.isValidAction("wtfbbq", context)) mustBe true
     }
@@ -122,7 +123,7 @@ class BehaviorParameterTypeSpec extends DBSpec {
       when(context.event).thenReturn(event)
       when(context.services).thenReturn(services)
       val fileId = IDs.next
-      when(fileMap.maybeUrlFor(fileId)).thenReturn(Some("https://fake-url.fake"))
+      when(fileMap.maybeUrlFor(fileId)).thenReturn(Future.successful(Some("https://fake-url.fake")))
       runNow(FileType.isValidAction(fileId, context)) mustBe true
     }
   }
