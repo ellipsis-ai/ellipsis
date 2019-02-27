@@ -3,8 +3,7 @@ package services.ms_teams.apiModels
 case class FirstMessageInfo(
                              from: MessageParticipantInfo,
                              recipient: MessageParticipantInfo,
-                             channelData: ChannelDataInfo,
-                             conversationType: String
+                             channelData: ChannelDataInfo
                            ) extends EventInfo {
 
   val maybeId: Option[String] = None
@@ -24,6 +23,8 @@ case class FirstMessageInfo(
   val aadObjectId: Option[String] = from.aadObjectId
   val botUserIdForContext: String = recipient.id
   val botParticipant: MessageParticipantInfo = recipient
+
+  val conversationType: String = if (channel.startsWith("19:")) { "channel" } else { "personal" }
 
   val isDirectMessage: Boolean = conversationType == "personal"
   val isPublicChannel: Boolean = conversationType == "channel"
