@@ -62,8 +62,7 @@ case class MSTeamsApiMethodContext(
                 Some(TenantInfo(botProfile.tenantId)),
                 Some(ChannelDataChannel(channel, None)),
                 Some(ChannelDataTeam(botProfile.teamIdForContext, None))
-              ),
-              "personal"
+              )
             )
           ),
           behaviorVersion,

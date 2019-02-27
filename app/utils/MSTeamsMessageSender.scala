@@ -145,17 +145,8 @@ case class MSTeamsMessageSender(
         ).recover(postErrorRecovery(activityInfo.conversation.id, text))
       }
       case firstMessageInfo: FirstMessageInfo => {
-        val botParticipant = firstMessageInfo.botParticipant
+        val convoId = firstMessageInfo.channel
         for {
-          convoId <- client.startConversation(
-            firstMessageInfo.serviceUrl,
-            StartConversationPayload(
-              MemberDetails.fromParticipant(botParticipant),
-              isGroup = false,
-              firstMessageInfo.maybeUserParticipant.map(MemberDetails.fromParticipant).toSeq,
-              firstMessageInfo.channelData.copy(channel = None, team = None)
-            )
-          )
           result <- {
             val response = ResponseInfo.newForMessage(
               firstMessageInfo.botParticipant,
