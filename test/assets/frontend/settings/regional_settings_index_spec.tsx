@@ -6,12 +6,12 @@ global.fetch = mockFetch;
 import Page from '../../../../app/assets/frontend/shared_ui/page';
 import RegionalSettings, {RegionalSettingsProps} from '../../../../app/assets/frontend/settings/regional_settings/index';
 
-jsRoutes.controllers.APITokenController.listTokens = jest.fn(() => ({ url: '/mock_list_tokens' }));
-jsRoutes.controllers.ApplicationController.possibleCitiesFor = jest.fn(() => ({ url: '/mock_possible_cities' }));
-jsRoutes.controllers.GithubConfigController.index = jest.fn(() => ({ url: '/mock_github_config' }));
-jsRoutes.controllers.web.settings.EnvironmentVariablesController.list = jest.fn(() => ({ url: '/mock_environment_variables_list' }));
-jsRoutes.controllers.web.settings.RegionalSettingsController.index = jest.fn(() => ({ url: '/mock_regional_settings' }));
-jsRoutes.controllers.web.settings.IntegrationsController.list = jest.fn(() => ({ url: '/mock_integrations' }));
+jsRoutes.controllers.APITokenController.listTokens = () => ({ url: '/mock_list_tokens', method: "get", absoluteURL: () => "" });
+jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/mock_possible_cities', method: "get", absoluteURL: () => "" });
+jsRoutes.controllers.GithubConfigController.index = () => ({ url: '/mock_github_config', method: "get", absoluteURL: () => "" });
+jsRoutes.controllers.web.settings.EnvironmentVariablesController.list = () => ({ url: '/mock_environment_variables_list', method: "get", absoluteURL: () => "" });
+jsRoutes.controllers.web.settings.RegionalSettingsController.index = () => ({ url: '/mock_regional_settings', method: "get", absoluteURL: () => "" });
+jsRoutes.controllers.web.settings.IntegrationsController.list = () => ({ url: '/mock_integrations', method: "get", absoluteURL: () => "" });
 
 describe('RegionalSettings', () => {
   const onSaveTimeZone = jest.fn();
