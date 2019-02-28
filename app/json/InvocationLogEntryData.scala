@@ -9,6 +9,7 @@ case class InvocationLogEntryData(
                                   resultText: String,
                                   context: String,
                                   maybeUserIdForContext: Option[String],
+                                  maybeOriginalEventType: Option[String],
                                   runtimeInMilliseconds: Long,
                                   createdAt: OffsetDateTime
                                 )
