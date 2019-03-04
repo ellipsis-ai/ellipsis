@@ -45,6 +45,7 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
       JsObject(Seq()),
       "done",
       "test",
+      Some("channel"),
       None,
       user,
       1000,
