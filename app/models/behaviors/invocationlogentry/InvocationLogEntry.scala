@@ -16,6 +16,7 @@ case class InvocationLogEntry(
                                paramValues: JsValue,
                                resultText: String,
                                context: String,
+                               maybeChannel: Option[String],
                                maybeUserIdForContext: Option[String],
                                user: User,
                                runtimeInMilliseconds: Long,

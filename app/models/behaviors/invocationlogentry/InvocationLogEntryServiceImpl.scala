@@ -26,6 +26,7 @@ case class RawInvocationLogEntry(
                                   paramValues: JsValue,
                                   resultText: String,
                                   context: String,
+                                  maybeChannel: Option[String],
                                   maybeUserIdForContext: Option[String],
                                   userId: String,
                                   runtimeInMilliseconds: Long,
@@ -42,12 +43,13 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def paramValues = column[JsValue]("param_values")
   def resultText = column[String]("result_text")
   def context = column[String]("context")
+  def maybeChannel = column[Option[String]]("channel")
   def maybeUserIdForContext = column[Option[String]]("user_id_for_context")
   def userId = column[String]("user_id")
   def runtimeInMilliseconds = column[Long]("runtime_in_milliseconds")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, behaviorVersionId, resultType, maybeOriginalEventType, messageText, paramValues, resultText, context, maybeUserIdForContext, userId, runtimeInMilliseconds, createdAt) <>
+  def * = (id, behaviorVersionId, resultType, maybeOriginalEventType, messageText, paramValues, resultText, context, maybeChannel, maybeUserIdForContext, userId, runtimeInMilliseconds, createdAt) <>
     ((RawInvocationLogEntry.apply _).tupled, RawInvocationLogEntry.unapply _)
 }
 
@@ -125,6 +127,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         }.toMap),
         result.fullText,
         event.eventContext.name,
+        event.maybeChannel,
         maybeUserIdForContext,
         user.id,
         runtimeInMilliseconds,
@@ -141,6 +144,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         raw.paramValues,
         raw.resultText,
         raw.context,
+        raw.maybeChannel,
         raw.maybeUserIdForContext,
         user,
         raw.runtimeInMilliseconds,

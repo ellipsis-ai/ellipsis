@@ -27,6 +27,7 @@ object InvocationLogEntryQueries {
       raw.paramValues,
       raw.resultText,
       raw.context,
+      raw.maybeChannel,
       raw.maybeUserIdForContext,
       user,
       raw.runtimeInMilliseconds,
