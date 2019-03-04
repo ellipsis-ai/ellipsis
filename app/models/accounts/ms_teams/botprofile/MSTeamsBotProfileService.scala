@@ -1,6 +1,7 @@
 package models.accounts.ms_teams.botprofile
 
 import models.behaviors.BotResult
+import models.behaviors.events.EventType
 import models.behaviors.events.ms_teams.MSTeamsMessageEvent
 import services.ms_teams.apiModels.ActivityInfo
 
@@ -16,6 +17,7 @@ trait MSTeamsBotProfileService {
 
   def sendResultWithNewEvent(
                               description: String,
+                              maybeOriginalEventType: Option[EventType],
                               getEventualMaybeResult: MSTeamsMessageEvent => Future[Option[BotResult]],
                               botProfile: MSTeamsBotProfile,
                               info: ActivityInfo,

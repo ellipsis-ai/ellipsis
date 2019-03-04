@@ -622,6 +622,7 @@ class SlackController @Inject() (
 
     def sendResultWithNewEvent(
                                 description: String,
+                                maybeOriginalEventType: Option[EventType],
                                 getEventualMaybeResult: MessageEvent => Future[Option[BotResult]],
                                 botProfile: BotProfileType,
                                 beQuiet: Boolean
@@ -633,6 +634,7 @@ class SlackController @Inject() (
         channel.id,
         user.id,
         message_ts,
+        maybeOriginalEventType,
         maybeOriginalMessageThreadId,
         isEphemeral,
         Some(response_url),
@@ -794,6 +796,7 @@ class SlackController @Inject() (
           channel.id,
           user.id,
           message_ts,
+          Some(EventType.actionChoice), // TODO: hmm
           maybeThreadIdToUse,
           isEphemeral,
           Some(response_url),
@@ -828,6 +831,7 @@ class SlackController @Inject() (
               channel.id,
               user.id,
               message_ts,
+              None,
               maybeOriginalMessageThreadId,
               useEphemeralResponse,
               Some(response_url),

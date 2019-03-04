@@ -11,6 +11,7 @@ case class InvocationLogEntry(
                                id: String,
                                behaviorVersion: BehaviorVersion,
                                resultType: String,
+                               maybeEventType: Option[EventType],
                                maybeOriginalEventType: Option[EventType],
                                messageText: String,
                                paramValues: JsValue,

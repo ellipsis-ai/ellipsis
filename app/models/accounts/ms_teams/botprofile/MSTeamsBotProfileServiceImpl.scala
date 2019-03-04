@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
 import javax.inject.{Inject, Provider}
 import models.accounts.registration.RegistrationService
-import models.behaviors.events.MSTeamsEventContext
+import models.behaviors.events.{EventType, MSTeamsEventContext}
 import models.behaviors.{BotResult, BotResultService}
 import models.behaviors.events.ms_teams.MSTeamsMessageEvent
 import play.api.Logger
@@ -113,6 +113,7 @@ class MSTeamsBotProfileServiceImpl @Inject() (
 
   def sendResultWithNewEvent(
                               description: String,
+                              maybeOriginalEventType: Option[EventType],
                               getEventualMaybeResult: MSTeamsMessageEvent => Future[Option[BotResult]],
                               botProfile: MSTeamsBotProfile,
                               info: ActivityInfo,
@@ -130,7 +131,7 @@ class MSTeamsBotProfileServiceImpl @Inject() (
       ),
       "",
       Seq(),
-      None,
+      maybeOriginalEventType,
       isUninterruptedConversation = false,
       isEphemeral,
       Some(info.responseUrl),

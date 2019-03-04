@@ -9,7 +9,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants.{BEHAVIOR_GROUP_HELP_RUN_BEHAVIOR_VERSION, SHOW_BEHAVIOR_GROUP_HELP}
-import models.behaviors.events.{Event, MessageEvent}
+import models.behaviors.events.{Event, EventType, MessageEvent}
 import models.help.HelpGroupSearchValue
 import play.api.Logger
 import play.api.mvc.{AnyContent, Request, Result}
@@ -71,6 +71,7 @@ trait ChatPlatformController {
 
     def sendResultWithNewEvent(
                                 description: String,
+                                maybeOriginalEventType: Option[EventType],
                                 getEventualMaybeResult: MessageEvent => Future[Option[BotResult]],
                                 botProfile: BotProfileType,
                                 beQuiet: Boolean
@@ -395,6 +396,7 @@ trait ChatPlatformController {
     def runForCorrectTeam: Unit = {
       info.sendResultWithNewEvent(
         "help index",
+        None,
         (event) => DisplayHelpBehavior(
           None,
           None,
@@ -443,6 +445,7 @@ trait ChatPlatformController {
     def runForCorrectTeam: Unit = {
       info.sendResultWithNewEvent(
         "skill help with maybe search",
+        None,
         (event) => DisplayHelpBehavior(
           searchValue.maybeSearchText,
           Some(searchValue.helpGroupId),
@@ -487,6 +490,7 @@ trait ChatPlatformController {
     def runForCorrectTeam: Unit = {
       info.sendResultWithNewEvent(
         "for skill action list",
+        None,
         event => DisplayHelpBehavior(
           searchValue.maybeSearchText,
           Some(searchValue.helpGroupId),
@@ -679,6 +683,7 @@ trait ChatPlatformController {
     private def runBehaviorVersion(): Unit = {
       info.sendResultWithNewEvent(
         s"run behavior version $behaviorVersionId",
+        None,
         event => for {
           maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(behaviorVersionId)
           maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
