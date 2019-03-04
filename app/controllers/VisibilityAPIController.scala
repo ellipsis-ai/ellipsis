@@ -93,6 +93,46 @@ class VisibilityAPIController @Inject() (
             ea.resultText,
             ea.context,
             ea.maybeUserIdForContext,
+            ea.maybeOriginalEventType.map(_.toString),
+            ea.runtimeInMilliseconds,
+            ea.createdAt
+          )
+        }
+        Ok(Json.toJson(data))
+      } else {
+        NotFound("")
+      }
+    }
+  }
+
+  def forTeamSinceDate(
+                         token: String,
+                         targetTeamId: String,
+                         year: String,
+                         month: String,
+                         day: String
+                       ) = Action.async { implicit request =>
+    val date = dateFor(year, month, day)
+    for {
+      maybeRequestingTeam <- dataService.teams.findForInvocationToken(token)
+      isAdmin <- maybeRequestingTeam.map { team =>
+        dataService.teams.isAdmin(team)
+      }.getOrElse(Future.successful(false))
+      maybeTargetTeam <- dataService.teams.find(targetTeamId)
+      entries <- maybeTargetTeam.map { targetTeam =>
+        dataService.invocationLogEntries.forTeamSinceDate(targetTeam, date)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      if (isAdmin) {
+        val data = entries.map { ea =>
+          InvocationLogEntryData(
+            ea.behaviorVersion.behavior.id,
+            ea.resultType,
+            ea.messageText,
+            ea.resultText,
+            ea.context,
+            ea.maybeUserIdForContext,
+            ea.maybeOriginalEventType.map(_.toString),
             ea.runtimeInMilliseconds,
             ea.createdAt
           )

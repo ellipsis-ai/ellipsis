@@ -84,6 +84,13 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def forTeamSinceDate(team: Team, date: OffsetDateTime): Future[Seq[InvocationLogEntry]] = {
+    val action = forTeamSinceDateQuery(team.id, date).result.map { r =>
+      r.map(tuple2Entry)
+    }
+    dataService.run(action)
+  }
+
   def allForBehavior(
                       behavior: Behavior,
                       from: OffsetDateTime,

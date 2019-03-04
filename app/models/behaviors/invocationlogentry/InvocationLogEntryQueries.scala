@@ -76,6 +76,13 @@ object InvocationLogEntryQueries {
   }
   val forTeamForDateQuery = Compiled(uncompiledForTeamForDateQuery _)
 
+  def uncompiledForTeamSinceDateQuery(teamId: Rep[String], date: Rep[OffsetDateTime]) = {
+    allWithVersion.
+      filter { case(_, (_, ((_, (_, team)), _))) => teamId === team.id}.
+      filter { case((entry, _), _) => entry.createdAt >= date }
+  }
+  val forTeamSinceDateQuery = Compiled(uncompiledForTeamSinceDateQuery _)
+
   def uncompiledAllForBehaviorQuery(
                                      behaviorId: Rep[String],
                                      from: Rep[OffsetDateTime],
