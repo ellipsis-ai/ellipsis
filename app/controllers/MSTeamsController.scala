@@ -231,7 +231,7 @@ class MSTeamsController @Inject() (
       for {
         _ <- sendResultWithNewEvent(
           s"run action named ${actionChoice.actionName}",
-          Some(EventType.actionChoice), // TODO: hmm
+          Some(EventType.actionChoice),
           event => for {
             maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
               dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
