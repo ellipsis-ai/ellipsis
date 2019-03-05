@@ -7,6 +7,7 @@ case class MSTeamsRunEvent(
                           eventContext: MSTeamsEventContext,
                           behaviorVersion: BehaviorVersion,
                           arguments: Map[String, String],
+                          eventType: EventType,
                           maybeOriginalEventType: Option[EventType],
                           override val isEphemeral: Boolean,
                           override val maybeResponseUrl: Option[String],
@@ -15,7 +16,6 @@ case class MSTeamsRunEvent(
 
   override type EC = MSTeamsEventContext
 
-  val eventType: EventType = EventType.api
   val maybeMessageIdForReaction: Option[String] = maybeTriggeringMessageTs
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {

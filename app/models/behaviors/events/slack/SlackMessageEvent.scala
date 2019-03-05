@@ -1,7 +1,6 @@
 package models.behaviors.events.slack
 
 import akka.actor.ActorSystem
-import com.mohiva.play.silhouette.api.LoginInfo
 import json.UserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.conversations.conversation.Conversation
@@ -17,7 +16,7 @@ case class SlackMessageEvent(
                               message: SlackMessage,
                               maybeFile: Option[SlackFile],
                               ts: String,
-                              maybeOriginalEventType: Option[EventType],
+                              protected val maybeOriginalEventType: Option[EventType],
                               override val isUninterruptedConversation: Boolean,
                               override val isEphemeral: Boolean,
                               override val maybeResponseUrl: Option[String],

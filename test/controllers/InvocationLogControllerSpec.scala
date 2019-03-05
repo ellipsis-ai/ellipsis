@@ -41,6 +41,7 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
       behaviorVersion,
       ResultType.Success.toString,
       Some(EventType.chat),
+      Some(EventType.chat),
       "test",
       JsObject(Seq()),
       "done",

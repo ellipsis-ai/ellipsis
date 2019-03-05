@@ -364,7 +364,8 @@ case class SlackEventContext(
       eventContext,
       behaviorVersion,
       nextAction.argumentsMap,
-      Some(botResult.event.eventType),
+      EventType.nextAction,
+      Some(botResult.event.originalEventType),
       botResult.event.isEphemeral,
       botResult.event.maybeResponseUrl,
       maybeMessageId
@@ -566,7 +567,8 @@ case class MSTeamsEventContext(
       eventContext,
       behaviorVersion,
       nextAction.argumentsMap,
-      Some(botResult.event.eventType),
+      EventType.nextAction,
+      Some(botResult.event.originalEventType),
       botResult.event.isEphemeral,
       botResult.event.maybeResponseUrl,
       maybeMessageId

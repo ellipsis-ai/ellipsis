@@ -160,6 +160,7 @@ class MSTeamsController @Inject() (
           maybeTs <- maybeBotProfile.map { botProfile =>
             sendResultWithNewEvent(
               "Message acknowledging response to MS Teams action",
+              None,
               messageEvent => for {
                 maybeConversation <- messageEvent.maybeOngoingConversation(dataService)
               } yield {
@@ -230,6 +231,7 @@ class MSTeamsController @Inject() (
       for {
         _ <- sendResultWithNewEvent(
           s"run action named ${actionChoice.actionName}",
+          Some(EventType.actionChoice),
           event => for {
             maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
               dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
@@ -271,12 +273,14 @@ class MSTeamsController @Inject() (
     def sendEphemeralMessage(message: String): Future[Unit] = Future.successful({})
     def sendResultWithNewEvent(
                                 description: String,
+                                maybeOriginalEventType: Option[EventType],
                                 getEventualMaybeResult: MessageEvent => Future[Option[BotResult]],
                                 botProfile: BotProfileType,
                                 beQuiet: Boolean
                               ): Future[Option[String]] = {
       dataService.msTeamsBotProfiles.sendResultWithNewEvent(
         description,
+        maybeOriginalEventType,
         getEventualMaybeResult,
         botProfile,
         toActivityInfo,

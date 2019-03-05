@@ -22,6 +22,7 @@ object InvocationLogEntryQueries {
       raw.id,
       BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
       raw.resultType,
+      EventType.maybeFrom(raw.maybeEventType),
       EventType.maybeFrom(raw.maybeOriginalEventType),
       raw.messageText,
       raw.paramValues,

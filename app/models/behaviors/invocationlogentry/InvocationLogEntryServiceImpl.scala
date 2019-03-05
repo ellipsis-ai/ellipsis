@@ -21,6 +21,7 @@ case class RawInvocationLogEntry(
                                   id: String,
                                   behaviorVersionId: String,
                                   resultType: String,
+                                  maybeEventType: Option[String],
                                   maybeOriginalEventType: Option[String],
                                   messageText: String,
                                   paramValues: JsValue,
@@ -38,6 +39,7 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def id = column[String]("id", O.PrimaryKey)
   def behaviorVersionId = column[String]("behavior_version_id")
   def resultType = column[String]("result_type")
+  def maybeEventType = column[Option[String]]("event_type")
   def maybeOriginalEventType = column[Option[String]]("original_event_type")
   def messageText = column[String]("message_text")
   def paramValues = column[JsValue]("param_values")
@@ -49,7 +51,7 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def runtimeInMilliseconds = column[Long]("runtime_in_milliseconds")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, behaviorVersionId, resultType, maybeOriginalEventType, messageText, paramValues, resultText, context, maybeChannel, maybeUserIdForContext, userId, runtimeInMilliseconds, createdAt) <>
+  def * = (id, behaviorVersionId, resultType, maybeEventType, maybeOriginalEventType, messageText, paramValues, resultText, context, maybeChannel, maybeUserIdForContext, userId, runtimeInMilliseconds, createdAt) <>
     ((RawInvocationLogEntry.apply _).tupled, RawInvocationLogEntry.unapply _)
 }
 
@@ -120,6 +122,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         IDs.next,
         behaviorVersion.id,
         result.resultType.toString,
+        Some(event.eventType.toString),
         Some(event.originalEventType.toString),
         event.invocationLogText,
         Json.toJson(parametersWithValues.map { ea =>
@@ -139,6 +142,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         raw.id,
         behaviorVersion,
         raw.resultType,
+        Some(event.eventType),
         Some(event.originalEventType),
         raw.messageText,
         raw.paramValues,

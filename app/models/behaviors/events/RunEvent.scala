@@ -12,6 +12,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait RunEvent extends Event {
 
+  val eventType: EventType
+
   val behaviorVersion: BehaviorVersion
   val arguments: Map[String, String]
 

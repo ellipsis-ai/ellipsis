@@ -3,7 +3,7 @@ package models.behaviors
 import akka.actor.ActorSystem
 import javax.inject.Inject
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{Event, EventHandler, SlackEventContext}
+import models.behaviors.events.{Event, EventHandler}
 import play.api.{Configuration, Logger}
 import services.caching.CacheService
 import services.slack.SlackEventService
@@ -41,7 +41,11 @@ class BotResultServiceImpl @Inject() (
     } yield result
   }
 
-  private def runNextAction(nextAction: NextAction, botResult: BotResult, maybeMessageTs: Option[String])(implicit actorSystem: ActorSystem): DBIO[Unit] = {
+  private def runNextAction(
+                             nextAction: NextAction,
+                             botResult: BotResult,
+                             maybeMessageTs: Option[String]
+                           )(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
       maybeOriginatingResponseChannel <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
         DBIO.from(botResult.event.maybeChannelToUseFor(behaviorVersion, services))
