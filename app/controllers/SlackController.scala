@@ -796,7 +796,7 @@ class SlackController @Inject() (
           channel.id,
           user.id,
           message_ts,
-          Some(EventType.actionChoice), // TODO: hmm
+          Some(EventType.actionChoice),
           maybeThreadIdToUse,
           isEphemeral,
           Some(response_url),
