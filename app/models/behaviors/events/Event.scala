@@ -35,7 +35,7 @@ trait Event {
   lazy val maybeMessageText: Option[String] = Option(messageText).filter(_.trim.nonEmpty)
   val maybeScheduled: Option[Scheduled] = None
   val eventType: EventType
-  val maybeOriginalEventType: Option[EventType]
+  protected val maybeOriginalEventType: Option[EventType]
   val isResponseExpected: Boolean
   val includesBotMention: Boolean
   val messageRecipientPrefix: String = eventContext.messageRecipientPrefix(isUninterruptedConversation)

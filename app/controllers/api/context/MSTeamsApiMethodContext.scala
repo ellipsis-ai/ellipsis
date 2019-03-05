@@ -42,6 +42,7 @@ case class MSTeamsApiMethodContext(
                    behaviorVersion: BehaviorVersion,
                    argumentsMap: Map[String, String],
                    maybeChannel: Option[String],
+                   eventType: EventType,
                    maybeOriginalEventType: Option[EventType],
                    maybeTriggeringMessageId: Option[String]
                  ): Future[Option[MSTeamsRunEvent]] = {
@@ -67,6 +68,7 @@ case class MSTeamsApiMethodContext(
           ),
           behaviorVersion,
           argumentsMap,
+          eventType,
           maybeOriginalEventType,
           isEphemeral = false,
           None,

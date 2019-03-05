@@ -127,7 +127,7 @@ class CacheServiceImpl @Inject() (
           ev.message,
           ev.maybeFile,
           ev.ts,
-          ev.maybeOriginalEventType.map(_.toString),
+          Some(ev.originalEventType.toString),
           ev.isUninterruptedConversation,
           ev.isEphemeral,
           ev.maybeResponseUrl,

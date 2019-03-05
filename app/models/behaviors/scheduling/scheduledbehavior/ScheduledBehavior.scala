@@ -64,6 +64,7 @@ case class ScheduledBehavior(
             ),
             behaviorVersion,
             arguments,
+            EventType.scheduled,
             Some(EventType.scheduled),
             isEphemeral = false,
             None,
