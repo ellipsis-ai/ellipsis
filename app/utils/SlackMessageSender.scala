@@ -191,13 +191,13 @@ case class SlackMessageSender(
 
   private def logInvolvedFor(channel: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     maybeBehaviorVersion.map { behaviorVersion =>
-      (for {
+      for {
         members <- SlackChannels(client).getMembersFor(channel).map(m => m.filterNot(_ == client.profile.userId))
         users <- Future.sequence(members.map { ea =>
           services.dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, ea), Seq(), behaviorVersion.team.id)
         })
         _ <- services.dataService.behaviorVersionUserInvolvements.createAllFor(behaviorVersion, users, OffsetDateTime.now)
-      } yield {}).recover(postErrorRecovery(channel, "logging involved"))
+      } yield {}
     }.getOrElse(Future.successful({}))
   }
 

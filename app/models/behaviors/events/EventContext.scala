@@ -543,7 +543,7 @@ case class MSTeamsEventContext(
         services.cacheService.getMSTeamsChannelFor(profile, channel.id)
       }.getOrElse(Future.successful(None))
       channelMembers <- maybeChannel.map { channel =>
-        client.getTeamMembers(channel.team)
+        client.getTeamMembers(channel.team.id)
       }.getOrElse(Future.successful(Seq()))
     } yield {
       Json.obj(
