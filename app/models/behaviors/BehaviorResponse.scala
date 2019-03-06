@@ -161,6 +161,7 @@ case class BehaviorResponse(
     } else {
       event.sendMessage(
         "Let’s continue this in a thread. :speech_balloon:",
+        Some(behaviorVersion),
         behaviorVersion.responseType,
         maybeShouldUnfurl = None,
         None,

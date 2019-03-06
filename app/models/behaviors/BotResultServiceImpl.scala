@@ -91,6 +91,7 @@ class BotResultServiceImpl @Inject() (
       sendResult <- DBIO.from(
         event.sendMessage(
           botResult.fullText,
+          botResult.maybeBehaviorVersion,
           botResult.responseType,
           maybeShouldUnfurl,
           maybeConversation,

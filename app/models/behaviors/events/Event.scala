@@ -206,6 +206,7 @@ trait Event {
 
   def sendMessage(
                    text: String,
+                   maybeBehaviorVersion: Option[BehaviorVersion],
                    responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
@@ -215,7 +216,7 @@ trait Event {
                    developerContext: DeveloperContext,
                    services: DefaultServices
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    eventContext.sendMessage(this, text, responseType, maybeShouldUnfurl, maybeConversation, attachments, files, choices, developerContext, services)
+    eventContext.sendMessage(this, text, maybeBehaviorVersion, responseType, maybeShouldUnfurl, maybeConversation, attachments, files, choices, developerContext, services)
   }
 
   def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {

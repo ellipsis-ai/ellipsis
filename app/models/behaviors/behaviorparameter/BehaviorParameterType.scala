@@ -692,6 +692,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
                                            )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     context.event.sendMessage(
       "",
+      Some(behaviorVersion),
       responseType = Normal,
       maybeShouldUnfurl = None,
       context.maybeConversation,

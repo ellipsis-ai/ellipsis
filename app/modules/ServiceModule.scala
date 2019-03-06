@@ -28,6 +28,7 @@ import models.behaviors.behaviorgroupversionsha.{BehaviorGroupVersionSHAService,
 import models.behaviors.behaviorparameter.{BehaviorParameterService, BehaviorParameterServiceImpl}
 import models.behaviors.behaviortestresult.{BehaviorTestResultService, BehaviorTestResultServiceImpl}
 import models.behaviors.behaviorversion.{BehaviorVersionService, BehaviorVersionServiceImpl}
+import models.behaviors.behaviorversionuserinvolvement.{BehaviorVersionUserInvolvementService, BehaviorVersionUserInvolvementServiceImpl}
 import models.behaviors.config.awsconfig.{AWSConfigService, AWSConfigServiceImpl}
 import models.behaviors.config.requiredawsconfig.{RequiredAWSConfigService, RequiredAWSConfigServiceImpl}
 import models.behaviors.config.requiredoauth1apiconfig.{RequiredOAuth1ApiConfigService, RequiredOAuth1ApiConfigServiceImpl}
@@ -125,6 +126,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[ScheduledBehaviorService].to[ScheduledBehaviorServiceImpl]
     bind[RecurrenceService].to[RecurrenceServiceImpl]
     bind[InvocationLogEntryService].to[InvocationLogEntryServiceImpl]
+    bind[BehaviorVersionUserInvolvementService].to[BehaviorVersionUserInvolvementServiceImpl]
     bind[AWSDynamoDBService].to[AWSDynamoDBServiceImpl]
     bind[BehaviorResponseService].to[BehaviorResponseServiceImpl]
     bind[BotResultService].to[BotResultServiceImpl]

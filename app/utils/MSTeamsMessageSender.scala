@@ -5,7 +5,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import json.UserData
 import models.MSTeamsMessageFormatter
-import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events._
@@ -58,7 +58,8 @@ case class MSTeamsMessageSender(
                                  botName: String,
                                  services: DefaultServices,
                                  isEphemeral: Boolean,
-                                 beQuiet: Boolean
+                                 beQuiet: Boolean,
+                                 maybeBehaviorVersion: Option[BehaviorVersion]
                              ) {
 
   import _root_.services.ms_teams.apiModels.Formatting._

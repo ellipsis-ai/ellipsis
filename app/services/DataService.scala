@@ -26,6 +26,7 @@ import models.behaviors.behaviorgroupversionsha.BehaviorGroupVersionSHAService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviortestresult.BehaviorTestResultService
 import models.behaviors.behaviorversion.BehaviorVersionService
+import models.behaviors.behaviorversionuserinvolvement.BehaviorVersionUserInvolvementService
 import models.behaviors.config.awsconfig.AWSConfigService
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfigService
 import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfigService
@@ -113,6 +114,7 @@ trait DataService {
   val scheduledBehaviors: ScheduledBehaviorService
   val recurrences: RecurrenceService
   val invocationLogEntries: InvocationLogEntryService
+  val behaviorVersionUserInvolvements: BehaviorVersionUserInvolvementService
   val devModeChannels: DevModeChannelService
   val subscriptions: SubscriptionService
   val invoices: InvoiceService

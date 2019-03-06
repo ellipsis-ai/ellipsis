@@ -220,6 +220,7 @@ class ConversationServiceImpl @Inject() (
       maybeLastTs <- maybeEvent.map { event =>
         DBIO.from(event.sendMessage(
           interruptionPromptFor(event, prompt, includeUsername),
+          Some(conversation.behaviorVersion),
           conversation.behaviorVersion.responseType,
           maybeShouldUnfurl = None,
           Some(conversation),

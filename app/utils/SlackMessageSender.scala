@@ -1,10 +1,13 @@
 package utils
 
+import java.time.OffsetDateTime
+
 import akka.actor.ActorSystem
+import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import json.UserData
 import models.SlackMessageFormatter
-import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.{slack, _}
@@ -89,7 +92,8 @@ case class SlackMessageSender(
                                services: DefaultServices,
                                isEphemeral: Boolean,
                                maybeResponseUrl: Option[String],
-                               beQuiet: Boolean
+                               beQuiet: Boolean,
+                               maybeBehaviorVersion: Option[BehaviorVersion]
                              ) {
 
   def choicesAttachments(implicit ec: ExecutionContext): Future[Seq[SlackMessageAttachment]] = {
@@ -185,6 +189,18 @@ case class SlackMessageSender(
     }
   }
 
+  private def logInvolvedFor(channel: String)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+    maybeBehaviorVersion.map { behaviorVersion =>
+      (for {
+        members <- SlackChannels(client).getMembersFor(channel).map(m => m.filterNot(_ == client.profile.userId))
+        users <- Future.sequence(members.map { ea =>
+          services.dataService.users.ensureUserFor(LoginInfo(Conversation.SLACK_CONTEXT, ea), Seq(), behaviorVersion.team.id)
+        })
+        _ <- services.dataService.behaviorVersionUserInvolvements.createAllFor(behaviorVersion, users, OffsetDateTime.now)
+      } yield {}).recover(postErrorRecovery(channel, "logging involved"))
+    }.getOrElse(Future.successful({}))
+  }
+
   private def postChatMessage(
                                text: String,
                                maybeAttachments: Option[Seq[Attachment]] = None,
@@ -198,23 +214,25 @@ case class SlackMessageSender(
       if (isEphemeral && !SlackEventContext.channelIsDM(responseChannel)) {
         postEphemeralMessage(text, maybeAttachments, responseChannel, maybeThreadTs).map(_ => None)
       } else {
-        client.postChatMessage(
-          responseChannel,
-          text,
-          username = None,
-          asUser = Some(true),
-          parse = None,
-          linkNames = None,
-          attachments = maybeAttachments,
-          unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
-          unfurlMedia = Some(true),
-          iconUrl = None,
-          iconEmoji = None,
-          replaceOriginal = None,
-          deleteOriginal = None,
-          threadTs = maybeThreadTs,
-          replyBroadcast = None
-        ).map(ts => Some(ts)).recover(postErrorRecovery(responseChannel, text))
+        logInvolvedFor(responseChannel).flatMap { logged =>
+          client.postChatMessage(
+            responseChannel,
+            text,
+            username = None,
+            asUser = Some(true),
+            parse = None,
+            linkNames = None,
+            attachments = maybeAttachments,
+            unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
+            unfurlMedia = Some(true),
+            iconUrl = None,
+            iconEmoji = None,
+            replaceOriginal = None,
+            deleteOriginal = None,
+            threadTs = maybeThreadTs,
+            replyBroadcast = None
+          ).map(ts => Some(ts)).recover(postErrorRecovery(responseChannel, text))
+        }
       }
     }
   }

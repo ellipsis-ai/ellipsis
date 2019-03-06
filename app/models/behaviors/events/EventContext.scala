@@ -86,6 +86,7 @@ sealed trait EventContext {
   def sendMessage(
                    event: Event,
                    text: String,
+                   maybeBehaviorVersion: Option[BehaviorVersion],
                    responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
@@ -285,6 +286,7 @@ case class SlackEventContext(
   def sendMessage(
                    event: Event,
                    unformattedText: String,
+                   maybeBehaviorVersion: Option[BehaviorVersion],
                    responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
@@ -319,7 +321,8 @@ case class SlackEventContext(
         services,
         event.isEphemeral,
         event.maybeResponseUrl,
-        event.beQuiet
+        event.beQuiet,
+        maybeBehaviorVersion
       ).send
     } yield maybeTs
   }
@@ -495,6 +498,7 @@ case class MSTeamsEventContext(
   def sendMessage(
                    event: Event,
                    unformattedText: String,
+                   maybeBehaviorVersion: Option[BehaviorVersion],
                    responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
@@ -526,7 +530,8 @@ case class MSTeamsEventContext(
         botName,
         services,
         event.isEphemeral,
-        event.beQuiet
+        event.beQuiet,
+        maybeBehaviorVersion
       ).send
     } yield maybeResult
   }
@@ -688,6 +693,7 @@ case class TestEventContext(
   def sendMessage(
                    event: Event,
                    text: String,
+                   maybeBehaviorVersion: Option[BehaviorVersion],
                    responseType: BehaviorResponseType,
                    maybeShouldUnfurl: Option[Boolean],
                    maybeConversation: Option[Conversation],
