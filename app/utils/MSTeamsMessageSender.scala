@@ -178,12 +178,14 @@ case class MSTeamsMessageSender(
           maybeReplyToId,
           maybeAttachments
         )
-        logInvolvedFor(activityInfo).flatMap { _ =>
-          client.postToResponseUrl(
-            activityInfo.responseUrlFor(conversation.id, maybeReplyToId),
-            Json.toJson(response)
-          ).recover(postErrorRecovery(activityInfo.conversation.id, text))
-        }
+        client.postToResponseUrl(
+          activityInfo.responseUrlFor(conversation.id, maybeReplyToId),
+          Json.toJson(response)
+        ).
+          recover(postErrorRecovery(activityInfo.conversation.id, text)).
+          flatMap { res =>
+            logInvolvedFor(activityInfo).map(_ => res)
+          }
       }
       case firstMessageInfo: FirstMessageInfo => {
         val convoId = firstMessageInfo.channel
@@ -198,12 +200,14 @@ case class MSTeamsMessageSender(
               maybeReplyToId,
               maybeAttachments
             )
-            logInvolvedFor(firstMessageInfo).flatMap { _ =>
-              client.postToResponseUrl(
-                s"${firstMessageInfo.serviceUrl}/v3/conversations/$convoId/activities",
-                Json.toJson(response)
-              ).recover(postErrorRecovery(convoId, text))
-            }
+            client.postToResponseUrl(
+              s"${firstMessageInfo.serviceUrl}/v3/conversations/$convoId/activities",
+              Json.toJson(response)
+            ).
+              recover(postErrorRecovery(convoId, text)).
+              flatMap { res =>
+                logInvolvedFor(firstMessageInfo).map(_ => res)
+              }
           }
         } yield result
       }

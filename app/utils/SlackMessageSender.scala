@@ -214,25 +214,25 @@ case class SlackMessageSender(
       if (isEphemeral && !SlackEventContext.channelIsDM(responseChannel)) {
         postEphemeralMessage(text, maybeAttachments, responseChannel, maybeThreadTs).map(_ => None)
       } else {
-        logInvolvedFor(responseChannel).flatMap { logged =>
-          client.postChatMessage(
-            responseChannel,
-            text,
-            username = None,
-            asUser = Some(true),
-            parse = None,
-            linkNames = None,
-            attachments = maybeAttachments,
-            unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
-            unfurlMedia = Some(true),
-            iconUrl = None,
-            iconEmoji = None,
-            replaceOriginal = None,
-            deleteOriginal = None,
-            threadTs = maybeThreadTs,
-            replyBroadcast = None
-          ).map(ts => Some(ts)).recover(postErrorRecovery(responseChannel, text))
-        }
+        client.postChatMessage(
+          responseChannel,
+          text,
+          username = None,
+          asUser = Some(true),
+          parse = None,
+          linkNames = None,
+          attachments = maybeAttachments,
+          unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
+          unfurlMedia = Some(true),
+          iconUrl = None,
+          iconEmoji = None,
+          replaceOriginal = None,
+          deleteOriginal = None,
+          threadTs = maybeThreadTs,
+          replyBroadcast = None
+        ).
+          recover(postErrorRecovery(responseChannel, text)).
+          flatMap(ts => logInvolvedFor(responseChannel).map(_ => Some(ts)))
       }
     }
   }
