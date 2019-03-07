@@ -42,6 +42,8 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
   val isInvokedExternally: Boolean
   val requiresChannel: Boolean
 
+  lazy val eventType: EventType = if (isInvokedExternally) { EventType.externalApi } else { EventType.api }
+
   def maybeOriginatingBehaviorVersion: Future[Option[BehaviorVersion]] = {
     maybeInvocationToken.map { invocationToken =>
       dataService.behaviorVersions.findWithoutAccessCheck(invocationToken.behaviorVersionId)
@@ -84,7 +86,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
     for {
       maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
       maybeEvent <- maybeBehaviorVersion.map { behaviorVersion =>
-        maybeRunEventFor(behaviorVersion, argumentsMap, maybeChannel, EventType.api, maybeOriginalEventType, maybeOriginalMessageId)
+        maybeRunEventFor(behaviorVersion, argumentsMap, maybeChannel, eventType, maybeOriginalEventType, maybeOriginalMessageId)
       }.getOrElse(Future.successful(None))
     } yield maybeEvent
   }
