@@ -1,11 +1,13 @@
 package utils
 
+import java.time.OffsetDateTime
+
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
 import json.UserData
 import models.MSTeamsMessageFormatter
-import models.behaviors.behaviorversion.{BehaviorResponseType, Private}
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events._
@@ -14,7 +16,7 @@ import models.behaviors.{ActionChoice, DeveloperContext}
 import models.team.{Team => EllipsisTeam}
 import play.api.libs.json.Json
 import services.DefaultServices
-import services.ms_teams.MSTeamsApiClient
+import services.ms_teams.{MSTeamsApiClient, MSTeamsApiProfileClient}
 import services.ms_teams.apiModels.{ActivityInfo, ResponseInfo, _}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,7 +60,8 @@ case class MSTeamsMessageSender(
                                  botName: String,
                                  services: DefaultServices,
                                  isEphemeral: Boolean,
-                                 beQuiet: Boolean
+                                 beQuiet: Boolean,
+                                 maybeBehaviorVersion: Option[BehaviorVersion]
                              ) {
 
   import _root_.services.ms_teams.apiModels.Formatting._
@@ -121,6 +124,42 @@ case class MSTeamsMessageSender(
     }
   }
 
+  private def getChannelMembersFor(
+                                    info: EventInfo
+                                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[String]] = {
+    if (info.isPublicChannel) {
+      val maybeBotProfile = client match {
+        case c: MSTeamsApiProfileClient => Some(c.profile)
+        case _ => None
+      }
+      for {
+        maybeChannel <- info.channelData.channel.map { channel =>
+          maybeBotProfile.map { profile =>
+            services.cacheService.getMSTeamsChannelFor(profile, channel.idWithoutMessage)
+          }.getOrElse(Future.successful(None))
+        }.getOrElse(Future.successful(None))
+        members <- maybeChannel.map { channel =>
+          client.getTeamMembers(channel.team.id)
+        }.getOrElse(Future.successful(Seq()))
+      } yield members.map(_.id)
+    } else {
+      Future.successful(info.aadObjectId.toSeq)
+    }
+
+  }
+
+  private def logInvolvedFor(info: EventInfo)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
+    maybeBehaviorVersion.map { behaviorVersion =>
+      for {
+        members <- getChannelMembersFor(info)
+        users <- Future.sequence(members.map { ea =>
+          services.dataService.users.ensureUserFor(LoginInfo(Conversation.MS_AAD_CONTEXT, ea), Seq(), behaviorVersion.team.id)
+        })
+        _ <- services.dataService.behaviorVersionUserInvolvements.createAllFor(behaviorVersion, users, OffsetDateTime.now)
+      } yield {}
+    }.getOrElse(Future.successful({}))
+  }
+
   private def postChatMessage(
                                maybeConversationOverride: Option[ConversationAccount],
                                maybeReplyToId: Option[String],
@@ -142,7 +181,11 @@ case class MSTeamsMessageSender(
         client.postToResponseUrl(
           activityInfo.responseUrlFor(conversation.id, maybeReplyToId),
           Json.toJson(response)
-        ).recover(postErrorRecovery(activityInfo.conversation.id, text))
+        ).
+          recover(postErrorRecovery(activityInfo.conversation.id, text)).
+          flatMap { res =>
+            logInvolvedFor(activityInfo).map(_ => res)
+          }
       }
       case firstMessageInfo: FirstMessageInfo => {
         val convoId = firstMessageInfo.channel
@@ -160,7 +203,11 @@ case class MSTeamsMessageSender(
             client.postToResponseUrl(
               s"${firstMessageInfo.serviceUrl}/v3/conversations/$convoId/activities",
               Json.toJson(response)
-            ).recover(postErrorRecovery(convoId, text))
+            ).
+              recover(postErrorRecovery(convoId, text)).
+              flatMap { res =>
+                logInvolvedFor(firstMessageInfo).map(_ => res)
+              }
           }
         } yield result
       }

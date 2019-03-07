@@ -28,6 +28,7 @@ import models.behaviors.behaviorgroupversionsha.BehaviorGroupVersionSHAService
 import models.behaviors.behaviorparameter.BehaviorParameterService
 import models.behaviors.behaviortestresult.BehaviorTestResultService
 import models.behaviors.behaviorversion.BehaviorVersionService
+import models.behaviors.behaviorversionuserinvolvement.BehaviorVersionUserInvolvementService
 import models.behaviors.config.awsconfig.AWSConfigService
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfigService
 import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfigService
@@ -117,6 +118,7 @@ class PostgresDataService @Inject() (
                                       val scheduledBehaviorsProvider: Provider[ScheduledBehaviorService],
                                       val recurrencesProvider: Provider[RecurrenceService],
                                       val invocationLogEntriesProvider: Provider[InvocationLogEntryService],
+                                      val behaviorVersionUserInvolvementsProvider: Provider[BehaviorVersionUserInvolvementService],
                                       val devModeChannelsProvider: Provider[DevModeChannelService],
                                       val behaviorGroupDeploymentsProvider: Provider[BehaviorGroupDeploymentService],
                                       val managedBehaviorGroupsProvider: Provider[ManagedBehaviorGroupService],
@@ -180,6 +182,7 @@ class PostgresDataService @Inject() (
   val scheduledBehaviors = scheduledBehaviorsProvider.get
   val recurrences = recurrencesProvider.get
   val invocationLogEntries = invocationLogEntriesProvider.get
+  val behaviorVersionUserInvolvements: BehaviorVersionUserInvolvementService = behaviorVersionUserInvolvementsProvider.get
   val devModeChannels = devModeChannelsProvider.get
   val behaviorGroupDeployments = behaviorGroupDeploymentsProvider.get
   val managedBehaviorGroups: ManagedBehaviorGroupService = managedBehaviorGroupsProvider.get

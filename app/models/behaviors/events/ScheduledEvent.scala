@@ -3,7 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import json.UserData
 import models.behaviors.behavior.Behavior
-import models.behaviors.behaviorversion.BehaviorResponseType
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.slack.{SlackMessageEvent, SlackRunEvent}
 import models.behaviors.scheduling.Scheduled
@@ -33,6 +33,7 @@ sealed trait ScheduledEvent extends Event {
 
   override def sendMessage(
                             text: String,
+                            maybeBehaviorVersion: Option[BehaviorVersion],
                             responseType: BehaviorResponseType,
                             maybeShouldUnfurl: Option[Boolean],
                             maybeConversation: Option[Conversation],
@@ -42,7 +43,7 @@ sealed trait ScheduledEvent extends Event {
                             developerContext: DeveloperContext,
                             services: DefaultServices
                           )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    underlying.sendMessage(text, responseType, maybeShouldUnfurl, maybeConversation, attachments, files, choices, developerContext, services)
+    underlying.sendMessage(text, maybeBehaviorVersion, responseType, maybeShouldUnfurl, maybeConversation, attachments, files, choices, developerContext, services)
   }
 
   override def detailsFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[JsObject] = {

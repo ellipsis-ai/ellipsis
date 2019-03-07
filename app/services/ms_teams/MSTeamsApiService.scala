@@ -370,8 +370,8 @@ trait MSTeamsApiClient {
       }
   }
 
-  def getTeamMembers(team: Team): Future[Seq[DirectoryObject]] = {
-    getResponseFor(s"groups/${team.id}/members", Seq()).
+  def getTeamMembers(teamId: String): Future[Seq[DirectoryObject]] = {
+    getResponseFor(s"groups/${teamId}/members", Seq()).
       map(r => extractValue[Seq[DirectoryObject]](r)).
       recover {
         case MSTeamsApiError(err) => {
@@ -379,7 +379,7 @@ trait MSTeamsApiClient {
             s"""
                |Failed to retrieve members: $err
                |
-               |Team ID: ${team.id}
+               |Team ID: ${teamId}
                |Tenant ID: ${tenantId}
              """.stripMargin)
           Seq()
