@@ -53,7 +53,19 @@ class TeamServiceImpl @Inject() (
   }
 
   def findByName(name: String): Future[Option[Team]] = {
-    val action = findByNameQueryFor(name).result.map(_.headOption)
+    val action = findByNameQueryFor(name).result.flatMap { found =>
+      DBIO.sequence(found.map { ea =>
+        dataService.invocationLogEntries.lastInvocationDateForTeamAction(ea).map { timestamp =>
+          (ea, timestamp)
+        }
+      })
+    }.map { withTimestamp =>
+      withTimestamp.
+        sortBy { case(_, maybeTimestamp) => maybeTimestamp.getOrElse(OffsetDateTime.now.minusYears(5))}.
+        reverse.
+        map { case(team, _) => team }.
+        headOption
+    }
     dataService.run(action)
   }
 

@@ -157,8 +157,11 @@ class InvocationLogEntryServiceImpl @Inject() (
     }
   }
 
+  def lastInvocationDateForTeamAction(team: Team): DBIO[Option[OffsetDateTime]] = {
+    lastInvocationForTeamQuery(team.id).result.headOption
+  }
+
   def lastInvocationDateForTeam(team: Team): Future[Option[OffsetDateTime]] = {
-    val action = lastInvocationForTeamQuery(team.id).result.headOption
-    dataService.run(action)
+    dataService.run(lastInvocationDateForTeamAction(team))
   }
 }

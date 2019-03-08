@@ -161,7 +161,7 @@ class VisibilityAPIController @Inject() (
 
   def activeWorkflowsSinceDate(
                                 token: String,
-                                targetTeamId: String,
+                                targetTeamName: String,
                                 year: String,
                                 month: String,
                                 day: String
@@ -173,7 +173,7 @@ class VisibilityAPIController @Inject() (
       isAdmin <- maybeRequestingTeam.map { team =>
         dataService.teams.isAdmin(team)
       }.getOrElse(Future.successful(false))
-      maybeTargetTeam <- dataService.teams.find(targetTeamId)
+      maybeTargetTeam <- dataService.teams.findByName(targetTeamName)
       entries <- maybeTargetTeam.map { targetTeam =>
         dataService.invocationLogEntries.forTeamSinceDate(targetTeam, start).map { e =>
           e.filter { ea =>
