@@ -121,6 +121,7 @@ POST        /admin/teams/toggle_bot_shortcut          @controllers.admin.TeamsCo
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
 GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @controllers.VisibilityAPIController.forTeamForDate(token: String, teamName: String, year: String, month: String, day: String)
 GET         /metrics/for_team_since_date/:token/:teamId/:year/:month/:day @controllers.VisibilityAPIController.forTeamSinceDate(token: String, teamId: String, year: String, month: String, day: String)
+GET         /metrics/active_workflows_for_team_since_date/:token/:teamName/:year/:month/:day @controllers.VisibilityAPIController.activeWorkflowsSinceDate(token: String, teamName: String, year: String, month: String, day: String)
 
 GET         /help/devmode                             @controllers.HelpController.devMode(slackTeamId: Option[String] ?= None, botName: Option[String] ?= None)
 GET         /help/scheduling                          @controllers.HelpController.scheduledMessages(slackTeamId: Option[String] ?= None, botName: Option[String] ?= None)

@@ -36,6 +36,7 @@ trait InvocationLogEntryService {
                        runtimeInMilliseconds: Long
                      ): DBIO[InvocationLogEntry]
 
+  def lastInvocationDateForTeamAction(team: Team): DBIO[Option[OffsetDateTime]]
   def lastInvocationDateForTeam(team: Team): Future[Option[OffsetDateTime]]
 
 }

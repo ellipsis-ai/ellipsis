@@ -8,18 +8,19 @@ import javax.inject.Inject
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.team.Team
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class BehaviorVersionUserInvolvement(
-                                           id: String,
-                                           behaviorVersionId: String,
-                                           userId: String,
-                                           createdAt: OffsetDateTime
-                                          )
+case class RawBehaviorVersionUserInvolvement(
+                                               id: String,
+                                               behaviorVersionId: String,
+                                               userId: String,
+                                               createdAt: OffsetDateTime
+                                              )
 
-class BehaviorVersionUserInvolvementsTable(tag: Tag) extends Table[BehaviorVersionUserInvolvement](tag, "behavior_version_user_involvements") {
+class BehaviorVersionUserInvolvementsTable(tag: Tag) extends Table[RawBehaviorVersionUserInvolvement](tag, "behavior_version_user_involvements") {
 
   def id = column[String]("id")
   def behaviorVersionId = column[String]("behavior_version_id")
@@ -27,7 +28,7 @@ class BehaviorVersionUserInvolvementsTable(tag: Tag) extends Table[BehaviorVersi
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * = (id, behaviorVersionId, userId, createdAt) <>
-    ((BehaviorVersionUserInvolvement.apply _).tupled, BehaviorVersionUserInvolvement.unapply _)
+    ((RawBehaviorVersionUserInvolvement.apply _).tupled, RawBehaviorVersionUserInvolvement.unapply _)
 }
 
 class BehaviorVersionUserInvolvementServiceImpl @Inject()(
@@ -37,7 +38,7 @@ class BehaviorVersionUserInvolvementServiceImpl @Inject()(
 
   def dataService = dataServiceProvider.get
 
-  val all = TableQuery[BehaviorVersionUserInvolvementsTable]
+  import BehaviorVersionUserInvolvementQueries._
 
   def createAllFor(
                     behaviorVersion: BehaviorVersion,
@@ -47,13 +48,20 @@ class BehaviorVersionUserInvolvementServiceImpl @Inject()(
     val instances = users.map { ea =>
       BehaviorVersionUserInvolvement(
         IDs.next,
-        behaviorVersion.id,
-        ea.id,
+        behaviorVersion,
+        ea,
         createdAt
       )
     }
 
-    val action = (all ++= instances).map { _ => instances}
+    val action = (all ++= instances.map(_.toRaw)).map { _ => instances}
+    dataService.run(action)
+  }
+
+  def findAllForTeamBetween(team: Team, start: OffsetDateTime, end: OffsetDateTime): Future[Seq[BehaviorVersionUserInvolvement]] = {
+    val action = findAllForTeamBetweenQuery(team.id, start, end).result.map { r =>
+      r.map(tuple2Involvement)
+    }
     dataService.run(action)
   }
 
