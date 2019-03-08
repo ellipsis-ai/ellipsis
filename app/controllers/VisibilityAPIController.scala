@@ -2,11 +2,12 @@ package controllers
 
 import java.time.format.DateTimeFormatter
 import java.time.{OffsetDateTime, ZoneOffset}
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.google.inject.Provider
 import json.Formatting._
 import json.InvocationLogEntryData
+import models.behaviors.events.EventType
 import play.api.Configuration
 import play.api.libs.json.Json
 import services.DataService
@@ -145,5 +146,68 @@ class VisibilityAPIController @Inject() (
       }
     }
   }
+
+  case class ActiveWorkflowStat(
+                                  behaviorName: String,
+                                  start: OffsetDateTime,
+                                  end: OffsetDateTime,
+                                  invocationCount: Long,
+                                  involvedUserCount: Long
+                                )
+
+  implicit val activeWorkflowStatWrites = Json.writes[ActiveWorkflowStat]
+
+  val workflowEventTypes: Seq[EventType] = Seq(EventType.scheduled, EventType.chat)
+
+  def activeWorkflowsSinceDate(
+                                token: String,
+                                targetTeamId: String,
+                                year: String,
+                                month: String,
+                                day: String
+                              ) = Action.async { implicit request =>
+    val start = dateFor(year, month, day)
+    val end = OffsetDateTime.now
+    for {
+      maybeRequestingTeam <- dataService.teams.findForInvocationToken(token)
+      isAdmin <- maybeRequestingTeam.map { team =>
+        dataService.teams.isAdmin(team)
+      }.getOrElse(Future.successful(false))
+      maybeTargetTeam <- dataService.teams.find(targetTeamId)
+      entries <- maybeTargetTeam.map { targetTeam =>
+        dataService.invocationLogEntries.forTeamSinceDate(targetTeam, start).map { e =>
+          e.filter { ea =>
+            ea.maybeEventType.exists(et => workflowEventTypes.contains(et))
+          }
+        }
+      }.getOrElse(Future.successful(Seq()))
+      involvements <- maybeTargetTeam.map { targetTeam =>
+        dataService.behaviorVersionUserInvolvements.findAllForTeamBetween(targetTeam, start, end)
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      if (isAdmin) {
+        val behaviorsToCount = entries.map(_.behaviorVersion.behavior).distinct.filterNot(_.isDataType)
+        val involvementsToCount = involvements.filter(ea => behaviorsToCount.contains(ea.behaviorVersion.behavior))
+        val data = involvementsToCount.groupBy(_.behaviorVersion.behavior).map { case(behavior, involvementsGroup) =>
+          val uniqueUserCount = involvementsGroup.map(_.user).distinct.length
+          val invocationCount = involvementsGroup.groupBy(_.createdAt).size
+          val behaviorName = involvementsGroup.headOption.flatMap(_.behaviorVersion.maybeName).getOrElse(behavior.id)
+          (behaviorName, uniqueUserCount, invocationCount)
+        }.map { case(behaviorName, uniqueUserCount, invocationCount) =>
+          ActiveWorkflowStat(
+            behaviorName,
+            start,
+            end,
+            invocationCount,
+            uniqueUserCount
+          )
+        }
+        Ok(Json.toJson(data))
+      } else {
+        NotFound("")
+      }
+    }
+  }
+
 
 }
