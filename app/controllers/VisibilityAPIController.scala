@@ -210,8 +210,9 @@ class VisibilityAPIController @Inject() (
             uniqueUserCount
           )
         }.toSeq
+        val totalActiveWorkflows = perActionData.size
         val totalInvolvedUsers = involvementsToCount.map(_.user).distinct.size
-        val overallStats = ActiveWorkflowStats(behaviorsToCount.size, totalInvolvedUsers, perActionData)
+        val overallStats = ActiveWorkflowStats(totalActiveWorkflows, totalInvolvedUsers, perActionData)
         Ok(Json.toJson(overallStats))
       } else {
         NotFound("")
