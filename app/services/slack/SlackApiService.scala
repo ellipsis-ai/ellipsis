@@ -197,10 +197,16 @@ case class SlackApiClient(
       }
   }
 
-  def conversationMembers(convoId: String): Future[Seq[String]] = {
-    postResponseFor("conversations.members", Map("channel" -> convoId)).
-      map { response =>
-        (responseToJson(response, Some("members")) \ "members").asOpt[Seq[String]].getOrElse(Seq())
+  def conversationMembers(convoId: String, maybeCursor: Option[String] = None): Future[Seq[String]] = {
+    val params = Map("channel" -> convoId) ++ maybeCursor.map(c => Map("cursor" -> c)).getOrElse(Map())
+    postResponseFor("conversations.members", params).
+      flatMap { response =>
+        val json = responseToJson(response, Some("members"))
+        val batch = (json \ "members").asOpt[Seq[String]].getOrElse(Seq())
+        val maybeNextCursor = (json \ "response_metadata" \ "next_cursor").asOpt[String].filter(_.trim.nonEmpty)
+        maybeNextCursor.map { nextCursor =>
+          conversationMembers(convoId, Some(nextCursor)).map(batch ++ _)
+        }.getOrElse(Future.successful(batch))
       }
   }
 
