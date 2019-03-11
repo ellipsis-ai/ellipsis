@@ -148,19 +148,30 @@ class VisibilityAPIController @Inject() (
   }
 
   case class PerBehaviorActiveWorkflowStat(
-                                  behaviorName: String,
-                                  start: OffsetDateTime,
-                                  end: OffsetDateTime,
-                                  invocationCount: Long,
-                                  involvedUserCount: Long
-                                )
+                                            actionName: String,
+                                            skillName: String,
+                                            start: OffsetDateTime,
+                                            end: OffsetDateTime,
+                                            invocationCount: Long,
+                                            involvedUserCount: Long
+                                          )
 
-  implicit val activeWorkflowStatWrites = Json.writes[PerBehaviorActiveWorkflowStat]
+  implicit val perBehaviorActiveWorkflowStatWrites = Json.writes[PerBehaviorActiveWorkflowStat]
+
+  case class PerSkillActiveWorkflowStats(
+                                          skillName: String,
+                                          invocationCount: Long,
+                                          involvedUserCount: Long,
+                                          workflows: Seq[PerBehaviorActiveWorkflowStat]
+                                        )
+
+  implicit val perSkillActiveWorkflowStatWrites = Json.writes[PerSkillActiveWorkflowStats]
 
   case class ActiveWorkflowStats(
                                   activeWorkflowCount: Long,
+                                  activeSkillCount: Long,
                                   involvedUserCount: Long,
-                                  workflows: Seq[PerBehaviorActiveWorkflowStat]
+                                  skills: Seq[PerSkillActiveWorkflowStats]
                                )
 
   implicit val aggregateActiveWorkflowStatWrites = Json.writes[ActiveWorkflowStats]
@@ -192,26 +203,56 @@ class VisibilityAPIController @Inject() (
       involvements <- maybeTargetTeam.map { targetTeam =>
         dataService.behaviorVersionUserInvolvements.findAllForTeamBetween(targetTeam, start, end)
       }.getOrElse(Future.successful(Seq()))
+      behaviorsToCount <- Future.successful(entries.map(_.behaviorVersion.behavior).distinct.filterNot(_.isDataType))
+      mostRecentVersionsForBehaviors <- Future.sequence(behaviorsToCount.map { ea =>
+        for {
+          maybeCurrentGroupVersion <- ea.maybeGroup.map { group =>
+            dataService.behaviorGroupVersions.maybeCurrentFor(group)
+          }.getOrElse(Future.successful(None))
+          maybeCurrentBehaviorVersion <- maybeCurrentGroupVersion.map { groupVersion =>
+            dataService.behaviorVersions.findFor(ea, groupVersion)
+          }.getOrElse(Future.successful(None))
+        } yield maybeCurrentBehaviorVersion.map { bv =>
+          (ea, bv)
+        }
+      }).map(_.flatten.toMap)
     } yield {
       if (isAdmin) {
-        val behaviorsToCount = entries.map(_.behaviorVersion.behavior).distinct.filterNot(_.isDataType)
         val involvementsToCount = involvements.filter(ea => behaviorsToCount.contains(ea.behaviorVersion.behavior))
-        val perActionData = involvementsToCount.groupBy(_.behaviorVersion.behavior).map { case(behavior, involvementsGroup) =>
-          val uniqueUserCount = involvementsGroup.map(_.user).distinct.length
-          val invocationCount = involvementsGroup.groupBy(_.createdAt).size
-          val behaviorName = involvementsGroup.headOption.flatMap(_.behaviorVersion.maybeName).getOrElse(behavior.id)
-          (behaviorName, uniqueUserCount, invocationCount)
-        }.map { case(behaviorName, uniqueUserCount, invocationCount) =>
-          PerBehaviorActiveWorkflowStat(
-            behaviorName,
-            start,
-            end,
-            invocationCount,
-            uniqueUserCount
-          )
+        val perSkillData = involvementsToCount.groupBy(_.behaviorVersion.group).flatMap { case (behaviorGroup, involvementsForGroup) =>
+          val uniqueUserCount = involvementsForGroup.map(_.user).distinct.length
+          val invocationCount = involvementsForGroup.groupBy(_.createdAt).size
+          val perActionData = involvementsForGroup.groupBy(_.behaviorVersion.behavior).map { case(behavior, involvementsGroup) =>
+            val uniqueUserCount = involvementsGroup.map(_.user).distinct.length
+            val invocationCount = involvementsGroup.groupBy(_.createdAt).size
+            val maybeBehaviorVersion = mostRecentVersionsForBehaviors.get(behavior)
+            val behaviorName = maybeBehaviorVersion.flatMap(_.maybeName).getOrElse(behavior.id)
+            val skillName = maybeBehaviorVersion.map(_.groupVersion.name).getOrElse("Unnamed skill")
+            (behaviorName, skillName, uniqueUserCount, invocationCount)
+          }.map { case(actionName, skillName, uniqueUserCount, invocationCount) =>
+            PerBehaviorActiveWorkflowStat(
+              actionName,
+              skillName,
+              start,
+              end,
+              invocationCount,
+              uniqueUserCount
+            )
+          }.toSeq
+          perActionData.headOption.map { actionData =>
+            PerSkillActiveWorkflowStats(
+              actionData.skillName,
+              invocationCount,
+              uniqueUserCount,
+              perActionData
+            )
+          }
         }.toSeq
+
+        val totalActiveSkills = perSkillData.size
+        val totalActiveWorkflows = perSkillData.map(_.workflows.size).sum
         val totalInvolvedUsers = involvementsToCount.map(_.user).distinct.size
-        val overallStats = ActiveWorkflowStats(behaviorsToCount.size, totalInvolvedUsers, perActionData)
+        val overallStats = ActiveWorkflowStats(totalActiveWorkflows, totalActiveSkills, totalInvolvedUsers, perSkillData)
         Ok(Json.toJson(overallStats))
       } else {
         NotFound("")
