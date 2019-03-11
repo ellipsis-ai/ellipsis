@@ -147,7 +147,7 @@ class VisibilityAPIController @Inject() (
     }
   }
 
-  case class ActiveWorkflowStat(
+  case class PerBehaviorActiveWorkflowStat(
                                   behaviorName: String,
                                   start: OffsetDateTime,
                                   end: OffsetDateTime,
@@ -155,7 +155,15 @@ class VisibilityAPIController @Inject() (
                                   involvedUserCount: Long
                                 )
 
-  implicit val activeWorkflowStatWrites = Json.writes[ActiveWorkflowStat]
+  implicit val activeWorkflowStatWrites = Json.writes[PerBehaviorActiveWorkflowStat]
+
+  case class ActiveWorkflowStats(
+                                  activeWorkflowCount: Long,
+                                  involvedUserCount: Long,
+                                  workflows: Seq[PerBehaviorActiveWorkflowStat]
+                               )
+
+  implicit val aggregateActiveWorkflowStatWrites = Json.writes[ActiveWorkflowStats]
 
   val workflowEventTypes: Seq[EventType] = Seq(EventType.scheduled, EventType.chat)
 
@@ -188,21 +196,23 @@ class VisibilityAPIController @Inject() (
       if (isAdmin) {
         val behaviorsToCount = entries.map(_.behaviorVersion.behavior).distinct.filterNot(_.isDataType)
         val involvementsToCount = involvements.filter(ea => behaviorsToCount.contains(ea.behaviorVersion.behavior))
-        val data = involvementsToCount.groupBy(_.behaviorVersion.behavior).map { case(behavior, involvementsGroup) =>
+        val perActionData = involvementsToCount.groupBy(_.behaviorVersion.behavior).map { case(behavior, involvementsGroup) =>
           val uniqueUserCount = involvementsGroup.map(_.user).distinct.length
           val invocationCount = involvementsGroup.groupBy(_.createdAt).size
           val behaviorName = involvementsGroup.headOption.flatMap(_.behaviorVersion.maybeName).getOrElse(behavior.id)
           (behaviorName, uniqueUserCount, invocationCount)
         }.map { case(behaviorName, uniqueUserCount, invocationCount) =>
-          ActiveWorkflowStat(
+          PerBehaviorActiveWorkflowStat(
             behaviorName,
             start,
             end,
             invocationCount,
             uniqueUserCount
           )
-        }
-        Ok(Json.toJson(data))
+        }.toSeq
+        val totalInvolvedUsers = involvementsToCount.map(_.user).distinct.size
+        val overallStats = ActiveWorkflowStats(behaviorsToCount.size, totalInvolvedUsers, perActionData)
+        Ok(Json.toJson(overallStats))
       } else {
         NotFound("")
       }
