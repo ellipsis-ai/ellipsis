@@ -16,6 +16,7 @@ class MessageListenerSpec extends DBSpec {
         val botProfile = mock[SlackBotProfile]
         val channel = "C123456"
         val slackUserId = "U123456"
+        val ts = SlackTimestamp.now
         val event = SlackMessageEvent(
           SlackEventContext(
             botProfile,
@@ -23,9 +24,9 @@ class MessageListenerSpec extends DBSpec {
             None,
             slackUserId
           ),
-          SlackMessage.fromUnformattedText("foo", botProfile),
+          SlackMessage.fromUnformattedText("foo", botProfile, Some(ts)),
           None,
-          SlackTimestamp.now,
+          ts,
           None,
           false,
           false,

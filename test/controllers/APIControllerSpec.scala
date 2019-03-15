@@ -95,7 +95,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         None,
         defaultSlackUserId
       ),
-      SlackMessage.fromUnformattedText("foo", botProfile),
+      SlackMessage.fromUnformattedText("foo", botProfile, None),
       None,
       SlackTimestamp.now,
       Some(EventType.api),
