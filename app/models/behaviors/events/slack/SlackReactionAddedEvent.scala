@@ -1,10 +1,11 @@
 package models.behaviors.events.slack
 
-import com.mohiva.play.silhouette.api.LoginInfo
+import akka.actor.ActorSystem
 import json.UserData
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.ellipsisobject.Message
 import models.behaviors.events.{Event, EventType, SlackEventContext}
 import models.team.Team
 import services.DefaultServices
@@ -28,6 +29,22 @@ case class SlackReactionAddedEvent(
   lazy val invocationLogText: String = relevantMessageText
 
   val maybeOriginalEventType: Option[EventType] = None
+
+  override def maybeMessageInfoAction(
+                                       maybeConversation: Option[Conversation],
+                                       services: DefaultServices
+                                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[Message]] = {
+    Message.buildForAction(this, maybeConversation, services).map(Some(_))
+  }
+
+  override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+    (for {
+      msg <- maybeMessage
+      ts <- msg.maybeTs
+    } yield {
+      eventContext.maybePermalinkFor(ts, services)
+    }).getOrElse(Future.successful(None))
+  }
 
   override val isResponseExpected: Boolean = false
   val includesBotMention: Boolean = true

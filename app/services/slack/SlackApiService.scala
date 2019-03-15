@@ -157,7 +157,7 @@ case class SlackApiClient(
     getResponseFor("reactions.get", params).
       flatMap { r =>
         val text = extract[SlackMessageJson](r, "message").text
-        SlackMessage.fromFormattedText(text, profile, slackEventService).map(Some(_))
+        SlackMessage.fromFormattedText(text, profile, slackEventService, Some(messageTs)).map(Some(_))
       }.
       recover {
         case SlackApiError(err) => {
