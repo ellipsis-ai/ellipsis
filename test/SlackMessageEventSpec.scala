@@ -11,6 +11,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.DefaultServices
 import support.TestContext
+import utils.SlackTimestamp
 
 import scala.concurrent.Future
 
@@ -24,6 +25,7 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
   def newEvent(channel: String, services: DefaultServices, maybeBotName: Option[String] = Some(botName)): SlackMessageEvent = {
     val profile = SlackBotProfile(botUserId, botTeamId, slackTeamId, botToken, OffsetDateTime.now, allowShortcutMention = true)
     when(services.dataService.slackBotProfiles.maybeNameFor(profile)).thenReturn(Future.successful(maybeBotName))
+    val ts = SlackTimestamp.now
     SlackMessageEvent(
       SlackEventContext(
         profile,
@@ -31,9 +33,9 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
         None,
         IDs.next
       ),
-      SlackMessage("oh hai", "oh hai", "oh hai", Set.empty[SlackUserData]),
+      SlackMessage("oh hai", "oh hai", "oh hai", Set.empty[SlackUserData], Some(ts)),
       None,
-      OffsetDateTime.now.toString,
+      ts,
       None,
       isUninterruptedConversation = false,
       isEphemeral = false,

@@ -61,7 +61,7 @@ case class SlackApiMethodContext(
             None,
             slackProfile.loginInfo.providerKey
           ),
-          SlackMessage.fromUnformattedText(message, botProfile),
+          SlackMessage.fromUnformattedText(message, botProfile, maybeMessageTs),
           None,
           maybeMessageTs.getOrElse(SlackTimestamp.now),
           maybeOriginalEventType,

@@ -376,7 +376,7 @@ class SlackController @Inject() (
 
   private def processMessageEventsFor(info: MessageRequestInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
-      slackMessage <- SlackMessage.fromFormattedText(info.message, botProfile, slackEventService)
+      slackMessage <- SlackMessage.fromFormattedText(info.message, botProfile, slackEventService, Some(info.ts))
       isUserValidForBot <- slackEventService.isUserValidForBot(info.userId, botProfile, info.maybeEnterpriseId)
       result <- if (!isUserValidForBot) {
         if (info.channel.startsWith("D") || botProfile.includesBotMention(slackMessage)) {
@@ -495,7 +495,7 @@ class SlackController @Inject() (
 
   private def processCommandFor(info: SlashCommandInfo, botProfile: SlackBotProfile)(implicit request: Request[AnyContent]): Future[Unit] = {
     for {
-      slackMessage <- SlackMessage.fromFormattedText(info.text, botProfile, slackEventService)
+      slackMessage <- SlackMessage.fromFormattedText(info.text, botProfile, slackEventService, None)
       event <- Future.successful(SlashCommandEvent(
         SlackEventContext(
           botProfile,
@@ -647,7 +647,7 @@ class SlackController @Inject() (
       for {
         maybeProfile <- dataService.slackBotProfiles.allForSlackTeamId(team.id).map(_.headOption)
         maybeSlackMessage <- maybeProfile.map { profile =>
-          SlackMessage.fromFormattedText(value, profile, slackEventService).map(Some(_))
+          SlackMessage.fromFormattedText(value, profile, slackEventService, None).map(Some(_))
         }.getOrElse(Future.successful(None))
         _ <- (for {
           profile <- maybeProfile
