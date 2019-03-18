@@ -309,7 +309,7 @@ case class SlackEventContext(
         developerContext,
         originatingChannel = channel,
         maybeDMChannel,
-        maybeThreadId,
+        maybeThreadId.orElse(responseType.maybeOriginalMessageThreadIdFor(event)),
         maybeShouldUnfurl,
         maybeConversation,
         attachments,

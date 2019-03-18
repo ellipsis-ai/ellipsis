@@ -14,6 +14,6 @@ case class TestRunEvent(
   val team = eventContext.team
   val user = eventContext.user
 
-  val maybeMessageIdForReaction: Option[String] = None
+  val maybeMessageId: Option[String] = None
 
 }

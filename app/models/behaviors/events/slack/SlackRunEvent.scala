@@ -21,7 +21,7 @@ case class SlackRunEvent(
 
   override type EC = SlackEventContext
 
-  val maybeMessageIdForReaction: Option[String] = maybeTriggeringMessageTs
+  val maybeMessageId: Option[String] = maybeTriggeringMessageTs
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {
     this.copy(maybeOriginalEventType = Some(originalEventType))

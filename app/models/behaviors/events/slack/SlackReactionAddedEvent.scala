@@ -51,7 +51,7 @@ case class SlackReactionAddedEvent(
 
   override val maybeReactionAdded: Option[String] = Some(reaction)
 
-  val maybeMessageIdForReaction: Option[String] = None
+  val maybeMessageId: Option[String] = maybeMessage.flatMap(_.maybeTs)
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],

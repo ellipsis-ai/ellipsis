@@ -25,7 +25,7 @@ case class TestMessageEvent(
 
   val isResponseExpected = true
 
-  val maybeMessageIdForReaction: Option[String] = None
+  val maybeMessageId: Option[String] = None
 
   val maybeFile: Option[FileReference] = None
 

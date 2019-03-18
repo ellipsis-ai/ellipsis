@@ -58,7 +58,7 @@ sealed trait ScheduledEvent extends Event {
   override val maybeScheduled: Option[Scheduled] = Some(scheduled)
   def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = underlying.messageUserDataListAction(services)
 
-  val maybeMessageIdForReaction: Option[String] = None
+  val maybeMessageId: Option[String] = None
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],

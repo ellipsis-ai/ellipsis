@@ -2,6 +2,7 @@ package models.behaviors.behaviorversion
 
 import models.behaviors.BotResult
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.events.Event
 import utils.Enum
 
 object BehaviorResponseType extends Enum[BehaviorResponseType] {
@@ -49,6 +50,8 @@ sealed trait BehaviorResponseType extends BehaviorResponseType.Value {
       )
     }
   }
+
+  def maybeOriginalMessageThreadIdFor(event: Event): Option[String] = None
 }
 
 case object Normal extends BehaviorResponseType {
@@ -95,4 +98,6 @@ case object Threaded extends BehaviorResponseType {
       maybeOriginalMessageTs
     ).orElse(maybeOriginalMessageTs)
   }
+
+  override def maybeOriginalMessageThreadIdFor(event: Event): Option[String] = event.maybeMessageId
 }

@@ -30,7 +30,7 @@ case class SlackMessageEvent(
 
   val eventType: EventType = EventType.chat
 
-  val maybeMessageIdForReaction: Option[String] = Some(ts)
+  val maybeMessageId: Option[String] = Some(ts)
 
   override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     eventContext.maybePermalinkFor(ts, services)
