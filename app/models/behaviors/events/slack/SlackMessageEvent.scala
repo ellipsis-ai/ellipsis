@@ -15,7 +15,7 @@ case class SlackMessageEvent(
                               eventContext: SlackEventContext,
                               message: SlackMessage,
                               maybeFile: Option[SlackFile],
-                              ts: String,
+                              maybeTs: Option[String],
                               protected val maybeOriginalEventType: Option[EventType],
                               override val isUninterruptedConversation: Boolean,
                               override val isEphemeral: Boolean,
@@ -30,10 +30,12 @@ case class SlackMessageEvent(
 
   val eventType: EventType = EventType.chat
 
-  val maybeMessageId: Option[String] = Some(ts)
+  val maybeMessageId: Option[String] = maybeTs
 
   override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
-    eventContext.maybePermalinkFor(ts, services)
+    maybeTs.map { ts =>
+      eventContext.maybePermalinkFor(ts, services)
+    }.getOrElse(Future.successful(None))
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {
@@ -81,7 +83,7 @@ case class SlackMessageEvent(
   }
 
   def maybeConversationRootedHere(dataService: DataService): Future[Option[Conversation]] = {
-    dataService.conversations.findOngoingFor(eventContext.userIdForContext, eventContext.name, maybeChannel, Some(ts), ellipsisTeamId)
+    dataService.conversations.findOngoingFor(eventContext.userIdForContext, eventContext.name, maybeChannel, maybeTs, ellipsisTeamId)
   }
 
 }

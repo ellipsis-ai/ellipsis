@@ -36,7 +36,13 @@ case class MSTeamsApiMethodContext(
 
   val requiresChannel: Boolean = true
 
-  def maybeMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[Event]] = ???
+  def maybeMessageEventFor(
+                            message: String,
+                            maybeChannel: Option[String],
+                            maybeOriginalEventType: Option[EventType],
+                            maybeMessageTs: Option[String],
+                            maybeThreadId: Option[String]
+                          ): Future[Option[Event]] = ???
 
   def maybeRunEventFor(
                    behaviorVersion: BehaviorVersion,

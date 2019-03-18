@@ -50,7 +50,7 @@ case class SlackApiMethodContext(
     }.getOrElse(Future.successful(None))
   }
 
-  def maybeBaseMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[SlackMessageEvent]] = {
+  def maybeBaseMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String], maybeThreadId: Option[String]): Future[Option[SlackMessageEvent]] = {
     maybeSlackChannelIdFor(maybeChannel).map { maybeSlackChannelId =>
       val maybeChannelToUse = maybeSlackChannelId.orElse(maybeChannel)
       maybeChannelToUse.map { channel =>
@@ -61,9 +61,9 @@ case class SlackApiMethodContext(
             None,
             slackProfile.loginInfo.providerKey
           ),
-          SlackMessage.fromUnformattedText(message, botProfile, maybeMessageTs),
+          SlackMessage.fromUnformattedText(message, botProfile, maybeMessageTs, maybeThreadId),
           None,
-          maybeMessageTs.getOrElse(SlackTimestamp.now),
+          maybeMessageTs,
           maybeOriginalEventType,
           isUninterruptedConversation = false,
           isEphemeral = false,
@@ -78,9 +78,10 @@ case class SlackApiMethodContext(
                             message: String,
                             maybeChannel: Option[String],
                             maybeOriginalEventType: Option[EventType],
-                            maybeMessageTs: Option[String]
+                            maybeMessageTs: Option[String],
+                            maybeThreadId: Option[String]
                           ): Future[Option[Event]] = {
-    maybeBaseMessageEventFor(message, maybeChannel, maybeOriginalEventType, maybeMessageTs).map { maybeBaseEvent =>
+    maybeBaseMessageEventFor(message, maybeChannel, maybeOriginalEventType, maybeMessageTs, maybeThreadId).map { maybeBaseEvent =>
       maybeBaseEvent.map { messageEvent =>
         val event: Event = maybeScheduledMessage.map { scheduledMessage =>
           ScheduledMessageSlackEvent(messageEvent, scheduledMessage)

@@ -8,7 +8,14 @@ import services.slack.SlackEventService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class SlackMessage(originalText: String, withoutBotPrefix: String, unformattedText: String, userList: Set[SlackUserData], maybeTs: Option[String])
+case class SlackMessage(
+                         originalText: String,
+                         withoutBotPrefix: String,
+                         unformattedText: String,
+                         userList: Set[SlackUserData],
+                         maybeTs: Option[String],
+                         maybeThreadId: Option[String]
+                       )
 
 object SlackMessage {
   def unformatLinks(text: String): String = {
@@ -50,22 +57,22 @@ object SlackMessage {
     SlackMessageEvent.toBotRegexFor(botProfile.userId).replaceFirstIn(withoutShortcut, "")
   }
 
-  def fromUnformattedText(text: String, botProfile: SlackBotProfile, maybeTs: Option[String]): SlackMessage = {
+  def fromUnformattedText(text: String, botProfile: SlackBotProfile, maybeTs: Option[String], maybeThreadId: Option[String]): SlackMessage = {
     val withoutBotPrefix = removeBotPrefix(text, botProfile)
-    SlackMessage(text, withoutBotPrefix, withoutBotPrefix, Set.empty[SlackUserData], maybeTs)
+    SlackMessage(text, withoutBotPrefix, withoutBotPrefix, Set.empty[SlackUserData], maybeTs, maybeThreadId)
   }
 
   def userIdsInText(text: String): Set[String] = {
     """<@(\w+)>""".r.findAllMatchIn(text).flatMap(_.subgroups).toSet
   }
 
-  def fromFormattedText(text: String, botProfile: SlackBotProfile, slackEventService: SlackEventService, maybeTs: Option[String])(implicit ec: ExecutionContext): Future[SlackMessage] = {
+  def fromFormattedText(text: String, botProfile: SlackBotProfile, slackEventService: SlackEventService, maybeTs: Option[String], maybeThreadId: Option[String])(implicit ec: ExecutionContext): Future[SlackMessage] = {
     val withoutBotPrefix = removeBotPrefix(text, botProfile)
     val userList = userIdsInText(text)
     for {
       slackUsers <- slackEventService.slackUserDataList(userList, botProfile)
     } yield {
-      SlackMessage(text, withoutBotPrefix, unformatTextWithUsers(withoutBotPrefix, slackUsers), slackUsers, maybeTs)
+      SlackMessage(text, withoutBotPrefix, unformatTextWithUsers(withoutBotPrefix, slackUsers), slackUsers, maybeTs, maybeThreadId)
     }
   }
 
@@ -79,5 +86,5 @@ object SlackMessage {
     client.findReaction(channel, ts, services.slackEventService)
   }
 
-  def blank: SlackMessage = SlackMessage("", "", "", Set.empty[SlackUserData], None)
+  def blank: SlackMessage = SlackMessage("", "", "", Set.empty[SlackUserData], None, None)
 }

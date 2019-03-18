@@ -149,15 +149,15 @@ case class SlackApiClient(
       }
   }
 
-  case class SlackMessageJson(user: String, text: String, ts: String)
+  case class SlackMessageJson(user: String, text: String, ts: String, thread_ts: Option[String])
   implicit val slackMessageFormat = Json.format[SlackMessageJson]
 
   def findReaction(channel: String, messageTs: String, slackEventService: SlackEventService): Future[Option[SlackMessage]] = {
     val params = Seq(("channel", channel), ("timestamp", messageTs))
     getResponseFor("reactions.get", params).
       flatMap { r =>
-        val text = extract[SlackMessageJson](r, "message").text
-        SlackMessage.fromFormattedText(text, profile, slackEventService, Some(messageTs)).map(Some(_))
+        val msg = extract[SlackMessageJson](r, "message")
+        SlackMessage.fromFormattedText(msg.text, profile, slackEventService, Some(messageTs), msg.thread_ts).map(Some(_))
       }.
       recover {
         case SlackApiError(err) => {

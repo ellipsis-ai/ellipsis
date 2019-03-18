@@ -63,7 +63,8 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                             message: String,
                             maybeChannel: Option[String],
                             maybeOriginalEventType: Option[EventType],
-                            maybeOriginalMessageId: Option[String]
+                            maybeOriginalMessageId: Option[String],
+                            maybeThreadId: Option[String]
                           ): Future[Option[Event]]
 
   def maybeRunEventFor(
@@ -149,7 +150,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                     info: RunActionInfo
                   )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
-      maybeEvent <- maybeMessageEventFor(trigger, info.maybeChannel, EventType.maybeFrom(info.originalEventType), info.originalMessageId)
+      maybeEvent <- maybeMessageEventFor(trigger, info.maybeChannel, EventType.maybeFrom(info.originalEventType), info.originalMessageId, info.originalMessageThreadId)
       result <- runBehaviorFor(maybeEvent, Right(trigger))
     } yield result
   }
