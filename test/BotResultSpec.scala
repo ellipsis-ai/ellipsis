@@ -64,6 +64,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
   }
 
   def mockPostChatMessage(text: String, event: SlackMessageEvent, client: SlackApiClient, resultTs: String, maybeThreadId: Option[String]): Unit = {
+    val message = SlackMessage.fromUnformattedText(text, client.profile, Some(resultTs), maybeThreadId)
     when(client.postChatMessage(
       channelId = defaultChannel,
       text = text,
@@ -80,9 +81,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
       deleteOriginal = None,
       threadTs = maybeThreadId,
       replyBroadcast = None
-    )).thenReturn({
-      Future.successful(SlackMessage.fromUnformattedText(text, client.profile, Some(resultTs), maybeThreadId))
-    })
+    )).thenReturn(Future.successful(message))
   }
 
   "sendIn" should {
