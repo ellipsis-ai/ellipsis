@@ -95,7 +95,7 @@ trait Event {
   def maybeMessageInfoAction(
                         maybeConversation: Option[Conversation],
                         services: DefaultServices
-                      )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[Message]] = {
+                      )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[MessageObject]] = {
     DBIO.successful(None)
   }
 
@@ -215,7 +215,7 @@ trait Event {
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
                    services: DefaultServices
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]] = {
     eventContext.sendMessage(this, text, maybeBehaviorVersion, responseType, maybeShouldUnfurl, maybeConversation, attachments, files, choices, developerContext, services)
   }
 

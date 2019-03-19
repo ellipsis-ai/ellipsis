@@ -205,7 +205,7 @@ case class SlackMessageSender(
                                text: String,
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
-                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[SlackMessage]] = {
     val responseChannel = channelToUse(maybeChannelToForce)
     val maybeThreadTs = maybeThreadTsToUse(responseChannel)
     maybeResponseUrlToUse(responseChannel).map { responseUrl =>
@@ -232,7 +232,7 @@ case class SlackMessageSender(
           replyBroadcast = None
         ).
           recover(postErrorRecovery(responseChannel, text)).
-          flatMap(ts => logInvolvedFor(responseChannel).map(_ => Some(ts)))
+          flatMap(msg => logInvolvedFor(responseChannel).map(_ => Some(msg)))
       }
     }
   }
@@ -281,10 +281,10 @@ case class SlackMessageSender(
                                   maybeShouldUnfurl: Option[Boolean],
                                   attachments: Seq[Attachment],
                                   maybeConversation: Option[Conversation],
-                                  maybePreviousTs: Option[String]
-                                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                                  maybePreviousMessage: Option[SlackMessage]
+                                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[SlackMessage]] = {
     if (segments.isEmpty) {
-      Future.successful(maybePreviousTs)
+      Future.successful(maybePreviousMessage)
     } else {
       val segment = segments.head.trim
       // Slack API gives an error for empty messages
@@ -301,7 +301,7 @@ case class SlackMessageSender(
           segment,
           maybeAttachmentsForSegment
         )
-      }.flatMap { maybeTs => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeTs)}
+      }.flatMap { maybeMessage => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeMessage)}
     }
   }
 
@@ -322,7 +322,7 @@ case class SlackMessageSender(
     Future.sequence(files.map(sendFile)).map(_ => {})
   }
 
-  def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+  def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[SlackMessage]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, userDataList)
     for {
       attachments <- attachmentsToUse.map { att =>
@@ -332,9 +332,9 @@ case class SlackMessageSender(
         }
       }
       _ <- sendPreamble(formattedText)
-      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
+      maybeLastMsg <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles
-    } yield maybeLastTs
+    } yield maybeLastMsg
   }
 
   private def postErrorRecovery[U](channel: String, text: String): PartialFunction[Throwable, U] = {

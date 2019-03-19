@@ -217,7 +217,7 @@ class ConversationServiceImpl @Inject() (
   def backgroundAction(conversation: Conversation, prompt: String, includeUsername: Boolean)(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
       maybeEvent <- conversation.maybePlaceholderEventAction(services)
-      maybeLastTs <- maybeEvent.map { event =>
+      maybeLastMessage <- maybeEvent.map { event =>
         DBIO.from(event.sendMessage(
           interruptionPromptFor(event, prompt, includeUsername),
           Some(conversation.behaviorVersion),
@@ -232,7 +232,7 @@ class ConversationServiceImpl @Inject() (
         ))
       }.getOrElse(DBIO.successful(None))
       _ <- maybeEvent.map { event =>
-        val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastTs)
+        val convoWithThreadId = conversation.copyWithMaybeThreadId(maybeLastMessage.flatMap(_.maybeId))
         dataService.conversations.saveAction(convoWithThreadId).flatMap { _ =>
           convoWithThreadId.respondAction(event, isReminding=false, services).flatMap { result =>
             botResultService.sendInAction(result, None)

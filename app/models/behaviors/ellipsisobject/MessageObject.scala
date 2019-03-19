@@ -9,8 +9,9 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
-case class Message(
+case class MessageObject(
                     text: String,
+                    id: Option[String],
                     channel: Option[Channel],
                     thread: Option[String],
                     usersMentioned: Set[UserData],
@@ -18,20 +19,21 @@ case class Message(
                     reactionAdded: Option[String]
                   )
 
-object Message {
+object MessageObject {
 
   def buildForAction(
                       event: Event,
                       maybeConversation: Option[Conversation],
                       services: DefaultServices
-                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Message] = {
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[MessageObject] = {
     for {
       maybePermalink <- DBIO.from(event.maybePermalinkFor(services))
       userDataList <- event.messageUserDataListAction(maybeConversation, services)
       maybeChannelData <- event.eventContext.maybeChannelDataForAction(services)
     } yield {
-      Message(
+      MessageObject(
         event.messageText,
+        event.maybeMessageId,
         maybeChannelData,
         event.maybeThreadId,
         userDataList,

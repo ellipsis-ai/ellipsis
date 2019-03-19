@@ -58,7 +58,7 @@ case class SlackApiMethodContext(
           SlackEventContext(
             botProfile,
             maybeSlackChannelId.getOrElse(channel),
-            None,
+            maybeThreadId,
             slackProfile.loginInfo.providerKey
           ),
           SlackMessage.fromUnformattedText(message, botProfile, maybeMessageTs, maybeThreadId),
@@ -97,7 +97,8 @@ case class SlackApiMethodContext(
                    maybeChannel: Option[String],
                    eventType: EventType,
                    maybeOriginalEventType: Option[EventType],
-                   maybeTriggeringMessageId: Option[String]
+                   maybeTriggeringMessageId: Option[String],
+                   maybeTriggeringMessageThreadId: Option[String]
                  ): Future[Option[SlackRunEvent]] = {
     for {
       maybeChannelToUse <- maybeSlackChannelIdFor(maybeChannel).map { maybeSlackChannelId =>
@@ -118,7 +119,8 @@ case class SlackApiMethodContext(
           maybeOriginalEventType,
           isEphemeral = false,
           None,
-          maybeTriggeringMessageId
+          maybeTriggeringMessageId,
+          maybeTriggeringMessageThreadId
         )
       }
     }

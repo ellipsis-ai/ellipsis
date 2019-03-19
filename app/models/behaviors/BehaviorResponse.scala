@@ -170,7 +170,7 @@ case class BehaviorResponse(
         choices = Seq(),
         DeveloperContext.default,
         services
-      )
+      ).map(_.flatMap(_.maybeId))
     }
   }
 

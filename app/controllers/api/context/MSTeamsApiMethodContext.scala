@@ -50,7 +50,8 @@ case class MSTeamsApiMethodContext(
                    maybeChannel: Option[String],
                    eventType: EventType,
                    maybeOriginalEventType: Option[EventType],
-                   maybeTriggeringMessageId: Option[String]
+                   maybeTriggeringMessageId: Option[String],
+                   maybeTriggeringMessageThreadId: Option[String]
                  ): Future[Option[MSTeamsRunEvent]] = {
     val client = services.msTeamsApiService.profileClientFor(botProfile)
     client.getApplicationInfo.map { maybeAppInfo =>

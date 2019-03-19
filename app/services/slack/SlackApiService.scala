@@ -285,7 +285,7 @@ case class SlackApiClient(
                       parse: Option[String] = None, linkNames: Option[String] = None, attachments: Option[Seq[Attachment]] = None,
                       unfurlLinks: Option[Boolean] = None, unfurlMedia: Option[Boolean] = None, iconUrl: Option[String] = None,
                       iconEmoji: Option[String] = None, replaceOriginal: Option[Boolean]= None,
-                      deleteOriginal: Option[Boolean] = None, threadTs: Option[String] = None, replyBroadcast: Option[Boolean] = None): Future[String] = {
+                      deleteOriginal: Option[Boolean] = None, threadTs: Option[String] = None, replyBroadcast: Option[Boolean] = None): Future[SlackMessage] = {
 
     val params = Map(
       "channel" -> channelId,
@@ -306,7 +306,8 @@ case class SlackApiClient(
       "reply_broadcast" -> replyBroadcast
     )
     postResponseFor("chat.postMessage", params).map { r =>
-      extract[String](r, "ts")
+      Logger.info(s"post response: ${Json.prettyPrint(r.json)}")
+      extract[SlackMessage](r, "message")
     }
   }
 

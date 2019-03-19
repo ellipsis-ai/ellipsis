@@ -42,7 +42,7 @@ sealed trait ScheduledEvent extends Event {
                             choices: Seq[ActionChoice],
                             developerContext: DeveloperContext,
                             services: DefaultServices
-                          )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                          )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]] = {
     underlying.sendMessage(text, maybeBehaviorVersion, responseType, maybeShouldUnfurl, maybeConversation, attachments, files, choices, developerContext, services)
   }
 

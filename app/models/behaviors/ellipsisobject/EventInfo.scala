@@ -7,7 +7,7 @@ case class EventInfo(
                       originalEventType: String,
                       platformName: String,
                       platformDescription: String,
-                      message: Option[Message]
+                      message: Option[MessageObject]
                     )
 
 object EventInfo {
@@ -15,7 +15,7 @@ object EventInfo {
   def buildFor(
                 event: Event,
                 user: EventUser,
-                maybeMessage: Option[Message]
+                maybeMessage: Option[MessageObject]
               ): EventInfo = {
     EventInfo(
       user,

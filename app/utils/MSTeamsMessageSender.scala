@@ -306,7 +306,7 @@ case class MSTeamsMessageSender(
     })
   }
 
-  def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+  def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[MSTeamsMessage]] = {
     val attachments = attachmentsToUse.flatMap {
       case a: MSTeamsMessageAttachment => Some(a.underlying)
       case _ => None
@@ -322,7 +322,7 @@ case class MSTeamsMessageSender(
       _ <- sendPreamble(formattedText)
       maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles
-    } yield maybeLastTs
+    } yield maybeLastTs.map(MSTeamsMessage.apply)
   }
 
   private def postErrorRecovery[U](convoId: String, text: String): PartialFunction[Throwable, U] = {

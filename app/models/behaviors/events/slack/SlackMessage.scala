@@ -2,7 +2,7 @@ package models.behaviors.events.slack
 
 import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.events.MessageEvent
+import models.behaviors.events.{Message, MessageEvent}
 import services.DefaultServices
 import services.slack.SlackEventService
 
@@ -15,7 +15,9 @@ case class SlackMessage(
                          userList: Set[SlackUserData],
                          maybeTs: Option[String],
                          maybeThreadId: Option[String]
-                       )
+                       ) extends Message {
+  val maybeId: Option[String] = maybeTs
+}
 
 object SlackMessage {
   def unformatLinks(text: String): String = {

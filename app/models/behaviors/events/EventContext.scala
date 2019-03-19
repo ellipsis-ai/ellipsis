@@ -95,14 +95,15 @@ sealed trait EventContext {
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
                    services: DefaultServices
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]]
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]]
 
   def newRunEventFor(
                    botResult: BotResult,
                    nextAction: NextAction,
                    behaviorVersion: BehaviorVersion,
                    channel: String,
-                   maybeMessageId: Option[String]
+                   maybeMessageId: Option[String],
+                   maybeThreadId: Option[String]
                  ): Event
 
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
@@ -295,12 +296,12 @@ case class SlackEventContext(
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
                    services: DefaultServices
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]] = {
     for {
       maybeDMChannel <- eventualMaybeDMChannel(services)
       botName <- botName(services)
       userDataList <- event.messageUserDataList(maybeConversation, services)
-      maybeTs <- SlackMessageSender(
+      maybeMessage <- SlackMessageSender(
         services.slackApiService.clientFor(profile),
         userIdForContext,
         profile.slackTeamId,
@@ -324,7 +325,7 @@ case class SlackEventContext(
         event.beQuiet,
         maybeBehaviorVersion
       ).send
-    } yield maybeTs
+    } yield maybeMessage
   }
 
   private def maybePermalinkFunctionFor(key: SlackMessagePermalinkCacheKey, services: DefaultServices): SlackMessagePermalinkCacheKey => Future[Option[String]] = {
@@ -355,7 +356,8 @@ case class SlackEventContext(
                     nextAction: NextAction,
                     behaviorVersion: BehaviorVersion,
                     channel: String,
-                    maybeMessageId: Option[String]
+                    maybeMessageId: Option[String],
+                    maybeThreadId: Option[String]
                   ): Event = {
     val eventContext = SlackEventContext(
       profile,
@@ -371,7 +373,8 @@ case class SlackEventContext(
       Some(botResult.event.originalEventType),
       botResult.event.isEphemeral,
       botResult.event.maybeResponseUrl,
-      maybeMessageId
+      maybeMessageId,
+      maybeThreadId
     )
   }
 
@@ -507,7 +510,7 @@ case class MSTeamsEventContext(
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
                    services: DefaultServices
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]] = {
     for {
       maybeDMChannel <- eventualMaybeDMChannel(services)
       botName <- botName(services)
@@ -562,7 +565,8 @@ case class MSTeamsEventContext(
                    nextAction: NextAction,
                    behaviorVersion: BehaviorVersion,
                    channel: String,
-                   maybeMessageId: Option[String]
+                   maybeMessageId: Option[String],
+                   maybeThreadId: Option[String]
                  ): Event = {
     val eventContext = MSTeamsEventContext(
       profile,
@@ -702,7 +706,7 @@ case class TestEventContext(
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
                    services: DefaultServices
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]] = {
     Future.successful(messageBuffer += text).map(_ => None)
   }
 
@@ -711,7 +715,8 @@ case class TestEventContext(
                    nextAction: NextAction,
                    behaviorVersion: BehaviorVersion,
                    channel: String,
-                   maybeMessageId: Option[String]
+                   maybeMessageId: Option[String],
+                   maybeThreadId: Option[String]
                  ): Event = {
     TestRunEvent(
       copy(),
