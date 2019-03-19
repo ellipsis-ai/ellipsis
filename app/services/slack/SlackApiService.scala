@@ -14,7 +14,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSResponse
 import services.DefaultServices
 import services.slack.apiModels._
-import utils.{SlackConversation, SlackTimestamp}
+import utils.SlackConversation
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -306,7 +306,6 @@ case class SlackApiClient(
       "reply_broadcast" -> replyBroadcast
     )
     postResponseFor("chat.postMessage", params).map { r =>
-      Logger.info(s"post response: ${Json.prettyPrint(r.json)}")
       extract[SlackMessage](r, "message")
     }
   }
