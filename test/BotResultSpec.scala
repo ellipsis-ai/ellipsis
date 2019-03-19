@@ -81,7 +81,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
       threadTs = maybeThreadId,
       replyBroadcast = None
     )).thenReturn({
-      Future.successful(resultTs)
+      Future.successful(SlackMessage.fromUnformattedText(text, client.profile, Some(resultTs), maybeThreadId))
     })
   }
 

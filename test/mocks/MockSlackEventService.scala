@@ -5,12 +5,12 @@ import json.{SlackUserData, SlackUserProfileData}
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.Event
+import models.behaviors.events.slack.SlackMessage
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import services.slack.apiModels.{Attachment, SlackUser}
 import services.slack.{SlackApiClient, SlackApiError, SlackEventService}
-import utils.SlackTimestamp
 
 import scala.concurrent.Future
 
@@ -36,7 +36,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
       any[Option[Boolean]],
       any[Option[String]],
       any[Option[Boolean]])
-    ).thenReturn(Future.successful(SlackTimestamp.now))
+    ).thenReturn(Future.successful(SlackMessage.blank))
     when(client.listConversations()).thenReturn(Future.successful(Seq()))
     client
   }
