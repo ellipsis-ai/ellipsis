@@ -84,7 +84,8 @@ abstract class Editable implements EditableInterface {
     abstract sortKeyForExisting(): Option<string>
 
     sortKey(): string {
-      return "A" + (this.sortKeyForExisting() || this.timestampForAlphabeticalSort());
+      const existing = this.sortKeyForExisting();
+      return existing ? "A" + existing : "Z" + this.timestampForAlphabeticalSort();
     }
 
     abstract namePlaceholderText(): string
