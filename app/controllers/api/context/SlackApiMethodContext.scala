@@ -110,7 +110,7 @@ case class SlackApiMethodContext(
           SlackEventContext(
             botProfile,
             channel,
-            None,
+            maybeTriggeringMessageThreadId,
             slackProfile.loginInfo.providerKey
           ),
           behaviorVersion,
