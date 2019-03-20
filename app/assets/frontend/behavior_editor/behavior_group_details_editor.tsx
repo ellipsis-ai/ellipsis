@@ -53,12 +53,14 @@ class BehaviorGroupDetailsEditor extends React.PureComponent<Props> {
           <div className="columns columns-elastic">
             <div className="column column-shrink">
               <h5>Emoji</h5>
-              <div className="display-nowrap pts">
-                <div className="display-inline-block">
-                  <EmojiInput raw={this.props.group.icon} pickerVisible={this.props.iconPickerVisible} onTogglePicker={this.props.onToggleIconPicker} onClickEmoji={this.onChangeEmoji} />
-                </div>
-                <div className="display-inline-block align-t pts">
-                  <DeleteButton className="button-s" onClick={this.onDeleteEmoji} title="Remove icon" />
+              <div className="pts">
+                <div className="columns columns-elastic">
+                  <div className="column column-expand prn">
+                    <EmojiInput raw={this.props.group.icon} pickerVisible={this.props.iconPickerVisible} onTogglePicker={this.props.onToggleIconPicker} onClickEmoji={this.onChangeEmoji} />
+                  </div>
+                  <div className="column column-shrink align-m">
+                    <DeleteButton className="button-s" onClick={this.onDeleteEmoji} title="Remove icon" />
+                  </div>
                 </div>
               </div>
             </div>
