@@ -27,16 +27,11 @@ describe('LibraryVersion', () => {
   });
 
   describe('sortKey', () => {
-    it('sorts non-new by name, first trigger, then by timestamp, with a leading A', () => {
+    it('sorts by name, first trigger, with a leading A, then by timestamp, with a leading Z', () => {
       const version1 = LibraryVersion.fromProps(libraryVersion).clone({ name: "Name" });
       const version2 = LibraryVersion.fromProps(libraryVersion);
       expect(version1.sortKey()).toBe("AName");
-      expect(version2.sortKey()).toEqual("A" + version2.timestampForAlphabeticalSort());
-    });
-
-    it('sorts new by timestamp only, with a leading Z', () => {
-      const version1 = LibraryVersion.fromProps(libraryVersion).clone({ name: "Name", isNew: true });
-      expect(version1.sortKey()).toEqual("Z" + version1.timestampForAlphabeticalSort());
+      expect(version2.sortKey()).toEqual("Z" + version2.timestampForAlphabeticalSort());
     });
   });
 

@@ -214,7 +214,7 @@ describe('BehaviorVersion', () => {
   });
 
   describe('sortKey', () => {
-    it('sorts non-new by name, first trigger, then by timestamp, with a leading A', () => {
+    it('sorts by name, first trigger, with a leading A then by timestamp, with a leading Z', () => {
       const replaceTrigger = Object.assign({}, behaviorVersionTask1);
       replaceTrigger.triggers[0].text = "Trigger!";
       replaceTrigger.triggers[0].isRegex = false;
@@ -222,13 +222,8 @@ describe('BehaviorVersion', () => {
       const version2 = BehaviorVersion.fromJson(replaceTrigger).clone({ triggers: [] });
       const version3 = BehaviorVersion.fromJson(replaceTrigger);
       expect(version1.sortKey()).toBe("AName");
-      expect(version2.sortKey()).toEqual("A" + version2.timestampForAlphabeticalSort());
+      expect(version2.sortKey()).toEqual("Z" + version2.timestampForAlphabeticalSort());
       expect(version3.sortKey()).toBe("ATrigger!");
-    });
-
-    it('sorts new by timestamp only, with a leading Z', () => {
-      const version1 = BehaviorVersion.fromJson(behaviorVersionTask1).clone({ name: "Name", isNew: true });
-      expect(version1.sortKey()).toEqual("Z" + version1.timestampForAlphabeticalSort());
     });
   });
 
