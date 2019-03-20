@@ -231,8 +231,7 @@ case class SlackMessageSender(
           replaceOriginal = None,
           deleteOriginal = None,
           threadTs = maybeThreadTs,
-          replyBroadcast = None,
-          slackEventService
+          replyBroadcast = None
         ).
           recover(postErrorRecovery(responseChannel, text)).
           flatMap(msg => logInvolvedFor(responseChannel).map(_ => Some(msg)))

@@ -35,8 +35,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
       any[Option[Boolean]],
       any[Option[Boolean]],
       any[Option[String]],
-      any[Option[Boolean]],
-      any[SlackEventService])
+      any[Option[Boolean]])
     ).thenReturn(Future.successful(SlackMessage.blank))
     when(client.listConversations()).thenReturn(Future.successful(Seq()))
     client

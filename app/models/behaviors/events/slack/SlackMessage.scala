@@ -85,7 +85,7 @@ object SlackMessage {
                           services: DefaultServices
                         )(implicit ec: ExecutionContext): Future[Option[SlackMessage]] = {
     val client = services.slackApiService.clientFor(botProfile)
-    client.findReaction(channel, ts, services.slackEventService)
+    client.findReaction(channel, ts)
   }
 
   def blank: SlackMessage = SlackMessage("", "", "", Set.empty[SlackUserData], None, None)

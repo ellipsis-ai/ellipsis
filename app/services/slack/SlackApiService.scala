@@ -41,6 +41,8 @@ case class SlackApiClient(
   private val API_BASE_URL = "https://slack.com/api/"
   private val ws = services.ws
 
+  val slackEventService = services.slackEventService
+
   private def urlFor(method: String): String = s"$API_BASE_URL/$method"
 
   private def responseToJson(response: WSResponse, maybeField: Option[String] = None): JsValue = {
@@ -152,7 +154,7 @@ case class SlackApiClient(
   case class SlackMessageJson(user: String, text: String, ts: String, thread_ts: Option[String])
   implicit val slackMessageFormat = Json.format[SlackMessageJson]
 
-  def findReaction(channel: String, messageTs: String, slackEventService: SlackEventService): Future[Option[SlackMessage]] = {
+  def findReaction(channel: String, messageTs: String): Future[Option[SlackMessage]] = {
     val params = Seq(("channel", channel), ("timestamp", messageTs))
     getResponseFor("reactions.get", params).
       flatMap { r =>
@@ -285,8 +287,7 @@ case class SlackApiClient(
                       parse: Option[String] = None, linkNames: Option[String] = None, attachments: Option[Seq[Attachment]] = None,
                       unfurlLinks: Option[Boolean] = None, unfurlMedia: Option[Boolean] = None, iconUrl: Option[String] = None,
                       iconEmoji: Option[String] = None, replaceOriginal: Option[Boolean]= None,
-                      deleteOriginal: Option[Boolean] = None, threadTs: Option[String] = None, replyBroadcast: Option[Boolean] = None,
-                      slackEventService: SlackEventService): Future[SlackMessage] = {
+                      deleteOriginal: Option[Boolean] = None, threadTs: Option[String] = None, replyBroadcast: Option[Boolean] = None): Future[SlackMessage] = {
 
     val params = Map(
       "channel" -> channelId,
