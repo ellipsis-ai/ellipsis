@@ -362,7 +362,7 @@ case class SlackEventContext(
     val eventContext = SlackEventContext(
       profile,
       channel,
-      botResult.responseType.maybeThreadTsToUseForNextAction(botResult, channel, maybeMessageId),
+      maybeThreadId,
       userIdForContext
     )
     SlackRunEvent(
@@ -373,8 +373,7 @@ case class SlackEventContext(
       Some(botResult.event.originalEventType),
       botResult.event.isEphemeral,
       botResult.event.maybeResponseUrl,
-      maybeMessageId,
-      maybeThreadId
+      maybeMessageId
     )
   }
 

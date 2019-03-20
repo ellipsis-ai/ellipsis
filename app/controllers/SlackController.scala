@@ -500,7 +500,7 @@ class SlackController @Inject() (
         SlackEventContext(
           botProfile,
           info.channelId,
-          maybeThreadId = None,
+          maybeThreadId = None, // You can't use slash commands in threads
           info.userId
         ),
         slackMessage,

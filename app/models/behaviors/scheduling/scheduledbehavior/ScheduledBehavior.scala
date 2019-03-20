@@ -68,7 +68,6 @@ case class ScheduledBehavior(
             Some(EventType.scheduled),
             isEphemeral = false,
             None,
-            None,
             None
           ),
           this

@@ -35,22 +35,6 @@ sealed trait BehaviorResponseType extends BehaviorResponseType.Value {
     maybeConversation.flatMap(_.maybeThreadId).orElse(maybeThreadTs)
   }
 
-  def maybeThreadTsToUseForNextAction(
-                                       originalBotResult: BotResult,
-                                       originatingResponseChannel: String,
-                                       maybeOriginalMessageTs: Option[String]
-                                     ): Option[String] = {
-    val maybeOriginalThreadId = originalBotResult.event.maybeThreadId
-    originalBotResult.event.maybeChannel.flatMap { originalEventChannel =>
-      maybeThreadTsToUseFor(
-        originatingResponseChannel,
-        originalEventChannel,
-        originalBotResult.maybeConversation,
-        maybeOriginalThreadId
-      )
-    }
-  }
-
   def maybeOriginalMessageThreadIdFor(event: Event): Option[String] = None
 }
 
@@ -86,18 +70,6 @@ case object Private extends BehaviorResponseType {
 
 case object Threaded extends BehaviorResponseType {
   val displayName = "Respond in a new thread"
-
-  override def maybeThreadTsToUseForNextAction(
-                                                originalBotResult: BotResult,
-                                                originatingResponseChannel: String,
-                                                maybeOriginalMessageTs: Option[String]
-                                              ): Option[String] = {
-    super.maybeThreadTsToUseForNextAction(
-      originalBotResult,
-      originatingResponseChannel,
-      maybeOriginalMessageTs
-    ).orElse(maybeOriginalMessageTs)
-  }
 
   override def maybeOriginalMessageThreadIdFor(event: Event): Option[String] = event.maybeMessageId
 }

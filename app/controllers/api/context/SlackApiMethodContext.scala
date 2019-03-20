@@ -119,8 +119,7 @@ case class SlackApiMethodContext(
           maybeOriginalEventType,
           isEphemeral = false,
           None,
-          maybeTriggeringMessageId,
-          maybeTriggeringMessageThreadId
+          maybeTriggeringMessageId
         )
       }
     }

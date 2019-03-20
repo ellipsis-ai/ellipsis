@@ -16,8 +16,7 @@ case class SlackRunEvent(
                            maybeOriginalEventType: Option[EventType],
                            override val isEphemeral: Boolean,
                            override val maybeResponseUrl: Option[String],
-                           maybeTriggeringMessageTs: Option[String],
-                           maybeTriggeringMessageThreadId: Option[String]
+                           maybeTriggeringMessageTs: Option[String]
                         ) extends RunEvent {
 
   override type EC = SlackEventContext

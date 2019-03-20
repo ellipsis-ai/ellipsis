@@ -96,6 +96,8 @@ case class SlackMessageSender(
                                maybeBehaviorVersion: Option[BehaviorVersion]
                              ) {
 
+  val slackEventService = services.slackEventService
+
   def choicesAttachments(implicit ec: ExecutionContext): Future[Seq[SlackMessageAttachment]] = {
     if (choices.isEmpty) {
       Future.successful(Seq())
@@ -229,7 +231,8 @@ case class SlackMessageSender(
           replaceOriginal = None,
           deleteOriginal = None,
           threadTs = maybeThreadTs,
-          replyBroadcast = None
+          replyBroadcast = None,
+          slackEventService
         ).
           recover(postErrorRecovery(responseChannel, text)).
           flatMap(msg => logInvolvedFor(responseChannel).map(_ => Some(msg)))
@@ -301,7 +304,9 @@ case class SlackMessageSender(
           segment,
           maybeAttachmentsForSegment
         )
-      }.flatMap { maybeMessage => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeMessage)}
+      }.flatMap { maybeMessage =>
+        sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeMessage)
+      }
     }
   }
 
