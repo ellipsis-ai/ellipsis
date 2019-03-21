@@ -61,7 +61,7 @@ trait Event {
     val channelText = maybeChannel.map { channel =>
       s" in channel [${channel}]"
     }.getOrElse("")
-    val contextUserText = s" for context user ID [$result.event.eventContext.userIdForContext]"
+    val contextUserText = s" for context user ID [${result.event.eventContext.userIdForContext}]"
     val convoText = result.maybeConversation.map { convo =>
       s" in conversation [${convo.id}]"
     }.getOrElse("")
