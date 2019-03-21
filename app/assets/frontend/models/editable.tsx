@@ -81,16 +81,11 @@ abstract class Editable implements EditableInterface {
       return pad.substring(0, pad.length - timestampString.length) + timestampString;
     }
 
-    sortKeyForExisting(): Option<string> {
-      return null; // override in subclasses
-    }
+    abstract sortKeyForExisting(): Option<string>
 
     sortKey(): string {
-      if (this.isNew) {
-        return "Z" + this.timestampForAlphabeticalSort();
-      } else {
-        return "A" + (this.sortKeyForExisting() || this.timestampForAlphabeticalSort());
-      }
+      const existing = this.sortKeyForExisting();
+      return existing ? "A" + existing : "Z" + this.timestampForAlphabeticalSort();
     }
 
     abstract namePlaceholderText(): string
