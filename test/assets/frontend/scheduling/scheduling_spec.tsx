@@ -81,13 +81,13 @@ const emptyConfig: SchedulingProps = {
 };
 
 function newSchedule(props?: Partial<ScheduledActionInterface>) {
-  return new ScheduledAction(Object.assign({
+  return new ScheduledAction(Object.assign<ScheduledActionInterface, Partial<ScheduledActionInterface> | undefined>({
     id: ID.next(),
     scheduleType: "message",
     behaviorId: ID.next(),
     behaviorGroupId: ID.next(),
     trigger: ":tada:",
-    arguments: {},
+    arguments: [],
     recurrence: new Recurrence({
       timeZone: defaultTimeZone,
       timeZoneName: defaultTimeZoneName
@@ -100,9 +100,9 @@ function newSchedule(props?: Partial<ScheduledActionInterface>) {
 }
 
 function newChannel(props?: Partial<ScheduleChannelInterface>) {
-  return new ScheduleChannel(Object.assign({
+  return new ScheduleChannel(Object.assign<ScheduleChannelInterface, Partial<ScheduleChannelInterface> | undefined>({
     id: defaultChannelId,
-    name: "test",
+    name: "channel",
     context: "Slack",
     isBotMember: true,
     isSelfDm: false,
@@ -151,10 +151,13 @@ describe('Scheduling', () => {
     });
 
     it('renders with some scheduled items', () => {
-      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
+      const config = Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
         scheduledActions: [newSchedule(), newSchedule()],
-        channelList: [newChannel()]
-      }));
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: [newChannel()] })]
+        })
+      });
+      const wrapper = createIndexWrapper(config);
       const page = wrapper.page;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
       const errorMessageSpy = jest.spyOn(page, 'renderErrorMessage');
@@ -176,7 +179,9 @@ describe('Scheduling', () => {
       }), newSchedule()];
       const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
         scheduledActions: schedules,
-        channelList: channels,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: channels })]
+        }),
         selectedScheduleId: null
       }));
       const page = wrapper.page;
@@ -209,7 +214,7 @@ describe('Scheduling', () => {
 
   describe('componentWillReceiveProps', () => {
     it('sets state to justSaved if current props isSaving is true, and new props isSaving is false', () => {
-      const config = Object.assign({}, emptyConfig, {
+      const config = Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
         isSaving: true
       });
       const wrapper = createIndexWrapper(config);
@@ -227,7 +232,7 @@ describe('Scheduling', () => {
     });
 
     it('sets state to justDeleted if current props isDeleting is true, and new props isDeleting is false', () => {
-      const config = Object.assign({}, emptyConfig, {
+      const config = Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
         isDeleting: true
       });
       const wrapper = createIndexWrapper(config);
@@ -255,7 +260,9 @@ describe('Scheduling', () => {
       })];
       const config = Object.assign({}, emptyConfig, {
         scheduledActions: schedules,
-        channelList: channels,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: channels })]
+        }),
         selectedScheduleId: schedules[0].id,
         isDeleting: true
       });
@@ -285,9 +292,11 @@ describe('Scheduling', () => {
       const schedules = [newSchedule({
         channel: channels[0].id
       })];
-      const config = Object.assign({}, emptyConfig, {
+      const config = Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
         scheduledActions: schedules,
-        channelList: channels,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: channels })]
+        }),
         selectedScheduleId: schedules[0].id,
         isDeleting: true
       });
@@ -311,4 +320,26 @@ describe('Scheduling', () => {
       });
     });
   });
+
+  describe('getScheduleByChannel', () => {
+    it('returns scheduled actions grouped by channel, with channels and actions in a channel both sorted ascending by first recurrence', () => {
+      const channel1 = newChannel({ name: "channel1", id: "channel1" });
+      const channel2 = newChannel({ name: "channel2", id: "channel2" });
+      const action1 = newSchedule({ firstRecurrence: new Date("2020-01-01T00:00:00.000Z"), channel: "channel1" });
+      const action2 = newSchedule({ firstRecurrence: new Date("2018-01-01T00:00:00.000Z"), channel: "channel2" });
+      const action3 = newSchedule({ firstRecurrence: new Date("2019-01-01T00:00:00.000Z"), channel: "channel1" });
+      const action4 = newSchedule({ firstRecurrence: new Date("2020-01-01T00:00:00.000Z"), channel: "channel2" });
+      const wrapper = createIndexWrapper(Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
+        scheduledActions: [action1, action2, action3, action4],
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: [channel1, channel2] })]
+        }),
+      }));
+      const page = wrapper.page;
+      const grouped = page.getScheduleByChannel();
+      expect(grouped.map((ea) => ea.channelId)).toEqual(["channel2", "channel1"]);
+      expect(grouped[0].actions).toEqual([action2, action4]);
+      expect(grouped[1].actions).toEqual([action3, action1]);
+    });
+  })
 });

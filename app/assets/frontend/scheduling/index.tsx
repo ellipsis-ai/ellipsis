@@ -212,16 +212,14 @@ class Scheduling extends React.Component<Props, State> {
         group.actions.push(action);
         groupsByName[groupName] = group;
       });
-      const channelNames = Object.keys(groupsByName);
-      const sortedNames = Sort.arrayAlphabeticalBy(channelNames, (ea) => ea);
-      const sortedGroups: Array<ScheduleGroup> = [];
-      sortedNames.forEach((channelName) => {
-        const group = groupsByName[channelName];
-        if (group) {
-          sortedGroups.push(group);
-        }
+      const groupArray = Object.keys(groupsByName).map((channelName) => {
+        const group = groupsByName[channelName] as ScheduleGroup;
+        group.actions = Sort.arrayAscending(group.actions, (action) => action.firstRecurrence ? Number(action.firstRecurrence) : Infinity);
+        return group;
       });
-      return sortedGroups;
+      return Sort.arrayAscending(groupArray, (group) => {
+        return group.actions[0].firstRecurrence ? Number(group.actions[0].firstRecurrence) : Infinity
+      });
     }
 
     shouldShowChannel(channelId: string): boolean {

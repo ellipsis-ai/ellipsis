@@ -12,6 +12,17 @@ const Sort = {
           return 0;
         }
       });
+    },
+
+    arrayAscending: function<T>(array: Array<T>, mapItemToProperty: (item: T) => number) {
+      const copy = array.slice();
+      return copy.sort((a, b) => {
+        return mapItemToProperty(a) - mapItemToProperty(b);
+      });
+    },
+
+    arrayDescending: function<T>(array: Array<T>, mapItemToProperty: (item: T) => number) {
+      return this.arrayAscending(array, mapItemToProperty).reverse();
     }
 };
 
