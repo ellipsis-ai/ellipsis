@@ -80,7 +80,8 @@ case class SlackMessageSender(
                                developerContext: DeveloperContext,
                                originatingChannel: String,
                                maybeDMChannel: Option[String],
-                               maybeThreadId: Option[String],
+                               maybeTriggeringMessageId: Option[String],
+                               maybeExistingThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
                                attachments: Seq[MessageAttachment] = Seq(),
@@ -174,7 +175,7 @@ case class SlackMessageSender(
     // We can't always use the response url, as it's a bit quirky:
     // - using the response url in a thread results in a message back in the main channel, for <%= reason %>
     // - posts to the response url don't give back a message ts
-    if (channel == originatingChannel && maybeThreadId.isEmpty && isEphemeral) {
+    if (channel == originatingChannel && maybeExistingThreadId.isEmpty && isEphemeral) {
       maybeResponseUrl
     } else {
       None
@@ -182,12 +183,12 @@ case class SlackMessageSender(
   }
 
   private def maybeThreadTsToUse(channel: String) = {
-    responseType.maybeThreadTsToUseFor(channel, originatingChannel, maybeConversation, maybeThreadId)
+    responseType.maybeThreadTsToUseFor(channel, originatingChannel, maybeConversation, maybeExistingThreadId, maybeTriggeringMessageId)
   }
 
   private def channelToUse(maybeChannelToForce: Option[String] = None): String = {
     maybeChannelToForce.getOrElse {
-      responseType.channelToUseFor(originatingChannel, maybeConversation, maybeThreadId, maybeDMChannel)
+      responseType.channelToUseFor(originatingChannel, maybeConversation, maybeExistingThreadId, maybeDMChannel)
     }
   }
 
@@ -267,7 +268,7 @@ case class SlackMessageSender(
     if (formattedText.nonEmpty) {
       maybePreambleText.map { preambleMessage =>
         if (beQuiet) {
-          postEphemeralMessage(preambleMessage, None, originatingChannel, maybeThreadId)
+          postEphemeralMessage(preambleMessage, None, originatingChannel, maybeExistingThreadId)
         } else {
           postChatMessage(preambleMessage, None, Some(originatingChannel))
         }

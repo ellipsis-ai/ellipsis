@@ -1,6 +1,5 @@
 package models.behaviors.behaviorversion
 
-import models.behaviors.BotResult
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.Event
 import utils.Enum
@@ -30,7 +29,8 @@ sealed trait BehaviorResponseType extends BehaviorResponseType.Value {
                              channelToUse: String,
                              originatingChannel: String,
                              maybeConversation: Option[Conversation],
-                             maybeThreadTs: Option[String]
+                             maybeThreadTs: Option[String],
+                             maybeTriggeringMessageId: Option[String]
                      ): Option[String] = {
     maybeConversation.flatMap(_.maybeThreadId).orElse(maybeThreadTs)
   }
@@ -58,10 +58,11 @@ case object Private extends BehaviorResponseType {
                                       channelToUse: String,
                                       originatingChannel: String,
                                       maybeConversation: Option[Conversation],
-                                      maybeThreadTs: Option[String]
+                                      maybeThreadTs: Option[String],
+                                      maybeTriggeringMessageId: Option[String]
                                    ): Option[String] = {
     if (channelToUse == originatingChannel) {
-      super.maybeThreadTsToUseFor(channelToUse, originatingChannel, maybeConversation, maybeThreadTs)
+      super.maybeThreadTsToUseFor(channelToUse, originatingChannel, maybeConversation, maybeThreadTs, maybeTriggeringMessageId)
     } else {
       None
     }
@@ -72,4 +73,14 @@ case object Threaded extends BehaviorResponseType {
   val displayName = "Respond in a new thread"
 
   override def maybeOriginalMessageThreadIdFor(event: Event): Option[String] = event.maybeMessageId
+
+  override def maybeThreadTsToUseFor(
+                                      channelToUse: String,
+                                      originatingChannel: String,
+                                      maybeConversation: Option[Conversation],
+                                      maybeThreadTs: Option[String],
+                                      maybeTriggeringMessageId: Option[String]
+                                    ): Option[String] = {
+    super.maybeThreadTsToUseFor(channelToUse, originatingChannel, maybeConversation, maybeThreadTs, maybeTriggeringMessageId).orElse(maybeTriggeringMessageId)
+  }
 }
