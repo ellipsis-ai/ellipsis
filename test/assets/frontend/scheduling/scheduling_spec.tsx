@@ -21,7 +21,7 @@ Object.defineProperty(window, "scrollTo", {
 });
 
 class Loader extends React.Component<SchedulingProps, SchedulingProps> {
-  page: Scheduling;
+  page?: Scheduling;
   constructor(props: SchedulingProps) {
     super(props);
     this.state = Object.assign({}, props);
@@ -120,7 +120,7 @@ describe('Scheduling', () => {
   describe('render', () => {
     it('renders an error message when there are no scheduled items and no channels', () => {
       const wrapper = createIndexWrapper(emptyConfig);
-      const page = wrapper.page;
+      const page = wrapper.page as Scheduling;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
       const errorMessageSpy = jest.spyOn(page, 'renderErrorMessage');
       const noScheduleMessageSpy = jest.spyOn(page, 'renderNoSchedulesMessage');
@@ -138,7 +138,7 @@ describe('Scheduling', () => {
           teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: [newChannel()] })]
         })
       }));
-      const page = wrapper.page;
+      const page = wrapper.page as Scheduling;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
       const errorMessageSpy = jest.spyOn(page, 'renderErrorMessage');
       const noScheduleMessageSpy = jest.spyOn(page, 'renderNoSchedulesMessage');
@@ -158,7 +158,7 @@ describe('Scheduling', () => {
         })
       });
       const wrapper = createIndexWrapper(config);
-      const page = wrapper.page;
+      const page = wrapper.page as Scheduling;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
       const errorMessageSpy = jest.spyOn(page, 'renderErrorMessage');
       const noScheduleMessageSpy = jest.spyOn(page, 'renderNoSchedulesMessage');
@@ -184,7 +184,7 @@ describe('Scheduling', () => {
         }),
         selectedScheduleId: null
       }));
-      const page = wrapper.page;
+      const page = wrapper.page as Scheduling;
       expect(page.state.selectedItem).toBe(null);
       expect(page.state.isEditing).toBe(false);
       expect(page.state.filterChannelId).toBe(null);
@@ -205,7 +205,7 @@ describe('Scheduling', () => {
         }),
         selectedScheduleId: schedules[0].id
       }));
-      const page = wrapper.page;
+      const page = wrapper.page as Scheduling;
       expect(page.state.selectedItem).toBe(schedules[0]);
       expect(page.state.isEditing).toBe(true);
       expect(page.state.filterChannelId).toEqual(channels[0].id);
@@ -218,7 +218,7 @@ describe('Scheduling', () => {
         isSaving: true
       });
       const wrapper = createIndexWrapper(config);
-      const page = wrapper.page;
+      const page = wrapper.page as Scheduling;
       const stateSpy = jest.spyOn(page, 'setState');
       wrapper.setState({
         isSaving: false
@@ -236,7 +236,7 @@ describe('Scheduling', () => {
         isDeleting: true
       });
       const wrapper = createIndexWrapper(config);
-      const page = wrapper.page;
+      const page = wrapper.page as Scheduling;
       const stateSpy = jest.spyOn(page, 'setState');
       wrapper.setState({
         isDeleting: false
@@ -267,7 +267,7 @@ describe('Scheduling', () => {
         isDeleting: true
       });
       const wrapper = createIndexWrapper(config);
-      const page = wrapper.page;
+      const page = wrapper.page as Scheduling;
       page.setState({
         selectedItem: schedules[0],
         filterChannelId: channels[0].id
@@ -301,7 +301,7 @@ describe('Scheduling', () => {
         isDeleting: true
       });
       const wrapper = createIndexWrapper(config);
-      const page = wrapper.page;
+      const page = wrapper.page as Scheduling;
       page.setState({
         selectedItem: schedules[0],
         filterChannelId: channels[0].id
@@ -335,7 +335,7 @@ describe('Scheduling', () => {
           teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: [channel1, channel2] })]
         }),
       }));
-      const page = wrapper.page;
+      const page = wrapper.page as Scheduling;
       const grouped = page.getScheduleByChannel();
       expect(grouped.map((ea) => ea.channelId)).toEqual(["channel2", "channel1"]);
       expect(grouped[0].actions).toEqual([action2, action4]);

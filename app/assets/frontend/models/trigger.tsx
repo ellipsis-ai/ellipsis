@@ -30,29 +30,11 @@ class Trigger implements Diffable, TriggerInterface {
   ) {
       const isRegex: boolean = typeof maybeIsRegex === "boolean" ? Boolean(maybeIsRegex) : false;
       const requiresMention: boolean = typeof maybeRequiresMention === "boolean" ? Boolean(maybeRequiresMention) : true;
-      Object.defineProperties(this, {
-        /* Case sensitivity disabled in the UI, so force it to be false */
-        caseSensitive: {
-          value: false,
-          enumerable: true
-        },
-        isRegex: {
-          value: isRegex,
-          enumerable: true
-        },
-        requiresMention: {
-          value: requiresMention,
-          enumerable: true
-        },
-        text: {
-          value: maybeText || "",
-          enumerable: true
-        },
-        triggerType: {
-          value: triggerType,
-          enumerable: true
-        }
-      });
+      this.caseSensitive = false;
+      this.isRegex = isRegex;
+      this.requiresMention = requiresMention;
+      this.text = maybeText || "";
+      this.triggerType = triggerType;
     }
 
     diffLabel(): string {

@@ -53,7 +53,7 @@ type PanelMap = { [name: string]: Container };
 class Page extends React.Component<Props, State> {
     panels: PanelMap;
     footer: Container;
-    component: React.Component;
+    component: Option<React.Component>;
     header: Option<HTMLElement>;
     navItems: Option<HTMLElement>;
     navActions: Option<HTMLElement>;
