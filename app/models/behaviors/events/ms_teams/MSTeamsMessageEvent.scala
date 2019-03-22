@@ -37,7 +37,7 @@ case class MSTeamsMessageEvent(
     case _ => None
   }.headOption
 
-  val maybeMessageIdForReaction: Option[String] = None // TODO: populate this
+  val maybeMessageId: Option[String] = None // TODO: populate this
 
   override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(None) // TODO: maybe implement this

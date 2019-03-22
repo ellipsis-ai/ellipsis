@@ -130,7 +130,9 @@ case class InvokeBehaviorConversation(
     event match {
       case event: SlackMessageEvent => {
         implicit val actorSystem = services.actorSystem
-        SlackMessageReactionHandler.handle(services.slackApiService.clientFor(event.profile), eventualResponse, event.channel, event.ts)
+        event.maybeTs.foreach { ts =>
+          SlackMessageReactionHandler.handle(services.slackApiService.clientFor(event.profile), eventualResponse, event.channel, ts)
+        }
       }
       case _ =>
     }

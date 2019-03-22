@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.ellipsisobject.Message
+import models.behaviors.ellipsisobject.MessageObject
 import models.team.Team
 import services.DefaultServices
 import slick.dbio.DBIO
@@ -27,8 +27,8 @@ trait MessageEvent extends Event {
   override def maybeMessageInfoAction(
                               maybeConversation: Option[Conversation],
                               services: DefaultServices
-                            )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[Message]] = {
-    Message.buildForAction(this, maybeConversation, services).map(Some(_))
+                            )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[MessageObject]] = {
+    MessageObject.buildForAction(this, maybeConversation, services).map(Some(_))
   }
 
   def allBehaviorResponsesFor(

@@ -42,7 +42,7 @@ sealed trait ScheduledEvent extends Event {
                             choices: Seq[ActionChoice],
                             developerContext: DeveloperContext,
                             services: DefaultServices
-                          )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                          )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]] = {
     underlying.sendMessage(text, maybeBehaviorVersion, responseType, maybeShouldUnfurl, maybeConversation, attachments, files, choices, developerContext, services)
   }
 
@@ -58,7 +58,7 @@ sealed trait ScheduledEvent extends Event {
   override val maybeScheduled: Option[Scheduled] = Some(scheduled)
   def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = underlying.messageUserDataListAction(services)
 
-  val maybeMessageIdForReaction: Option[String] = None
+  val maybeMessageId: Option[String] = None
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],

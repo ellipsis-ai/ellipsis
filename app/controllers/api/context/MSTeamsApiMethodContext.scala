@@ -36,7 +36,13 @@ case class MSTeamsApiMethodContext(
 
   val requiresChannel: Boolean = true
 
-  def maybeMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String]): Future[Option[Event]] = ???
+  def maybeMessageEventFor(
+                            message: String,
+                            maybeChannel: Option[String],
+                            maybeOriginalEventType: Option[EventType],
+                            maybeMessageTs: Option[String],
+                            maybeThreadId: Option[String]
+                          ): Future[Option[Event]] = ???
 
   def maybeRunEventFor(
                    behaviorVersion: BehaviorVersion,
@@ -44,7 +50,8 @@ case class MSTeamsApiMethodContext(
                    maybeChannel: Option[String],
                    eventType: EventType,
                    maybeOriginalEventType: Option[EventType],
-                   maybeTriggeringMessageId: Option[String]
+                   maybeTriggeringMessageId: Option[String],
+                   maybeTriggeringMessageThreadId: Option[String]
                  ): Future[Option[MSTeamsRunEvent]] = {
     val client = services.msTeamsApiService.profileClientFor(botProfile)
     client.getApplicationInfo.map { maybeAppInfo =>

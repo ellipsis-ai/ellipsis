@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
-import models.behaviors.behaviorversion.{BehaviorVersion, Private, Threaded}
+import models.behaviors.behaviorversion._
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
@@ -162,7 +162,7 @@ case class BehaviorResponse(
       event.sendMessage(
         "Let’s continue this in a thread. :speech_balloon:",
         Some(behaviorVersion),
-        behaviorVersion.responseType,
+        Normal,
         maybeShouldUnfurl = None,
         None,
         attachments = Seq(),
@@ -170,7 +170,7 @@ case class BehaviorResponse(
         choices = Seq(),
         DeveloperContext.default,
         services
-      )
+      ).map(_.flatMap(_.maybeId))
     }
   }
 

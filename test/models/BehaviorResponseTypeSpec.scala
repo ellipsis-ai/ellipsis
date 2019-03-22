@@ -9,6 +9,7 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsObject, JsString}
 import services.DataService
+import utils.SlackTimestamp
 
 class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
   val originatingChannel = "CHANNEL"
@@ -72,88 +73,51 @@ class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
   }
 
   "maybeThreadTsToUseFor" should {
-    "return None if there is no thread to use" in {
-      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, None) mustBe None
-      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, None) mustBe None
-      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, None) mustBe None
+    "return None if there is no thread to use and no triggering message" in {
+      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, None, None) mustBe None
+      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, None, None) mustBe None
+      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, None, None) mustBe None
+    }
+
+    "return None if there is no thread to use unless threaded response and triggering message" in {
+      val maybeMessageId = Some(SlackTimestamp.now)
+      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, None, maybeMessageId) mustBe None
+      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, None, maybeMessageId) mustBe maybeMessageId
+      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, None, maybeMessageId) mustBe None
     }
 
     "prioritize the conversation thread if present when not Private in another channel" in {
       val conversationWithThread = mock[Conversation]
       when(conversationWithThread.maybeThreadId).thenReturn(Some(conversationThreadTs))
 
-      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithThread), Some(threadTs)) mustBe Some(conversationThreadTs)
-      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithThread), Some(threadTs)) mustBe Some(conversationThreadTs)
-      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithThread), Some(threadTs)) mustBe Some(conversationThreadTs)
+      val maybeMessageId = Some(SlackTimestamp.now)
+      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithThread), Some(threadTs), maybeMessageId) mustBe Some(conversationThreadTs)
+      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithThread), Some(threadTs), maybeMessageId) mustBe Some(conversationThreadTs)
+      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithThread), Some(threadTs), maybeMessageId) mustBe Some(conversationThreadTs)
     }
 
     "use the original thread if no conversation thread and not Private in another channel" in {
       val conversationWithoutThread = mock[Conversation]
       when(conversationWithoutThread.maybeThreadId).thenReturn(None)
 
-      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithoutThread), Some(threadTs)) mustBe Some(threadTs)
-      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithoutThread), Some(threadTs)) mustBe Some(threadTs)
-      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithoutThread), Some(threadTs)) mustBe Some(threadTs)
+      val maybeMessageId = Some(SlackTimestamp.now)
 
-      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, Some(threadTs)) mustBe Some(threadTs)
-      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, Some(threadTs)) mustBe Some(threadTs)
-      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, Some(threadTs)) mustBe Some(threadTs)
+      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithoutThread), Some(threadTs), maybeMessageId) mustBe Some(threadTs)
+      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithoutThread), Some(threadTs), maybeMessageId) mustBe Some(threadTs)
+      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, Some(conversationWithoutThread), Some(threadTs), maybeMessageId) mustBe Some(threadTs)
+
+      Normal.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, Some(threadTs), maybeMessageId) mustBe Some(threadTs)
+      Threaded.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, Some(threadTs), maybeMessageId) mustBe Some(threadTs)
+      Private.maybeThreadTsToUseFor(originatingChannel, originatingChannel, None, Some(threadTs), maybeMessageId) mustBe Some(threadTs)
     }
 
     "return None if a Private response happens in another channel" in {
       val conversation = mock[Conversation]
-      Private.maybeThreadTsToUseFor(dmChannelToUse, originatingChannel, Some(conversation), Some(threadTs)) mustBe None
-      Private.maybeThreadTsToUseFor(dmChannelToUse, originatingChannel, None, Some(threadTs)) mustBe None
-      Private.maybeThreadTsToUseFor(dmChannelToUse, originatingChannel, Some(conversation), None) mustBe None
+      val maybeMessageId = Some(SlackTimestamp.now)
+      Private.maybeThreadTsToUseFor(dmChannelToUse, originatingChannel, Some(conversation), Some(threadTs), maybeMessageId) mustBe None
+      Private.maybeThreadTsToUseFor(dmChannelToUse, originatingChannel, None, Some(threadTs), maybeMessageId) mustBe None
+      Private.maybeThreadTsToUseFor(dmChannelToUse, originatingChannel, Some(conversation), None, maybeMessageId) mustBe None
     }
   }
 
-  "maybeThreadTsToUseForNextAction" should {
-    "use the original message TS for Threaded responses with no current thread" in {
-      val event = mock[Event]
-      when(event.maybeChannel).thenReturn(Some(originatingChannel))
-      when(event.maybeThreadId).thenReturn(None)
-
-      val conversationWithoutThread = mock[Conversation]
-      when(conversationWithoutThread.maybeThreadId).thenReturn(None)
-
-      Threaded.maybeThreadTsToUseForNextAction(botResultFor(event, Some(conversationWithoutThread)), originatingChannel, Some(originalMessageTs)) mustBe Some(originalMessageTs)
-      Threaded.maybeThreadTsToUseForNextAction(botResultFor(event, None), originatingChannel, Some(originalMessageTs)) mustBe Some(originalMessageTs)
-    }
-
-    "otherwise use the existing maybeThreadTsToUseFor logic for Threaded responses" in {
-      val event = mock[Event]
-      when(event.maybeChannel).thenReturn(Some(originatingChannel))
-      when(event.maybeThreadId).thenReturn(Some(threadTs))
-
-      val conversationWithThread = mock[Conversation]
-      when(conversationWithThread.maybeThreadId).thenReturn(Some(conversationThreadTs))
-
-      Threaded.maybeThreadTsToUseForNextAction(botResultFor(event, Some(conversationWithThread)), originatingChannel, Some(originalMessageTs)) mustBe Some(conversationThreadTs)
-      Threaded.maybeThreadTsToUseForNextAction(botResultFor(event, None), originatingChannel, Some(originalMessageTs)) mustBe Some(threadTs)
-    }
-
-    "use maybeThreadToUseFor for Normal or Private responses" in {
-      val eventWithThread = mock[Event]
-      when(eventWithThread.maybeChannel).thenReturn(Some(originatingChannel))
-      when(eventWithThread.maybeThreadId).thenReturn(Some(threadTs))
-
-      val eventWithoutThread = mock[Event]
-      when(eventWithoutThread.maybeChannel).thenReturn(Some(originatingChannel))
-      when(eventWithoutThread.maybeThreadId).thenReturn(None)
-
-      val conversationWithThread = mock[Conversation]
-      when(conversationWithThread.maybeThreadId).thenReturn(Some(conversationThreadTs))
-
-      Normal.maybeThreadTsToUseForNextAction(botResultFor(eventWithoutThread, Some(conversationWithThread)), originatingChannel, Some(originalMessageTs)) mustBe Some(conversationThreadTs)
-      Normal.maybeThreadTsToUseForNextAction(botResultFor(eventWithThread, None), originatingChannel, Some(originalMessageTs)) mustBe Some(threadTs)
-      Normal.maybeThreadTsToUseForNextAction(botResultFor(eventWithoutThread, None), originatingChannel, Some(originalMessageTs)) mustBe None
-
-      Private.maybeThreadTsToUseForNextAction(botResultFor(eventWithoutThread, Some(conversationWithThread)), originatingChannel, Some(originalMessageTs)) mustBe Some(conversationThreadTs)
-      Private.maybeThreadTsToUseForNextAction(botResultFor(eventWithThread, None), originatingChannel, Some(originalMessageTs)) mustBe Some(threadTs)
-      Private.maybeThreadTsToUseForNextAction(botResultFor(eventWithoutThread, None), originatingChannel, Some(originalMessageTs)) mustBe None
-
-      Private.maybeThreadTsToUseForNextAction(botResultFor(eventWithThread, Some(conversationWithThread)), dmChannelToUse, Some(originalMessageTs)) mustBe None
-    }
-  }
 }

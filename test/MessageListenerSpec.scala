@@ -24,9 +24,9 @@ class MessageListenerSpec extends DBSpec {
             None,
             slackUserId
           ),
-          SlackMessage.fromUnformattedText("foo", botProfile, Some(ts)),
+          SlackMessage.fromUnformattedText("foo", botProfile, Some(ts), None),
           None,
-          ts,
+          Some(ts),
           None,
           false,
           false,
