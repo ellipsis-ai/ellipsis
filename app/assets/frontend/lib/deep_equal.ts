@@ -23,22 +23,23 @@ class DeepEqual {
       }
     }
 
-    static objectsEqual(obj1: object, obj2: object): boolean {
+    static objectsEqual(obj1: { [k: string]: any } | null, obj2: { [k: string]: any } | null): boolean {
       // typeof null returns "object", so we need to guard against one side being null
-      if (obj1 !== obj2 && (obj1 === null || obj2 === null)) {
-        return false;
+      if (!obj1 || !obj2) {
+        return obj1 === obj2;
+      } else {
+        if (obj1.constructor !== obj2.constructor) {
+          return false;
+        }
+        const obj1Keys = Object.keys(obj1);
+        const obj2Keys = Object.keys(obj2);
+        if (!DeepEqual.arraysEqual(obj1Keys.sort(), obj2Keys.sort())) {
+          return false;
+        }
+        return obj1Keys.every(function (key) {
+          return DeepEqual.isEqual(obj1[key], obj2[key]);
+        });
       }
-      if (obj1.constructor !== obj2.constructor) {
-        return false;
-      }
-      var obj1Keys = Object.keys(obj1);
-      var obj2Keys = Object.keys(obj2);
-      if (!DeepEqual.arraysEqual(obj1Keys.sort(), obj2Keys.sort())) {
-        return false;
-      }
-      return obj1Keys.every(function(key) {
-        return DeepEqual.isEqual(obj1[key], obj2[key]);
-      });
     }
 
 }

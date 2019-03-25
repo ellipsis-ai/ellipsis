@@ -4,19 +4,24 @@ import java.io.File
 
 import _root_.models.accounts.slack.botprofile.SlackBotProfile
 import akka.actor.ActorSystem
+import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
-import models.accounts.linkedaccount.LinkedAccount
+import models.behaviors.events.slack.SlackMessage
+import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.json.{Format, JsError, JsSuccess, Json}
+import play.api.libs.json._
 import play.api.libs.ws.WSResponse
 import services.DefaultServices
 import services.slack.apiModels._
-import utils.SlackConversation
+import utils.{SlackConversation, SlackTimestamp}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class MalformedResponseException(message: String) extends Exception(message)
+trait InvalidResponseException
+
+case class ErrorResponseException(status: Int, statusText: String) extends Exception(s"Slack API returned ${status}: ${statusText}") with InvalidResponseException
+case class MalformedResponseException(message: String) extends Exception(message) with InvalidResponseException
 case class SlackApiError(code: String) extends Exception(code)
 
 
@@ -31,13 +36,46 @@ case class SlackApiClient(
 
   val token: String = profile.token
 
+  private val SLACK_CONVERSATIONS_BATCH_SIZE = 1000
+
   private val API_BASE_URL = "https://slack.com/api/"
   private val ws = services.ws
 
   private def urlFor(method: String): String = s"$API_BASE_URL/$method"
 
+  private def responseToJson(response: WSResponse, maybeField: Option[String] = None): JsValue = {
+    if (response.status < 400) {
+      try {
+        response.json
+      } catch {
+        case j: JsonParseException => throw MalformedResponseException(
+          s"""Slack API returned a non-JSON response${
+            maybeField.map(field => s" while retrieving field ${field}").getOrElse(".")
+          }
+             |Ellipsis team ID: ${profile.teamId}
+             |Slack team ID: ${profile.slackTeamId}
+             |Error:
+             |${j.getMessage}
+             |
+             |Truncated body:
+             |${response.body.slice(0, 500)}
+             |""".stripMargin
+        )
+      }
+    } else {
+      Logger.error(
+        s"""Received irregular response from Slack API:
+           |${response.status}: ${response.statusText}
+           |
+           |Truncated body:
+           |${response.body.slice(0, 500)}
+         """.stripMargin)
+      throw ErrorResponseException(response.status, response.statusText)
+    }
+  }
+
   private def extract[T](response: WSResponse, field: String)(implicit fmt: Format[T]): T = {
-    val json = response.json
+    val json = responseToJson(response, Some(field))
     (json \ field).validate[T] match {
       case JsSuccess(v, _) => v
       case JsError(_) => {
@@ -75,8 +113,10 @@ case class SlackApiClient(
   }
 
   private def getResponseFor(endpoint: String, params: Seq[(String, String)]): Future[WSResponse] = {
+    Logger.info(s"SlackApiClient query $endpoint with params $params")
     ws.
       url(urlFor(endpoint)).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
       withQueryStringParameters((params ++ defaultParams): _*).
       get
   }
@@ -90,28 +130,90 @@ case class SlackApiClient(
       }
   }
 
-  def listConversations: Future[Seq[SlackConversation]] = {
-    val params = Seq(("types", "public_channel, private_channel, mpim, im"), ("exclude_archived", "false"))
-    getResponseFor("conversations.list", params).
-      map { response =>
-        (response.json \ "channels").validate[Seq[SlackConversation]] match {
-          case JsSuccess(data, _) => data
-          case JsError(err) => Seq()
+  def permalinkFor(channel: String, messageTs: String): Future[Option[String]] = {
+    val params = Seq(("channel", channel), ("message_ts", messageTs))
+    getResponseFor("chat.getPermalink", params).
+      map(r => Some(extract[String](r, "permalink"))).
+      recover {
+        case SlackApiError("message_not_found") => None // happens for simulated timestamps in RunEvents
+        case SlackApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve permalink: $err
+               |
+               |Channel: $channel
+               |Message timestamp: $messageTs
+             """.stripMargin)
+          None
         }
       }
   }
 
-  def conversationMembers(convoId: String): Future[Seq[String]] = {
-    postResponseFor("conversations.members", Map("channel" -> convoId)).
-      map { response =>
-        (response.json \ "members").asOpt[Seq[String]].getOrElse(Seq())
+  case class SlackMessageJson(user: String, text: String, ts: String)
+  implicit val slackMessageFormat = Json.format[SlackMessageJson]
+
+  def findReaction(channel: String, messageTs: String, slackEventService: SlackEventService): Future[Option[SlackMessage]] = {
+    val params = Seq(("channel", channel), ("timestamp", messageTs))
+    getResponseFor("reactions.get", params).
+      flatMap { r =>
+        val text = extract[SlackMessageJson](r, "message").text
+        SlackMessage.fromFormattedText(text, profile, slackEventService, Some(messageTs)).map(Some(_))
+      }.
+      recover {
+        case SlackApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve reactions for message: $err
+               |
+               |Channel: $channel
+               |Message timestamp: $messageTs
+             """.stripMargin)
+          None
+        }
+      }
+  }
+
+  def listConversations(maybeCursor: Option[String] = None): Future[Seq[SlackConversation]] = {
+    val params = Seq(
+      ("types", "public_channel, private_channel, mpim, im"),
+      ("exclude_archived", "false"),
+      ("limit", SLACK_CONVERSATIONS_BATCH_SIZE.toString)
+    ) ++ maybeCursor.map(c => Seq(("cursor", c))).getOrElse(Seq())
+    getResponseFor("conversations.list", params).
+      flatMap { response =>
+        val json = responseToJson(response, Some("channels"))
+        val batch = (json \ "channels").validate[Seq[SlackConversation]] match {
+          case JsSuccess(data, _) => data
+          case JsError(err) => {
+            Logger.error(s"Failed to parse SlackConversation from conversations.list: ${JsError.toJson(err).toString}")
+            Seq()
+          }
+        }
+        // Slack returns an empty string next_cursor rather than leaving it out
+        val maybeNextCursor = (json \ "response_metadata" \ "next_cursor").asOpt[String].filter(_.trim.nonEmpty)
+        maybeNextCursor.map { nextCursor =>
+          listConversations(Some(nextCursor)).map(batch ++ _)
+        }.getOrElse(Future.successful(batch))
+      }
+  }
+
+  def conversationMembers(convoId: String, maybeCursor: Option[String] = None): Future[Seq[String]] = {
+    val params = Map("channel" -> convoId) ++ maybeCursor.map(c => Map("cursor" -> c)).getOrElse(Map())
+    postResponseFor("conversations.members", params).
+      flatMap { response =>
+        val json = responseToJson(response, Some("members"))
+        val batch = (json \ "members").asOpt[Seq[String]].getOrElse(Seq())
+        val maybeNextCursor = (json \ "response_metadata" \ "next_cursor").asOpt[String].filter(_.trim.nonEmpty)
+        maybeNextCursor.map { nextCursor =>
+          conversationMembers(convoId, Some(nextCursor)).map(batch ++ _)
+        }.getOrElse(Future.successful(batch))
       }
   }
 
   def openConversationFor(slackUserId: String): Future[String] = {
     postResponseFor("conversations.open", Map("users" -> slackUserId)).
       map { response =>
-        val json = response.json
+        val json = responseToJson(response, Some("channel.id"))
         if ((json \ "ok").as[Boolean]) {
           (json \ "channel" \ "id").validate[String] match {
             case JsSuccess(id, _) => id
@@ -131,6 +233,22 @@ case class SlackApiClient(
     }
   }
 
+  def getTeamInfo: Future[Option[SlackTeam]] = {
+    getResponseFor("team.info", Seq()).
+      map(r => Some(extract[SlackTeam](r, "team"))).
+      recover {
+        case SlackApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve team info: $err
+               |
+               |Team ID: ${profile.slackTeamId}
+             """.stripMargin)
+          None
+        }
+      }
+  }
+
   def getUserInfoByEmail(email: String): Future[Option[SlackUser]] = {
     postResponseFor("users.lookupByEmail", Map("email" -> email)).map { r =>
       Some(extract[SlackUser](r, "user"))
@@ -146,7 +264,8 @@ case class SlackApiClient(
                   filename: Option[String] = None,
                   title: Option[String] = None,
                   initialComment: Option[String] = None,
-                  channels: Option[Seq[String]] = None
+                  channels: Option[Seq[String]] = None,
+                  maybeThreadTs: Option[String] = None
                 ): Future[SlackFile] = {
     val params = Map(
       "content" -> content,
@@ -154,7 +273,8 @@ case class SlackApiClient(
       "filename" -> filename,
       "title" -> title,
       "initial_comment" -> initialComment,
-      "channels" -> channels.map(_.mkString(","))
+      "channels" -> channels.map(_.mkString(",")),
+      "thread_ts" -> maybeThreadTs
     )
     postResponseFor("files.upload", params).map { res =>
       extract[SlackFile](res, "file")
@@ -188,6 +308,53 @@ case class SlackApiClient(
     postResponseFor("chat.postMessage", params).map { r =>
       extract[String](r, "ts")
     }
+  }
+
+  def postEphemeralMessage(
+                            text: String,
+                            channelId: String,
+                            maybeThreadTs: Option[String],
+                            userId: String,
+                            asUser: Option[Boolean] = None,
+                            parse: Option[String] = None,
+                            linkNames: Option[String] = None,
+                            attachments: Option[Seq[Attachment]] = None
+                          ): Future[Unit] = {
+    val params = Map(
+      "channel" -> channelId,
+      "thread_ts" -> maybeThreadTs,
+      "text" -> text,
+      "user" -> userId,
+      "as_user" -> asUser,
+      "parse" -> parse,
+      "link_names" -> linkNames,
+      "attachments" -> attachments.map(a => Json.stringify(Json.toJson(a)))
+    )
+    postResponseFor("chat.postEphemeral", params).map(_ => {})
+  }
+
+  def postToResponseUrl(
+                         text: String,
+                         maybeAttachments: Option[Seq[Attachment]],
+                         responseUrl: String,
+                         isEphemeral: Boolean,
+                         replaceOriginal: Boolean = false
+                       ): Future[Unit] = {
+    val responseType = if (isEphemeral) { "ephemeral" } else { "in_channel" }
+    val payload = Json.obj(
+      "response_type" -> JsString(responseType),
+      "replace_original" -> Json.toJson(replaceOriginal),
+      "text" -> JsString(text)
+    ) ++ maybeAttachments.map { attachments =>
+      Json.obj(
+        "attachments" -> attachments.map(a => Json.toJson(a))
+      )
+    }.getOrElse(Json.obj())
+    services.ws.
+      url(responseUrl).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      post(payload).
+      map(_ => {})
   }
 
   def addReactionToMessage(emojiName: String, channelId: String, timestamp: String): Future[Boolean] = {

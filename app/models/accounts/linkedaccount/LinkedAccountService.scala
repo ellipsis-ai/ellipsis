@@ -16,9 +16,13 @@ trait LinkedAccountService {
 
   def save(link: LinkedAccount): Future[LinkedAccount]
 
+  def allForAction(user: User): DBIO[Seq[LinkedAccount]]
+
   def allFor(user: User): Future[Seq[LinkedAccount]]
 
   def allForLoginInfoAction(loginInfo: LoginInfo): DBIO[Seq[LinkedAccount]]
+
+  def allForLoginInfo(loginInfo: LoginInfo): Future[Seq[LinkedAccount]]
 
   def maybeForSlackForAction(user: User): DBIO[Option[LinkedAccount]]
 
@@ -29,6 +33,10 @@ trait LinkedAccountService {
       maybeLinkedAccount.map(_.loginInfo.providerKey)
     }
   }
+
+  def maybeForMSTeamsFor(user: User): Future[Option[LinkedAccount]]
+
+  def maybeForMSAzureActiveDirectoryFor(user: User): Future[Option[LinkedAccount]]
 
   def maybeForGithubFor(user: User): Future[Option[LinkedAccount]]
 

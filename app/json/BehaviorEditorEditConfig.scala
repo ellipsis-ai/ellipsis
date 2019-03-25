@@ -11,17 +11,18 @@ case class BehaviorEditorEditConfig(
   envVariables: Seq[EnvironmentVariableData],
   savedAnswers: Seq[InputSavedAnswerData],
   awsConfigs: Seq[AWSConfigData],
-  oauth2Applications: Seq[OAuth2ApplicationData],
-  oauth2Apis: Seq[OAuth2ApiData],
+  oauthApplications: Seq[OAuthApplicationData],
+  oauthApis: Seq[OAuthApiData],
   simpleTokenApis: Seq[SimpleTokenApiData],
-  linkedOAuth2ApplicationIds: Seq[String],
+  linkedOAuthApplicationIds: Seq[String],
   userId: String,
   isAdmin: Boolean,
   isLinkedToGithub: Boolean,
   showVersions: Option[Boolean],
   lastDeployTimestamp: Option[OffsetDateTime],
   slackTeamId: Option[String],
-  botName: String
+  botName: String,
+  possibleResponseTypes: Seq[BehaviorResponseTypeData]
 )
 
 object BehaviorEditorEditConfig {
@@ -35,17 +36,18 @@ object BehaviorEditorEditConfig {
       data.environmentVariables,
       data.savedAnswers,
       data.awsConfigs,
-      data.oauth2Applications,
-      data.oauth2Apis,
+      data.oauthApplications,
+      data.oauthApis,
       data.simpleTokenApis,
-      data.linkedOAuth2ApplicationIds,
+      data.linkedOAuthApplicationIds,
       data.userId,
       data.isAdmin,
       data.isLinkedToGithub,
       maybeShowVersions,
       data.lastDeployTimestamp,
       data.maybeSlackTeamId,
-      data.botName
+      data.botName,
+      data.possibleResponseTypes
     )
   }
 }

@@ -53,15 +53,14 @@ class ApplicationController @Inject() (
             Future.successful(None)
           }
           maybeSlackTeamId <- teamAccess.maybeTargetTeam.map { team =>
-            dataService.slackBotProfiles.allFor(team).map { botProfiles =>
-              botProfiles.headOption.map(_.slackTeamId)
-            }
+            dataService.slackBotProfiles.maybeFirstFor(team, user).map(_.map(_.slackTeamId))
           }.getOrElse(Future.successful(None))
           groupData <- maybeBehaviorGroups.map { groups =>
             Future.sequence(groups.map { group =>
               BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
             }).map(_.flatten.sorted)
           }.getOrElse(Future.successful(Seq()))
+          isLinkedToGithub <- dataService.linkedAccounts.maybeForGithubFor(user).map(_.nonEmpty)
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             val viewConfigData = viewConfig(Some(teamAccess))
@@ -73,7 +72,8 @@ class ApplicationController @Inject() (
               slackTeamId = maybeSlackTeamId,
               teamTimeZone = team.maybeTimeZone.map(_.toString),
               branchName = maybeBranch,
-              botName = viewConfigData.botName
+              botName = viewConfigData.botName,
+              isLinkedToGithub = isLinkedToGithub
             )
             Ok(views.js.shared.webpackLoader(
               viewConfigData,
@@ -114,9 +114,12 @@ class ApplicationController @Inject() (
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
         BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
       }).map(_.flatten)
-    } yield teamAccess.maybeTargetTeam.map { team =>
-      val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
-      Ok(Json.toJson(fetcher.result))
+      maybePublishedData <- teamAccess.maybeTargetTeam.map { team =>
+        val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, alreadyInstalledData, githubService, services, ec)
+        fetcher.result.map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield maybePublishedData.map { publishedData =>
+      Ok(Json.toJson(publishedData))
     }.getOrElse {
       val message = maybeTeamId.map { teamId =>
         s"You can't access this for team ${teamId}"
@@ -197,12 +200,14 @@ class ApplicationController @Inject() (
       }.getOrElse {
         Future.successful(None)
       }
-    } yield {
-      maybeInstalledGroupData.map { installedGroupData =>
-        val publishedGroupData = teamAccess.maybeTargetTeam.map { team =>
+      publishedGroupData <- maybeInstalledGroupData.map { installedGroupData =>
+        teamAccess.maybeTargetTeam.map { team =>
           val fetcher = GithubPublishedBehaviorGroupsFetcher(team, maybeBranch, installedGroupData, githubService, services, ec)
           fetcher.result
-        }.getOrElse(Seq())
+        }.getOrElse(Future.successful(Seq()))
+      }.getOrElse(Future.successful(Seq()))
+    } yield {
+      maybeInstalledGroupData.map { installedGroupData =>
         val matchResults = FuzzyMatcher[BehaviorGroupData](queryString, installedGroupData ++ publishedGroupData).run
         Ok(Json.toJson(matchResults.map(_.item)).toString)
       }.getOrElse {

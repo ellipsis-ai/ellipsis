@@ -3,6 +3,7 @@ package models.behaviors.builtins
 import java.util.Calendar
 
 import akka.actor.ActorSystem
+import models.behaviors.behaviorversion.Private
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.DefaultServices
@@ -23,13 +24,13 @@ case class HelloBehavior(
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
-      messageInfo <- event.messageInfo(services)
+      messageInfo <- event.deprecatedMessageInfo(None, services)
       appVersion <- version(services)
     } yield {
       val greeting = (messageInfo.details \ "name").asOpt[String].map(name => (s"Hello @$name")).getOrElse("Hello")
       val message = appVersion.map(v => (s"This is Ellipsis version $v")).getOrElse("This is Ellipsis, I am ready to help.")
       val reply = s"$greeting\n$message"
-      SimpleTextResult(event, None, reply , forcePrivateResponse = true)
+      SimpleTextResult(event, None, reply , responseType = Private)
     }
   }
 

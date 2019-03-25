@@ -1,41 +1,106 @@
-@import models.team.Team
 @import java.time.format.DateTimeFormatter
 @import java.time.LocalDateTime
 @import java.time.ZoneId
+@import java.time.format.TextStyle
+@import java.util.Locale
+@import json.AdminTeamData
+@import helper.CSRF
 
+@import java.time.OffsetDateTime
 @(
   config: ViewConfig,
-  teams: Seq[Team],
+  teams: Seq[AdminTeamData],
   teamCount: Int,
   currentPage: Int,
   pageSize: Int,
-  pageCount: Int)(implicit messages: Messages, r: RequestHeader
-)
+  totalPages: Int,
+  maybeUpdatedTeamId: Option[String]
+)(implicit messages: Messages, r: RequestHeader)
 
+@formatDate(date: OffsetDateTime) = @{
+  date.format(
+    DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z").
+    withLocale(java.util.Locale.ENGLISH).
+    withZone(ZoneId.of("UTC"))
+  )
+}
 
-@page.main("Teams", config, Seq(NavItem.admin)) {
-  <h4>@teamCount Teams</h4>
-  <ol>
-  @teams.map { team =>
-    <li>
-      @team.createdAt.format(DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'").withLocale(java.util.Locale.ENGLISH).withZone(ZoneId.of("GMT"))),
-      <a href="@controllers.routes.ApplicationController.teamHome(team.id).url"> @team.name </a>
-      , @team.timeZone
-      <a href="@controllers.admin.routes.ManagedBehaviorGroupsController.list(team.id).url">Manage skills</a>
-    </li>
+@page.main("Teams", config, Seq(NavItem.adminTeamsList(false)), bodyClass = "bg-light") {
+  <div class="container pbxxxxl">
+    <h4>@teamCount Teams</h4>
+    <div class="columns">
+    @teams.map { team =>
+      <div class="column column-one-third narrow-column-half mobile-column-full mbl">
+        <div class="border bg-white pal">
+          <h4 class="mtn">
+            <a href="@controllers.routes.ApplicationController.teamHome(team.id).url">@team.name</a>
+          </h4>
+          <div class="type-s">
+            <div class="mbl">
+              <div>
+                Created: @formatDate(team.createdAt)
+              </div>
+              @*<div>
+                Last invoked: @team.lastInvocationDate.map(formatDate).getOrElse("Never")
+              </div>*@
+              <div>
+                Time zone: @team.timeZone
+              </div>
+            </div>
+
+            <div class="mbl">
+              <a href="@controllers.admin.routes.ManagedBehaviorGroupsController.list(team.id).url">Edit managed skills</a>
+            </div>
+
+            <div>
+              <form action="@controllers.admin.routes.TeamsController.toggleBotShortcutForTeam().url" method="post">
+                <div class="display-inline-block align-t">…Bot shortcut enabled:</div>
+                <input type="hidden" name="teamId" value="@{team.id}">
+                @CSRF.formField
+                <div class="form-select form-select-s">
+                  <select class="form-select-element" name="enableShortcut">
+                    <option value="true" @if(team.allowShortcutMention) { selected="selected" }>Yes</option>
+                    <option value="false" @if(!team.allowShortcutMention) { selected="selected" }>No</option>
+                  </select>
+                </div>
+                <button class="button button-s button-shrink align-t" type="submit">Update</button>
+                @if(maybeUpdatedTeamId.contains(team.id)) {
+                  <div class="display-inline-block align-t type-green mls type-m">✓</div>
+                }
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+    </div>
+  </div>
+  @if(teamCount > pageSize ) {
+    <div class="position-fixed position-fixed-bottom type-weak type-label border-emphasis-top border-blue mtm pvl container bg-blue-lightest">
+      @if(currentPage > 1) {
+        <a href="?page=1&perPage=@pageSize">Page 1</a>
+        @if(currentPage > 3) {
+          <span> … </span>
+        }
+        @if(currentPage > 2) {
+          <span> · </span>
+          <a href="?page=@{currentPage - 1}&perPage=@pageSize">Page @{currentPage - 1}</a>
+        }
+        <span> · </span>
+      }
+      <span>Page @currentPage</span>
+      @if(currentPage < totalPages) {
+        @if(currentPage + 1 < totalPages) {
+          <span> · </span>
+          <a href="?page=@{currentPage + 1}&perPage=@pageSize">Page @{currentPage + 1}</a>
+        }
+        @if(currentPage + 2 < totalPages) {
+          <span> … </span>
+        }
+        <span> · </span>
+        <a href="?page=@totalPages&perPage=@pageSize">Page @totalPages</a>
+      }
+    </div>
   }
-  </ol>
-
-  @if(teamCount != pageSize ) {
-    <a href="?page=1">1</a>
-    <a href="?page=@pageCount&perPage=@pageSize">@pageCount</a>
-    @*@if(currentPage != 1) {*@
-      @*<a href="?page=@{currentPage-1}&perPage=@pageSize">Previous</a>*@
-    @*}*@
-    @*@if(currentPage != pageCount) {*@
-      @*<a href="?page=@{currentPage-1}">Next</a>*@
-    @*}*@
-  }
-
 }
 

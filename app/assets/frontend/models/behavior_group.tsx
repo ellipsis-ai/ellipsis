@@ -8,7 +8,7 @@ import LibraryVersion, {LibraryVersionJson} from './library_version';
 import Input, {InputJson} from './input';
 import DeepEqual from '../lib/deep_equal';
 import {RequiredAWSConfig, RequiredAWSConfigJson} from './aws';
-import {RequiredOAuth2Application, RequiredOAuth2ApplicationJson} from './oauth2';
+import {RequiredOAuthApplication, RequiredOAuthApplicationJson} from './oauth';
 import {RequiredSimpleTokenApi, RequiredSimpleTokenApiJson} from './simple_token';
 import User, {UserJson} from './user';
 import ParamType from "./param_type";
@@ -19,7 +19,7 @@ const ONE_MINUTE = 60000;
 
 export interface BehaviorGroupJson {
   id?: Option<string>;
-  teamId?: Option<string>;
+  teamId: string;
   name?: Option<string>;
   icon?: Option<string>;
   description?: Option<string>;
@@ -28,7 +28,7 @@ export interface BehaviorGroupJson {
   behaviorVersions: Array<BehaviorVersionJson>;
   libraryVersions: Array<LibraryVersionJson>;
   requiredAWSConfigs: Array<RequiredAWSConfigJson>;
-  requiredOAuth2ApiConfigs: Array<RequiredOAuth2ApplicationJson>;
+  requiredOAuthApiConfigs: Array<RequiredOAuthApplicationJson>;
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApiJson>;
   createdAt?: Option<Timestamp>;
   exportId?: Option<string>;
@@ -47,7 +47,7 @@ interface BehaviorGroupInterface extends BehaviorGroupJson {
   behaviorVersions: Array<BehaviorVersion>;
   libraryVersions: Array<LibraryVersion>;
   requiredAWSConfigs: Array<RequiredAWSConfig>;
-  requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>;
+  requiredOAuthApiConfigs: Array<RequiredOAuthApplication>;
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>;
   author?: Option<User>;
   deployment?: Option<BehaviorGroupDeployment>;
@@ -60,7 +60,7 @@ interface BehaviorGroupInterface extends BehaviorGroupJson {
 class BehaviorGroup implements Diffable, BehaviorGroupInterface {
   constructor(
     readonly id: Option<string>,
-    readonly teamId: Option<string>,
+    readonly teamId: string,
     readonly name: Option<string>,
     readonly icon: Option<string>,
     readonly description: Option<string>,
@@ -69,7 +69,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     readonly behaviorVersions: Array<BehaviorVersion>,
     readonly libraryVersions: Array<LibraryVersion>,
     readonly requiredAWSConfigs: Array<RequiredAWSConfig>,
-    readonly requiredOAuth2ApiConfigs: Array<RequiredOAuth2Application>,
+    readonly requiredOAuthApiConfigs: Array<RequiredOAuthApplication>,
     readonly requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
     readonly createdAt: Option<Timestamp>,
     readonly exportId: Option<string>,
@@ -92,7 +92,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         behaviorVersions: { value: behaviorVersions, enumerable: true },
         libraryVersions: { value: libraryVersions, enumerable: true },
         requiredAWSConfigs: { value: requiredAWSConfigs, enumerable: true },
-        requiredOAuth2ApiConfigs: { value: requiredOAuth2ApiConfigs, enumerable: true },
+        requiredOAuthApiConfigs: { value: requiredOAuthApiConfigs, enumerable: true },
         requiredSimpleTokenApis: { value: requiredSimpleTokenApis, enumerable: true },
         createdAt: { value: createdAt, enumerable: true },
         exportId: { value: exportId, enumerable: true },
@@ -115,8 +115,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
       return this.requiredAWSConfigs || [];
     }
 
-    getRequiredOAuth2ApiConfigs(): Array<RequiredOAuth2Application> {
-      return this.requiredOAuth2ApiConfigs || [];
+    getRequiredOAuthApiConfigs(): Array<RequiredOAuthApplication> {
+      return this.requiredOAuthApiConfigs || [];
     }
 
     getRequiredSimpleTokenApis(): Array<RequiredSimpleTokenApi> {
@@ -124,7 +124,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     }
 
     needsConfig(): boolean {
-      return this.getRequiredOAuth2ApiConfigs().filter(ea => !ea.config).length > 0;
+      return this.getRequiredOAuthApiConfigs().filter(ea => !ea.config).length > 0;
     }
 
     static timestampToNumber(t: Option<Timestamp>): Option<number> {
@@ -174,6 +174,10 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
 
     getInputs(): Array<Input> {
       return this.actionInputs.concat(this.dataTypeInputs);
+    }
+
+    getLibraries(): Array<LibraryVersion> {
+      return this.libraryVersions;
     }
 
     getAllInputIdsFromBehaviorVersions(): Set<string> {
@@ -330,8 +334,8 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         name: "Required AWS configurations",
         value: this.requiredAWSConfigs
       }, {
-        name: "Required OAuth2 configurations",
-        value: this.requiredOAuth2ApiConfigs
+        name: "Required OAuth configurations",
+        value: this.requiredOAuthApiConfigs
       }, {
         name: "Required simple token API configurations",
         value: this.requiredSimpleTokenApis
@@ -350,7 +354,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
         props.behaviorVersions,
         props.libraryVersions,
         props.requiredAWSConfigs,
-        props.requiredOAuth2ApiConfigs,
+        props.requiredOAuthApiConfigs,
         props.requiredSimpleTokenApis,
         props.createdAt,
         props.exportId,
@@ -367,7 +371,7 @@ class BehaviorGroup implements Diffable, BehaviorGroupInterface {
     static fromJson(props: BehaviorGroupJson): BehaviorGroup {
       return BehaviorGroup.fromProps(Object.assign({}, props, {
         requiredAWSConfigs: props.requiredAWSConfigs.map(RequiredAWSConfig.fromJson),
-        requiredOAuth2ApiConfigs: props.requiredOAuth2ApiConfigs.map(RequiredOAuth2Application.fromJson),
+        requiredOAuthApiConfigs: props.requiredOAuthApiConfigs.map(RequiredOAuthApplication.fromJson),
         requiredSimpleTokenApis: props.requiredSimpleTokenApis.map(RequiredSimpleTokenApi.fromJson),
         behaviorVersions: props.behaviorVersions.map((ea) => BehaviorVersion.fromJson(Object.assign({}, ea, { groupId: props.id }))),
         actionInputs: Input.allFromJson(props.actionInputs || []),

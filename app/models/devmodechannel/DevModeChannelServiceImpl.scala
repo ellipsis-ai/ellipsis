@@ -50,7 +50,7 @@ class DevModeChannelServiceImpl @Inject() (
 
   def isEnabledForAction(event: Event, behaviorVersion: BehaviorVersion): DBIO[Boolean] = {
     event.maybeChannel.map { channel =>
-      findAction(event.context, channel, behaviorVersion.team).map(_.isDefined)
+      findAction(event.eventContext.name, channel, behaviorVersion.team).map(_.isDefined)
     }.getOrElse(DBIO.successful(false))
   }
 

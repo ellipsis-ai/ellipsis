@@ -1,30 +1,37 @@
 import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 import BehaviorListLoader, {BehaviorListLoaderProps} from '../../../../app/assets/frontend/behavior_list/loader';
 import BehaviorList from '../../../../app/assets/frontend/behavior_list/index';
 import TimeZoneSetter from '../../../../app/assets/frontend/time_zone/team_time_zone_setter';
 import BehaviorGroup, {BehaviorGroupJson} from '../../../../app/assets/frontend/models/behavior_group';
 import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavior_version";
 import {ComponentClass} from "react";
+import {TriggerType} from "../../../../app/assets/frontend/models/trigger";
 
 jest.setMock('../../../../app/assets/frontend/lib/data_request', { DataRequest: () => ({
   jsonGet: jest.fn(() => {
-    return new Promise((resolve, reject) => {
-      global.process.nextTick(() => resolve([]) || reject({ error: "oops" }));
+    return new Promise((resolve) => {
+      global.process.nextTick(() => resolve([]));
     });
   }),
   jsonPost: jest.fn(() => {
-    return new Promise((resolve, reject) => {
-      global.process.nextTick(() => resolve([]) || reject({ error: "oops" }));
+    return new Promise((resolve) => {
+      global.process.nextTick(() => resolve([]));
     });
   })
 })});
 
+const absoluteUrl = () => "https://nope/";
+
 describe('BehaviorListApp', () => {
-  jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo = () => ({ url: '/fetch', method: 'get' });
-  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get' });
-  jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get' });
-  jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get' });
+  jsRoutes.controllers.ApplicationController.fetchPublishedBehaviorInfo = () => ({ url: '/fetch', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.ApplicationController.possibleCitiesFor = () => ({ url: '/possibleCitiesFor', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.BehaviorEditorController.edit = () => ({ url: '/edit', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.BehaviorEditorController.newGroup = () => ({ url: '/newGroup', method: 'get', absoluteURL: absoluteUrl });
+  jsRoutes.controllers.GithubConfigController.index = () => ({ url: '/githubConfig', method: 'get', absoluteURL: absoluteUrl });
+
+  const normalResponseType= "Normal";
+  const normalResponseTypeJson = { id: normalResponseType, displayString: "Display normally" };
 
   const behaviorVersionTask1: BehaviorVersionJson = {
     "teamId": "abcdef",
@@ -36,20 +43,22 @@ describe('BehaviorListApp', () => {
       "text": "B",
       "requiresMention": false,
       "isRegex": true,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }, {
       "text": "C",
       "requiresMention": false,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
       isDataType: false,
-      isTest: false
+      isTest: false,
+      responseTypeId: normalResponseType
     },
     "createdAt": 1468338136532,
-    inputIds: [],
-    knownEnvVarsUsed: []
+    inputIds: []
   };
   const behaviorVersionTask2: BehaviorVersionJson = {
     "teamId": "abcdef",
@@ -61,15 +70,16 @@ describe('BehaviorListApp', () => {
       "text": "A",
       "requiresMention": true,
       "isRegex": true,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
       isDataType: false,
-      isTest: false
+      isTest: false,
+      responseTypeId: normalResponseType
     },
     "createdAt": 1468359271138,
-    inputIds: [],
-    knownEnvVarsUsed: []
+    inputIds: []
   };
   const behaviorVersionKnowledge1: BehaviorVersionJson ={
     "teamId": "abcdef",
@@ -80,11 +90,11 @@ describe('BehaviorListApp', () => {
     "triggers": [],
     "config": {
       isDataType: false,
-      isTest: false
+      isTest: false,
+      responseTypeId: normalResponseType
     },
     "createdAt": 1466109904858,
-    inputIds: [],
-    knownEnvVarsUsed: []
+    inputIds: []
   };
   const group1: BehaviorGroupJson = {
     id: "a",
@@ -97,7 +107,7 @@ describe('BehaviorListApp', () => {
     behaviorVersions: [behaviorVersionTask1],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858,
     exportId: null,
@@ -117,7 +127,7 @@ describe('BehaviorListApp', () => {
     behaviorVersions: [behaviorVersionTask2],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858,
     exportId: null,
@@ -137,7 +147,7 @@ describe('BehaviorListApp', () => {
     behaviorVersions: [behaviorVersionKnowledge1],
     libraryVersions: [],
     requiredAWSConfigs: [],
-    requiredOAuth2ApiConfigs: [],
+    requiredOAuthApiConfigs: [],
     requiredSimpleTokenApis: [],
     createdAt: 1466109904858,
     exportId: null,
@@ -146,7 +156,7 @@ describe('BehaviorListApp', () => {
     deployment: null,
     isManaged: false
   };
-  const defaultConfig = {
+  const defaultConfig: BehaviorListLoaderProps = {
     containerId: "foo",
     csrfToken: "1",
     behaviorGroups: [group1, group2, group3],
@@ -154,17 +164,18 @@ describe('BehaviorListApp', () => {
     slackTeamId: "1",
     teamTimeZone: "America/Toronto",
     branchName: null,
-    botName: "TestBot"
+    botName: "TestBot",
+    isLinkedToGithub: false
   };
 
-  function createBehaviorListLoader(config) {
+  function createBehaviorListLoader(config: BehaviorListLoaderProps) {
     const div = document.createElement("div");
     return TestUtils.renderIntoDocument(
       <BehaviorListLoader {...config} feedbackContainer={div} />
     ) as BehaviorListLoader;
   }
 
-  let config: Partial<BehaviorListLoaderProps> = {};
+  let config: BehaviorListLoaderProps;
 
   beforeEach(() => {
     config = Object.assign({}, defaultConfig);
@@ -174,14 +185,14 @@ describe('BehaviorListApp', () => {
     it('renders a BehaviorList when the time zone is set', () => {
       const list = createBehaviorListLoader(config);
       expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList as ComponentClass<any>).length).toBe(1);
-      expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter).length).toBe(0);
+      expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter as ComponentClass<any>).length).toBe(0);
     });
 
     it('renders a TimeZoneSetter when no time zone is set', () => {
       config.teamTimeZone = null;
       const list = createBehaviorListLoader(config);
       expect(TestUtils.scryRenderedComponentsWithType(list, BehaviorList as ComponentClass<any>).length).toBe(0);
-      expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter).length).toBe(1);
+      expect(TestUtils.scryRenderedComponentsWithType(list, TimeZoneSetter as ComponentClass<any>).length).toBe(1);
     });
   });
 

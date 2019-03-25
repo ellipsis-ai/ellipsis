@@ -5,14 +5,14 @@ import ScheduleChannelEditor from './schedule_channel_editor';
 import ScheduledItemConfig from './scheduled_item_config';
 import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction, {ScheduledActionArgument} from '../models/scheduled_action';
-import ScheduleChannel from '../models/schedule_channel';
 import Recurrence from "../models/recurrence";
 import autobind from "../lib/autobind";
 import User from "../models/user";
+import OrgChannels from "../models/org_channels";
 
 interface Props {
   scheduledAction: Option<ScheduledAction>,
-  channelList: Array<ScheduleChannel>,
+  orgChannels: OrgChannels,
   behaviorGroups: Array<BehaviorGroup>,
   onChange: (newItem: ScheduledAction, optionalCallback?: () => void) => void,
   teamTimeZone: string,
@@ -20,7 +20,8 @@ interface Props {
   slackUserId: string,
   slackBotUserId: string,
   isAdmin: boolean,
-  scheduleUser: Option<User>
+  scheduleUser: Option<User>,
+  csrfToken: string
 }
 
 class ScheduledItemEditor extends React.Component<Props> {
@@ -97,19 +98,20 @@ class ScheduledItemEditor extends React.Component<Props> {
             <SectionHeading number="2">Where to do it</SectionHeading>
             <ScheduleChannelEditor
               scheduledAction={scheduledAction}
-              channelList={this.props.channelList}
+              orgChannels={this.props.orgChannels}
               onChange={this.updateChannel}
               slackUserId={this.props.slackUserId}
               slackBotUserId={this.props.slackBotUserId}
             />
           </div>
           <div className="container container-wide pvxxl">
-            <SectionHeading number="3">When to repeat</SectionHeading>
+            <SectionHeading number="3">When to do it</SectionHeading>
             <RecurrenceEditor
               onChange={this.updateRecurrence}
               recurrence={scheduledAction.recurrence}
               teamTimeZone={this.props.teamTimeZone}
               teamTimeZoneName={this.props.teamTimeZoneName}
+              csrfToken={this.props.csrfToken}
             />
           </div>
         </div>

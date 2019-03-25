@@ -4,23 +4,23 @@ import java.sql.Timestamp
 import java.time.OffsetDateTime
 
 import models.behaviors.conversations.InvokeBehaviorConversation
-import models.behaviors.triggers.messagetrigger.MessageTriggerQueries
 import drivers.SlickPostgresDriver.api._
 import models.behaviors.behaviorversion.BehaviorVersionQueries
 import models.behaviors.events.EventType
+import models.behaviors.triggers.TriggerQueries
 
 object ConversationQueries {
 
   def all = TableQuery[ConversationsTable]
   def allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithGroupVersion).on(_.behaviorVersionId === _._1._1.id)
-  def allWithTrigger = allWithBehaviorVersion.joinLeft(MessageTriggerQueries.allWithBehaviorVersion).on(_._1.maybeTriggerId === _._1.id)
+  def allWithTrigger = allWithBehaviorVersion.joinLeft(TriggerQueries.allWithBehaviorVersion).on(_._1.maybeTriggerId === _._1.id)
 
-  type TupleType = ((RawConversation, BehaviorVersionQueries.TupleType), Option[MessageTriggerQueries.TupleType])
+  type TupleType = ((RawConversation, BehaviorVersionQueries.TupleType), Option[TriggerQueries.TupleType])
 
   def tuple2Conversation(tuple: TupleType): Conversation = {
     val raw = tuple._1._1
     val behaviorVersion = BehaviorVersionQueries.tuple2BehaviorVersion(tuple._1._2)
-    val maybeTrigger = tuple._2.map(MessageTriggerQueries.tuple2Trigger)
+    val maybeTrigger = tuple._2.map(TriggerQueries.tuple2Trigger)
     // When we have multiple kinds of conversations again, use conversationType to figure out which is which
     InvokeBehaviorConversation(
       raw.id,

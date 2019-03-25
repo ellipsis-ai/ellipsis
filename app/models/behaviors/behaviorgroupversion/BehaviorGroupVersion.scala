@@ -23,6 +23,7 @@ case class BehaviorGroupVersion(
   val team: Team = group.team
 
   val functionName: String = BehaviorGroupVersion.functionNameFor(id)
+  val dirName: String = s"/tmp/$functionName"
 
   def exportName: String = {
     Option(SafeFileName.forName(name)).filter(_.nonEmpty).getOrElse(id)
@@ -34,13 +35,12 @@ case class BehaviorGroupVersion(
 
   private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
-      maybeAttemptingUserSlackTeamId <- dataService.users.maybeSlackTeamIdFor(user)
-      maybeBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+      maybeAttemptingUserSlackTeamIds <- dataService.users.maybeSlackTeamIdsFor(user)
+      slackTeamIds <- dataService.slackBotProfiles.allFor(team).map(_.map(_.slackTeamId))
     } yield {
-      (for {
-        attemptingUserSlackTeamId <- maybeAttemptingUserSlackTeamId
-        requiredSlackTeamId <- maybeBotProfile.map(_.slackTeamId)
-      } yield attemptingUserSlackTeamId == requiredSlackTeamId).getOrElse(false)
+      maybeAttemptingUserSlackTeamIds.exists { attemptingUserSlackTeamIds =>
+        slackTeamIds.exists(teamId => attemptingUserSlackTeamIds.contains(teamId))
+      }
     }
   }
 

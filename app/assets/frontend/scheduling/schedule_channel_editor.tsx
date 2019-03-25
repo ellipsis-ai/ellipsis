@@ -1,16 +1,16 @@
 import * as React from 'react';
 import Checkbox from '../form/checkbox';
 import Collapsible from '../shared_ui/collapsible';
-import SearchWithResults from '../form/search_with_results';
-import SVGCheckmark from '../svg/checkmark';
+import SearchWithGroupedResults, {LabeledOptionGroup} from '../form/search_with_grouped_results';
 import ChannelName from './channel_name';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
 import autobind from "../lib/autobind";
+import OrgChannels from "../models/org_channels";
 
 interface Props {
   scheduledAction: ScheduledAction,
-  channelList: Array<ScheduleChannel>,
+  orgChannels: OrgChannels,
   slackUserId: string,
   slackBotUserId: string,
   onChange: (channelId: string, useDM: boolean) => void
@@ -21,13 +21,18 @@ interface State {
   showChannels: boolean
 }
 
+interface ScheduleChannelGroup {
+  groupName: string,
+  channels: Array<ScheduleChannelOption>
+}
+
 interface ScheduleChannelOption {
   name: string,
   value: string
 }
 
 class ScheduleChannelEditor extends React.Component<Props, State> {
-  searcher: Option<SearchWithResults>;
+  searcher: Option<SearchWithGroupedResults>;
 
   constructor(props: Props) {
     super(props);
@@ -43,11 +48,11 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
   }
 
     hasChannelList(): boolean {
-      return Boolean(this.props.channelList) && this.props.channelList.length > 0;
+      return this.props.orgChannels.allChannels().length > 0;
     }
 
     findChannelFor(channelId: string): Option<ScheduleChannel> {
-      return this.hasChannelList() ? this.props.channelList.find((ea) => ea.id === channelId) : null;
+      return this.props.orgChannels.allChannels().find((ea) => ea.id === channelId);
     }
 
     componentWillUpdate(newProps: Props) {
@@ -69,36 +74,47 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
       return !channel.isArchived && (!channel.isOtherDm || this.props.scheduledAction.channel === channel.id);
     }
 
-    getFilteredChannelList(): Array<ScheduleChannelOption> {
-      const channels = this.hasChannelList() ? this.props.channelList.filter(
-        (ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, this.state.searchText)
-      ) : [];
-      const channelList = channels.map((ea) => ({
-        name: ea.getFormattedName(),
-        value: ea.id
-      }));
-      if (this.props.scheduledAction.channel) {
-        if (this.hasChannelList()) {
-          return channelList;
-        } else {
-          return [{
-            name: `Channel ID ${this.props.scheduledAction.channel}`,
-            value: this.props.scheduledAction.channel
-          }];
-        }
-      } else {
-        return [{
-          name: "No channel selected",
-          value: ""
-        }].concat(channelList);
-      }
+  getFilteredChannelListFor(label: string, allChannels: Array<ScheduleChannel>): Array<ScheduleChannelOption> {
+    const channels = allChannels.filter(
+      (ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, this.state.searchText)
+    );
+    const channelList = channels.map((ea) => ({
+      name: ea.getFormattedName(),
+      value: ea.id
+    }));
+    if (this.hasChannelList()) {
+      return channelList;
+    } else {
+      return [{
+        name: `Channel ID ${this.props.scheduledAction.channel}`,
+        value: this.props.scheduledAction.channel
+      }];
+    }
+  }
+    getChannelGroupFor(label: string, channels: Array<ScheduleChannel>) {
+      return {
+        groupName: label,
+        channels: this.getFilteredChannelListFor("Shared", channels)
+      };
+    }
+
+    getFilteredChannelGroups(): Array<ScheduleChannelGroup> {
+      let groups: Array<ScheduleChannelGroup> = [];
+      groups.push(this.getChannelGroupFor("Shared within organization", this.props.orgChannels.orgSharedChannels));
+      groups.push(this.getChannelGroupFor("Shared externally", this.props.orgChannels.externallySharedChannels));
+      this.props.orgChannels.teamChannels.forEach(ea => {
+        groups.push(this.getChannelGroupFor(ea.teamName, ea.channelList));
+      });
+      groups.push(this.getChannelGroupFor("Private groups", this.props.orgChannels.mpimChannels));
+      groups.push(this.getChannelGroupFor("Direct messages", this.props.orgChannels.dmChannels));
+      return groups;
     }
 
     updateSearch(newValue: string): void {
       const selectedChannel = this.findChannelFor(this.props.scheduledAction.channel);
       if (!selectedChannel || !this.searchIncludes(selectedChannel, newValue)) {
         const newChannel = this.hasChannelList() ?
-          this.props.channelList.find((ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, newValue)) : null;
+          this.props.orgChannels.allChannels().find((ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, newValue)) : null;
         this.selectChannel(newChannel ? newChannel.id : "");
       }
       this.setState({
@@ -117,6 +133,23 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
       }
       const selectedChannel = this.findChannelFor(channelId);
       return Boolean(selectedChannel && selectedChannel.isDm());
+    }
+
+    channelMissing(): boolean {
+      const channelId = this.props.scheduledAction.channel;
+      return !channelId || !this.findChannelFor(channelId);
+    }
+
+    channelArchived(): boolean {
+      const channelId = this.props.scheduledAction.channel;
+      const channel = this.findChannelFor(channelId);
+      return Boolean(channel && channel.isArchived);
+    }
+
+    channelReadOnly(): boolean {
+      const channelId = this.props.scheduledAction.channel;
+      const channel = this.findChannelFor(channelId);
+      return Boolean(channel && channel.isReadOnly);
     }
 
     botMissingFromChannel(): boolean {
@@ -157,17 +190,28 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
     }
 
     renderChannelWarning() {
-      if (this.botMissingFromChannel()) {
+      if (this.channelMissing()) {
         return (
           <span className="type-pink type-bold type-italic">
-            Warning: Ellipsis must be invited to this channel to run any action.
+            Warning: Unknown or deleted channel
           </span>
         );
-      } else if (this.props.scheduledAction.channel) {
+      } else if (this.channelArchived()) {
         return (
-          <span className="type-green">
-            <span className="display-inline-block height-l align-m mrs"><SVGCheckmark/></span>
-            <span className="display-inline-block align-m">Ellipsis can send messages in this channel.</span>
+          <span className="type-pink type-bold type-italic">
+            Warning: This channel has been archived
+          </span>
+        );
+      } else if (this.botMissingFromChannel()) {
+        return (
+          <span className="type-pink type-bold type-italic">
+            Warning: The bot must be invited to this channel to run any action
+          </span>
+        );
+      } else if (this.channelReadOnly()) {
+        return (
+          <span className="type-pink type-bold type-italic">
+            Warning: The bot is restricted from posting to this channel by the admin
           </span>
         );
       } else if (!this.hasChannelList()) {
@@ -186,17 +230,22 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
     }
 
     render() {
-      const channelList = this.getFilteredChannelList();
-      const hasNoMatches = Boolean(this.state.searchText) && channelList.length === 0;
+      const channelOptionGroups: Array<LabeledOptionGroup> = this.getFilteredChannelGroups().map(ea => {
+        return {
+          label: ea.groupName,
+          options: ea.channels
+        }
+      });
+      const hasNoMatches = Boolean(this.state.searchText) && channelOptionGroups.every(ea => ea.options.length === 0);
       const isDM = this.channelIsDM(this.props.scheduledAction.channel);
       return (
         <div>
           <Collapsible revealWhen={this.shouldShowChannels()}>
-            <SearchWithResults
+            <SearchWithGroupedResults
               ref={(searcher) => this.searcher = searcher}
               placeholder="Search for a channel"
               value={this.props.scheduledAction.channel || ""}
-              options={channelList}
+              optionGroups={channelOptionGroups}
               isSearching={false}
               noMatches={hasNoMatches}
               onChangeSearch={this.updateSearch}

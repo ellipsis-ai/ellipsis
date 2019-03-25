@@ -22,11 +22,13 @@ object InvocationLogEntryQueries {
       raw.id,
       BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2),
       raw.resultType,
+      EventType.maybeFrom(raw.maybeEventType),
       EventType.maybeFrom(raw.maybeOriginalEventType),
       raw.messageText,
       raw.paramValues,
       raw.resultText,
       raw.context,
+      raw.maybeChannel,
       raw.maybeUserIdForContext,
       user,
       raw.runtimeInMilliseconds,
@@ -76,6 +78,13 @@ object InvocationLogEntryQueries {
   }
   val forTeamForDateQuery = Compiled(uncompiledForTeamForDateQuery _)
 
+  def uncompiledForTeamSinceDateQuery(teamId: Rep[String], date: Rep[OffsetDateTime]) = {
+    allWithVersion.
+      filter { case(_, (_, ((_, (_, team)), _))) => teamId === team.id}.
+      filter { case((entry, _), _) => entry.createdAt >= date }
+  }
+  val forTeamSinceDateQuery = Compiled(uncompiledForTeamSinceDateQuery _)
+
   def uncompiledAllForBehaviorQuery(
                                      behaviorId: Rep[String],
                                      from: Rep[OffsetDateTime],
@@ -90,4 +99,14 @@ object InvocationLogEntryQueries {
       filter { case((entry, _), _) => maybeOriginalEventType.isEmpty || entry.maybeOriginalEventType === maybeOriginalEventType }
   }
   val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
+
+  def uncompiledLastInvocationForTeamQuery(teamId: Rep[String]) = {
+    allWithVersion.
+      filter { case(_, (_, ((_, (_, team)), _))) => teamId === team.id}.
+      sortBy { case((entry, _), _) => entry.createdAt.desc }.
+      take(1).
+      map { case((entry, _), _) => entry.createdAt }
+  }
+
+  val lastInvocationForTeamQuery = Compiled(uncompiledLastInvocationForTeamQuery _)
 }

@@ -16,24 +16,20 @@ import Select from '../../form/select';
 import {maybeDiffFor, ModifiedDiff} from '../../models/diffs';
 import autobind from '../../lib/autobind';
 import SVGWarning from '../../svg/warning';
+import {GithubFetchError} from '../../models/github/github_fetch_error';
+import {UpdateFromGithubSuccessData} from "../loader";
 
 const versionSources = {
   local: "local",
   github: "github"
 };
 
-type GithubFetchError = {
-  message: string,
-  type?: string,
-  details?: {}
-}
-
 type Props = {
   csrfToken: string,
   currentGroup: BehaviorGroup,
   currentGroupIsModified: boolean,
   currentUserId: string,
-  currentSelectedId?: string,
+  currentSelectedId?: Option<string>,
   versions: Array<BehaviorGroup>,
   onClearActivePanel: () => void,
   onUndoChanges: () => void,
@@ -41,7 +37,7 @@ type Props = {
   isLinkedToGithub: boolean,
   linkedGithubRepo: Option<LinkedGithubRepo>,
   onLinkGithubRepo: (owner: string, repo: string, branch: Option<string>, callback: () => void) => void,
-  onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: (json: { data: BehaviorGroupJson }) => void, onError: (branch: string, error?: GithubFetchError) => void) => void,
+  onUpdateFromGithub: (owner: string, repo: string, branch: string, callback: (json: UpdateFromGithubSuccessData) => void, onError: (branch: string, error?: Option<GithubFetchError>) => void) => void,
   onSaveChanges: () => void,
   isModifyingGithubRepo: boolean,
   onChangedGithubRepo: () => void
@@ -50,7 +46,6 @@ type Props = {
 type State = {
   selectedMenuItem: string,
   diffFromSelectedToCurrent: boolean,
-  headerHeight: number,
   footerHeight: number,
   branch: string,
   isChangingBranchName: boolean,
@@ -86,7 +81,6 @@ class VersionBrowser extends React.Component<Props, State> {
     this.state = {
       selectedMenuItem: this.getDefaultSelectedItem(props),
       diffFromSelectedToCurrent: true,
-      headerHeight: 0,
       footerHeight: 0,
       branch: props.linkedGithubRepo && props.linkedGithubRepo.currentBranch ? props.linkedGithubRepo.currentBranch : "master",
       isFetching: false,
@@ -172,7 +166,7 @@ class VersionBrowser extends React.Component<Props, State> {
     });
   }
 
-  onError(branch: string, error?: GithubFetchError): void {
+  onError(branch: string, error?: Option<GithubFetchError>): void {
     if (error && error.type && error.type === "NoBranchFound") {
       this.setState({
         isFetching: false,
@@ -226,7 +220,7 @@ class VersionBrowser extends React.Component<Props, State> {
   }
 
   authorForVersion(version: BehaviorGroup): string {
-    const isCurrentUser = version.author && version.author.id === this.props.currentUserId;
+    const isCurrentUser = version.author && version.author.ellipsisUserId === this.props.currentUserId;
     return version.author ? `by ${isCurrentUser ? "you" : version.author.formattedName()}` : "";
   }
 
@@ -362,10 +356,6 @@ class VersionBrowser extends React.Component<Props, State> {
     } else {
       return null;
     }
-  }
-
-  getHeaderHeight(): number {
-    return this.state.headerHeight;
   }
 
   getFooterHeight(): number {
@@ -743,19 +733,9 @@ class VersionBrowser extends React.Component<Props, State> {
     );
   }
 
-  getMainHeaderHeight(): number {
-    const mainHeader = document.getElementById("main-header");
-    return mainHeader ? mainHeader.offsetHeight : 0;
-  }
-
-  getContainerStyle() {
-    const myHeaderHeight = this.getHeaderHeight();
-    const mainHeaderHeight = this.getMainHeaderHeight();
-    const headerHeight = Math.max(0, myHeaderHeight - mainHeaderHeight);
-    const footerHeight = this.getFooterHeight();
+  getContainerStyle(): React.CSSProperties {
     return {
-      paddingTop: `${headerHeight}px`,
-      paddingBottom: `${footerHeight}px`
+      paddingBottom: `${this.getFooterHeight()}px`
     };
   }
 
@@ -806,11 +786,9 @@ class VersionBrowser extends React.Component<Props, State> {
               <div className="bg-white border-emphasis-bottom border-light container container-wide pvl">
                 <LinkGithubRepo
                   ref={(el) => this.linkGitHubRepoComponent = el}
-                  group={this.props.currentGroup}
                   linked={this.getLinkedGithubRepo()}
                   onDoneClick={this.onLinkedGithubRepo}
                   onLinkGithubRepo={this.props.onLinkGithubRepo}
-                  csrfToken={this.props.csrfToken}
                 />
               </div>
             </Collapsible>

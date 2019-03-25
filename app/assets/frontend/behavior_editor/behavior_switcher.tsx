@@ -5,7 +5,7 @@ import BehaviorVersion from '../models/behavior_version';
 import LibraryVersion from '../models/library_version';
 import NodeModuleVersion from '../models/node_module_version';
 import {RequiredAWSConfig} from '../models/aws';
-import {RequiredOAuth2Application} from '../models/oauth2';
+import {RequiredOAuthApplication} from '../models/oauth';
 import {RequiredSimpleTokenApi} from '../models/simple_token';
 import DynamicLabelButton from "../form/dynamic_label_button";
 import Editable from "../models/editable";
@@ -16,6 +16,9 @@ import TestsStatus from "./tests_status";
 import {ReactNode} from "react";
 import SVGCheckmark from '../svg/checkmark';
 import SVGWarning from '../svg/warning';
+import NodeModuleList from "./node_module_list";
+
+export type BehaviorSelectCallback = (optionalGroupId: Option<string>, editableId?: Option<string>, optionalCallback?: () => void) => void;
 
 interface Props {
   actionBehaviors: Array<BehaviorVersion>,
@@ -24,8 +27,8 @@ interface Props {
   tests: Array<BehaviorVersion>,
   nodeModuleVersions: Array<NodeModuleVersion>,
   selectedId?: Option<string>,
-  groupId: string,
-  onSelect: (groupId: string, editableId?: Option<string>) => void,
+  groupId: Option<string>,
+  onSelect: BehaviorSelectCallback,
   addNewAction: () => void,
   addNewDataType: () => void,
   addNewTest: () => void,
@@ -33,7 +36,7 @@ interface Props {
   isModified: (editable: Editable) => boolean,
   onUpdateNodeModules: () => void,
   requiredAWSConfigs: Array<RequiredAWSConfig>,
-  requiredOAuth2Applications: Array<RequiredOAuth2Application>,
+  requiredOAuthApplications: Array<RequiredOAuthApplication>,
   requiredSimpleTokenApis: Array<RequiredSimpleTokenApi>,
   onApiConfigClick: (config: RequiredApiConfig) => void,
   onAddApiConfigClick: () => void,
@@ -70,29 +73,10 @@ class BehaviorSwitcher extends React.Component<Props> {
         return (
           <div className="border-bottom mtl pbl">
             <div className="container container-wide mbs">
-              <h6>Required NPM modules</h6>
+              <h6>{NodeModuleVersion.icon()} NPM modules</h6>
             </div>
             <div className="type-s">
-              {this.props.nodeModuleVersions.map((version, index) => (
-                <div
-                  key={`nodeModuleVersion${index}`}
-                  className={`pbxs`}
-                >
-                  <div className="phxl mobile-phl type-monospace display-ellipsis" title={
-                    `${version.from} v${version.version}`
-                  }>
-                    <span>{version.from}</span>
-                    {this.props.updatingNodeModules ? (
-                      <span className="pulse type-disabled">@...</span>
-                    ) : (
-                      <span>
-                        <span className="type-disabled">@</span>
-                        <span className="type-weak">{version.version}</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+              <NodeModuleList nodeModuleVersions={this.props.nodeModuleVersions} updatingNodeModules={this.props.updatingNodeModules} />
             </div>
             <div className="container container-wide mvm">
               <DynamicLabelButton
@@ -171,7 +155,7 @@ class BehaviorSwitcher extends React.Component<Props> {
 
           <div>
             <BehaviorSwitcherGroup
-              heading="Actions"
+              heading={`${BehaviorVersion.actionIcon()} Actions`}
               editables={this.props.actionBehaviors}
               selectedId={this.props.selectedId}
               onAddNew={this.props.addNewAction}
@@ -181,7 +165,7 @@ class BehaviorSwitcher extends React.Component<Props> {
             />
 
             <BehaviorSwitcherGroup
-              heading="Data types"
+              heading={`${BehaviorVersion.dataTypeIcon()} Data types`}
               editables={this.props.dataTypeBehaviors}
               selectedId={this.props.selectedId}
               onAddNew={this.props.addNewDataType}
@@ -191,7 +175,7 @@ class BehaviorSwitcher extends React.Component<Props> {
             />
 
             <BehaviorSwitcherGroup
-              heading="Libraries"
+              heading={`${LibraryVersion.icon()} Libraries`}
               editables={this.props.libraries}
               selectedId={this.props.selectedId}
               onAddNew={this.props.addNewLibrary}
@@ -201,7 +185,7 @@ class BehaviorSwitcher extends React.Component<Props> {
             />
 
             <BehaviorSwitcherGroup
-              heading="Tests"
+              heading={`${BehaviorVersion.testIcon()} Tests`}
               editables={this.props.tests}
               selectedId={this.props.selectedId}
               onAddNew={this.props.addNewTest}
@@ -214,7 +198,7 @@ class BehaviorSwitcher extends React.Component<Props> {
 
             <ApiConfigList
               requiredAWSConfigs={this.props.requiredAWSConfigs}
-              requiredOAuth2Applications={this.props.requiredOAuth2Applications}
+              requiredOAuthApplications={this.props.requiredOAuthApplications}
               requiredSimpleTokenApis={this.props.requiredSimpleTokenApis}
               onApiConfigClick={this.props.onApiConfigClick}
               onAddApiConfigClick={this.props.onAddApiConfigClick}

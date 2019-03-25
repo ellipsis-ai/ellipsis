@@ -6,12 +6,12 @@ import GithubOwnerRepoReadonly from '../github/github_owner_repo_readonly';
 import BehaviorGroup from "../../models/behavior_group";
 
 type Props = {
-  linkedGithubRepo?: LinkedGithubRepo,
+  linkedGithubRepo?: Option<LinkedGithubRepo>,
   isLinkedToGithub: boolean,
   currentGroupIsModified: boolean,
   onChangeGithubRepo: () => void,
   currentGroup: BehaviorGroup,
-  currentSelectedId?: string
+  currentSelectedId?: Option<string>
 };
 
 class GithubRepoActions extends React.Component<Props> {

@@ -2,13 +2,15 @@ package models.behaviors.behaviortestresult
 
 import java.time.OffsetDateTime
 
+import akka.actor.ActorSystem
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
 import models.IDs
 import models.behaviors.SuccessResult
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.testing.TestEvent
+import models.behaviors.events.TestEventContext
+import models.behaviors.testing.TestMessageEvent
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,9 +39,10 @@ class BehaviorTestResultServiceImpl @Inject() (
 
   import BehaviorTestResultQueries._
 
-  private def createForAction(behaviorVersion: BehaviorVersion): DBIO[BehaviorTestResult] = {
+  private def createForAction(behaviorVersion: BehaviorVersion)
+                             (implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BehaviorTestResult] = {
     val author = behaviorVersion.groupVersion.maybeAuthor.get
-    val event = TestEvent(author, behaviorVersion.team, "", includesBotMention = true)
+    val event = TestMessageEvent(TestEventContext(author, behaviorVersion.team), "", includesBotMention = true)
     DBIO.from(dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), event, None)).flatMap { result =>
       val outputText = result.fullText ++ result.maybeLog.map(l => s"\n\n$l").getOrElse("")
       val newInstance = BehaviorTestResult(
@@ -56,7 +59,8 @@ class BehaviorTestResultServiceImpl @Inject() (
     }
   }
 
-  def ensureFor(behaviorVersion: BehaviorVersion): Future[BehaviorTestResult] = {
+  def ensureFor(behaviorVersion: BehaviorVersion)
+               (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BehaviorTestResult] = {
     val action = findByBehaviorVersionQuery(behaviorVersion.id).result.flatMap { r =>
       r.headOption.map(DBIO.successful).getOrElse {
         createForAction(behaviorVersion)

@@ -14,20 +14,22 @@ import com.amazonaws.services.logs.model.{CreateLogGroupRequest, PutSubscription
 import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.Inject
+import json.Formatting._
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorParameter, FileType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
+import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.ellipsisobject._
 import models.behaviors.events.Event
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.library.LibraryVersion
 import models.behaviors.nodemoduleversion.NodeModuleVersion
-import models.environmentvariable.{EnvironmentVariable, TeamEnvironmentVariable}
-import models.team.Team
+import models.environmentvariable.EnvironmentVariable
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
@@ -80,7 +82,7 @@ class AWSLambdaServiceImpl @Inject() (
   }.toList
 
   def createdFileNameFor(groupVersion: BehaviorGroupVersion): String = {
-    dirNameFor(groupVersion.functionName) ++ "/created"
+    groupVersion.dirName ++ "/created"
   }
 
   def fetchFunctions(maybeNextMarker: Option[String]): Future[List[FunctionConfiguration]] = {
@@ -121,41 +123,33 @@ class AWSLambdaServiceImpl @Inject() (
     }
   }
 
+  private def teamInfoFor(behaviorVersion: BehaviorVersion, userInfo: DeprecatedUserInfo, maybeBotInfo: Option[BotInfo]): DBIO[TeamInfo] = {
+    val team = behaviorVersion.team
+    val groupVersion = behaviorVersion.groupVersion
+    for {
+      awsConfigs <- dataService.awsConfigs.allForAction(team)
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(groupVersion)
+      requiredOAuth1ApiConfigs <- dataService.requiredOAuth1ApiConfigs.allForAction(groupVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(groupVersion)
+      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(groupVersion)
+      teamInfo <- DBIO.from {
+        val apiConfigInfo = ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth1ApiConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis)
+        TeamInfo.forConfig(apiConfigInfo, userInfo, team, maybeBotInfo, ws)
+      }
+    } yield teamInfo
+  }
+
   private def invocationJsonFor(
                                  behaviorVersion: BehaviorVersion,
+                                 userInfo: DeprecatedUserInfo,
+                                 teamInfo: TeamInfo,
+                                 eventInfo: EventInfo,
                                  parameterValues: Seq[ParameterWithValue],
                                  environmentVariables: Seq[EnvironmentVariable],
-                                 event: Event,
-                                 defaultServices: DefaultServices,
                                  token: InvocationToken
-                               ): DBIO[JsObject] = {
-    for {
-      awsConfigs <- dataService.awsConfigs.allForAction(behaviorVersion.team)
-      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForAction(behaviorVersion.groupVersion)
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
-      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForAction(behaviorVersion.groupVersion)
-      userInfo <- event.userInfoAction(defaultServices)
-      teamInfo <- DBIO.from {
-        val apiConfigInfo = ApiConfigInfo(awsConfigs, requiredAWSConfigs, requiredOAuth2ApiConfigs, requiredSimpleTokenApis)
-        TeamInfo.forConfig(apiConfigInfo, userInfo, behaviorVersion.team, ws)
-      }
-    } yield {
-      val parameterValueData = parameterValues.map { ea => (ea.invocationName, ea.preparedValue) }
-      val teamEnvVars = environmentVariables.filter(ev => ev.isInstanceOf[TeamEnvironmentVariable])
-      val contextParamData = Seq(
-        CONTEXT_PARAM -> JsObject(Seq(
-          API_BASE_URL_KEY -> JsString(apiBaseUrl),
-          TOKEN_KEY -> JsString(token.id),
-          ENV_KEY -> JsObject(teamEnvVars.map { ea =>
-            ea.name -> JsString(ea.value)
-          }),
-          USER_INFO_KEY -> userInfo.toJson,
-          TEAM_INFO_KEY -> teamInfo.toJson,
-          EVENT_INFO_KEY -> EventInfo(event).toJson
-        ))
-      )
-      JsObject(parameterValueData ++ contextParamData ++ Seq(("behaviorVersionId", JsString(behaviorVersion.id))))
-    }
+                               ): JsObject = {
+    val contextObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, environmentVariables, apiBaseUrl, token)
+    AWSLambdaInvocationJsonBuilder(behaviorVersion, contextObject, parameterValues).build
   }
 
   private def cacheKeyFor(behaviorVersion: BehaviorVersion, payloadData: Seq[(String, JsValue)]): String = {
@@ -166,12 +160,12 @@ class AWSLambdaServiceImpl @Inject() (
   private def maybeCachedResultFor(
                                     behaviorVersion: BehaviorVersion,
                                     payloadData: Seq[(String, JsValue)]
-                                  ): Option[InvokeResult] = {
+                                  ): Future[Option[InvokeResult]] = {
     if (behaviorVersion.canBeMemoized) {
       val cacheKey = cacheKeyFor(behaviorVersion, payloadData)
       cacheService.getInvokeResult(cacheKey)
     } else {
-      None
+      Future.successful(None)
     }
   }
 
@@ -187,19 +181,21 @@ class AWSLambdaServiceImpl @Inject() (
                             defaultServices: DefaultServices
                           ): DBIO[BotResult] = {
     DBIO.from {
-      maybeCachedResultFor(behaviorVersion, payloadData).map(Future.successful).getOrElse {
-        Logger.info(s"running lambda function for ${behaviorVersion.id}")
-        val invokeRequest =
-          new InvokeRequest().
-            withLogType(LogType.Tail).
-            withFunctionName(behaviorVersion.groupVersion.functionName).
-            withInvocationType(InvocationType.RequestResponse).
-            withPayload(invocationJson.toString())
-        JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
-          if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
-            cacheService.cacheInvokeResult(cacheKeyFor(behaviorVersion, payloadData), res)
+      maybeCachedResultFor(behaviorVersion, payloadData).flatMap { maybeCached =>
+        maybeCached.map(Future.successful).getOrElse {
+          Logger.info(s"running lambda function for ${behaviorVersion.id}")
+          val invokeRequest =
+            new InvokeRequest().
+              withLogType(LogType.Tail).
+              withFunctionName(behaviorVersion.groupVersion.functionName).
+              withInvocationType(InvocationType.RequestResponse).
+              withPayload(invocationJson.toString())
+          JavaFutureConverter.javaToScala(client.invokeAsync(invokeRequest)).map { res =>
+            if (behaviorVersion.canBeMemoized && res.getFunctionError == null) {
+              cacheService.cacheInvokeResult(cacheKeyFor(behaviorVersion, payloadData), res)
+            }
+            res
           }
-          res
         }
       }.map(successFn).recoverWith {
         case e: java.util.concurrent.ExecutionException => {
@@ -240,20 +236,26 @@ class AWSLambdaServiceImpl @Inject() (
                     event: Event,
                     maybeConversation: Option[Conversation],
                     defaultServices: DefaultServices
-                  ): DBIO[BotResult] = {
+                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       developerContext <- DeveloperContext.buildFor(event, behaviorVersion, dataService)
-      user <- event.ensureUserAction(dataService)
-      token <- dataService.invocationTokens.createForAction(user, behaviorVersion, event.maybeScheduled)
-      invocationJson <- invocationJsonFor(
-        behaviorVersion,
-        parametersWithValues,
-        environmentVariables,
-        event,
-        defaultServices,
-        token
-      )
+      userInfo <- event.deprecatedUserInfoAction(maybeConversation, defaultServices)
+      eventUser <- event.eventUserAction(maybeConversation, defaultServices)
+      user <- event.ensureUserAction(defaultServices.dataService)
+      token <- dataService.invocationTokens.createForAction(user, behaviorVersion, event.maybeScheduled, Some(event.eventContext.teamIdForContext))
+      maybeBotInfo <- DBIO.from(event.maybeBotInfo(defaultServices))
+      teamInfo <- teamInfoFor(behaviorVersion, userInfo, maybeBotInfo)
+      maybeMessage <- event.maybeMessageInfoAction(maybeConversation, defaultServices)
       result <- {
+        val invocationJson = invocationJsonFor(
+          behaviorVersion,
+          userInfo,
+          teamInfo,
+          EventInfo.buildFor(event, eventUser, maybeMessage),
+          parametersWithValues,
+          environmentVariables,
+          token
+        )
         if (behaviorVersion.functionBody.isEmpty) {
           DBIO.successful(SuccessResult(
             event,
@@ -265,8 +267,9 @@ class AWSLambdaServiceImpl @Inject() (
             invocationJson,
             behaviorVersion.maybeResponseTemplate,
             None,
-            behaviorVersion.forcePrivateResponse,
-            developerContext
+            behaviorVersion.responseType,
+            developerContext,
+            dataService
           ))
         } else {
           invokeFunctionAction(
@@ -302,199 +305,18 @@ class AWSLambdaServiceImpl @Inject() (
   val amazonServiceExceptionRegex = """.*com\.amazonaws\.AmazonServiceException.*""".r
   val resourceNotFoundExceptionRegex = """com\.amazonaws\.services\.lambda\.model\.ResourceNotFoundException.*""".r
 
-  private def awsConfigCodeFor(required: RequiredAWSConfig): String = {
-    if (required.isConfigured) {
-      val teamInfoPath = s"event.$CONTEXT_PARAM.teamInfo.aws.${required.nameInCode}"
-      s"""$CONTEXT_PARAM.aws.${required.nameInCode} = {
-         |  accessKeyId: ${teamInfoPath}.accessKeyId,
-         |  secretAccessKey: ${teamInfoPath}.secretAccessKey,
-         |  region: ${teamInfoPath}.region,
-         |};
-         |
-     """.stripMargin
-    } else {
-      ""
-    }
-  }
-
-  private def awsCodeFor(apiConfigInfo: ApiConfigInfo): String = {
-    if (apiConfigInfo.requiredAWSConfigs.isEmpty) {
-      ""
-    } else {
-      s"""
-         |$CONTEXT_PARAM.aws = {};
-         |
-         |${apiConfigInfo.requiredAWSConfigs.map(awsConfigCodeFor).mkString("\n")}
-       """.stripMargin
-    }
-  }
-
-  private def accessTokenCodeFor(app: RequiredOAuth2ApiConfig): String = {
-    app.maybeApplication.map { application =>
-      val infoKey =  if (application.api.grantType.requiresAuth) { "userInfo" } else { "teamInfo" }
-      s"""$CONTEXT_PARAM.accessTokens.${app.nameInCode} = event.$CONTEXT_PARAM.$infoKey.links.find((ea) => ea.externalSystem === "${application.name}").token;"""
-    }.getOrElse("")
-  }
-
-  private def accessTokensCodeFor(requiredOAuth2ApiConfigs: Seq[RequiredOAuth2ApiConfig]): String = {
-    requiredOAuth2ApiConfigs.map(accessTokenCodeFor).mkString("\n")
-  }
-
-  private def accessTokenCodeFor(required: RequiredSimpleTokenApi): String = {
-    s"""$CONTEXT_PARAM.accessTokens.${required.nameInCode} = event.$CONTEXT_PARAM.userInfo.links.find((ea) => ea.externalSystem === "${required.api.name}").token;"""
-  }
-
-  private def simpleTokensCodeFor(requiredSimpleTokenApis: Seq[RequiredSimpleTokenApi]): String = {
-    requiredSimpleTokenApis.map(accessTokenCodeFor).mkString("\n")
-  }
-
-  def decorateParams(params: Seq[BehaviorParameter]): String = {
-    params.map { ea =>
-      ea.input.paramType.decorationCodeFor(ea)
-    }.mkString("")
-  }
-
-  def functionWithParams(params: Seq[BehaviorParameter], functionBody: String, isForExport: Boolean): String = {
-    val paramNames = params.map(_.input.name)
-    val paramDecoration = if (isForExport) { "" } else { decorateParams(params) }
-    s"""function(${(paramNames ++ Array(CONTEXT_PARAM)).mkString(", ")}) {
-        |  $paramDecoration${functionBody.trim}
-        |}\n""".stripMargin
-  }
-
-  private def behaviorMappingFor(behaviorVersion: BehaviorVersion, params: Seq[BehaviorParameter]): String = {
-    val paramsFromEvent = params.indices.map(i => s"event.${invocationParamFor(i)}")
-    val invocationParamsString = (paramsFromEvent ++ Array(s"event.$CONTEXT_PARAM")).mkString(", ")
-    s""""${behaviorVersion.id}": function() {
-       |  var fn = require("./${behaviorVersion.jsName}");
-       |  return fn($invocationParamsString);
-       |}""".stripMargin
-  }
-
-  private def behaviorsMapFor(behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])]): String = {
-    s"""var behaviors = {
-       |  ${behaviorVersionsWithParams.map { case(bv, params) => behaviorMappingFor(bv, params)}.mkString(", ")}
-       |}
-     """.stripMargin
-  }
-
-  private def hasFileParams(behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])]): Boolean = {
-    behaviorVersionsWithParams.exists { case(_, params) => params.exists(_.input.paramType == FileType) }
-  }
-
-  private def nodeCodeFor(
-                           behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
-                           apiConfigInfo: ApiConfigInfo
-                         ): String = {
-    s"""exports.handler = function(event, context, lambdaCallback) {
-        |  ${behaviorsMapFor(behaviorVersionsWithParams)};
-        |
-        |  const $CONTEXT_PARAM = event.$CONTEXT_PARAM;
-        |
-        |  $OVERRIDE_CONSOLE
-        |  $CALLBACK_FUNCTION
-        |  const callback = ellipsisCallback;
-        |
-        |  $NO_RESPONSE_CALLBACK_FUNCTION
-        |  $SUCCESS_CALLBACK_FUNCTION
-        |  $ERROR_CLASS
-        |  $ERROR_CALLBACK_FUNCTION
-        |
-        |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
-        |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
-        |  $CONTEXT_PARAM.Error = EllipsisError;
-        |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
-        |  $CONTEXT_PARAM.require = function(module) { return require(module.replace(/@.+$$/, "")); }
-        |  process.removeAllListeners('unhandledRejection');
-        |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
-        |  process.removeAllListeners('uncaughtException');
-        |  process.on('uncaughtException', $CONTEXT_PARAM.error);
-        |
-        |  ${awsCodeFor(apiConfigInfo)}
-        |  $CONTEXT_PARAM.accessTokens = {};
-        |  ${accessTokensCodeFor(apiConfigInfo.requiredOAuth2ApiConfigs)}
-        |  ${simpleTokensCodeFor(apiConfigInfo.requiredSimpleTokenApis)}
-        |
-        |  try {
-        |    behaviors[event.behaviorVersionId]();
-        |  } catch(err) {
-        |    $CONTEXT_PARAM.error(err);
-        |  }
-        |}
-    """.stripMargin
-  }
-
-  private def dirNameFor(functionName: String) = s"/tmp/$functionName"
-  private def zipFileNameFor(functionName: String) = s"${dirNameFor(functionName)}.zip"
-
   private def writeFileNamed(path: String, content: String) = {
     val writer = new PrintWriter(new File(path))
     writer.write(content)
     writer.close()
   }
 
-  private def requiredModulesForFileParams(behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])]): Seq[String] = {
-    if (hasFileParams(behaviorVersionsWithParams)) {
-      Seq("request")
-    } else {
-      Seq()
-    }
-  }
-
-  private def createZipWithModulesFor(
-                                       functionName: String,
-                                       behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
-                                       libraries: Seq[LibraryVersion],
-                                       apiConfigInfo: ApiConfigInfo
-                                     ): Future[Unit] = {
-    val dirName = dirNameFor(functionName)
-    val path = Path(dirName)
-    path.createDirectory()
-
-    writeFileNamed(s"$dirName/index.js", nodeCodeFor(behaviorVersionsWithParams, apiConfigInfo))
-
-    val behaviorVersionsDirName = s"$dirName/${BehaviorVersion.dirName}"
-    Path(behaviorVersionsDirName).createDirectory()
-    behaviorVersionsWithParams.foreach { case(behaviorVersion, params) =>
-      writeFileNamed(s"$dirName/${behaviorVersion.jsName}", BehaviorVersion.codeFor(functionWithParams(params, behaviorVersion.functionBody, isForExport = false)))
-    }
-
-    if (hasFileParams(behaviorVersionsWithParams)) {
-      writeFileNamed(s"$dirName/$FETCH_FUNCTION_FOR_FILE_PARAM_NAME.js", FETCH_FUNCTION_FOR_FILE_PARAM)
-    }
-
-    libraries.foreach { ea =>
-      writeFileNamed(s"$dirName/${ea.jsName}", ea.code)
-    }
-
-    val requiredModulesForBehaviorVersions = RequiredModulesInCode.requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
-    val requiredModules = (requiredModulesForBehaviorVersions ++ requiredModulesForFileParams(behaviorVersionsWithParams)).distinct
-    for {
-      _ <- if (requiredModules.isEmpty) {
-        Future.successful({})
-      } else {
-        Future {
-          blocking(
-            Process(Seq("bash", "-c", s"cd $dirName && npm init -f && npm install ${requiredModules.mkString(" ")}"), None, "HOME" -> "/tmp").!
-          )
-        }
-      }
-      _ <- Future {
-        blocking(
-          Process(Seq("bash","-c",s"cd $dirName && zip -q -r ${zipFileNameFor(functionName)} *")).!
-        )
-      }
-    } yield {}
-
-  }
-
   private def getNodeModuleInfoFor(groupVersion: BehaviorGroupVersion): JsValue = {
-    val dirName = dirNameFor(groupVersion.functionName)
     val timeout = OffsetDateTime.now.plusSeconds(10)
     while (timeout.isAfter(OffsetDateTime.now) && !Path(createdFileNameFor(groupVersion)).exists) {
       Thread.sleep(1000)
     }
-    val packageName = s"$dirName/package.json"
+    val packageName = s"${groupVersion.dirName}/package.json"
     if (Path(packageName).exists) {
       try {
         Json.parse(Source.fromFile(packageName).getLines.mkString)
@@ -540,18 +362,14 @@ class AWSLambdaServiceImpl @Inject() (
   }
 
   private def getZipFor(
-                         functionName: String,
+                         groupVersion: BehaviorGroupVersion,
                          behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                          libraries: Seq[LibraryVersion],
                          apiConfigInfo: ApiConfigInfo
                        ): Future[ByteBuffer] = {
-    createZipWithModulesFor(
-      functionName,
-      behaviorVersionsWithParams,
-      libraries,
-      apiConfigInfo
-    ).map { _ =>
-      val path = Paths.get(zipFileNameFor(functionName))
+    val builder = AWSLambdaZipBuilder(groupVersion, behaviorVersionsWithParams, libraries, apiConfigInfo)
+    builder.build.map { _ =>
+      val path = Paths.get(builder.zipFileName)
       ByteBuffer.wrap(Files.readAllBytes(path))
     }
   }
@@ -625,7 +443,7 @@ class AWSLambdaServiceImpl @Inject() (
       } else {
         for {
           functionCode <- getZipFor(
-              functionName,
+              groupVersion,
               behaviorVersionsWithParams,
               libraries,
               apiConfigInfo

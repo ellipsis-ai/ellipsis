@@ -38,7 +38,7 @@ object ScheduledActionData {
       arguments = Seq(),
       recurrence = ScheduledActionRecurrenceData.fromRecurrence(scheduledMessage.recurrence),
       firstRecurrence = Some(scheduledMessage.nextSentAt),
-      secondRecurrence = Some(scheduledMessage.followingSentAt),
+      secondRecurrence = scheduledMessage.maybeFollowingSentAt,
       useDM = scheduledMessage.isForIndividualMembers,
       channel = scheduledMessage.maybeChannel.getOrElse(""),
       userId = scheduledMessage.maybeUser.map(_.id)
@@ -56,7 +56,7 @@ object ScheduledActionData {
       arguments = arguments,
       recurrence = ScheduledActionRecurrenceData.fromRecurrence(scheduledBehavior.recurrence),
       firstRecurrence = Some(scheduledBehavior.nextSentAt),
-      secondRecurrence = Some(scheduledBehavior.followingSentAt),
+      secondRecurrence = scheduledBehavior.maybeFollowingSentAt,
       useDM = scheduledBehavior.isForIndividualMembers,
       channel = scheduledBehavior.maybeChannel.getOrElse(""),
       userId = scheduledBehavior.maybeUser.map(_.id)
@@ -78,7 +78,7 @@ object ScheduledActionData {
                               team: Team,
                               teamAccess: UserTeamAccess,
                               dataService: DataService,
-                              maybeConversationList: Option[Seq[ScheduleChannelData]],
+                              teamChannelsData: Seq[TeamChannelsData],
                               maybeSlackUserId: Option[String],
                               forceAdmin: Boolean
                             )(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
@@ -86,12 +86,10 @@ object ScheduledActionData {
       if (teamAccess.isAdminAccess || forceAdmin) {
         allScheduledActions
       } else {
-        maybeConversationList.map { conversationList =>
-          val convoIds = conversationList.map(_.id)
-          allScheduledActions.filter { action =>
-            convoIds.contains(action.channel)
-          }
-        }.getOrElse(Seq())
+        val convoIds = teamChannelsData.flatMap(_.channelList.map(_.id))
+        allScheduledActions.filter { action =>
+          action.userId.contains(teamAccess.user.id) || convoIds.contains(action.channel)
+        }
       }
     }
   }

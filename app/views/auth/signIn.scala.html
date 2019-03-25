@@ -1,0 +1,49 @@
+@(
+  config: ViewConfig,
+  slackScopes: String,
+  slackClientId: String,
+  slackRedirectUrl: String,
+  msTeamsScopes: String,
+  msTeamsClientId: String,
+  msTeamsRedirectUrl: String,
+  includeMSTeams: Boolean
+)(implicit r: RequestHeader, m: Messages)
+
+@page.main("Sign in with Slack", config,
+  bodyClass = "bg-white",
+  navClass = "container-narrow container-c",
+  hideNav = true) {
+
+  <div id="content">
+    <div class="bg-black type-white border-emphasis-bottom border-pink">
+      <div class="container container-narrow container-c pvxxxxl mobile-pvxl">
+
+        <h1 class="mobile-mtn">Sign in to Ellipsis</h1>
+
+        <p>
+          <span class="type-pink-light">You need to identify yourself to use Ellipsis outside of chat. </span>
+        </p>
+
+        <div class="mtxl">
+          <span class="mrl">
+            @signInWithSlackButton(slackScopes, slackClientId, slackRedirectUrl)
+          </span>
+          <span class="mrl">
+            @{if (includeMSTeams) { signInWithMSTeamsButton(msTeamsScopes, msTeamsClientId, msTeamsRedirectUrl) } else {}}
+          </span>
+        </div>
+
+      </div>
+    </div>
+    <div class="bg-white type-black">
+      <div class="container container-narrow container-c pvxxxxl mobile-pvxl">
+
+        <p>Not sure if your Slack team is using Ellipsis? Learn more and add it to your team.</p>
+
+        <p class="mvxl">
+          <a href="@{routes.SlackController.add()}" class="button button-l">Learn about Ellipsis</a>
+        </p>
+      </div>
+    </div>
+  </div>
+}

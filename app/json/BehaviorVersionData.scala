@@ -9,8 +9,9 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.datatypeconfig.BehaviorVersionForDataTypeSchema
 import models.behaviors.datatypefield.DataTypeFieldForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
+import models.behaviors.triggers.MessageSent
 import models.team.Team
-import play.api.libs.json.Json
+import play.api.libs.json._
 import services.DataService
 import slick.dbio.DBIO
 import utils.NameFormatter
@@ -31,7 +32,6 @@ case class BehaviorVersionData(
                                 triggers: Seq[BehaviorTriggerData],
                                 config: BehaviorConfig,
                                 exportId: Option[String],
-                                knownEnvVarsUsed: Seq[String],
                                 createdAt: Option[OffsetDateTime]
                                 ) extends BehaviorVersionForDataTypeSchema {
 
@@ -135,12 +135,8 @@ object BehaviorVersionData {
                 triggers: Seq[BehaviorTriggerData],
                 config: BehaviorConfig,
                 exportId: Option[String],
-                createdAt: Option[OffsetDateTime],
-                dataService: DataService
+                createdAt: Option[OffsetDateTime]
               ): BehaviorVersionData = {
-
-    val knownEnvVarsUsed = dataService.teamEnvironmentVariables.lookForInCode(functionBody)
-
     BehaviorVersionData(
       id,
       teamId,
@@ -155,7 +151,6 @@ object BehaviorVersionData {
       triggers.sorted,
       config,
       exportId,
-      knownEnvVarsUsed,
       createdAt
     )
   }
@@ -172,19 +167,18 @@ object BehaviorVersionData {
       functionBody = "",
       responseTemplate = "",
       inputIds = Seq(),
-      triggers = Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false)),
+      triggers = Seq(BehaviorTriggerData("", requiresMention = true, isRegex = false, caseSensitive = false, triggerType = MessageSent.toString)),
       config = BehaviorConfig(
         None,
         maybeName,
-        None,
+        BehaviorResponseTypeData.normal.id,
         None,
         isDataType = maybeDataTypeConfig.isDefined,
         Some(isTest),
         maybeDataTypeConfig
       ),
       exportId = None,
-      createdAt = None,
-      dataService = dataService
+      createdAt = None
     )
   }
 
@@ -195,30 +189,24 @@ object BehaviorVersionData {
                    response: String,
                    params: String,
                    triggers: String,
-                   configString: String,
-                   dataService: DataService
+                   configString: String
                    ): BehaviorVersionData = {
-    val config = Json.parse(configString).validate[BehaviorConfig].get
-    val configWithDataTypeConfig = if (!config.isDataType || config.dataTypeConfig.isDefined) {
-      config
-    } else {
-      config.copy(dataTypeConfig = Some(DataTypeConfigData(Seq(), usesCode = Some(true))))
-    }
+    val behaviorConfig = Json.parse(configString).validate[LegacyBehaviorConfigJson].get.toBehaviorConfig
+    val triggerData = Json.parse(triggers).validate[Seq[LegacyBehaviorTriggerJson]].get.map(_.toBehaviorTriggerData)
     BehaviorVersionData.buildFor(
-      None,
-      teamId,
-      None,
-      None,
+      id = None,
+      teamId = teamId,
+      behaviorId = None,
+      groupId = None,
       isNew = false,
-      maybeDescription,
-      extractFunctionBodyFrom(function),
-      response,
-      Json.parse(params).validate[Seq[String]].get,
-      Json.parse(triggers).validate[Seq[BehaviorTriggerData]].get,
-      configWithDataTypeConfig,
-      configWithDataTypeConfig.exportId,
-      createdAt = None,
-      dataService
+      description = maybeDescription,
+      functionBody = extractFunctionBodyFrom(function),
+      responseTemplate = response,
+      inputIds = Json.parse(params).validate[Seq[String]].get,
+      triggers = triggerData,
+      config = behaviorConfig,
+      exportId = behaviorConfig.exportId,
+      createdAt = None
     )
   }
 
@@ -248,7 +236,7 @@ object BehaviorVersionData {
         }
       }).map(_.toMap)
       maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.messageTriggers.allFor(behaviorVersion).map(Some(_))
+        dataService.triggers.allFor(behaviorVersion).map(Some(_))
       }.getOrElse(Future.successful(None))
       maybeDataTypeConfig <- maybeBehaviorVersion.map { behaviorVersion =>
         dataService.dataTypeConfigs.maybeFor(behaviorVersion)
@@ -267,7 +255,7 @@ object BehaviorVersionData {
         val config = BehaviorConfig(
           maybeExportId,
           behaviorVersion.maybeName,
-          Some(behaviorVersion.forcePrivateResponse),
+          behaviorVersion.responseType.id,
           Some(behaviorVersion.canBeMemoized),
           isDataType = maybeEnsuredDataTypeConfigData.isDefined,
           isTest = Some(behaviorVersion.isTest),
@@ -285,12 +273,17 @@ object BehaviorVersionData {
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
           params.map(_.input.inputId),
           triggers.map(ea =>
-            BehaviorTriggerData(ea.pattern, requiresMention = ea.requiresBotMention, isRegex = ea.shouldTreatAsRegex, caseSensitive = ea.isCaseSensitive)
+            BehaviorTriggerData(
+              ea.pattern,
+              requiresMention = ea.requiresBotMention,
+              isRegex = ea.shouldTreatAsRegex,
+              caseSensitive = ea.isCaseSensitive,
+              triggerType = ea.triggerType.toString
+            )
           ),
           config,
           behavior.maybeExportId,
-          Some(behaviorVersion.createdAt),
-          dataService
+          Some(behaviorVersion.createdAt)
         )
       }
     }

@@ -3,13 +3,15 @@ import java.time.OffsetDateTime
 import json.SlackUserData
 import models.IDs
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.events.{SlackMessage, SlackMessageEvent}
+import models.behaviors.events.SlackEventContext
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.DefaultServices
 import support.TestContext
+import utils.SlackTimestamp
 
 import scala.concurrent.Future
 
@@ -21,19 +23,24 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
   val botName = "MockieBot"
 
   def newEvent(channel: String, services: DefaultServices, maybeBotName: Option[String] = Some(botName)): SlackMessageEvent = {
-    val profile = SlackBotProfile(botUserId, botTeamId, slackTeamId, botToken, OffsetDateTime.now)
+    val profile = SlackBotProfile(botUserId, botTeamId, slackTeamId, botToken, OffsetDateTime.now, allowShortcutMention = true)
     when(services.dataService.slackBotProfiles.maybeNameFor(profile)).thenReturn(Future.successful(maybeBotName))
+    val ts = SlackTimestamp.now
     SlackMessageEvent(
-      profile,
-      slackTeamId,
-      channel,
+      SlackEventContext(
+        profile,
+        channel,
+        None,
+        IDs.next
+      ),
+      SlackMessage("oh hai", "oh hai", "oh hai", Set.empty[SlackUserData], Some(ts)),
       None,
-      IDs.next,
-      SlackMessage("oh hai", "oh hai", "oh hai", Set.empty[SlackUserData]),
+      ts,
       None,
-      OffsetDateTime.now.toString,
-      None,
-      isUninterruptedConversation = false
+      isUninterruptedConversation = false,
+      isEphemeral = false,
+      maybeResponseUrl = None,
+      beQuiet = false
     )
   }
 
@@ -41,8 +48,8 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
     "return the bot display name" in new TestContext {
       running(app) {
         val event = newEvent("C1234", services)
-        val name = await(event.botName(services)(actorSystem, ec))
-        name mustBe botName
+        val maybeInfo = await(event.maybeBotInfo(services)(actorSystem, ec))
+        maybeInfo.map(_.name) must contain(botName)
       }
     }
   }

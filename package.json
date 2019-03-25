@@ -9,45 +9,48 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@babel/core": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/preset-react": "^7.0.0",
     "@types/diff-match-patch": "^1.0.32",
-    "@types/jest": "^19.2.4",
-    "@types/react": "^15.6.14",
-    "@types/react-addons-test-utils": "0.14.21",
+    "@types/emoji-mart": "^2.8.2",
+    "@types/jest": "^24.0.9",
+    "@types/react": "^16.7.17",
+    "@types/react-dom": "^16.0.11",
+    "@types/urijs": "^1.15.38",
     "animated-scroll-to": "1.1.8",
-    "babel-cli": "6.26.0",
-    "babel-core": "6.26.0",
-    "babel-eslint": "8.2.1",
-    "babel-jest": "19.0.0",
-    "babel-loader": "7.1.2",
-    "babel-preset-env": "1.6.1",
-    "babel-preset-react": "6.24.1",
-    "codemirror": "5.34.0",
+    "babel-core": "^7.0.0-bridge.0",
+    "babel-jest": "^24.1.0",
+    "babel-loader": "^8.0.5",
+    "babel-runtime": "^6.26.0",
     "config": "1.29.4",
     "core-js": "2.4.1",
+    "css-loader": "^1.0.0",
     "diff-match-patch": "1.0.1",
-    "eslint": "4.17.0",
-    "eslint-plugin-react": "7.4.0",
+    "emoji-mart": "^2.9.2",
     "javascript-debounce": "1.0.0",
-    "jest": "19.0.2",
-    "jshint": "2.9.5",
+    "jest": "^24.1.0",
     "moment": "2.21.0",
-    "react": "15.3.1",
-    "react-addons-test-utils": "15.3.1",
-    "react-dom": "15.3.1",
-    "ts-jest": "^19.0.14",
-    "ts-loader": "^3.5.0",
-    "typescript": "^2.7.2",
-    "urijs": "1.18.1",
+    "monaco-editor": "^0.15.2",
+    "prop-types": "^15.6.2",
+    "react": "^16.6.3",
+    "react-dom": "^16.6.3",
+    "react-monaco-editor": "^0.21.0",
+    "style-loader": "^0.23.0",
+    "ts-jest": "^24.0.0",
+    "ts-loader": "^5.2.1",
+    "typescript": "^3.3.4000",
+    "urijs": "^1.19.1",
     "uuid": "3.2.1",
-    "webpack": "3.10.0",
-    "webpack-dev-server": "2.11.1",
+    "webpack": "^4.25.1",
+    "webpack-cli": "^3.1.1",
+    "webpack-dev-server": "^3.1.14",
     "whatwg-fetch": "1.0.0"
   },
   "scripts": {
-    "lint": "scripts/run_eslint",
     "test": "node --trace-warnings node_modules/.bin/jest --runInBand",
     "postinstall": "find ./npm_modules/* -maxdepth 2 -name package.json -exec sh -c 'cd $(dirname \"{}\"); npm install' \\;",
-    "build": "NODE_CONFIG_DIR='./conf/webpack' webpack --env.WEBPACK_BUILD_PATH=${WEBPACK_BUILD_PATH} -p --config ./app/assets/frontend/webpack/webpack.base.config.js",
+    "build": "NODE_CONFIG_DIR='./conf/webpack' webpack --mode production --env.WEBPACK_BUILD_PATH=${WEBPACK_BUILD_PATH} -p --config ./app/assets/frontend/webpack/webpack.base.config.js",
     "start": "NODE_CONFIG_DIR='./conf/webpack' node ./app/assets/frontend/webpack/webpack.server",
     "typescript": "tsc --pretty --noEmit"
   },
@@ -70,6 +73,13 @@
               "AWSConfigController": {}
             }
           }
+        }
+      },
+      "ts-jest": {
+        "diagnostics": {
+          "ignoreCodes": [
+            151001
+          ]
         }
       }
     },
@@ -94,8 +104,8 @@
       ".+/*\\.d\\.ts"
     ],
     "transform": {
-      "^.+\\.jsx?$": "<rootDir>/node_modules/babel-jest",
-      "^.+\\.tsx?$": "<rootDir>/node_modules/ts-jest/dist/preprocessor"
+      "^.+\\.jsx?$": "babel-jest",
+      "^.+\\.tsx?$": "ts-jest"
     }
   },
   "repository": {

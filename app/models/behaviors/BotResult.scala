@@ -3,10 +3,14 @@ package models.behaviors
 import akka.actor.ActorSystem
 import json.Formatting._
 import models.IDs
+import models.accounts.OAuth2State
 import models.accounts.logintoken.LoginToken
+import models.accounts.oauth1application.OAuth1Application
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.ResultType.ResultType
+import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Normal, Private}
+import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
@@ -14,11 +18,12 @@ import models.behaviors.templates.TemplateApplier
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json._
+import play.api.mvc.Call
 import services.AWSLambdaConstants._
 import services.caching.CacheService
 import services.{AWSLambdaLogResult, DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.UploadFileSpec
+import utils.{Color, UploadFileSpec}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -41,17 +46,42 @@ case class ActionArg(name: String, value: String)
 
 case class NextAction(actionName: String, args: Option[Seq[ActionArg]]) extends WithActionArgs
 
+case class SkillCodeActionChoice(
+                                   label: String,
+                                   actionName: String,
+                                   args: Option[Seq[ActionArg]],
+                                   allowOthers: Option[Boolean],
+                                   allowMultipleSelections: Option[Boolean],
+                                   quiet: Option[Boolean]
+                               ) extends WithActionArgs {
+  def toActionChoiceWith(user: User, behaviorVersion: BehaviorVersion): ActionChoice = {
+    ActionChoice(
+      label,
+      actionName,
+      args,
+      allowOthers,
+      allowMultipleSelections,
+      user.id,
+      behaviorVersion.id,
+      quiet
+    )
+  }
+}
+
 case class ActionChoice(
                          label: String,
                          actionName: String,
                          args: Option[Seq[ActionArg]],
                          allowOthers: Option[Boolean],
                          allowMultipleSelections: Option[Boolean],
-                         userId: Option[String],
-                         groupVersionId: Option[String]
+                         userId: String,
+                         originatingBehaviorVersionId: String,
+                         quiet: Option[Boolean]
                        ) extends WithActionArgs {
 
   val areOthersAllowed: Boolean = allowOthers.contains(true)
+
+  val shouldBeQuiet: Boolean = quiet.contains(true)
 
   private def isAllowedBecauseAdmin(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     dataService.users.isAdmin(user).map { isAdmin =>
@@ -59,46 +89,113 @@ case class ActionChoice(
     }
   }
 
-  private def isAllowedBecauseSameTeam(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    groupVersionId.map { gvid =>
-      for {
-        maybeGroupVersion <- dataService.behaviorGroupVersions.findWithoutAccessCheck(gvid)
-        maybeActionChoiceSlackTeamId <- maybeGroupVersion.map { gv =>
-          dataService.slackBotProfiles.allFor(gv.team).map(_.headOption.map(_.slackTeamId))
-        }.getOrElse(Future.successful(None))
-        maybeAttemptingUserSlackTeamId <- dataService.users.maybeSlackTeamIdFor(user)
-      } yield {
-        (for {
-          actionChoiceSlackTeamId <- maybeActionChoiceSlackTeamId
-          attemptingUserSlackTeamId <- maybeAttemptingUserSlackTeamId
-        } yield {
-          areOthersAllowed && actionChoiceSlackTeamId == attemptingUserSlackTeamId
-        }).getOrElse(false)
-      }
-    }.getOrElse(Future.successful(false))
-  }
-
-  def canBeTriggeredBy(user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
-    val noUser = userId.isEmpty
-    val sameUser = userId.contains(user.id)
-    for {
-      admin <- isAllowedBecauseAdmin(user, dataService)
-      sameTeam <- isAllowedBecauseSameTeam(user, dataService)
-    } yield {
-      noUser || sameUser || sameTeam || admin
+  def canBeTriggeredBy(user: User, userTeamIdForContext: String, botTeamIdForContext: String, dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    val sameUser = userId == user.id
+    val sameTeam = areOthersAllowed && userTeamIdForContext == botTeamIdForContext
+    isAllowedBecauseAdmin(user, dataService).map { admin =>
+      sameUser || sameTeam || admin
     }
   }
 
 }
 
+trait ExecutionInfoError {
+  val jsonLookup: JsLookupResult
+  val jsError: JsError
+  val paramName: String
+  val userWarning: String
+
+  def devLog: UploadFileSpec = {
+    UploadFileSpec(
+      Some(ExecutionInfo.errorFor(jsonLookup, jsError, paramName)),
+      Some("text"),
+      Some(s"Error log for $paramName")
+    )
+  }
+}
+
+case class UserFilesError(jsonLookup: JsLookupResult, jsError: JsError) extends ExecutionInfoError {
+  val paramName: String = "files"
+  val userWarning: String = "An unexpected error occurred while trying to provide a file."
+}
+
+case class ChoicesError(jsonLookup: JsLookupResult, jsError: JsError) extends ExecutionInfoError {
+  val paramName: String = "choices"
+  val userWarning: String = "An unexpected error occurred while trying to provide follow-up actions to choose."
+}
+
+case class NextActionError(jsonLookup: JsLookupResult, jsError: JsError) extends ExecutionInfoError {
+  val paramName: String = "next"
+  val userWarning: String = "An unexpected error occurred while trying to run a follow-up action."
+}
+
+case class ExecutionInfo(
+                          userFiles: Seq[UploadFileSpec],
+                          choices: Seq[SkillCodeActionChoice],
+                          maybeNextAction: Option[NextAction],
+                          errors: Seq[ExecutionInfoError]
+                        ) {
+  def withUserFilesFrom(payloadJson: JsValue): ExecutionInfo = {
+    val fileJson = (payloadJson \ "files")
+    fileJson.validateOpt[Seq[UploadFileSpec]] match {
+      case JsSuccess(maybeFiles, _) => this.copy(userFiles = maybeFiles.getOrElse(Seq()))
+      case e: JsError => this.copy(errors = errors :+ UserFilesError(fileJson, e))
+    }
+  }
+
+  def withChoicesFrom(payloadJson: JsValue): ExecutionInfo = {
+    val choicesJson = (payloadJson \ "choices")
+    choicesJson.validateOpt[Seq[SkillCodeActionChoice]] match {
+      case JsSuccess(maybeChoices, _) => this.copy(choices = choices ++ maybeChoices.getOrElse(Seq()))
+      case e: JsError => this.copy(errors = errors :+ ChoicesError(choicesJson, e))
+    }
+  }
+
+  def withNextActionFrom(payloadJson: JsValue): ExecutionInfo = {
+    val nextJson = (payloadJson \ "next")
+    nextJson.validateOpt[NextAction] match {
+      case JsSuccess(maybeNextActionFromJs, _) => this.copy(maybeNextAction = maybeNextActionFromJs)
+      case e: JsError => this.copy(errors = errors :+ NextActionError(nextJson, e))
+    }
+  }
+}
+
+object ExecutionInfo {
+  def empty: ExecutionInfo = {
+    ExecutionInfo(Seq(), Seq(), None, Seq())
+  }
+
+  def jsonErrorsToMessage(errs: Seq[(JsPath, Seq[JsonValidationError])], paramName: String): String = {
+    errs.map { error =>
+      val path = error._1.toJsonString.replaceFirst("^obj", paramName)
+      val message = error._2.flatMap(_.messages).map { message =>
+        // Convert Play's unfriendly validation errors like "error.invalid.jsstring" to something more legible
+        message.split('.').filterNot(_ == "error").map(_.replaceFirst("^js", "")).mkString(" ")
+      }.mkString(", ")
+      s"- ${path}: ${message}"
+    }.mkString("\n")
+  }
+
+  def errorFor(originalJson: JsLookupResult, jsError: JsError, paramName: String): String = {
+    s"""Error: invalid `${paramName}` value provided to ellipsis.success()
+       |
+       |Value received:
+       |
+       |${paramName}: ${Json.prettyPrint(originalJson.getOrElse(JsNull))}
+       |
+       |Errors:
+       |
+       |${ExecutionInfo.jsonErrorsToMessage(jsError.errors, paramName)}
+       |""".stripMargin
+  }
+}
+
 sealed trait BotResult {
   val resultType: ResultType.Value
-  val forcePrivateResponse: Boolean
+  val responseType: BehaviorResponseType
   val event: Event
   val maybeConversation: Option[Conversation]
   val maybeBehaviorVersion: Option[BehaviorVersion]
-  def maybeNextAction: Option[NextAction] = None
-  def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = DBIO.successful(None)
   val shouldInterrupt: Boolean = true
   def text: String
   def fullText: String = text
@@ -106,17 +203,22 @@ sealed trait BotResult {
   val developerContext: DeveloperContext
   def maybeLog: Option[String] = None
   def maybeLogFile: Option[UploadFileSpec] = None
+  lazy val executionInfo: ExecutionInfo = ExecutionInfo.empty
 
   def shouldIncludeLogs: Boolean = {
-    maybeLog.isDefined && (developerContext.isInDevMode || developerContext.isInInvocationTester)
+    developerContext.isInDevMode || developerContext.isInInvocationTester
   }
 
+  def maybeNextAction: Option[NextAction] = executionInfo.maybeNextAction
+  def actionChoicesFor(user: User): Seq[ActionChoice] = Seq()
+
   def files: Seq[UploadFileSpec] = {
-    if (shouldIncludeLogs) {
-      Seq(maybeLogFile).flatten
+    val logs = if (shouldIncludeLogs) {
+      Seq(maybeLogFile).flatten ++ executionInfo.errors.map(_.devLog)
     } else {
       Seq()
     }
+    executionInfo.userFiles ++ logs
   }
 
   def filesAsLogText: String = {
@@ -141,10 +243,6 @@ sealed trait BotResult {
     }
   }
 
-  def maybeChannelForSendAction(maybeConversation: Option[Conversation], services: DefaultServices)(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Option[String]] = {
-    event.maybeChannelForSendAction(forcePrivateResponse, maybeConversation, services)
-  }
-
   val interruptionPrompt = {
     val action = if (maybeConversation.isDefined) { "ask" } else { "tell" }
     s"You haven't answered my question yet, but I have something new to $action you."
@@ -156,8 +254,7 @@ sealed trait BotResult {
     } else {
       val dataService = services.dataService
       for {
-        maybeChannelForSend <- maybeChannelForSendAction(maybeConversation, services)
-        ongoing <- dataService.conversations.allOngoingForAction(event.userIdForContext, event.context, maybeChannelForSend, event.maybeThreadId, event.teamId)
+        ongoing <- dataService.conversations.allOngoingForAction(event.eventContext, Some(this))
         ongoingWithRoots <- DBIO.sequence(ongoing.map { ea =>
           dataService.parentConversations.rootForAction(ea).map { root =>
             (ea, root)
@@ -183,7 +280,11 @@ sealed trait BotResult {
 
   val shouldSend: Boolean = true
 
-  def attachmentGroups: Seq[MessageAttachmentGroup] = Seq()
+  def attachments: Seq[MessageAttachment] = {
+    executionInfo.errors.map { error =>
+      event.eventContext.messageAttachmentFor(maybeText = Some(error.userWarning), maybeColor = Some(Color.PINK))
+    }
+  }
 
   def isForManagedGroup(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
     maybeBehaviorVersion.map { behaviorVersion =>
@@ -224,26 +325,6 @@ trait BotResultWithLogResult extends BotResult {
 
 }
 
-case class InvalidFilesException(message: String) extends Exception {
-  def responseText: String =
-    s"""Invalid files passed to `ellipsis.success()`
-       |
-       |Errors: $message
-       |
-       |The value for the `files` property should be an array like:
-       |
-       |```
-       |[
-       |  {
-       |    content: "The content…",
-       |    filetype: "text",
-       |    filename: "filname.txt"
-       |  }, ...
-       |]
-       |```
-     """.stripMargin
-}
-
 case class SuccessResult(
                           event: Event,
                           behaviorVersion: BehaviorVersion,
@@ -254,44 +335,37 @@ case class SuccessResult(
                           invocationJson: JsObject,
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
-                          forcePrivateResponse: Boolean,
-                          developerContext: DeveloperContext
+                          override val responseType: BehaviorResponseType,
+                          developerContext: DeveloperContext,
+                          dataService: DataService
                         ) extends BotResultWithLogResult {
 
   val resultType = ResultType.Success
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
-  override def files: Seq[UploadFileSpec] = {
-    val authoredFiles = (payloadJson \ "files").validateOpt[Seq[UploadFileSpec]] match {
-      case JsSuccess(maybeFiles, _) => maybeFiles.getOrElse(Seq())
-      case JsError(errs) => throw InvalidFilesException(errs.map { case (_, validationErrors) =>
-        validationErrors.map(_.message).mkString(", ")
-      }.mkString(", "))
-    }
-    authoredFiles ++ super.files
+  override lazy val executionInfo: ExecutionInfo = {
+    ExecutionInfo.empty.
+      withChoicesFrom(payloadJson).
+      withNextActionFrom(payloadJson).
+      withUserFilesFrom(payloadJson)
   }
 
-  override def maybeNextAction: Option[NextAction] = {
-    (payloadJson \ "next").asOpt[NextAction]
-  }
-
-  override def maybeChoicesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Seq[ActionChoice]]] = {
-    event.ensureUserAction(dataService).map { user =>
-      (payloadJson \ "choices").asOpt[Seq[ActionChoice]].map { choices =>
-        choices.map { ea =>
-          ea.copy(
-            userId = Some(user.id),
-            groupVersionId = Some(behaviorVersion.groupVersion.id)
-          )
-        }
-      }
-    }
+  override def actionChoicesFor(user: User): Seq[ActionChoice] = {
+    executionInfo.choices.map(_.toActionChoiceWith(user, behaviorVersion))
   }
 
   def text: String = {
     val inputs = invocationJson.fields ++ parametersWithValues.map { ea => (ea.parameter.name, ea.preparedValue) }
     TemplateApplier(maybeResponseTemplate, JsDefined(result), inputs).apply
+  }
+
+  override def shouldNotifyAdmins(implicit ec: ExecutionContext): Future[Boolean] = {
+    if (executionInfo.errors.nonEmpty) {
+      isForManagedGroup(dataService)
+    } else {
+      Future.successful(false)
+    }
   }
 }
 
@@ -299,7 +373,7 @@ case class SimpleTextResult(
                              event: Event,
                              maybeConversation: Option[Conversation],
                              simpleText: String,
-                             forcePrivateResponse: Boolean,
+                             override val responseType: BehaviorResponseType,
                              override val shouldInterrupt: Boolean = true
                            ) extends BotResult {
 
@@ -317,8 +391,8 @@ case class TextWithAttachmentsResult(
                                       event: Event,
                                       maybeConversation: Option[Conversation],
                                       simpleText: String,
-                                      forcePrivateResponse: Boolean,
-                                      override val attachmentGroups: Seq[MessageAttachmentGroup]
+                                      override val responseType: BehaviorResponseType,
+                                      otherAttachments: Seq[MessageAttachment]
                                     ) extends BotResult {
   val resultType = ResultType.TextWithActions
 
@@ -327,27 +401,39 @@ case class TextWithAttachmentsResult(
   val developerContext: DeveloperContext = DeveloperContext.default
 
   def text: String = simpleText
+
+  override def attachments: Seq[MessageAttachment] = {
+    otherAttachments ++ super.attachments
+  }
 }
 
-case class NoResponseResult(
-                             event: Event,
-                             behaviorVersion: BehaviorVersion,
-                             maybeConversation: Option[Conversation],
-                             payloadJson: JsValue,
-                             maybeLogResult: Option[AWSLambdaLogResult]
-                           ) extends BotResultWithLogResult {
-
+trait NoResponseResult extends BotResult {
+  val responseType: BehaviorResponseType = Normal
+  val resultType: ResultType.Value = ResultType.NoResponse
   val developerContext: DeveloperContext = DeveloperContext.default
-
-  val resultType = ResultType.NoResponse
-  val forcePrivateResponse = false // N/A
-  override val shouldInterrupt = false
-
-  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
   def text: String = ""
 
+  override val shouldInterrupt: Boolean = false
   override val shouldSend: Boolean = false
+}
+
+case class NoResponseForBehaviorVersionResult(
+                                               event: Event,
+                                               behaviorVersion: BehaviorVersion,
+                                               maybeConversation: Option[Conversation],
+                                               payloadJson: JsValue,
+                                               maybeLogResult: Option[AWSLambdaLogResult]
+                                             ) extends BotResultWithLogResult with NoResponseResult {
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+}
+
+case class NoResponseForBuiltinResult(
+                                       event: Event
+                                     ) extends NoResponseResult {
+  val maybeConversation: Option[Conversation] = None
+  val maybeBehaviorVersion: Option[BehaviorVersion] = None
 }
 
 trait WithBehaviorLink {
@@ -356,7 +442,7 @@ trait WithBehaviorLink {
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
   val dataService: DataService
   val configuration: Configuration
-  val forcePrivateResponse = behaviorVersion.forcePrivateResponse
+  val responseType: BehaviorResponseType = behaviorVersion.responseType
   val team: Team = behaviorVersion.team
 
   def link: String = dataService.behaviors.editLinkFor(behaviorVersion.group.id, Some(behaviorVersion.behavior.id), configuration)
@@ -510,6 +596,7 @@ case class AdminSkillErrorNotificationResult(
                                             ) extends BotResult {
 
   val resultType = ResultType.AdminSkillErrorNotification
+  val responseType: BehaviorResponseType = Normal
 
   override def shouldIncludeLogs: Boolean = true
 
@@ -528,21 +615,28 @@ case class AdminSkillErrorNotificationResult(
     s" running action `$action` in skill `$skill` $skillLink"
   }.getOrElse("")
   lazy val text: String = {
-    val user = s"<@${originalResult.event.userIdForContext}>"
+    val userIdForContext = originalResult.event.eventContext.userIdForContext
+    val contextUserText = s"Context User ID: <@${userIdForContext}> (ID #${userIdForContext})"
+
     s"""Error$description
        |
        |Team: $teamLink
-       |User: $user
+       |$contextUserText
        |Result type: ${originalResult.resultType}
        |
+       |Result text delivered:
+       |
+       |---
+       |
+       |${originalResult.text}
      """.stripMargin
   }
 
-  lazy val maybeConversation: Option[Conversation] = originalResult.maybeConversation
+  lazy val maybeConversation: Option[Conversation] = None
   lazy val maybeBehaviorVersion: Option[BehaviorVersion] = originalResult.maybeBehaviorVersion
   override def maybeLogFile: Option[UploadFileSpec] = originalResult.maybeLogFile
-  val forcePrivateResponse: Boolean = false
-
+  override lazy val executionInfo: ExecutionInfo = originalResult.executionInfo
+  override def attachments: Seq[MessageAttachment] = originalResult.attachments
 }
 
 case class MissingTeamEnvVarsResult(
@@ -559,7 +653,7 @@ case class MissingTeamEnvVarsResult(
 
   val linkToEnvVarConfig: String = {
     val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val path = controllers.web.settings.routes.EnvironmentVariablesController.list(Some(event.teamId), Some(missingEnvVars.mkString(",")))
+    val path = controllers.web.settings.routes.EnvironmentVariablesController.list(Some(event.ellipsisTeamId), Some(missingEnvVars.mkString(",")))
     val url = s"$baseUrl$path"
     s"[Configure environment variables](${url})"
   }
@@ -584,7 +678,7 @@ case class AWSDownResult(
                         ) extends BotResult {
 
   val resultType = ResultType.AWSDown
-  val forcePrivateResponse = false
+  val responseType: BehaviorResponseType = Normal
 
   val developerContext: DeveloperContext = DeveloperContext.default
 
@@ -602,6 +696,61 @@ case class AWSDownResult(
 
 }
 
+trait OAuthTokenMissing {
+  val key = IDs.next
+
+  val resultType = ResultType.OAuth2TokenMissing
+
+  val behaviorVersion: BehaviorVersion
+  val loginToken: LoginToken
+  val event: Event
+  val configuration: Configuration
+  val cacheService: CacheService
+  val apiApplicationId: String
+  val apiApplicationName: String
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+
+  val responseType: BehaviorResponseType = Private
+
+  val redirectPath: Call
+
+  def authLink: String = {
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val redirect = s"$baseUrl$redirectPath"
+    val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))
+    s"$baseUrl$authPath"
+  }
+
+  def text: String = {
+    s"""To use this skill, you need to [authenticate with ${apiApplicationName}]($authLink).
+       |
+       |You only need to do this one time for ${apiApplicationName}. You may be prompted to sign in to Ellipsis using your Slack account.
+       |""".stripMargin
+  }
+
+  def beforeSend: Unit = cacheService.cacheEvent(key, event, 5.minutes)
+}
+
+case class OAuth1TokenMissing(
+                               oAuth1Application: OAuth1Application,
+                               event: Event,
+                               behaviorVersion: BehaviorVersion,
+                               maybeConversation: Option[Conversation],
+                               loginToken: LoginToken,
+                               cacheService: CacheService,
+                               configuration: Configuration,
+                               developerContext: DeveloperContext
+                             ) extends BotResult with OAuthTokenMissing {
+
+  val apiApplicationId: String = oAuth1Application.id
+  val apiApplicationName: String = oAuth1Application.name
+
+  val redirectPath: Call = controllers.routes.APIAccessController.linkCustomOAuth1Service(apiApplicationId, Some(key), None)
+
+  override def beforeSend: Unit = super.beforeSend
+}
+
 case class OAuth2TokenMissing(
                                oAuth2Application: OAuth2Application,
                                event: Event,
@@ -611,56 +760,59 @@ case class OAuth2TokenMissing(
                                cacheService: CacheService,
                                configuration: Configuration,
                                developerContext: DeveloperContext
-                             ) extends BotResult {
+                             ) extends BotResult with OAuthTokenMissing {
 
-  val key = IDs.next
+  val apiApplicationId: String = oAuth2Application.id
+  val apiApplicationName: String = oAuth2Application.name
 
-  val resultType = ResultType.OAuth2TokenMissing
+  val state: String = OAuth2State(IDs.next, Some(key), None).encodedString
 
+  val redirectPath: Call = controllers.routes.APIAccessController.linkCustomOAuth2Service(apiApplicationId, None, Some(state))
+
+  override def beforeSend: Unit = super.beforeSend
+}
+
+trait RequiredApiNotReady {
+  val resultType: ResultType = ResultType.RequiredApiNotReady
+  val responseType: BehaviorResponseType = Private
+
+  val behaviorVersion: BehaviorVersion
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+  val dataService: DataService
+  val configuration: Configuration
 
-  val forcePrivateResponse = true
+  val requiredApiName: String
 
-  def authLink: String = {
-    val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val redirectPath = controllers.routes.APIAccessController.linkCustomOAuth2Service(oAuth2Application.id, None, None, Some(key), None)
-    val redirect = s"$baseUrl$redirectPath"
-    val authPath = controllers.routes.SocialAuthController.loginWithToken(loginToken.value, Some(redirect))
-    s"$baseUrl$authPath"
+  def configLink: String = dataService.behaviors.editLinkFor(behaviorVersion.groupVersion.group.id, None, configuration)
+  def configText: String = {
+    s"You first must [configure the ${requiredApiName} API]($configLink)"
   }
 
   def text: String = {
-    s"""To use this skill, you need to [authenticate with ${oAuth2Application.name}]($authLink).
-       |
-       |You only need to do this one time for ${oAuth2Application.name}. You may be prompted to sign in to Ellipsis using your Slack account.
-       |""".stripMargin
+    s"This skill is not ready to use. $configText."
   }
-
-  override def beforeSend: Unit = cacheService.cacheEvent(key, event, 5.minutes)
 }
 
-case class RequiredApiNotReady(
-                                required: RequiredOAuth2ApiConfig,
+case class RequiredOAuth1ApiNotReady(
+                                required: RequiredOAuth1ApiConfig,
                                 event: Event,
                                 behaviorVersion: BehaviorVersion,
                                 maybeConversation: Option[Conversation],
                                 dataService: DataService,
                                 configuration: Configuration,
                                 developerContext: DeveloperContext
-                             ) extends BotResult {
+                             ) extends BotResult with RequiredApiNotReady {
+  val requiredApiName: String = required.api.name
+}
 
-  val resultType = ResultType.RequiredApiNotReady
-  val forcePrivateResponse = true
-
-  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
-
-  def configLink: String = dataService.behaviors.editLinkFor(required.groupVersion.group.id, None, configuration)
-  def configText: String = {
-    s"You first must [configure the ${required.api.name} API]($configLink)"
-  }
-
-  def text: String = {
-    s"This skill is not ready to use. $configText."
-  }
-
+case class RequiredOAuth2ApiNotReady(
+                                      required: RequiredOAuth2ApiConfig,
+                                      event: Event,
+                                      behaviorVersion: BehaviorVersion,
+                                      maybeConversation: Option[Conversation],
+                                      dataService: DataService,
+                                      configuration: Configuration,
+                                      developerContext: DeveloperContext
+                                    ) extends BotResult with RequiredApiNotReady {
+  val requiredApiName: String = required.api.name
 }

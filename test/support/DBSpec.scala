@@ -23,10 +23,12 @@ import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.input.Input
 import models.behaviors.savedanswer.SavedAnswer
+import models.behaviors.triggers.MessageSent
 import models.team.Team
 import modules.ActorModule
-import org.scalatest.mock.MockitoSugar
-import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
+import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.db.DBApi
 import play.api.db.evolutions.Evolutions
 import play.api.inject.bind
@@ -41,7 +43,7 @@ import slick.dbio.DBIO
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
+trait DBSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar {
 
   lazy val config = app.injector.instanceOf(classOf[Configuration])
   lazy val dbApi = app.injector.instanceOf(classOf[DBApi])
@@ -118,7 +120,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def newTriggerData: BehaviorTriggerData = {
-    BehaviorTriggerData("foo", false, false, false)
+    BehaviorTriggerData("foo", false, false, false, MessageSent.toString)
   }
 
   def newGroupVersionDataFor(group: BehaviorGroup, user: User): BehaviorGroupData = {
@@ -133,7 +135,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
       behaviorVersions = Seq(),
       libraryVersions = Seq(),
       requiredAWSConfigs = Seq(),
-      requiredOAuth2ApiConfigs = Seq(),
+      requiredOAuthApiConfigs = Seq(),
       requiredSimpleTokenApis = Seq(),
       gitSHA = None,
       exportId = None,
@@ -190,8 +192,16 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
     runNow(dataService.behaviorVersions.findFor(behavior, groupVersion)).get
   }
 
+  def newSavedBehaviorVersionFor(behavior: Behavior, groupVersion: BehaviorGroupVersion, user: User): BehaviorVersion = {
+    runNow(dataService.behaviorVersions.createForAction(behavior, groupVersion, ApiConfigInfo(Seq(), Seq(), Seq(), Seq(), Seq()), Some(user), newBehaviorVersionDataFor(behavior)))
+  }
+
   def newSavedBehaviorGroupFor(team: Team): BehaviorGroup = {
     runNow(dataService.behaviorGroups.createFor(None, team))
+  }
+
+  def newSavedBehaviorFor(group: BehaviorGroup): Behavior = {
+    runNow(dataService.behaviors.createForAction(group, None, None, isDataType = false))
   }
 
   def newSavedOAuth2Api: OAuth2Api = {
@@ -203,7 +213,7 @@ trait DBSpec extends PlaySpec with OneAppPerSuite with MockitoSugar {
   }
 
   def newSavedRequiredOAuth2ConfigFor(api: OAuth2Api, groupVersion: BehaviorGroupVersion): RequiredOAuth2ApiConfig = {
-    val data = RequiredOAuth2ApiConfigData(None, None, api.id, None, "default", None)
+    val data = RequiredOAuthApiConfigData(None, None, api.id, None, "default", None)
     runNow(dataService.requiredOAuth2ApiConfigs.maybeCreateFor(data, groupVersion)).get
   }
 

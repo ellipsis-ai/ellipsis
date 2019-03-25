@@ -1,7 +1,9 @@
 package models.behaviors.testing
 
+import akka.actor.ActorSystem
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.events.TestEventContext
 import services._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,12 +15,12 @@ case class InvocationTester(
                             services: DefaultServices
                           ) {
 
-  def run(implicit ec: ExecutionContext): Future[InvocationTestReport] = {
+  def run(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[InvocationTestReport] = {
     val dataService = services.dataService
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
       event <- Future.successful {
-        TestEvent(user, behaviorVersion.team, "", includesBotMention = true)
+        TestMessageEvent(TestEventContext(user, behaviorVersion.team), "", includesBotMention = true)
       }
       paramValueMaybes <- Future.successful {
         params.map { param =>

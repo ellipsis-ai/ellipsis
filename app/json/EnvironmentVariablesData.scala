@@ -17,6 +17,7 @@ object EnvironmentVariableData {
 }
 
 case class EnvironmentVariablesData(
-                                teamId: String,
-                                variables: Seq[EnvironmentVariableData]
-                                )
+                                     teamId: String,
+                                     variables: Seq[EnvironmentVariableData],
+                                     error: Option[String]
+                                   )

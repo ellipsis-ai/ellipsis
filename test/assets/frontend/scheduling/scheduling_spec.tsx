@@ -1,31 +1,37 @@
 import * as React from 'react';
-import * as TestUtils from 'react-addons-test-utils';
+import * as TestUtils from 'react-dom/test-utils';
 import * as MockDataRequest from '../../../mocks/mock_data_request';
-jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
-jest.mock('../../../../app/assets/frontend/lib/browser_utils');
 import Scheduling from '../../../../app/assets/frontend/scheduling/index';
 import Recurrence from '../../../../app/assets/frontend/models/recurrence';
 import ScheduledAction, {ScheduledActionInterface} from '../../../../app/assets/frontend/models/scheduled_action';
 import ScheduleChannel, {ScheduleChannelInterface} from '../../../../app/assets/frontend/models/schedule_channel';
 import ID from '../../../../app/assets/frontend/lib/id';
-import Page from '../../../../app/assets/frontend/shared_ui/page';
 import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
-import {Component} from "react";
+import OrgChannels from "../../../../app/assets/frontend/models/org_channels";
+import TeamChannels from "../../../../app/assets/frontend/models/team_channels";
+import {getPageRequiredProps} from "../../../mocks/mock_page";
 
-jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test", method: "get" });
+jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
+jest.mock('../../../../app/assets/frontend/lib/browser_utils');
+
+jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test", method: "get", absoluteURL: () => "https://nope/" });
+
+Object.defineProperty(window, "scrollTo", {
+  value: jest.fn()
+});
 
 class Loader extends React.Component<SchedulingProps, SchedulingProps> {
   page: Scheduling;
   constructor(props: SchedulingProps) {
     super(props);
-    this.state = props;
+    this.state = Object.assign({}, props);
   }
   render() {
     return (
       <Scheduling
-        ref={(el) => this.page = el}
+        ref={(el: Scheduling) => this.page = el}
         {...this.state}
-        {...Page.requiredPropDefaults()}
+        {...getPageRequiredProps()}
       />
     );
   }
@@ -46,7 +52,13 @@ const defaultTimeZoneName = "Eastern Time";
 
 const emptyConfig: SchedulingProps = {
   scheduledActions: [],
-  channelList: [],
+  orgChannels: OrgChannels.fromJson({
+    dmChannels: [],
+    mpimChannels: [],
+    orgSharedChannels: [],
+    externallySharedChannels: [],
+    teamChannels: []
+  }),
   behaviorGroups: [],
   teamId: "1234",
   teamTimeZone: defaultTimeZone,
@@ -64,17 +76,18 @@ const emptyConfig: SchedulingProps = {
   newAction: false,
   isAdmin: false,
   userMap: {},
-  onLoadUserData: emptyFn
+  onLoadUserData: emptyFn,
+  csrfToken: "FANCY_TOKEN"
 };
 
 function newSchedule(props?: Partial<ScheduledActionInterface>) {
-  return new ScheduledAction(Object.assign({
+  return new ScheduledAction(Object.assign<ScheduledActionInterface, Partial<ScheduledActionInterface> | undefined>({
     id: ID.next(),
     scheduleType: "message",
     behaviorId: ID.next(),
     behaviorGroupId: ID.next(),
     trigger: ":tada:",
-    arguments: {},
+    arguments: [],
     recurrence: new Recurrence({
       timeZone: defaultTimeZone,
       timeZoneName: defaultTimeZoneName
@@ -87,9 +100,9 @@ function newSchedule(props?: Partial<ScheduledActionInterface>) {
 }
 
 function newChannel(props?: Partial<ScheduleChannelInterface>) {
-  return new ScheduleChannel(Object.assign({
+  return new ScheduleChannel(Object.assign<ScheduleChannelInterface, Partial<ScheduleChannelInterface> | undefined>({
     id: defaultChannelId,
-    name: "test",
+    name: "channel",
     context: "Slack",
     isBotMember: true,
     isSelfDm: false,
@@ -97,16 +110,16 @@ function newChannel(props?: Partial<ScheduleChannelInterface>) {
     isPrivateChannel: false,
     isPrivateGroup: false,
     isArchived: false,
-    isShared: false
+    isOrgShared: false,
+    isExternallyShared: false,
+    isReadOnly: false
   }, props));
 }
 
 describe('Scheduling', () => {
   describe('render', () => {
     it('renders an error message when there are no scheduled items and no channels', () => {
-      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
-        channelList: null
-      }));
+      const wrapper = createIndexWrapper(emptyConfig);
       const page = wrapper.page;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
       const errorMessageSpy = jest.spyOn(page, 'renderErrorMessage');
@@ -121,7 +134,9 @@ describe('Scheduling', () => {
 
     it('renders the no schedules message with channels but with no scheduled items', () => {
       const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
-        channelList: [newChannel()]
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: [newChannel()] })]
+        })
       }));
       const page = wrapper.page;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
@@ -136,10 +151,13 @@ describe('Scheduling', () => {
     });
 
     it('renders with some scheduled items', () => {
-      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
+      const config = Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
         scheduledActions: [newSchedule(), newSchedule()],
-        channelList: [newChannel()]
-      }));
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: [newChannel()] })]
+        })
+      });
+      const wrapper = createIndexWrapper(config);
       const page = wrapper.page;
       const noScheduleSpy = jest.spyOn(page, 'renderNoSchedules');
       const errorMessageSpy = jest.spyOn(page, 'renderErrorMessage');
@@ -161,7 +179,9 @@ describe('Scheduling', () => {
       }), newSchedule()];
       const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
         scheduledActions: schedules,
-        channelList: channels,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: channels })]
+        }),
         selectedScheduleId: null
       }));
       const page = wrapper.page;
@@ -177,7 +197,12 @@ describe('Scheduling', () => {
       }), newSchedule()];
       const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
         scheduledActions: schedules,
-        channelList: channels,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [{
+            teamName: "Test team",
+            channelList: channels
+          }]
+        }),
         selectedScheduleId: schedules[0].id
       }));
       const page = wrapper.page;
@@ -189,7 +214,7 @@ describe('Scheduling', () => {
 
   describe('componentWillReceiveProps', () => {
     it('sets state to justSaved if current props isSaving is true, and new props isSaving is false', () => {
-      const config = Object.assign({}, emptyConfig, {
+      const config = Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
         isSaving: true
       });
       const wrapper = createIndexWrapper(config);
@@ -207,7 +232,7 @@ describe('Scheduling', () => {
     });
 
     it('sets state to justDeleted if current props isDeleting is true, and new props isDeleting is false', () => {
-      const config = Object.assign({}, emptyConfig, {
+      const config = Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
         isDeleting: true
       });
       const wrapper = createIndexWrapper(config);
@@ -235,7 +260,9 @@ describe('Scheduling', () => {
       })];
       const config = Object.assign({}, emptyConfig, {
         scheduledActions: schedules,
-        channelList: channels,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: channels })]
+        }),
         selectedScheduleId: schedules[0].id,
         isDeleting: true
       });
@@ -265,9 +292,11 @@ describe('Scheduling', () => {
       const schedules = [newSchedule({
         channel: channels[0].id
       })];
-      const config = Object.assign({}, emptyConfig, {
+      const config = Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
         scheduledActions: schedules,
-        channelList: channels,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: channels })]
+        }),
         selectedScheduleId: schedules[0].id,
         isDeleting: true
       });
@@ -291,4 +320,26 @@ describe('Scheduling', () => {
       });
     });
   });
+
+  describe('getScheduleByChannel', () => {
+    it('returns scheduled actions grouped by channel, with channels and actions in a channel both sorted ascending by first recurrence', () => {
+      const channel1 = newChannel({ name: "channel1", id: "channel1" });
+      const channel2 = newChannel({ name: "channel2", id: "channel2" });
+      const action1 = newSchedule({ firstRecurrence: new Date("2020-01-01T00:00:00.000Z"), channel: "channel1" });
+      const action2 = newSchedule({ firstRecurrence: new Date("2018-01-01T00:00:00.000Z"), channel: "channel2" });
+      const action3 = newSchedule({ firstRecurrence: new Date("2019-01-01T00:00:00.000Z"), channel: "channel1" });
+      const action4 = newSchedule({ firstRecurrence: new Date("2020-01-01T00:00:00.000Z"), channel: "channel2" });
+      const wrapper = createIndexWrapper(Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
+        scheduledActions: [action1, action2, action3, action4],
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: [channel1, channel2] })]
+        }),
+      }));
+      const page = wrapper.page;
+      const grouped = page.getScheduleByChannel();
+      expect(grouped.map((ea) => ea.channelId)).toEqual(["channel2", "channel1"]);
+      expect(grouped[0].actions).toEqual([action2, action4]);
+      expect(grouped[1].actions).toEqual([action3, action1]);
+    });
+  })
 });

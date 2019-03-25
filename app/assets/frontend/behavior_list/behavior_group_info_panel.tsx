@@ -11,7 +11,7 @@ import User from "../models/user";
 
   type Props = {
     groupData: Option<BehaviorGroup>,
-    onBehaviorGroupImport: (BehaviorGroup) => void,
+    onBehaviorGroupImport: (group: BehaviorGroup) => void,
     onBehaviorGroupUpdate: (originalGroup: BehaviorGroup, updatedGroup: BehaviorGroup) => void,
     onToggle: () => void,
     isImportable: boolean,
@@ -211,7 +211,7 @@ import User from "../models/user";
       } else {
         return (
           <div className="type-s mvm">
-            <span>Custom skill</span>
+            <span>{group.linkedGithubRepo ? "Linked to GitHub" : "Custom skill"}</span>
             {this.renderGithubLink(groupGithubUrl)}
           </div>
         );

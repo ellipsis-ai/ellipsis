@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.events._
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -30,21 +31,25 @@ case class ScheduledMessage(
     Future.successful(s"`$text`")
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[ScheduledEvent]] = {
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[ScheduledMessageSlackEvent]] = {
     Future.successful(
       Some(
-        ScheduledEvent(
+        ScheduledMessageSlackEvent(
           SlackMessageEvent(
-            profile,
-            profile.slackTeamId,
-            channel,
-            None,
-            slackUserId,
-            SlackMessage.fromUnformattedText(text, profile.userId),
+            SlackEventContext(
+              profile,
+              channel,
+              None,
+              slackUserId
+            ),
+            SlackMessage.fromUnformattedText(text, profile, None),
             None,
             SlackTimestamp.now,
             Some(EventType.scheduled),
-            isUninterruptedConversation = false
+            isUninterruptedConversation = false,
+            isEphemeral = false,
+            None,
+            beQuiet = false
           ),
           this
         )
@@ -52,12 +57,18 @@ case class ScheduledMessage(
     )
   }
 
-  def withUpdatedNextTriggeredFor(when: OffsetDateTime): ScheduledMessage = {
-    this.copy(nextSentAt = recurrence.nextAfter(when))
+  def updatedWithNextRunAfter(when: OffsetDateTime): ScheduledMessage = {
+    this.copy(nextSentAt = recurrence.nextAfter(when), recurrence = recurrence.incrementTimesHasRun)
   }
 
-  def updateNextTriggeredForAction(dataService: DataService): DBIO[ScheduledMessage] = {
-    dataService.scheduledMessages.updateNextTriggeredForAction(this)
+  def updateForNextRunAction(dataService: DataService): DBIO[ScheduledMessage] = {
+    dataService.scheduledMessages.updateForNextRunAction(this)
+  }
+
+  def deleteAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Unit] = {
+    dataService.scheduledMessages.deleteAction(this).map { _ =>
+      {}
+    }
   }
 
   def toRaw: RawScheduledMessage = {

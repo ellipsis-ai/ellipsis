@@ -3,10 +3,11 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
-import models.behaviors.events.Event
+import models.behaviors.BotResult
+import models.behaviors.events.{Event, EventContext}
 import slick.dbio.DBIO
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait ConversationService {
 
@@ -16,9 +17,9 @@ trait ConversationService {
 
   def maybeWithThreadId(threadId: String, userIdForContext: String, context: String): Future[Option[Conversation]]
 
-  def allOngoingForAction(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): DBIO[Seq[Conversation]]
+  def allOngoingForAction(eventContext: EventContext, maybeBotResult: Option[BotResult])(implicit ec: ExecutionContext, actorSystem: ActorSystem): DBIO[Seq[Conversation]]
 
-  def allOngoingFor(userIdForContext: String, context: String, maybeChannel: Option[String], maybeThreadId: Option[String], teamId: String): Future[Seq[Conversation]]
+  def allOngoingFor(eventContext: EventContext, maybeBotResult: Option[BotResult])(implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[Conversation]]
 
   def allOngoingBehaviorGroupVersionIds: Future[Seq[String]]
 

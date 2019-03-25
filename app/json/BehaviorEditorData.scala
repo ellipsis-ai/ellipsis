@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import controllers.RemoteAssets
 import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.behaviorparameter.BehaviorParameterType
+import models.behaviors.triggers.TriggerType
 import models.team.Team
 import play.api.libs.ws.WSClient
 import services.DataService
@@ -20,16 +21,17 @@ case class BehaviorEditorData(
                                environmentVariables: Seq[EnvironmentVariableData],
                                savedAnswers: Seq[InputSavedAnswerData],
                                awsConfigs: Seq[AWSConfigData],
-                               oauth2Applications: Seq[OAuth2ApplicationData],
-                               oauth2Apis: Seq[OAuth2ApiData],
+                               oauthApplications: Seq[OAuthApplicationData],
+                               oauthApis: Seq[OAuthApiData],
                                simpleTokenApis: Seq[SimpleTokenApiData],
-                               linkedOAuth2ApplicationIds: Seq[String],
+                               linkedOAuthApplicationIds: Seq[String],
                                userId: String,
                                isAdmin: Boolean,
                                isLinkedToGithub: Boolean,
                                lastDeployTimestamp: Option[OffsetDateTime],
                                maybeSlackTeamId: Option[String],
-                               botName: String
+                               botName: String,
+                               possibleResponseTypes: Seq[BehaviorResponseTypeData] = BehaviorResponseTypeData.all
                               )
 
 object BehaviorEditorData {
@@ -126,12 +128,15 @@ object BehaviorEditorData {
               )(implicit ec: ExecutionContext): Future[BehaviorEditorData] = {
     for {
       teamAccess <- dataService.users.teamAccessFor(user, Some(team.id))
-      maybeSlackBotProfile <- dataService.slackBotProfiles.allFor(team).map(_.headOption)
+      maybeSlackBotProfile <- dataService.slackBotProfiles.maybeFirstFor(team, user)
       teamEnvironmentVariables <- dataService.teamEnvironmentVariables.allFor(team)
       awsConfigs <- dataService.awsConfigs.allFor(team)
+      oAuth1Applications <- dataService.oauth1Applications.allUsableFor(team)
+      oauth1Apis <- dataService.oauth1Apis.allFor(teamAccess.maybeTargetTeam)
       oAuth2Applications <- dataService.oauth2Applications.allUsableFor(team)
       oauth2Apis <- dataService.oauth2Apis.allFor(teamAccess.maybeTargetTeam)
       simpleTokenApis <- dataService.simpleTokenApis.allFor(teamAccess.maybeTargetTeam)
+      linkedOAuth1Tokens <- dataService.linkedOAuth1Tokens.allForUser(user, ws)
       linkedOAuth2Tokens <- dataService.linkedOAuth2Tokens.allForUser(user, ws)
       // TODO: use the group data or some such to avoid grabbing group from DB again
       maybeGroup <- maybeGroupData.flatMap { groupData =>
@@ -185,8 +190,8 @@ object BehaviorEditorData {
         dataService.managedBehaviorGroups.infoFor(group, team).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield {
-      val maybeVerifiedSelectedId = maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
       val data = maybeGroupData.getOrElse {
+        val newBehaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None, dataService);
         BehaviorGroupData(
           None,
           team.id,
@@ -195,7 +200,7 @@ object BehaviorEditorData {
           icon = None,
           actionInputs = Seq(),
           dataTypeInputs = Seq(),
-          Seq(BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None, dataService)),
+          Seq(newBehaviorVersionData),
           Seq(),
           Seq(),
           Seq(),
@@ -211,6 +216,9 @@ object BehaviorEditorData {
           maybeLinkedGithubRepo.map(LinkedGithubRepoData.from)
         )
       }
+      val maybeVerifiedSelectedId = maybeGroupData.map { _ =>
+        maybeVerifiedBehaviorId.orElse(maybeVerifiedLibraryId)
+      }.getOrElse(data.actionBehaviorVersions.headOption.flatMap(_.behaviorId))
       BehaviorEditorData(
         teamAccess,
         data,
@@ -219,10 +227,10 @@ object BehaviorEditorData {
         teamEnvironmentVariables.map(EnvironmentVariableData.withoutValueFor),
         inputSavedAnswerData,
         awsConfigs.map(AWSConfigData.from),
-        oAuth2Applications.map(OAuth2ApplicationData.from),
-        oauth2Apis.map(ea => OAuth2ApiData.from(ea, assets)),
+        (oAuth1Applications ++ oAuth2Applications).map(OAuthApplicationData.from),
+        (oauth1Apis ++ oauth2Apis).map(ea => OAuthApiData.from(ea, assets)),
         simpleTokenApis.map(ea => SimpleTokenApiData.from(ea, assets)),
-        linkedOAuth2Tokens.map(_.application.id),
+        (linkedOAuth1Tokens.map(_.application) ++ linkedOAuth2Tokens.map(_.application)).map(_.id),
         user.id,
         isAdmin,
         isLinkedToGithub,

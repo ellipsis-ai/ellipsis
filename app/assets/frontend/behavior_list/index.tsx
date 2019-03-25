@@ -25,10 +25,11 @@ import FixedHeader from "../shared_ui/fixed_header";
 import {CSSProperties} from "react";
 import {maybeDiffFor} from "../models/diffs";
 import {ToggleGroup, ToggleGroupItem} from '../form/toggle_group';
+import ImportFromGithubPanel from "./import_from_github_panel";
 
 const ANIMATION_DURATION = 0.25;
 
-type Props = {
+export interface BehaviorListProps {
   onLoadPublishedBehaviorGroups: () => void,
   onBehaviorGroupImport: (b: BehaviorGroup) => void,
   onBehaviorGroupUpdate: (orig: BehaviorGroup, upd: BehaviorGroup, callback?: (newGroup: BehaviorGroup) => void) => void,
@@ -49,8 +50,12 @@ type Props = {
   teamId: string,
   slackTeamId: string,
   botName: string,
-  notification: any
-} & PageRequiredProps;
+  csrfToken: string
+  notification: any,
+  isLinkedToGithub: boolean
+}
+
+type Props = BehaviorListProps & PageRequiredProps
 
 interface PublishedBehaviorGroupDiffers {
   [behaviorGroupId: string]: boolean
@@ -95,12 +100,12 @@ class BehaviorList extends React.Component<Props, State> {
     };
 
     this.delaySubmitSearch = debounce(() => this.submitSearch(), 50);
-    this.delayUpdateActiveSearch = debounce((newText) => this.updateActiveSearch(newText), 200);
+    this.delayUpdateActiveSearch = debounce((newText: string) => this.updateActiveSearch(newText), 200);
     this.delayOnScroll = debounce(() => this.onScroll(), 50);
     this.mainHeader = document.getElementById('main-header');
   }
 
-  componentWillReceiveProps(nextProps: Props) {
+  componentWillReceiveProps(nextProps: BehaviorListProps) {
     const newestImported = nextProps.recentlyInstalled.filter((next) => {
       return !BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, next.exportId);
     });
@@ -143,10 +148,25 @@ class BehaviorList extends React.Component<Props, State> {
     return this.state.activeSearchText;
   }
 
+  toggleGithubImport(): void {
+    this.toggleActivePanel("importFromGithub", true);
+  }
+
   renderNavActions() {
     return (
       <div className="mtl">
-        {this.renderTeachButton()}
+        <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
+          className="button button-s button-shrink mrs">
+          Create new skill…
+        </a>
+        {this.props.isLinkedToGithub ? (
+          <Button className="button-s button-shrink" onClick={this.toggleGithubImport}>Import from GitHub…</Button>
+        ) : (
+          <a href={jsRoutes.controllers.GithubConfigController.index(this.props.teamId).url}
+            className="button button-s button-shrink">
+            Set up GitHub link…
+          </a>
+        )}
       </div>
     );
   }
@@ -549,7 +569,7 @@ class BehaviorList extends React.Component<Props, State> {
       BehaviorGroup.groupsIncludeExportId(this.props.recentlyInstalled, exportId));
   }
 
-  toggleInfoPanel(group: BehaviorGroup): void {
+  toggleInfoPanel(group?: BehaviorGroup): void {
     var previousSelectedGroup = this.state.selectedBehaviorGroup;
     var panelOpen = this.getActivePanelName() === 'moreInfo';
 
@@ -590,7 +610,7 @@ class BehaviorList extends React.Component<Props, State> {
     if (!groupId) {
       return null;
     }
-    const onCheckedChangeForGroup = (isChecked) => {
+    const onCheckedChangeForGroup = (isChecked: boolean) => {
       this.onGroupCheckboxChange(groupId, isChecked);
     };
     return (
@@ -696,15 +716,6 @@ class BehaviorList extends React.Component<Props, State> {
     );
   }
 
-  renderTeachButton() {
-    return (
-      <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
-        className="button button-s button-shrink">
-        Create new skill…
-      </a>
-    );
-  }
-
   renderPublishedIntro() {
     if (this.getLocalBehaviorGroups().length === 0) {
       return (
@@ -775,8 +786,8 @@ class BehaviorList extends React.Component<Props, State> {
           {this.renderPublishedIntro()}
 
           <div className={"columns mvxl " + (this.isLoadingMatchingResults() ? "pulse-faded" : "")}>
-            {groups.length > 0 ? groups.map((group) => (
-              <ResponsiveColumn key={group.exportId}>
+            {groups.length > 0 ? groups.map((group, index) => (
+              <ResponsiveColumn key={group.exportId || `publishedGroup${index}`}>
                 <BehaviorGroupCard
                   group={group}
                   onMoreInfoClick={this.toggleInfoPanel}
@@ -963,6 +974,19 @@ class BehaviorList extends React.Component<Props, State> {
 
         {this.props.onRenderFooter((
           <div>
+            <Collapsible
+              revealWhen={this.getActivePanelName() === 'importFromGithub'}
+              animationDuration={this.getAnimationDuration()}
+            >
+              <ImportFromGithubPanel
+                isActive={this.getActivePanelName() === 'importFromGithub'}
+                teamId={this.props.teamId}
+                csrfToken={this.props.csrfToken}
+                onDone={this.props.onClearActivePanel}
+                onBehaviorGroupImport={this.onBehaviorGroupImport}
+                onIsImportingToTeam={this.isImporting}
+              />
+            </Collapsible>
             <Collapsible
               revealWhen={this.getActivePanelName() === 'moreInfo'}
               animationDuration={this.getAnimationDuration()}

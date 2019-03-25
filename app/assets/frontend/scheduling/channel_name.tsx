@@ -13,7 +13,6 @@ interface Props {
         <span>
           <span className="type-weak">{channel.getPrefix()} </span>
           <span>{channel.getName()} </span>
-          <span className="type-weak">{channel.getSuffix()}</span>
         </span>
       ) : (
         <span className="type-disabled">

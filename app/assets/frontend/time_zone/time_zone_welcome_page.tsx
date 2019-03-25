@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Page from "../shared_ui/page";
 import {PageRequiredProps} from "../shared_ui/page";
 
 type Props = {
@@ -33,7 +32,5 @@ class TeamTimeZoneWelcomePage extends React.Component<Props> {
       );
     }
 }
-
-TeamTimeZoneWelcomePage.defaultProps = Page.requiredPropDefaults();
 
 export default TeamTimeZoneWelcomePage;

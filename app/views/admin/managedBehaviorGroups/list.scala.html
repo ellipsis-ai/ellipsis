@@ -1,7 +1,6 @@
 @import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroup
 @import models.team.Team
-@import json.BehaviorGroupData
-@import json.UserData
+@import json.{BehaviorGroupData, UserData}
 @import helper._
 
 @(
@@ -13,40 +12,57 @@
 )(implicit messages: Messages, r: RequestHeader)
 
 
-@page.main("Managed skills", config, Seq(NavItem.admin)) {
-  <h4>Managed skills for @team.name</h4>
-  <ol>
+@page.main("Managed skills", config, Seq(
+  NavItem.adminTeamsList(true),
+  NavItem(s"Managed skills for ${team.name}", None)
+)) {
+  <div class="container">
+
+    <h4>Managed skills for @team.name</h4>
+
+    <div class="columns">
     @managedData.map { case(managed, groupData) =>
       @groupData.id.map { groupId =>
-        <li>
-          <span>@groupData.name</span>
-          <form style="display:inline-block; width: auto; margin: 0; padding: 0;" method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.setContact(groupId).url">
-            @CSRF.formField
-            <select name="contactId" class="form-input form-input-inline">
-              <option value="">– No contact selected –</option>
-              @usersData.map { ea =>
-                <option value="@ea.id" @if(managed.maybeContactId.contains(ea.id)){ selected="selected" }else{}>@ea.userNameOrDefault</option>
-              }
-            </select>
-            <input style="display:inline;" type="submit" value="Update" class="form-input form-input-inline"/>
-          </form>
-          <form style="display:inline-block; width: auto; margin: 0; padding: 0;" method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.delete(groupId).url">
-            @CSRF.formField
-          <input style="display:inline;" type="submit" value="Remove" class="form-input form-input-inline"/>
-        </form>
-        </li>
+        <div class="column column-half narrow-column-full mbl">
+          <div class="border bg-white pal">
+            <h4 class="mtn">@groupData.name</h4>
+            <form class="display-inline-block type-s align-t" method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.setContact(groupId).url">
+              @CSRF.formField
+              <div class="display-inline-block align-t">Contact:</div>
+              <div class="form-select form-select-s">
+                <select name="contactId" class="form-select-element">
+                  <option value="">– No contact selected –</option>
+                  @usersData.map { ea =>
+                    <option value="@ea.ellipsisUserId" @if(managed.maybeContactId.contains(ea.ellipsisUserId)){ selected="selected" }else{}>@ea.userNameOrDefault</option>
+                  }
+                </select>
+              </div>
+              <button type="submit" class="button button-s align-t button-shrink">Update</button>
+            </form>
+            <form class="display-inline-block align-t" method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.delete(groupId).url">
+              @CSRF.formField
+              <button type="submit" class="button button-s button-shrink">Remove</button>
+            </form>
+          </div>
+        </div>
       }
     }
-  </ol>
+    </div>
 
-  <form method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.add(team.id).url">
-    @CSRF.formField
-    <select name="groupId" class="form-input form-input-inline">
-      @otherData.map { ea =>
-        <option value="@ea.id">@ea.name</option>
-      }
-    </select>
-    <input class="form-input form-input-inline" type="submit" value="Add"/>
-  </form>
+    <div class="bg-white border pal mtxl">
+      <form class="type-s" method="POST" action="@controllers.admin.routes.ManagedBehaviorGroupsController.add(team.id).url">
+        @CSRF.formField
+        <div class="display-inline-block align-t">Add managed skill:</div>
+        <div class="form-select form-select-s">
+          <select name="groupId" class="form-select-element">
+            @otherData.map { ea =>
+              <option value="@ea.id">@ea.name</option>
+            }
+          </select>
+        </div>
+        <button class="button button-s button-shrink align-t" type="submit">Add</button>
+      </form>
+    </div>
+  </div>
 }
 

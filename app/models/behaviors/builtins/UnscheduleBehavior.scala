@@ -1,6 +1,7 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.DefaultServices
@@ -17,7 +18,7 @@ case class UnscheduleBehavior(
     val configuration = services.configuration
     val dataService = services.dataService
     for {
-      maybeTeam <- dataService.teams.find(event.teamId)
+      maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
       response <- (for {
         team <- maybeTeam
         channel <- event.maybeChannel
@@ -49,13 +50,13 @@ case class UnscheduleBehavior(
         }
       }).getOrElse(Future.successful("I couldn’t access the scheduling for this channel."))
     } yield {
-      SimpleTextResult(event, None, response, forcePrivateResponse = false)
+      SimpleTextResult(event, None, response, responseType = Normal)
     }
   }
 
   private def viewAllLink: String = {
     services.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(None, None, Some(event.teamId))
+      val path = controllers.routes.ScheduledActionsController.index(None, None, Some(event.ellipsisTeamId))
       s"[View all scheduled items]($baseUrl$path)"
     }.getOrElse("")
   }

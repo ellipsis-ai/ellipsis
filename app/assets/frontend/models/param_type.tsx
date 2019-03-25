@@ -3,10 +3,11 @@ import Formatter from '../lib/formatter';
 const builtinTypes: Array<string> = ['Text', 'Number', 'Yes/No'];
 
 export interface ParamTypeJson {
-  id?: Option<string>;
-  exportId: string;
-  name: string;
+  id?: Option<string>
+  exportId: string
+  name: string
   needsConfig?: Option<boolean>
+  typescriptType?: Option<string>
 }
 
 interface ParamTypeInterface extends ParamTypeJson {}
@@ -15,10 +16,12 @@ class ParamType implements ParamTypeInterface {
   readonly isBuiltIn: boolean;
   readonly name: string;
   readonly needsConfig: boolean;
+  readonly typescriptType: string;
 
   constructor(
     readonly id: Option<string>,
     readonly exportId: string,
+    maybeTypescriptType: Option<string>,
     maybeName?: Option<string>,
     maybeNeedsConfig?: Option<boolean>
   ) {
@@ -29,7 +32,8 @@ class ParamType implements ParamTypeInterface {
         exportId: { value: exportId, enumerable: true },
         isBuiltIn: { value: isBuiltIn, enumerable: true },
         name: { value: (typeof maybeName === "string" ? maybeName : ""), enumerable: true },
-        needsConfig: { value: (typeof maybeNeedsConfig === "boolean" ? maybeNeedsConfig : false), enumerable: true }
+        needsConfig: { value: (typeof maybeNeedsConfig === "boolean" ? maybeNeedsConfig : false), enumerable: true },
+        typescriptType: { value: (typeof maybeTypescriptType === "string" ? maybeTypescriptType : "any"), enumerable: true }
       });
     }
 
@@ -87,6 +91,7 @@ class ParamType implements ParamTypeInterface {
       return new ParamType(
         props.id,
         props.exportId,
+        props.typescriptType,
         props.name,
         props.needsConfig
       );
@@ -94,6 +99,14 @@ class ParamType implements ParamTypeInterface {
 
     static fromJson(props: ParamTypeJson): ParamType {
       return ParamType.fromProps(props);
+    }
+
+    static typescriptTypeForDataTypes(): string {
+      return `{
+  id: string,
+  label: string,
+  [k: string]: any
+}`;
     }
   }
 

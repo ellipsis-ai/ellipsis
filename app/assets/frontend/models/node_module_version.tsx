@@ -16,6 +16,10 @@ class NodeModuleVersion implements NodeModuleVersionInterface {
     });
   }
 
+  getUrl(): string {
+    return `https://www.npmjs.com/package/${this.from}/v/${this.version}`;
+  }
+
   clone(props: Partial<NodeModuleVersionInterface>): NodeModuleVersion {
     return NodeModuleVersion.fromProps(Object.assign({}, this, props));
   }
@@ -26,6 +30,10 @@ class NodeModuleVersion implements NodeModuleVersionInterface {
 
   static allFromJson(jsonArray: Array<NodeModuleVersionJson>) {
     return jsonArray.map((props) => NodeModuleVersion.fromProps(props));
+  }
+
+  static icon(): string {
+    return "📦";
   }
 
 }

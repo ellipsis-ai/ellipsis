@@ -16,7 +16,7 @@ GET         /search_skills                            @controllers.ApplicationCo
 POST        /set_team_time_zone                       @controllers.ApplicationController.setTeamTimeZone
 GET         /possible_cities_for                      @controllers.ApplicationController.possibleCitiesFor(searchQuery: String)
 
-GET         /new_skill                                @controllers.BehaviorEditorController.newGroup(teamId: Option[String] ?= None)
+GET         /new_skill                                @controllers.BehaviorEditorController.newGroup(teamId: Option[String] ?= None, actionId: Option[String] ?= None)
 GET         /edit_skill/:id                           @controllers.BehaviorEditorController.edit(id: String, actionId: Option[String] ?= None, showVersions: Option[Boolean] ?= None)
 GET         /skill_meta_data/:id                      @controllers.BehaviorEditorController.metaData(id: String)
 GET         /export_skill/:id                         @controllers.BehaviorImportExportController.export(id: String)
@@ -42,6 +42,7 @@ POST        /save_default_storage_item                @controllers.BehaviorEdito
 POST        /query_default_storage                    @controllers.BehaviorEditorController.queryDefaultStorage
 POST        /delete_default_storage_items             @controllers.BehaviorEditorController.deleteDefaultStorageItems
 GET         /node_module_versions/:groupId            @controllers.BehaviorEditorController.nodeModuleVersionsFor(groupId: String)
+POST        /new_from_github                          @controllers.BehaviorEditorController.newFromGithub
 POST        /update_from_github                       @controllers.BehaviorEditorController.updateFromGithub
 POST        /push_to_github                           @controllers.BehaviorEditorController.pushToGithub
 POST        /linked_github_repos                      @controllers.BehaviorEditorController.linkToGithubRepo
@@ -50,11 +51,6 @@ GET         /behavior_test_results/:groupId           @controllers.BehaviorEdito
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
 POST        /reset_saved_answer_for_all               @controllers.SavedAnswerController.resetForTeam
-
-GET         /list_oauth2_apis                         @controllers.OAuth2ApiController.list(teamId: Option[String] ?= None)
-GET         /new_oauth2_api                           @controllers.OAuth2ApiController.newApi(teamId: Option[String] ?= None)
-GET         /edit_oauth2_api/:id                      @controllers.OAuth2ApiController.edit(id: String, teamId: Option[String] ?= None)
-POST        /save_oauth2_api                          @controllers.OAuth2ApiController.save
 
 GET         /list_api_tokens                          @controllers.APITokenController.listTokens(tokenId: Option[String] ?= None, teamId: Option[String] ?= None)
 POST        /create_api_token                         @controllers.APITokenController.createToken
@@ -66,14 +62,13 @@ POST        /reset_github_config                      @controllers.GithubConfigC
 GET         /settings/environment_variables           @controllers.web.settings.EnvironmentVariablesController.list(teamId: Option[String] ?= None, newVars: Option[String] ?= None)
 POST        /settings/environment_variables           @controllers.web.settings.EnvironmentVariablesController.submit
 POST        /settings/delete_environment_variable     @controllers.web.settings.EnvironmentVariablesController.delete
+GET         /settings/environment_variables/admin/load_value @controllers.web.settings.EnvironmentVariablesController.adminLoadValue(teamId: String, name: String)
 
 GET         /settings/regional_settings               @controllers.web.settings.RegionalSettingsController.index(teamId: Option[String] ?= None)
 GET         /settings/integrations                    @controllers.web.settings.IntegrationsController.list(teamId: Option[String] ?= None)
-GET         /settings/integrations/add                @controllers.web.settings.OAuth2ApplicationController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
-
-GET         /settings/oauth2_applications/add         @controllers.web.settings.OAuth2ApplicationController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
-GET         /settings/oauth2_applications/:id/edit    @controllers.web.settings.OAuth2ApplicationController.edit(id: String, teamId: Option[String] ?= None)
-POST        /settings/oauth2_applications             @controllers.web.settings.OAuth2ApplicationController.save
+GET         /settings/integrations/add                @controllers.web.settings.IntegrationsController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
+POST        /settings/integrations                    @controllers.web.settings.IntegrationsController.save
+GET         /settings/integrations/:id/edit           @controllers.web.settings.IntegrationsController.edit(id: String, teamId: Option[String] ?= None)
 
 GET         /settings/aws_configs/add                 @controllers.web.settings.AWSConfigController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredAWSConfigNameInCode: Option[String] ?= None)
 GET         /settings/aws_configs/:id/edit            @controllers.web.settings.AWSConfigController.edit(id: String, teamId: Option[String] ?= None)
@@ -83,34 +78,50 @@ POST        /settings/aws_configs                     @controllers.web.settings.
 GET         /scheduling                               @controllers.ScheduledActionsController.index(selectedId: Option[String] ?= None, newSchedule: Option[Boolean] ?= None, teamId: Option[String] ?= None, forceAdmin: Option[Boolean] ?= None)
 POST        /save_schedule                            @controllers.ScheduledActionsController.save
 POST        /delete_schedule                          @controllers.ScheduledActionsController.delete
+POST        /validate_recurrence                      @controllers.ScheduledActionsController.validateRecurrence
 
 GET         /authenticate/slack                       @controllers.SocialAuthController.authenticateSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /install/slack                            @controllers.SocialAuthController.installForSlack(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 GET         /authenticate/github                      @controllers.SocialAuthController.authenticateGithub(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
+GET         /install/ms_teams                         @controllers.SocialAuthController.installForMSTeams(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
+GET         /authenticate/ms_teams                    @controllers.SocialAuthController.authenticateMSTeams(redirect: Option[String] ?= None, team: Option[String] ?= None, channel: Option[String] ?= None)
 POST        /sign_out                                 @controllers.SocialAuthController.signOut
 GET         /login_with_token/:token                  @controllers.SocialAuthController.loginWithToken(token: String, redirect: Option[String] ?= None)
+GET         /ms_teams/permissions                     @controllers.SocialAuthController.msTeamsPermissions(tenant: Option[String] ?= None, admin_consent: Option[String] ?= None, state: Option[String] ?= None)
+
+GET         /sign_in                                  @controllers.SocialAuthController.signIn(redirect: Option[String] ?= None, ms_teams: Option[Boolean] ?= None)
 
 GET         /add_to_slack                             @controllers.SlackController.add
-GET         /sign_in_with_slack                       @controllers.SlackController.signIn(redirect: Option[String] ?= None)
 POST        /slack/event                              @controllers.SlackController.event
 POST        /slack/action                             @controllers.SlackController.action
+POST        /slack/command                            @controllers.SlackController.command
 
-GET         /link_oauth2/:configId                    @controllers.APIAccessController.linkCustomOAuth2Service(configId: String, code: Option[String], state: Option[String], invocationId: Option[String], redirect: Option[String])
+GET         /add_to_ms_teams                          @controllers.MSTeamsController.add
+
+
+#NOCSRF
+POST        /ms_teams/event                           @controllers.MSTeamsController.event
+
+GET         /link_oauth1/:configId                    @controllers.APIAccessController.linkCustomOAuth1Service(configId: String, invocationId: Option[String], redirect: Option[String])
+GET         /link_oauth2/:configId                    @controllers.APIAccessController.linkCustomOAuth2Service(configId: String, code: Option[String], state: Option[String])
 GET         /authenticated/:message                   @controllers.APIAccessController.authenticated(message: String)
 
 GET         /admin/lambdas                            @controllers.admin.LambdasController.list()
 POST        /admin/lambdas/:versionId/redeploy        @controllers.admin.LambdasController.redeploy(versionId: String)
 POST        /admin/lambdas/redeploy_all               @controllers.admin.LambdasController.redeployAll
-GET         /admin/teams                              @controllers.admin.TeamsController.list(page: Int ?= 0, perPage: Int ?= 10)
+GET         /admin/teams                              @controllers.admin.TeamsController.list(page: Int ?= 1, perPage: Int ?= 50, updatedTeamId: Option[String] ?= None)
 GET         /admin/billing/plans                      @controllers.admin.billing.PlansController.list()
 GET         /admin/user_info/lookup                   @controllers.admin.UserInfoController.userDataFor(userId: String)
 GET         /admin/managed_skills/:teamId             @controllers.admin.ManagedBehaviorGroupsController.list(teamId: String)
 POST        /admin/managed_skills/:teamId             @controllers.admin.ManagedBehaviorGroupsController.add(teamId: String)
 POST        /admin/managed_skills/delete/:groupId     @controllers.admin.ManagedBehaviorGroupsController.delete(groupId: String)
 POST        /admin/managed_skills/update/:groupId     @controllers.admin.ManagedBehaviorGroupsController.setContact(groupId: String)
+POST        /admin/teams/toggle_bot_shortcut          @controllers.admin.TeamsController.toggleBotShortcutForTeam()
 
 GET         /metrics/invocations_for_date/:token/:year/:month/:day          @controllers.VisibilityAPIController.invocationCountsForDate(token: String, year: String, month: String, day: String)
 GET         /metrics/for_team_for_date/:token/:teamName/:year/:month/:day   @controllers.VisibilityAPIController.forTeamForDate(token: String, teamName: String, year: String, month: String, day: String)
+GET         /metrics/for_team_since_date/:token/:teamId/:year/:month/:day @controllers.VisibilityAPIController.forTeamSinceDate(token: String, teamId: String, year: String, month: String, day: String)
+GET         /metrics/active_workflows_for_team_since_date/:token/:teamName/:year/:month/:day @controllers.VisibilityAPIController.activeWorkflowsSinceDate(token: String, teamName: String, year: String, month: String, day: String)
 
 GET         /help/devmode                             @controllers.HelpController.devMode(slackTeamId: Option[String] ?= None, botName: Option[String] ?= None)
 GET         /help/scheduling                          @controllers.HelpController.scheduledMessages(slackTeamId: Option[String] ?= None, botName: Option[String] ?= None)
@@ -137,19 +148,16 @@ POST        /webhooks/chargebee/events                @controllers.webhooks.char
 #NOCSRF
 POST        /put_item                                 @controllers.DefaultStorage.putItem
 #NOCSRF
-POST        /api/post_message                         @controllers.APIController.postMessage
+POST        /api/post_message                         @controllers.api.APIController.postMessage
 #NOCSRF
-POST        /api/run_action                           @controllers.APIController.runAction
+POST        /api/run_action                           @controllers.api.APIController.runAction
 #NOCSRF
-POST        /api/schedule_action                      @controllers.APIController.scheduleAction
+POST        /api/schedule_action                      @controllers.api.APIController.scheduleAction
 #NOCSRF
-POST        /api/unschedule_action                    @controllers.APIController.unscheduleAction
+POST        /api/unschedule_action                    @controllers.api.APIController.unscheduleAction
 #NOCSRF
-POST        /api/say                                  @controllers.APIController.say
-#NOCSRF
-GET         /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
-#NOCSRF
-HEAD        /api/v1/files                             @controllers.APIController.fetchFile(token: String, fileId: String)
+POST        /api/say                                  @controllers.api.APIController.say
+
 #NOCSRF
 GET         /get_action_logs/:actionName/:token       @controllers.InvocationLogController.getLogs(actionName: String, token: String, from: Option[String] ?= None, to: Option[String] ?= None, userId: Option[String] ?= None, originalEventType: Option[String] ?= None)
 #NOCSRF
@@ -157,11 +165,23 @@ POST        /api/graphql                              @controllers.GraphQLContro
 
 # API v1
 #NOCSRF
-POST        /api/v1/tokens                            @controllers.APIController.generateApiToken
+POST        /api/v1/tokens                            @controllers.api.APIController.generateApiToken
 #NOCSRF
-POST        /api/v1/commands/say                      @controllers.APIController.say
+POST        /api/v1/commands/say                      @controllers.api.APIController.say
 #NOCSRF
-GET         /api/v1/users                             @controllers.APIController.findUsers(token: String, email: Option[String] ?= None)
+GET         /api/v1/users                             @controllers.api.APIController.findUsers(token: String, email: Option[String] ?= None)
+#NOCSRF
+GET         /api/v1/files                             @controllers.api.APIController.fetchFile(token: String, fileId: String)
+#NOCSRF
+HEAD        /api/v1/files                             @controllers.api.APIController.fetchFile(token: String, fileId: String)
+#NOCSRF
+POST        /api/v1/add_message_listener              @controllers.api.APIController.addMessageListener
+#NOCSRF
+POST        /api/v1/delete_saved_answers              @controllers.api.APIController.deleteSavedAnswers
+#NOCSRF
+DELETE   /api/v1/inputs/:inputName/user_saved_answer/:token  @controllers.api.APIController.deleteUserSavedAnswer(inputName: String, token: String)
+#NOCSRF
+DELETE   /api/v1/inputs/:inputName/team_saved_answers/:token @controllers.api.APIController.deleteTeamSavedAnswers(inputName: String, token: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)
@@ -170,4 +190,4 @@ GET         /assets/*file                             @controllers.RemoteAssets.
 GET         /styleguide/colors                        @controllers.StyleguideController.colors
 
 # Webpack routes
-GET         /bundles/*file                            @controllers.WebpackController.bundle(file)
+GET         /javascripts/*file                            @controllers.WebpackController.bundle(file)

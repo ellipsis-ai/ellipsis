@@ -27,7 +27,7 @@ class Checkbox extends React.PureComponent<Props> {
     this.props.onChange(isChecked, this.props.value);
   }
 
-  handleEnterKey(event) {
+  handleEnterKey(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.which === 13) {
       event.preventDefault();
       if (typeof this.props.onEnterKey === 'function') {

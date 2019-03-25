@@ -1,16 +1,18 @@
 package models.behaviors.defaultstorageitem
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
+import javax.inject.Inject
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.{Behavior, BehaviorQueries}
-import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BuiltInType}
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.datatypefield.DataTypeField
+import models.team.Team
 import play.api.libs.json._
 import sangria.execution.UserFacingError
 import services.DataService
@@ -64,48 +66,55 @@ class DefaultStorageItemServiceImpl @Inject() (
     }
   }
 
-  private def fieldsForBehaviorIdAction(behaviorId: String): DBIO[Seq[DataTypeField]] = {
+  private def fieldsForBehaviorVersionAction(behaviorVersion: BehaviorVersion): DBIO[Seq[DataTypeField]] = {
     for {
-      maybeBehavior <- dataService.behaviors.findWithoutAccessCheckAction(behaviorId)
-      maybeBehaviorVersion <- maybeBehavior.map { behavior =>
-        dataService.behaviors.maybeCurrentVersionForAction(behavior)
-      }.getOrElse(DBIO.successful(None))
-      maybeDataTypeConfig <- maybeBehaviorVersion.map { version =>
-        dataService.dataTypeConfigs.maybeForAction(version)
-      }.getOrElse(DBIO.successful(None))
+      maybeDataTypeConfig <- dataService.dataTypeConfigs.maybeForAction(behaviorVersion)
       fields <- maybeDataTypeConfig.map { config =>
         dataService.dataTypeFields.allForAction(config)
       }.getOrElse(DBIO.successful(Seq()))
     } yield fields
   }
 
-  def findByIdAction(id: String, behaviorGroup: BehaviorGroup): DBIO[Option[DefaultStorageItem]] = {
+  private def fieldsForBehaviorIdAction(behaviorId: String): DBIO[Seq[DataTypeField]] = {
     for {
-      maybeTuple <- findByIdQuery(id, behaviorGroup.id).result.map(_.headOption)
+      maybeBehavior <- dataService.behaviors.findWithoutAccessCheckAction(behaviorId)
+      maybeCurrentVersion <- maybeBehavior.map { behavior =>
+        dataService.behaviors.maybeCurrentVersionForAction(behavior)
+      }.getOrElse(DBIO.successful(None))
+      fields <- maybeCurrentVersion.map { version =>
+        fieldsForBehaviorVersionAction(version)
+      }.getOrElse(DBIO.successful(Seq()))
+    } yield fields
+  }
+
+  def findByIdAction(id: String, groupVersion: BehaviorGroupVersion): DBIO[Option[DefaultStorageItem]] = {
+    for {
+      maybeTuple <- findByIdQuery(id, groupVersion.group.id).result.map(_.headOption)
       maybeItem <- maybeTuple.map(t => tuple2Item(t).map(Some(_))).getOrElse(DBIO.successful(None))
     } yield maybeItem
   }
 
-  def findById(id: String, behaviorGroup: BehaviorGroup): Future[Option[DefaultStorageItem]] = {
-    dataService.run(findByIdAction(id, behaviorGroup))
+  def findById(id: String, groupVersion: BehaviorGroupVersion): Future[Option[DefaultStorageItem]] = {
+    dataService.run(findByIdAction(id, groupVersion))
   }
 
-  private def filterForBehaviorAction(behavior: Behavior, filter: JsValue): DBIO[Seq[DefaultStorageItem]] = {
+  private def filterForBehaviorVersionAction(behaviorVersion: BehaviorVersion, filter: JsValue): DBIO[Seq[DefaultStorageItem]] = {
     for {
-      filterWithIds <- dataWithFieldIdsFor(filter, behavior.id)
-      result <- filterQuery(behavior.id, filterWithIds).result
+      fields <- fieldsForBehaviorVersionAction(behaviorVersion)
+      filterWithIds <- dataWithFieldIdsFor(filter, fields, behaviorVersion.team)
+      result <- filterQuery(behaviorVersion.behavior.id, filterWithIds).result
       items <- DBIO.sequence(result.map(tuple2Item))
     } yield items
   }
 
-  private def filterForBehavior(behavior: Behavior, filter: JsValue): Future[Seq[DefaultStorageItem]] = {
-    dataService.run(filterForBehaviorAction(behavior, filter))
+  private def filterForBehaviorVersion(behaviorVersion: BehaviorVersion, filter: JsValue): Future[Seq[DefaultStorageItem]] = {
+    dataService.run(filterForBehaviorVersionAction(behaviorVersion, filter))
   }
 
-  def filter(typeName: String, filter: JsValue, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]] = {
-    dataService.behaviors.findByIdOrName(typeName, behaviorGroup).flatMap { maybeBehavior =>
-      maybeBehavior.map { behavior =>
-        filterForBehavior(behavior, filter)
+  def filter(typeName: String, filter: JsValue, groupVersion: BehaviorGroupVersion): Future[Seq[DefaultStorageItem]] = {
+    dataService.behaviorVersions.findByName(typeName, groupVersion).flatMap { maybeBehaviorVersion =>
+      maybeBehaviorVersion.map { behaviorVersion =>
+        filterForBehaviorVersion(behaviorVersion, filter)
       }.getOrElse(Future.successful(Seq()))
     }
   }
@@ -146,27 +155,29 @@ class DefaultStorageItemServiceImpl @Inject() (
     dataService.run(countForAction(behavior))
   }
 
-  private def fieldValueWithIdsFor(field: DataTypeField, fieldValue: JsValue): DBIO[JsValue] = {
+  private def fieldValueWithIdsFor(field: DataTypeField, fieldValue: JsValue, team: Team): DBIO[JsValue] = {
     field.fieldType match {
-      case t: BuiltInType => DBIO.successful(t.prepareJsValue(fieldValue))
-      case t: BehaviorBackedDataType => dataWithFieldIdsFor(fieldValue, t.behaviorVersion.behavior.id)
+      case t: BuiltInType => DBIO.successful(t.prepareJsValue(fieldValue, team))
+      case t: BehaviorBackedDataType => {
+        fieldsForBehaviorVersionAction(t.behaviorVersion).flatMap { fields =>
+          dataWithFieldIdsFor(fieldValue, fields, team)
+        }
+      }
     }
   }
 
-  private def dataWithFieldIdsFor(data: JsValue, behaviorId: String): DBIO[JsValue] = {
+  private def dataWithFieldIdsFor(data: JsValue, fields: Seq[DataTypeField], team: Team): DBIO[JsValue] = {
     data match {
       case obj: JsObject => {
-        fieldsForBehaviorIdAction(behaviorId).flatMap { fields =>
-          val initial: DBIO[JsObject] = DBIO.successful(Json.obj())
-          obj.value.foldLeft(initial) {
-            case (eventualAcc, (fieldName, fieldValue)) => {
-              eventualAcc.flatMap { acc =>
-                fields.find(_.name == fieldName).map { field =>
-                  fieldValueWithIdsFor(field, fieldValue).map { resolvedValue =>
-                    acc + (field.fieldId, resolvedValue)
-                  }
-                }.getOrElse(DBIO.successful(acc))
-              }
+        val initial: DBIO[JsObject] = DBIO.successful(Json.obj())
+        obj.value.foldLeft(initial) {
+          case (eventualAcc, (fieldName, fieldValue)) => {
+            eventualAcc.flatMap { acc =>
+              fields.find(_.name == fieldName).map { field =>
+                fieldValueWithIdsFor(field, fieldValue, team).map { resolvedValue =>
+                  acc + (field.fieldId, resolvedValue)
+                }
+              }.getOrElse(DBIO.successful(acc))
             }
           }
         }.map(v => v - "id")
@@ -181,7 +192,7 @@ class DefaultStorageItemServiceImpl @Inject() (
       case t: BuiltInType => DBIO.successful(fieldValue)
       case t: BehaviorBackedDataType => {
         fieldValue match {
-          case id: JsString => findByIdAction(id.value, t.behaviorVersion.behavior.group).map { maybeItem =>
+          case id: JsString => findByIdAction(id.value, t.behaviorVersion.groupVersion).map { maybeItem =>
             maybeItem.map(_.data).getOrElse(id)
           }
           case _ => DBIO.successful(fieldValue)
@@ -212,22 +223,19 @@ class DefaultStorageItemServiceImpl @Inject() (
     }
   }
 
-  private def saveItemForBehaviorAction(maybeExistingId: Option[String], behavior: Behavior, user: User, data: JsValue): DBIO[DefaultStorageItem] = {
+  private def saveItemForBehaviorAction(maybeExistingId: Option[String], behaviorVersion: BehaviorVersion, user: User, data: JsValue): DBIO[DefaultStorageItem] = {
     val idToUse = maybeExistingId.getOrElse(IDs.next)
-    val team = behavior.team
-    val group = behavior.group
+    val team = behaviorVersion.team
+    val group = behaviorVersion.group
     for {
-      maybeCurrentVersion <- dataService.behaviors.maybeCurrentVersionForAction(behavior)
-      maybeDataTypeConfig <- maybeCurrentVersion.map { version =>
-        dataService.dataTypeConfigs.maybeForAction(version)
-      }.getOrElse(DBIO.successful(None))
+      maybeDataTypeConfig <- dataService.dataTypeConfigs.maybeForAction(behaviorVersion)
       fields <- maybeDataTypeConfig.map { config =>
         dataService.dataTypeFields.allForAction(config)
       }.getOrElse(DBIO.successful(Seq()))
       fieldsWithObjectType <- DBIO.successful(fields.filterNot(_.fieldType.isBuiltIn))
       nestedFieldItems <- DBIO.sequence(fieldsWithObjectType.flatMap { field =>
         (data \ field.name).toOption.map { fieldData =>
-          saveItemAction(field.fieldType.name, user, fieldData, behavior.group).map { maybeItem =>
+          saveItemAction(field.fieldType.name, user, fieldData, behaviorVersion.groupVersion).map { maybeItem =>
             (field, maybeItem)
           }
         }
@@ -241,26 +249,27 @@ class DefaultStorageItemServiceImpl @Inject() (
         }
         case _ => data
       })
-      newDataWithFieldIds <- dataWithFieldIdsFor(newData, behavior.id)
-      newInstanceToSave <- DBIO.successful(DefaultStorageItem(idToUse, behavior, OffsetDateTime.now, user.id, newDataWithFieldIds))
+      fields <- fieldsForBehaviorVersionAction(behaviorVersion)
+      newDataWithFieldIds <- dataWithFieldIdsFor(newData, fields, team)
+      newInstanceToSave <- DBIO.successful(DefaultStorageItem(idToUse, behaviorVersion.behavior, OffsetDateTime.now, user.id, newDataWithFieldIds))
       _ <- DBIO.successful(println(s"saving $newInstanceToSave"))
       _ <- maybeExistingId.map { existingId =>
         rawFindQueryFor(existingId).update(newInstanceToSave.toRaw)
       }.getOrElse {
         (all += newInstanceToSave.toRaw)
       }
-      newInstanceToReturn <- tuple2Item((newInstanceToSave.toRaw, ((behavior.toRaw, team), Some((group.toRaw, team)))))
+      newInstanceToReturn <- tuple2Item((newInstanceToSave.toRaw, ((behaviorVersion.behavior.toRaw, team), Some((group.toRaw, team)))))
     } yield newInstanceToReturn
   }
 
   private def maybeExistingIdFor(data: JsValue): Option[String] = (data \ "id").asOpt[String]
 
-  def saveItemAction(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): DBIO[DefaultStorageItem] = {
+  def saveItemAction(typeName: String, user: User, data: JsValue, groupVersion: BehaviorGroupVersion): DBIO[DefaultStorageItem] = {
     val maybeExistingId = (data \ "id").asOpt[String]
     ((for {
-      maybeBehavior <- dataService.behaviors.findByNameAction(typeName, behaviorGroup)
-      maybeItem <- maybeBehavior.map { behavior =>
-        saveItemForBehaviorAction(maybeExistingId, behavior, user, data).map(Some(_))
+      maybeBehaviorVersion <- dataService.behaviorVersions.findByNameAction(typeName, groupVersion)
+      maybeItem <- maybeBehaviorVersion.map { behaviorVersion =>
+        saveItemForBehaviorAction(maybeExistingId, behaviorVersion, user, data).map(Some(_))
       }.getOrElse(DBIO.successful(None))
     } yield maybeItem) transactionally).map { maybeNewItem =>
       maybeNewItem.getOrElse {
@@ -269,59 +278,59 @@ class DefaultStorageItemServiceImpl @Inject() (
     }
   }
 
-  def createItemForBehavior(behavior: Behavior, user: User, data: JsValue): Future[DefaultStorageItem] = {
-    dataService.run(saveItemForBehaviorAction(None, behavior, user, data))
+  def createItemForBehaviorVersion(behaviorVersion: BehaviorVersion, user: User, data: JsValue): Future[DefaultStorageItem] = {
+    dataService.run(saveItemForBehaviorAction(None, behaviorVersion, user, data))
   }
 
-  def createItem(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
+  def createItem(typeName: String, user: User, data: JsValue, groupVersion: BehaviorGroupVersion): Future[DefaultStorageItem] = {
     maybeExistingIdFor(data).map { existingId =>
       throw new IdPassedForCreationException(existingId)
     }.getOrElse {
-      val action = saveItemAction(typeName, user, data, behaviorGroup)
+      val action = saveItemAction(typeName, user, data, groupVersion)
       dataService.run(action)
     }
   }
 
-  def updateItem(typeName: String, user: User, data: JsValue, behaviorGroup: BehaviorGroup): Future[DefaultStorageItem] = {
+  def updateItem(typeName: String, user: User, data: JsValue, groupVersion: BehaviorGroupVersion): Future[DefaultStorageItem] = {
     if (maybeExistingIdFor(data).isEmpty) {
       throw new NoIdPassedForUpdateException()
     } else {
-      val action = saveItemAction(typeName, user, data, behaviorGroup)
+      val action = saveItemAction(typeName, user, data, groupVersion)
       dataService.run(action)
     }
   }
 
-  def deleteItemAction(id: String, behaviorGroup: BehaviorGroup): DBIO[Option[DefaultStorageItem]] = {
+  def deleteItemAction(id: String, groupVersion: BehaviorGroupVersion): DBIO[Option[DefaultStorageItem]] = {
     for {
-      maybeItem <- findByIdAction(id, behaviorGroup)
+      maybeItem <- findByIdAction(id, groupVersion)
       _ <- maybeItem.map(_ => rawFindQueryFor(id).delete).getOrElse(DBIO.successful({}))
     } yield maybeItem
   }
 
-  def deleteItem(id: String, behaviorGroup: BehaviorGroup): Future[Option[DefaultStorageItem]] = {
-    dataService.run(deleteItemAction(id, behaviorGroup))
+  def deleteItem(id: String, groupVersion: BehaviorGroupVersion): Future[Option[DefaultStorageItem]] = {
+    dataService.run(deleteItemAction(id, groupVersion))
   }
 
-  def deleteItems(ids: Seq[String], behaviorGroup: BehaviorGroup): Future[Int] = {
-    Future.sequence(ids.map(ea => deleteItem(ea, behaviorGroup))).map { deletedItemOptions =>
+  def deleteItems(ids: Seq[String], groupVersion: BehaviorGroupVersion): Future[Int] = {
+    Future.sequence(ids.map(ea => deleteItem(ea, groupVersion))).map { deletedItemOptions =>
       deletedItemOptions.flatten.length
     }
   }
 
-  def deleteFilteredItemsForBehavior(behavior: Behavior, filter: JsValue): Future[Seq[DefaultStorageItem]] = {
+  def deleteFilteredItemsForBehaviorVersion(behaviorVersion: BehaviorVersion, filter: JsValue): Future[Seq[DefaultStorageItem]] = {
     val action = for {
-      found <- filterForBehaviorAction(behavior, filter)
+      found <- filterForBehaviorVersionAction(behaviorVersion, filter)
       _ <- DBIO.sequence(found.map { ea =>
-        deleteItemAction(ea.id, behavior.group)
+        deleteItemAction(ea.id, behaviorVersion.groupVersion)
       })
     } yield found
     dataService.run(action)
   }
 
-  def deleteFilteredItemsFor(typeName: String, filter: JsValue, behaviorGroup: BehaviorGroup): Future[Seq[DefaultStorageItem]] = {
-    dataService.behaviors.findByIdOrName(typeName, behaviorGroup).flatMap { maybeBehavior =>
-      maybeBehavior.map { behavior =>
-        deleteFilteredItemsForBehavior(behavior, filter)
+  def deleteFilteredItemsFor(typeName: String, filter: JsValue, groupVersion: BehaviorGroupVersion): Future[Seq[DefaultStorageItem]] = {
+    dataService.behaviorVersions.findByName(typeName, groupVersion).flatMap { maybeBehaviorVersion =>
+      maybeBehaviorVersion.map { behaviorVersion =>
+        deleteFilteredItemsForBehaviorVersion(behaviorVersion, filter)
       }.getOrElse(Future.successful(Seq()))
     }
   }

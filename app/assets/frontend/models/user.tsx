@@ -1,8 +1,8 @@
 export interface UserJson {
-  id: string,
+  ellipsisUserId: string;
   userName?: Option<string>;
   fullName?: Option<string>;
-  tz?: Option<string>;
+  timeZone?: Option<string>;
   teamName?: Option<string>;
   email?: Option<string>;
 }
@@ -11,18 +11,18 @@ interface UserInterface extends UserJson {}
 
 class User {
     constructor(
-      readonly id: string,
+      readonly ellipsisUserId: string,
       readonly userName: Option<string>,
       readonly fullName: Option<string>,
-      readonly tz: Option<string>,
+      readonly timeZone: Option<string>,
       readonly teamName: Option<string>,
       readonly email: Option<string>
     ) {
       Object.defineProperties(this, {
-        id: { value: id, enumerable: true },
+        ellipsisUserId: { value: ellipsisUserId, enumerable: true },
         userName: { value: userName, enumerable: true },
         fullName: { value: fullName, enumerable: true },
-        tz: { value: tz, enumerable: true },
+        timeZone: { value: timeZone, enumerable: true },
         teamName: { value: teamName, enumerable: true },
         email: { value: email, enumerable: true }
       });
@@ -53,15 +53,15 @@ class User {
     }
 
     isSameUser(otherUser?: Option<User>): boolean {
-      return Boolean(otherUser && this.id === otherUser.id);
+      return Boolean(otherUser && this.ellipsisUserId === otherUser.ellipsisUserId);
     }
 
     static fromProps(props: UserInterface): User {
       return new User(
-        props.id,
+        props.ellipsisUserId,
         props.userName,
         props.fullName,
-        props.tz,
+        props.timeZone,
         props.teamName,
         props.email
       );
@@ -72,7 +72,7 @@ class User {
     }
 
     static withoutProfile(userId: string): User {
-      return User.fromProps({ id: userId });
+      return User.fromProps({ ellipsisUserId: userId });
     }
 }
 

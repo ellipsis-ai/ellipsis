@@ -1,6 +1,7 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.DefaultServices
@@ -16,7 +17,7 @@ case class RevokeAuthBehavior(
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     val dataService = services.dataService
     for {
-      maybeTeam <- dataService.teams.find(event.teamId)
+      maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
       user <- event.ensureUser(dataService)
       maybeApplication <- maybeTeam.map { team =>
         dataService.oauth2Applications.allUsableFor(team)
@@ -30,7 +31,7 @@ case class RevokeAuthBehavior(
       } else {
         s"I couldn't find any auth tokens for you for `$appName`"
       }
-      SimpleTextResult(event, None, msg, forcePrivateResponse = false)
+      SimpleTextResult(event, None, msg, responseType = Normal)
     }
   }
 

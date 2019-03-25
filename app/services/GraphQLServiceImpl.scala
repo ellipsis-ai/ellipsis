@@ -16,7 +16,7 @@ import sangria.execution.{Executor, UserFacingError}
 import sangria.marshalling.playJson._
 import sangria.parser.{QueryParser, SyntaxError}
 import sangria.schema.{Action, Context, DefaultAstSchemaBuilder, Schema}
-import services.caching.CacheService
+import services.caching.{CacheService, DefaultStorageSchemaCacheKey}
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -56,14 +56,10 @@ class GraphQLServiceImpl @Inject() (
     }
   }
 
-  private def buildSchemaStringFor(groupVersionId: String): Future[String] = {
+  private def schemaStringFor(groupVersionId: String): Future[String] = {
     dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersionId).map(_.sortBy(_.id)).flatMap { configs =>
       buildSchemaStringFor(configs.map(_.behaviorVersion))
     }
-  }
-
-  private def schemaStringFor(groupVersion: BehaviorGroupVersion): Future[String] = {
-    cacheService.getDefaultStorageSchema(groupVersion.id, buildSchemaStringFor)
   }
 
   private def previewSchemaStringFor(data: BehaviorGroupData): Future[String] = {
@@ -120,7 +116,7 @@ class GraphQLServiceImpl @Inject() (
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
         case listFieldRegex(typeName) => {
-          ctx.ctx.filter(typeName.capitalize, valueFor(ctx, definition), group).map { items =>
+          ctx.ctx.filter(typeName.capitalize, valueFor(ctx, definition), groupVersion).map { items =>
             fromJson(JsArray(items.map(_.data)))
           }
         }
@@ -133,16 +129,16 @@ class GraphQLServiceImpl @Inject() (
                                    definition: ast.FieldDefinition
                                  ): Action[DefaultStorageItemService, _] = {
       definition.name match {
-        case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
-        case updateFieldRegex(typeName) => ctx.ctx.updateItem(typeName, user, valueFor(ctx, definition), group).map(_.data)
+        case createFieldRegex(typeName) => ctx.ctx.createItem(typeName, user, valueFor(ctx, definition), groupVersion).map(_.data)
+        case updateFieldRegex(typeName) => ctx.ctx.updateItem(typeName, user, valueFor(ctx, definition), groupVersion).map(_.data)
         case deleteWhereFieldRegex(typeName) => {
-          ctx.ctx.deleteFilteredItemsFor(typeName, valueFor(ctx, definition), group).map { items =>
+          ctx.ctx.deleteFilteredItemsFor(typeName, valueFor(ctx, definition), groupVersion).map { items =>
             items.map(_.data)
           }
         }
         case deleteFieldRegex(_) => {
           val idToDelete: String = ctx.arg(definition.arguments.head.name)
-          ctx.ctx.deleteItem(idToDelete, group).map { maybeItem =>
+          ctx.ctx.deleteItem(idToDelete, groupVersion).map { maybeItem =>
             maybeItem.map(_.data).getOrElse {
               throw ItemNotFoundError(idToDelete)
             }
@@ -205,13 +201,20 @@ class GraphQLServiceImpl @Inject() (
     }
   }
 
-  def schemaFor(groupVersion: BehaviorGroupVersion, user: User): Future[Schema[DefaultStorageItemService, Any]] = {
-    schemaStringFor(groupVersion).map { str =>
-      QueryParser.parse(str) match {
-        case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder(groupVersion, user))
-        case Failure(err) => throw err
+  def buildSchemaFor(key: DefaultStorageSchemaCacheKey): Future[Schema[DefaultStorageItemService, Any]] = {
+    for {
+      schema <- schemaStringFor(key.groupVersion.id).map { str =>
+        QueryParser.parse(str) match {
+          case Success(res) => Schema.buildFromAst(res, new MySchemaBuilder(key.groupVersion, key.user))
+          case Failure(err) => throw err
+        }
       }
-    }
+    } yield schema
+  }
+
+  def schemaFor(groupVersion: BehaviorGroupVersion, user: User): Future[Schema[DefaultStorageItemService, Any]] = {
+    val key = DefaultStorageSchemaCacheKey(groupVersion, user)
+    cacheService.getDefaultStorageSchema(key, buildSchemaFor)
   }
 
   def previewSchemaFor(data: BehaviorGroupData): Future[Schema[DefaultStorageItemService, Any]] = {

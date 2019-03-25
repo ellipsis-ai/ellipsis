@@ -69,8 +69,7 @@ case class GithubBehaviorGroupDataBuilder(
       response,
       params,
       triggers,
-      config,
-      dataService
+      config
     )
   }
 
@@ -108,9 +107,9 @@ case class GithubBehaviorGroupDataBuilder(
     val maybeExportId = maybeConfig.flatMap(_.exportId)
     val name = maybeConfig.map(_.name).getOrElse(repoName)
     val icon = maybeConfig.flatMap(_.icon)
-    val requiredAWSConfigData = maybeConfig.map(_.requiredAWSConfigs).getOrElse(Seq())
-    val requiredOAuth2ApiConfigData = maybeConfig.map(_.requiredOAuth2ApiConfigs).getOrElse(Seq())
-    val requiredSimpleTokenApiData = maybeConfig.map(_.requiredSimpleTokenApis).getOrElse(Seq())
+    val requiredAWSConfigData = maybeConfig.flatMap(_.requiredAWSConfigs).getOrElse(Seq())
+    val requiredOAuthApiConfigData = maybeConfig.flatMap(_.requiredOAuthApiConfigs).getOrElse(Seq())
+    val requiredSimpleTokenApiData = maybeConfig.flatMap(_.requiredSimpleTokenApis).getOrElse(Seq())
     val readme = findEntryNamed("README", entries).flatMap(readme => (readme \ "object" \ "text").asOpt[String])
     val actionInputs = inputsFromEntryNamed("action_inputs.json", entries)
     val dataTypeInputs = inputsFromEntryNamed("data_type_inputs.json", entries)
@@ -128,7 +127,7 @@ case class GithubBehaviorGroupDataBuilder(
       behaviors,
       libraries,
       requiredAWSConfigData,
-      requiredOAuth2ApiConfigData,
+      requiredOAuthApiConfigData,
       requiredSimpleTokenApiData,
       maybeSHA,
       maybeExportId,

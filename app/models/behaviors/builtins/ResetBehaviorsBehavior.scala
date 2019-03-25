@@ -2,6 +2,7 @@ package models.behaviors.builtins
 
 import akka.actor.ActorSystem
 import com.amazonaws.AmazonServiceException
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.DefaultServices
@@ -17,7 +18,7 @@ case class ResetBehaviorsBehavior(
     val dataService = services.dataService
     val eventualReply = try {
       for {
-        maybeTeam <- dataService.teams.find(event.teamId)
+        maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
         groups <- maybeTeam.map { team =>
           dataService.behaviorGroups.allFor(team)
         }.getOrElse(Future.successful(Seq()))
@@ -29,7 +30,7 @@ case class ResetBehaviorsBehavior(
       case e: AmazonServiceException => Future.successful("Got an error from AWS")
     }
     eventualReply.map { reply =>
-      SimpleTextResult(event, None, reply, forcePrivateResponse = false)
+      SimpleTextResult(event, None, reply, responseType = Normal)
     }
   }
 

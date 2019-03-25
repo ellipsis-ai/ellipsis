@@ -91,6 +91,10 @@ class DataTypeConfig implements DataTypeConfigInterface {
       return DataTypeConfig.fromProps(Object.assign({}, this, props));
     }
 
+    static defaultConfig(): DataTypeConfig {
+      return new DataTypeConfig([], true);
+    }
+
     static fromProps(props: DataTypeConfigInterface): DataTypeConfig {
       return new DataTypeConfig(
         props.fields,

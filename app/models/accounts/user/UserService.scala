@@ -2,7 +2,9 @@ package models.accounts.user
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import json.UserData
+import json.{SlackUserData, UserData}
+import models.accounts.ms_teams.profile.MSTeamsProfile
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.profile.SlackProfile
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
@@ -17,8 +19,8 @@ trait UserService extends IdentityService[User] {
   def findFromEvent(event: Event, team: Team): Future[Option[User]]
   def createFor(teamId: String): Future[User]
   def save(user: User): Future[User]
-  def ensureUserForAction(loginInfo: LoginInfo, teamId: String): DBIO[User]
-  def ensureUserFor(loginInfo: LoginInfo, teamId: String): Future[User]
+  def ensureUserForAction(loginInfo: LoginInfo, otherLoginInfos: Seq[LoginInfo], teamId: String): DBIO[User]
+  def ensureUserFor(loginInfo: LoginInfo, otherLoginInfos: Seq[LoginInfo], teamId: String): Future[User]
   def teamAccessForAction(user: User, maybeTargetTeamId: Option[String]): DBIO[UserTeamAccess]
   def teamAccessFor(user: User, maybeTargetTeamId: Option[String]): Future[UserTeamAccess]
   def canAccess(user: User, group: BehaviorGroup)(implicit ec: ExecutionContext): Future[Boolean] = canAccess(user, group.team)
@@ -37,9 +39,13 @@ trait UserService extends IdentityService[User] {
 
   def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]]
 
-  def maybeSlackTeamIdFor(user: User): Future[Option[String]]
+  def maybeSlackTeamIdsFor(user: User): Future[Option[SlackUserTeamIds]]
+
+  def maybeSlackUserDataFor(user: User): Future[Option[SlackUserData]]
 
   def maybeSlackProfileFor(user: User): Future[Option[SlackProfile]]
+
+  def maybeMSTeamsProfileFor(user: User): Future[Option[MSTeamsProfile]]
 
   def findForInvocationToken(tokenId: String): Future[Option[User]]
 

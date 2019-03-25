@@ -26,7 +26,7 @@ trait ScheduledBehaviorService {
 
   def save(scheduledBehavior: ScheduledBehavior): Future[ScheduledBehavior]
 
-  def updateNextTriggeredForAction(scheduledBehavior: ScheduledBehavior): DBIO[ScheduledBehavior]
+  def updateForNextRunAction(scheduledBehavior: ScheduledBehavior): DBIO[ScheduledBehavior]
 
   def maybeCreateWithRecurrenceText(
                       behavior: Behavior,
@@ -47,6 +47,8 @@ trait ScheduledBehaviorService {
                  maybeChannel: Option[String],
                  isForIndividualMembers: Boolean
                ): Future[ScheduledBehavior]
+
+  def deleteAction(scheduledBehavior: ScheduledBehavior): DBIO[Option[ScheduledBehavior]]
 
   def delete(scheduledBehavior: ScheduledBehavior): Future[Option[ScheduledBehavior]]
 

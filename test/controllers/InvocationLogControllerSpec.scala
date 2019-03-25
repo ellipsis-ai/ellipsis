@@ -10,7 +10,7 @@ import models.behaviors.ResultType
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.events.EventType
 import models.behaviors.invocationlogentry.InvocationLogEntry
 import models.behaviors.invocationtoken.InvocationToken
@@ -18,10 +18,9 @@ import models.team.Team
 import org.mockito.Matchers
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
-import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.DataService
@@ -32,6 +31,7 @@ import scala.concurrent.Future
 class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
 
   val token: String = IDs.next
+  val defaultSlackTeamId: String = IDs.next
   val behaviorName = "test"
   val now: OffsetDateTime = OffsetDateTime.now
 
@@ -41,10 +41,12 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
       behaviorVersion,
       ResultType.Success.toString,
       Some(EventType.chat),
+      Some(EventType.chat),
       "test",
       JsObject(Seq()),
       "done",
       "test",
+      Some("channel"),
       None,
       user,
       1000,
@@ -62,9 +64,9 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
     val group = BehaviorGroup(IDs.next, None, team, now)
     val groupVersion = BehaviorGroupVersion(IDs.next, group, "skill", None, None, None, OffsetDateTime.now)
     val behavior = Behavior(IDs.next, team, Some(group), Some(IDs.next), isDataType = false, OffsetDateTime.now)
-    val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, false, false, false, OffsetDateTime.now)
-    val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, Some(behaviorName), None, None, false, false, false, OffsetDateTime.now)
-    val invocationToken = InvocationToken(IDs.next, user.id, originatingBehaviorVersion.id, None, now)
+    val originatingBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, None, None, None, Normal, false, false, OffsetDateTime.now)
+    val targetBehaviorVersion = BehaviorVersion(IDs.next, behavior, groupVersion, None, Some(behaviorName), None, None, Normal, false, false, OffsetDateTime.now)
+    val invocationToken = InvocationToken(IDs.next, user.id, originatingBehaviorVersion.id, None, Some(defaultSlackTeamId), now)
 
     val logs = makeLogs(targetBehaviorVersion, user)
     when(dataService.invocationTokens.findNotExpired(token)).thenReturn(Future.successful(Some(invocationToken)))

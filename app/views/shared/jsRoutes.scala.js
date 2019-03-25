@@ -3,8 +3,8 @@
 
 @JavaScriptReverseRouter("jsRoutes")(
   routes.javascript.APIAccessController.linkCustomOAuth2Service,
-  routes.javascript.APIController.postMessage,
-  routes.javascript.APIController.say,
+  api.routes.javascript.APIController.postMessage,
+  api.routes.javascript.APIController.say,
   routes.javascript.APITokenController.createToken,
   routes.javascript.APITokenController.listTokens,
   routes.javascript.APITokenController.revokeToken,
@@ -31,6 +31,7 @@
   routes.javascript.BehaviorEditorController.versionInfoFor,
   routes.javascript.BehaviorEditorController.nodeModuleVersionsFor,
   routes.javascript.BehaviorEditorController.testResults,
+  routes.javascript.BehaviorEditorController.newFromGithub,
   routes.javascript.BehaviorEditorController.updateFromGithub,
   routes.javascript.BehaviorEditorController.pushToGithub,
   routes.javascript.BehaviorEditorController.linkToGithubRepo,
@@ -43,6 +44,7 @@
   routes.javascript.ScheduledActionsController.index,
   routes.javascript.ScheduledActionsController.delete,
   routes.javascript.ScheduledActionsController.save,
+  routes.javascript.ScheduledActionsController.validateRecurrence,
   routes.javascript.SocialAuthController.authenticateGithub,
   routes.javascript.SupportController.sendRequest,
 
@@ -52,14 +54,16 @@
 
   web.settings.routes.javascript.EnvironmentVariablesController.list,
   web.settings.routes.javascript.EnvironmentVariablesController.submit,
+  web.settings.routes.javascript.EnvironmentVariablesController.delete,
+  web.settings.routes.javascript.EnvironmentVariablesController.adminLoadValue,
   web.settings.routes.javascript.RegionalSettingsController.index,
   web.settings.routes.javascript.IntegrationsController.list,
+  web.settings.routes.javascript.IntegrationsController.add,
+  web.settings.routes.javascript.IntegrationsController.edit,
+  web.settings.routes.javascript.IntegrationsController.save,
   web.settings.routes.javascript.AWSConfigController.add,
   web.settings.routes.javascript.AWSConfigController.edit,
   web.settings.routes.javascript.AWSConfigController.save,
-  web.settings.routes.javascript.OAuth2ApplicationController.edit,
-  web.settings.routes.javascript.OAuth2ApplicationController.add,
-  web.settings.routes.javascript.OAuth2ApplicationController.save,
 
   admin.routes.javascript.UserInfoController.userDataFor
 )

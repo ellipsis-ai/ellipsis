@@ -10,14 +10,14 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.BotResult
-import models.behaviors.events.{EventHandler, ScheduledEvent}
+import models.behaviors.events.{EventHandler, ScheduledBehaviorSlackEvent, ScheduledEvent}
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.{Configuration, Logger}
-import services.slack.{SlackApiClient, SlackApiError}
+import services.slack.SlackApiError
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.{FutureSequencer, SlackChannels}
+import utils.{FutureSequencer, SlackChannels, SlackMessageSenderChannelException}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,7 +34,13 @@ trait Scheduled {
 
   def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String]
 
-  def followingSentAt: OffsetDateTime = recurrence.nextAfter(nextSentAt)
+  def maybeFollowingSentAt: Option[OffsetDateTime] = {
+    if (recurrence.shouldRunAgainAfterNextRun) {
+      Some(recurrence.nextAfter(nextSentAt))
+    } else {
+      None
+    }
+  }
 
   def successResponse(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     displayText(dataService).map { displayText =>
@@ -42,37 +48,11 @@ trait Scheduled {
     }
   }
 
-  def maybeScheduleInfoTextFor(
-                           event: ScheduledEvent,
-                           result: BotResult,
-                           configuration: Configuration,
-                           displayText: String,
-                           isForInterruption: Boolean
-                         ): Option[String] = {
-    if (result.hasText) {
-      val scheduleLink = scheduleLinkFor(configuration, event.scheduled.id, event.teamId)
-      val greeting = if (isForInterruption) {
-        "Meanwhile, "
-      } else {
-        """:wave: Hi.
-         |
-         |""".stripMargin
-      }
-      Some(s"""${greeting}I’m running $displayText as scheduled. $scheduleLink
-       |
-       |───
-       |
-       |""".stripMargin)
-    } else {
-      None
-    }
-  }
-
-  def scheduleLinkFor(configuration: Configuration, scheduleId: String, teamId: String): String = {
+  def maybeEditScheduleUrlFor(configuration: Configuration): Option[String] = {
     configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(Some(scheduleId), None, Some(teamId))
-      s"_[✎ Edit]($baseUrl$path)_"
-    }.getOrElse("")
+      val path = controllers.routes.ScheduledActionsController.index(Some(id), None, Some(team.id))
+      baseUrl + path
+    }
   }
 
   def isScheduledForDirectMessage: Boolean = {
@@ -122,7 +102,9 @@ trait Scheduled {
     } else {
       recurrence.displayString.trim ++ recipientDetails
     }
-    val scheduleLink = scheduleLinkFor(configuration, scheduleId, teamId)
+    val scheduleLink = maybeEditScheduleUrlFor(configuration).map { url =>
+      s"_[✎ Edit]($url)_"
+    }.getOrElse("")
     displayText(dataService).map { desc =>
       s"""
         |
@@ -155,11 +137,17 @@ trait Scheduled {
   }
 
   def nextRunsString: String = {
-    s"""The next two times will be:
-       | - ${nextRunStringFor(nextSentAt)}
-       | - ${nextRunStringFor(followingSentAt)}
-       |
-     """.stripMargin
+    maybeFollowingSentAt.map { followingSentAt =>
+      s"""The next two times will be:
+         | - ${nextRunStringFor(nextSentAt)}
+         | - ${nextRunStringFor(followingSentAt)}
+         |
+       """.stripMargin
+    }.getOrElse {
+      s"""The next time will be:
+         | - ${nextRunStringFor(nextSentAt)}
+       """.stripMargin
+    }
   }
 
   def botProfileAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[SlackBotProfile]] = {
@@ -200,7 +188,7 @@ trait Scheduled {
       maybeEvent <- eventFor(channel, slackUserId, profile, services)
       _ <- maybeEvent.map { event =>
         eventHandler.handle(event, None).flatMap { results =>
-          FutureSequencer.sequence(results, sendResultFn(event, services))
+          FutureSequencer.sequence(results, sendResultFn(event, slackUserId, profile, services))
         }
       }.getOrElse(Future.successful(Seq()))
     } yield {}
@@ -214,7 +202,7 @@ trait Scheduled {
     slackUserId: String => {
       val client = services.slackApiService.clientFor(profile)
       for {
-        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, profile.slackTeamId, client, (e) => {
+        maybeSlackUserData <- services.slackEventService.maybeSlackUserDataFor(slackUserId, client, (e) => {
           Logger.error(
             s"""Slack API reported user not found while trying to send a scheduled message:
                |Slack user ID: $slackUserId
@@ -228,10 +216,10 @@ trait Scheduled {
           userData.accountId != profile.userId && !userData.deleted && !userData.isBot
         }.map { userData =>
           services.slackApiService.clientFor(profile).openConversationFor(userData.accountId).map { dmChannel =>
-            Some(SlackDMInfo(userData.accountId, userData.accountTeamId, dmChannel))
+            Some(SlackDMInfo(userData.accountId, userData.firstTeamId, dmChannel))
           }.recover {
             case e: SlackApiError => {
-              val msg = s"""Couldn't open DM for scheduled message to @${userData.getDisplayName} (${userData.accountId}) on Slack team ${userData.accountTeamId} due to Slack API error: ${e.code}"""
+              val msg = s"""Couldn't open DM for scheduled message to @${userData.getDisplayName} (${userData.accountId}) on Slack team ${userData.firstTeamId} due to Slack API error: ${e.code}"""
               Logger.error(msg, e)
               None
             }
@@ -250,27 +238,42 @@ trait Scheduled {
                   services: DefaultServices
                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val dataService = services.dataService
-    val configuration = services.configuration
     val botResultService = services.botResultService
     for {
       displayText <- displayText(dataService)
-      maybeIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = false))
-      maybeInterruptionIntroText <- Future.successful(maybeScheduleInfoTextFor(event, result, configuration, displayText, isForInterruption = true))
-      _ <- botResultService.sendIn(result, None, maybeIntroText, maybeInterruptionIntroText)
+      _ <- botResultService.sendIn(result, None)
     } yield {
-      val channelInfo =
-        event.maybeChannel.
-          map { channel => s" in channel $channel" }.
-          getOrElse("")
       Logger.info(event.logTextFor(result, Some(s"for scheduled message [$displayText]")))
     }
   }
 
   def sendResultFn(
                     event: ScheduledEvent,
+                    slackUserId: String,
+                    profile: SlackBotProfile,
                     services: DefaultServices
                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): BotResult => Future[Unit] = {
-    result: BotResult => sendResult(result, event, services)
+    result: BotResult => {
+      sendResult(result, event, services).recover {
+        case c: SlackMessageSenderChannelException => {
+          if (slackUserId != profile.userId) {
+            val editLink = maybeEditScheduleUrlFor(services.configuration).map { url =>
+              s"[✎ Edit schedule]($url)"
+            }.getOrElse("")
+            displayText(services.dataService).flatMap { scheduledDisplayText =>
+              val message =
+                s"""**I was unable to run ${scheduledDisplayText} on schedule for you in the specified channel.** ${c.formattedChannelReason}
+                   |
+                   |${editLink}
+                   |""".stripMargin
+              services.dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, profile, slackUserId, message)
+            }
+          } else {
+            throw c
+          }
+        }
+      }
+    }
   }
 
   def send(
@@ -306,8 +309,17 @@ trait Scheduled {
     }.getOrElse(Future.successful(Unit))
   }
 
-  def updateNextTriggeredForAction(dataService: DataService): DBIO[Scheduled]
+  def updateOrDeleteScheduleAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Option[Scheduled]] = {
+    if (recurrence.shouldRunAgainAfterNextRun) {
+      updateForNextRunAction(dataService).map(Some(_))
+    } else {
+      deleteAction(dataService).map(_ => None)
+    }
+  }
 
+  def updateForNextRunAction(dataService: DataService): DBIO[Scheduled]
+
+  def deleteAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Unit]
 }
 
 object Scheduled {

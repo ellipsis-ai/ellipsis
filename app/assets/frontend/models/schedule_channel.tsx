@@ -8,7 +8,9 @@ export interface ScheduleChannelJson {
   isPrivateChannel: boolean,
   isPrivateGroup: boolean,
   isArchived: boolean,
-  isShared: boolean
+  isOrgShared: boolean,
+  isExternallyShared: boolean,
+  isReadOnly: boolean
 }
 
 export interface ScheduleChannelInterface extends ScheduleChannelJson {}
@@ -23,7 +25,9 @@ class ScheduleChannel implements ScheduleChannelInterface {
   readonly isPrivateChannel: boolean;
   readonly isPrivateGroup: boolean;
   readonly isArchived: boolean;
-  readonly isShared: boolean;
+  readonly isOrgShared: boolean;
+  readonly isExternallyShared: boolean;
+  readonly isReadOnly: boolean;
 
     constructor(props: ScheduleChannelInterface) {
       Object.defineProperties(this, {
@@ -36,7 +40,9 @@ class ScheduleChannel implements ScheduleChannelInterface {
         isPrivateChannel: { value: props.isPrivateChannel, enumerable: true },
         isPrivateGroup: { value: props.isPrivateGroup, enumerable: true },
         isArchived: { value: props.isArchived, enumerable: true },
-        isShared: { value: props.isShared, enumerable: true }
+        isOrgShared: { value: props.isOrgShared, enumerable: true },
+        isExternallyShared: { value: props.isExternallyShared, enumerable: true },
+        isReadOnly: { value: props.isReadOnly, enumerable: true }
       });
     }
 
@@ -50,14 +56,6 @@ class ScheduleChannel implements ScheduleChannelInterface {
 
     getPrefix(): string {
       return this.isPublic() ? "#" : "🔒 ";
-    }
-
-    getSuffix(): string {
-      if (this.isShared) {
-        return "(shared)";
-      } else {
-        return "";
-      }
     }
 
     getUnformattedName() {
@@ -75,7 +73,7 @@ class ScheduleChannel implements ScheduleChannelInterface {
     }): string {
       const shouldFormat = options && options.formatting;
       const name = this.getUnformattedName();
-      return shouldFormat ? `${this.getPrefix()}${name} ${this.getSuffix()}`.trim() : name;
+      return shouldFormat ? `${this.getPrefix()}${name}`.trim() : name;
     }
 
     getFormattedName(): string {

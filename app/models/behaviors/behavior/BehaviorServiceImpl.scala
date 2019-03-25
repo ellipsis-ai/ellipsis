@@ -1,8 +1,8 @@
 package models.behaviors.behavior
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.google.inject.Provider
 import models.IDs
 import models.accounts.user.User
@@ -11,7 +11,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
 import services.{AWSLambdaService, DataService}
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.events.SlackMessageEvent
+import models.behaviors.events.slack.SlackMessageEvent
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -71,7 +71,7 @@ class BehaviorServiceImpl @Inject() (
 
   def findByTrigger(trigger: String, group: BehaviorGroup): Future[Option[Behavior]] = {
     for {
-      triggers <- dataService.messageTriggers.allActiveFor(group)
+      triggers <- dataService.triggers.allActiveFor(group)
     } yield {
       val activated = triggers.filter(_.matches(trigger, includesBotMention = true))
       activated.map(_.behaviorVersion.behavior).headOption

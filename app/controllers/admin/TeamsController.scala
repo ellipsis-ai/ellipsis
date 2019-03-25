@@ -5,11 +5,16 @@ import javax.inject.Inject
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.RemoteAssets
+import json.AdminTeamData
 import models.silhouette.EllipsisEnv
+import models.team.Team
 import play.api.Configuration
+import play.api.data.Form
+import play.api.data.Forms._
 import services.{AWSLambdaService, DataService}
-import scala.concurrent.{ExecutionContext, Future}
+import utils.PageData
 
+import scala.concurrent.{ExecutionContext, Future}
 
 class TeamsController @Inject() (
                                   val silhouette: Silhouette[EllipsisEnv],
@@ -20,46 +25,85 @@ class TeamsController @Inject() (
                                   implicit val ec: ExecutionContext
                                 ) extends AdminAuth {
 
-  def list(page: Int, perPage: Int) = silhouette.SecuredAction.async { implicit request =>
+  private def adminTeamDataFor(team: Team): Future[AdminTeamData] = {
+    for {
+      botProfiles <- dataService.slackBotProfiles.allFor(team)
+      /* TODO: This is super slow, not sure why: */
+      maybeLastInvocationDate <- Future.successful(None) /*dataService.invocationLogEntries.lastInvocationDateForTeam(team)*/
+    } yield {
+      AdminTeamData(
+        team.id,
+        team.name,
+        team.timeZone.toString,
+        team.createdAt,
+        botProfiles.exists(_.allowShortcutMention),
+        maybeLastInvocationDate
+      )
+    }
+  }
+
+  def list(page: Int, perPage: Int, maybeUpdatedTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     withIsAdminCheck(() => {
-      if (page < 0 || perPage < 0) {
+      if (page < 1 || perPage < 1) {
         Future {
-          BadRequest("page and perPage parameters cannot be less than zero!")
+          BadRequest("page and perPage parameters cannot be less than 1!")
         }
-      }
-      else {
+      } else {
         for {
           count <- dataService.teams.allCount
-          pageData <- getPageData(count, page, perPage)
-          teams <- dataService.teams.allTeamsPaged(pageData.current, pageData.size)
+          pageData <- Future.successful(PageData.pageDataFor(count, page, perPage))
+          teams <- dataService.teams.allTeamsPaged(pageData.currentPage, pageData.pageSize)
+          adminTeamsData <- Future.sequence(teams.map(adminTeamDataFor)).map(_.sorted.reverse)
         } yield {
-          Ok(views.html.admin.teams.list(viewConfig(None), teams, count, pageData.current, pageData.size, pageData.total))
+          Ok(views.html.admin.teams.list(
+            viewConfig(None),
+            teams = adminTeamsData,
+            teamCount = count,
+            currentPage = pageData.currentPage,
+            pageSize = pageData.pageSize,
+            totalPages = pageData.totalPages,
+            maybeUpdatedTeamId = maybeUpdatedTeamId
+          ))
         }
       }
-
     })
   }
 
+  case class ToggleSlackBotShortcutInfo(teamId: String, enableShortcut: Boolean)
 
-  private case class PageData(current: Int, size: Int, total: Int)
+  private val toggleSlackBotShortcutForm = Form(
+    mapping(
+      "teamId" -> nonEmptyText,
+      "enableShortcut" -> boolean
+    )(ToggleSlackBotShortcutInfo.apply)(ToggleSlackBotShortcutInfo.unapply)
+  )
 
-  private def getPageData(count: Int, page: Int, perPage: Int): Future[PageData] = {
-    var realPage = page
-    var realPerPage = perPage
-    var lastPage = (math.ceil(count/realPerPage)).toInt
-
-    // if page is zero and there are less than 50 teams display them all.
-    if (page == 0 && count < 50) {
-      realPage = 1
-      realPerPage = count
-      lastPage = 1
-    }
-
-    if ( count % realPerPage > 0) lastPage = +1
-
-    Future { new PageData(realPage, realPerPage, lastPage) }
+  def toggleBotShortcutForTeam() = silhouette.SecuredAction.async { implicit request =>
+    withIsAdminCheck(() => {
+      toggleSlackBotShortcutForm.bindFromRequest.fold(
+        formWithErrors => {
+          Future.successful(BadRequest(formWithErrors.errorsAsJson))
+        },
+        info => {
+          for {
+            maybeTeam <- dataService.teams.find(info.teamId)
+            botProfiles <- maybeTeam.map { team =>
+              dataService.slackBotProfiles.allFor(team)
+            }.getOrElse(Future.successful(Seq()))
+            enabledFlags <- Future.sequence(botProfiles.map { botProfile =>
+              dataService.slackBotProfiles.toggleMentionShortcut(botProfile, info.enableShortcut)
+            })
+          } yield {
+            if (enabledFlags.contains(None)) {
+              NotFound(s"Unable to modify shortcut setting for team ${info.teamId}")
+            } else {
+              Redirect(routes.TeamsController.list(1, 10, Some(info.teamId)))
+            }
+          }
+        }
+      )
+    })
   }
-
 }
 
 

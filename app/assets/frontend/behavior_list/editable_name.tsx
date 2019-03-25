@@ -6,18 +6,19 @@ import Trigger from "../models/trigger";
 import BehaviorVersion from "../models/behavior_version";
 import autobind from "../lib/autobind";
 import {ReactNode} from "react";
+import {BehaviorSelectCallback} from "../behavior_editor/behavior_switcher";
 
 interface Props {
   version: Editable,
   disableLink?: Option<boolean>,
   omitDescription?: Option<boolean>,
-  labelDataType?: Option<boolean>,
-  onClick?: Option<(groupId: string, behaviorId: string) => void>,
+  labelType?: Option<boolean>,
+  onClick?: Option<BehaviorSelectCallback>,
   isImportable?: Option<boolean>,
   className?: Option<string>,
   triggerClassName?: Option<string>,
   highlightText?: Option<string>,
-  renderStatus?: (Editable) => ReactNode
+  renderStatus?: (e: Editable) => ReactNode
 }
 
 class EditableName extends React.Component<Props> {
@@ -129,7 +130,7 @@ class EditableName extends React.Component<Props> {
       return (
         <div className={this.getDisplayClassesFor(version)}>
           <span className={this.props.disableLink ? "" : "link"}>{version.name || "New data type"}</span>
-          {this.props.labelDataType ? (
+          {this.props.labelType ? (
             <span>{" (data type)"}</span>
           ) : null}
         </div>
@@ -140,6 +141,9 @@ class EditableName extends React.Component<Props> {
       return (
         <div className={this.getDisplayClassesFor(version)}>
           <span className={this.props.disableLink ? "" : "link"}>{version.name || "New library"}</span>
+          {this.props.labelType ? (
+            <span>{" (library)"}</span>
+          ) : null}
         </div>
       );
     }
@@ -199,7 +203,7 @@ class EditableName extends React.Component<Props> {
     }
 
     onLinkClick(event: React.MouseEvent<HTMLAnchorElement>) {
-      if (this.props.onClick && this.props.version.groupId) {
+      if (this.props.onClick) {
         this.props.onClick(this.props.version.groupId, this.props.version.getPersistentId());
         event.preventDefault();
       }
@@ -214,25 +218,33 @@ class EditableName extends React.Component<Props> {
     }
 
     render() {
+      const teamId = this.props.version.teamId;
+      const behaviorGroupId = this.props.version.groupId;
+      let link: string;
+      if (behaviorGroupId) {
+        link = jsRoutes.controllers.BehaviorEditorController.edit(behaviorGroupId, this.props.version.getPersistentId()).url;
+      } else if (teamId) {
+        link = jsRoutes.controllers.BehaviorEditorController.newGroup(teamId).url;
+      } else {
+        link = window.location.href;
+      }
       if (this.props.disableLink) {
         return (
           <div className={this.props.className || ""}>
             {this.getLabelFromVersion(this.props.version)}
           </div>
         );
-      } else if (this.props.version.groupId) {
+      } else {
         return (
           <div>
             <a
-              href={jsRoutes.controllers.BehaviorEditorController.edit(this.props.version.groupId, this.props.version.getPersistentId()).url}
+              href={link}
               onClick={this.onLinkClick}
               className={"link-block " + (this.props.className || "")}>
               {this.getLabelFromVersion(this.props.version)}
             </a>
           </div>
         );
-      } else {
-        return null;
       }
     }
 }

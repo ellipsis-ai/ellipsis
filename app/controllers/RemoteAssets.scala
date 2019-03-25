@@ -29,27 +29,31 @@ class RemoteAssets @Inject() (
     }
   }
 
-  def getUrl(file: String): String = {
+  def getUrl(file: String, forceSameHost: Boolean = false): String = {
     val asset = Asset(file)
-    configuration.getOptional[String]("external_cdn_assets." + asset.name).getOrElse {
-      configuration.getOptional[String]("cdn_url") match {
-        case Some(contentUrl) => {
-          val withoutAssetsPrefix = controllers.routes.RemoteAssets.getAsset(asset).url.substring(7)
-          contentUrl + withoutAssetsPrefix
-        }
-        case None => {
-          controllers.routes.RemoteAssets.getAsset(asset).url
+    if (forceSameHost) {
+      controllers.routes.RemoteAssets.getAsset(asset).url
+    } else {
+      configuration.getOptional[String]("external_cdn_assets." + asset.name).getOrElse {
+        configuration.getOptional[String]("cdn_url") match {
+          case Some(contentUrl) => {
+            val withoutAssetsPrefix = controllers.routes.RemoteAssets.getAsset(asset).url.substring(7)
+            contentUrl + withoutAssetsPrefix
+          }
+          case None => {
+            controllers.routes.RemoteAssets.getAsset(asset).url
+          }
         }
       }
     }
   }
 
-  def getWebpackBundle(file: String): String = {
+  def getWebpackBundle(file: String, forceSameHost: Boolean = false): String = {
     // In development, bundles are served by the WebpackController
     if (environment.mode == Mode.Dev) {
       routes.WebpackController.bundle(file).url
     } else {
-      getUrl("javascripts/" + file)
+      getUrl("javascripts/" + file, forceSameHost)
     }
   }
 }

@@ -5,13 +5,13 @@ import models.behaviors.SimpleTextResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.events.Event
-import models.behaviors.events.SlackMessageActionConstants._
+import models.behaviors.events.{Event, EventContext}
+import models.behaviors.events.MessageActionConstants._
 import services.caching.CacheService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 case class BehaviorParameterContext(
                                      event: Event,
@@ -23,6 +23,8 @@ case class BehaviorParameterContext(
   val behaviorVersion: BehaviorVersion = parameter.behaviorVersion
   val dataService: DataService = services.dataService
   val cacheService: CacheService = services.cacheService
+
+  val eventContext: EventContext = event.eventContext
 
   def isFirstParamAction: DBIO[Boolean] = {
     services.dataService.behaviorParameters.isFirstForBehaviorVersionAction(parameter)
@@ -39,12 +41,13 @@ case class BehaviorParameterContext(
       event,
       maybeConversation,
       text,
-      behaviorVersion.forcePrivateResponse
+      behaviorVersion.responseType
     )
   }
 
-  def dataTypeChoiceCallbackId: String = dataTypeChoiceCallbackIdFor(event.userIdForContext, maybeConversation.map(_.id))
+  def dataTypeChoiceCallbackId: String = dataTypeChoiceCallbackIdFor(event.eventContext.userIdForContext, maybeConversation.map(_.id))
 
-  def yesNoCallbackId: String = yesNoCallbackIdFor(event.userIdForContext, maybeConversation.map(_.id))
+  def yesNoCallbackId: String = yesNoCallbackIdFor(event.eventContext.userIdForContext, maybeConversation.map(_.id))
 
+  def textInputCallbackId: String = textInputCallbackIdFor(event.eventContext.userIdForContext, maybeConversation.map(_.id))
 }

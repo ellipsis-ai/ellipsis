@@ -1,6 +1,7 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.Event
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.{BotResult, SimpleTextResult}
@@ -32,14 +33,14 @@ case class ListScheduledBehavior(
 
   private def viewAllLink: String = {
     configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(None, None, Some(event.teamId))
+      val path = controllers.routes.ScheduledActionsController.index(None, None, Some(event.ellipsisTeamId))
       s"[View all scheduled items]($baseUrl$path)"
     }.getOrElse("")
   }
 
   private def newScheduleLink: String = {
     configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(None, Some(true), Some(event.teamId))
+      val path = controllers.routes.ScheduledActionsController.index(None, Some(true), Some(event.ellipsisTeamId))
       s"[Schedule something new]($baseUrl$path)"
     }.getOrElse("")
   }
@@ -69,7 +70,7 @@ case class ListScheduledBehavior(
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
     for {
-      maybeTeam <- dataService.teams.find(event.teamId)
+      maybeTeam <- dataService.teams.find(event.ellipsisTeamId)
       scheduled <- maybeTeam.map { team =>
         maybeChannel.map { channel =>
           Scheduled.allActiveForChannel(team, channel, dataService)
@@ -83,7 +84,7 @@ case class ListScheduledBehavior(
         responseFor(scheduled)
       }
     } yield {
-      SimpleTextResult(event, None, responseText, forcePrivateResponse = false)
+      SimpleTextResult(event, None, responseText, responseType = Normal)
     }
   }
 

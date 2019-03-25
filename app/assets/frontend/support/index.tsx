@@ -38,22 +38,22 @@ class SupportRequest extends React.Component<Props, State> {
     }
   }
 
-  onChange(fieldName: keyof State, newValue: string): void {
-    const newState = {};
-    newState[fieldName] = newValue;
-    this.setState(newState);
-  }
-
   onChangeName(newValue: string): void {
-    this.onChange("userName", newValue);
+    this.setState({
+      userName: newValue
+    });
   }
 
   onChangeEmail(newValue: string): void {
-    this.onChange("email", newValue);
+    this.setState({
+      email: newValue
+    });
   }
 
   onChangeMessage(newValue: string): void {
-    this.onChange("message", newValue);
+    this.setState({
+      message: newValue
+    });
   }
 
   isValidEmail(): boolean {
@@ -142,7 +142,7 @@ class SupportRequest extends React.Component<Props, State> {
             <div className="columns">
               <div className="column column-two-thirds narrow-column-full pbl">
                 <h5>Your question or concern <span className="type-weak type-regular">(required):</span></h5>
-                <Textarea value={this.state.message} onChange={this.onChangeMessage} rows="10" className="form-input-height-auto" />
+                <Textarea value={this.state.message} onChange={this.onChangeMessage} rows={10} className="form-input-height-auto" />
               </div>
             </div>
             <div>

@@ -8,7 +8,8 @@ export interface ButtonProps {
   disabled?: boolean,
   onClick: Option<() => void>,
   title?: string,
-  style?: Partial<CSSProperties>
+  style?: Partial<CSSProperties>,
+  stopPropagation?: boolean
 }
 
 type Props = ButtonProps;
@@ -23,7 +24,16 @@ class Button extends React.PureComponent<Props> {
       this.button = null;
     }
 
-    onClick() {
+    componentDidMount(): void {
+      if (this.button) {
+        this.button.addEventListener('click', this.internalClickHandler);
+      }
+    }
+
+    internalClickHandler(event: MouseEvent): void {
+      if (this.props.stopPropagation) {
+        event.stopPropagation();
+      }
       // Strip the browser event object from the onClick handler
       if (this.props.onClick) {
         this.props.onClick();
@@ -46,7 +56,6 @@ class Button extends React.PureComponent<Props> {
             }`
           }
           type="button"
-          onClick={this.onClick}
           disabled={this.props.disabled}
           title={this.props.title}
         >{this.props.children}</button>

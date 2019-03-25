@@ -7,12 +7,14 @@ import scala.util.matching.Regex
 
 case class SlackChannels(client: SlackApiClient) {
 
+  def botUserId: String = client.profile.userId
+
   def getInfoFor(convoId: String)(implicit ec: ExecutionContext): Future[Option[SlackConversation]] = {
     client.conversationInfo(convoId)
   }
 
   def getList(implicit ec: ExecutionContext): Future[Seq[SlackConversation]] = {
-    client.listConversations
+    client.listConversations()
   }
 
   def getMembersFor(convoId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = {
@@ -34,7 +36,7 @@ case class SlackChannels(client: SlackApiClient) {
     getInfoFor(unformattedChannelLikeIdOrName).flatMap { maybeChannelLike =>
       maybeChannelLike.map(c => Future.successful(Some(c.id))).getOrElse {
         getList.map { infos =>
-          infos.find(_.name == unformattedChannelLikeIdOrName).map(_.id)
+          infos.find(_.name.contains(unformattedChannelLikeIdOrName)).map(_.id)
         }
       }
     }

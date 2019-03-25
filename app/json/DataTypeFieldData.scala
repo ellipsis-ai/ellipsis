@@ -19,7 +19,7 @@ case class DataTypeFieldData(
   lazy val fieldTypeForSchema: FieldTypeForSchema = {
     fieldType.getOrElse {
       val paramType = TextType
-      BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(false))
+      BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(false), Some(paramType.typescriptType))
     }
   }
 

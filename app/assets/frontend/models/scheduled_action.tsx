@@ -20,7 +20,7 @@ export interface ScheduledActionJson {
   secondRecurrence?: Option<Timestamp>,
   useDM: boolean,
   channel: string,
-  userId: Option<string>
+  userId?: Option<string>
 }
 
 export interface ScheduledActionInterface extends ScheduledActionJson {

@@ -9,8 +9,9 @@ import {BehaviorVersionJson} from "../../../../app/assets/frontend/models/behavi
 import {LibraryVersionJson} from "../../../../app/assets/frontend/models/library_version";
 import {InputJson} from "../../../../app/assets/frontend/models/input";
 import {RequiredAWSConfigJson} from "../../../../app/assets/frontend/models/aws";
-import {RequiredOAuth2Application, RequiredOAuth2ApplicationJson} from "../../../../app/assets/frontend/models/oauth2";
+import {RequiredOAuthApplication, RequiredOAuthApplicationJson} from "../../../../app/assets/frontend/models/oauth";
 import {RequiredSimpleTokenApiJson} from "../../../../app/assets/frontend/models/simple_token";
+import {TriggerType} from "../../../../app/assets/frontend/models/trigger";
 
 const teamId = 'team123456';
 const groupId = 'group123456';
@@ -19,8 +20,13 @@ const libraryId = 'lib123456';
 const inputId = 'input123456';
 const inputId2 = 'input234567';
 const requiredAWSConfigId = 'requiredAWS123456';
+const requiredTrelloConfigId = 'requiredTrello123456';
 const requiredGithubConfigId = 'requiredGithub123456';
 const requiredPivotalTrackerConfigId = 'requiredPivotalTracker123456';
+
+const normalResponseType = "Normal";
+
+const privateResponseType = "Private";
 
 const behaviorVersion1: BehaviorVersionJson = Object.freeze({
   "id": "abcdef",
@@ -37,16 +43,18 @@ const behaviorVersion1: BehaviorVersionJson = Object.freeze({
     "text": "B",
     "requiresMention": false,
     "isRegex": true,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": TriggerType.MessageSent
   }, {
     "text": "C",
     "requiresMention": false,
     "isRegex": false,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": TriggerType.MessageSent
   }],
   "inputIds": [inputId, inputId2],
   "config": {
-    "forcePrivateResponse": false,
+    responseTypeId: normalResponseType,
     isDataType: false,
     isTest: false,
     exportId: null,
@@ -54,7 +62,6 @@ const behaviorVersion1: BehaviorVersionJson = Object.freeze({
     dataTypeConfig: null
   },
   "createdAt": 1468338136532,
-  knownEnvVarsUsed: [],
   isNew: false,
   editorScrollPosition: null
 });
@@ -73,16 +80,18 @@ const behaviorVersion2: BehaviorVersionJson = Object.freeze({
     "text": "B",
     "requiresMention": true,
     "isRegex": true,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": TriggerType.MessageSent
   }, {
     "text": ".+",
     "requiresMention": false,
     "isRegex": true,
-    "caseSensitive": false
+    "caseSensitive": false,
+    "triggerType": TriggerType.MessageSent
   }],
   "inputIds": [inputId2, inputId],
   "config": {
-    "forcePrivateResponse": true,
+    responseTypeId: privateResponseType,
     isDataType: false,
     isTest: false,
     exportId: null,
@@ -90,7 +99,6 @@ const behaviorVersion2: BehaviorVersionJson = Object.freeze({
     dataTypeConfig: null
   },
   "createdAt": 1468359271138,
-  knownEnvVarsUsed: [],
   isNew: false,
   editorScrollPosition: null
 });
@@ -130,7 +138,8 @@ const actionInput1: InputJson = Object.freeze({
     id: 'Text',
     name: 'Text',
     exportId: 'Text',
-    needsConfig: false
+    needsConfig: false,
+    typescriptType: 'string'
   },
   isSavedForTeam: false,
   isSavedForUser: true,
@@ -145,7 +154,8 @@ const actionInputChanged: InputJson = Object.freeze({
     id: 'sdflkjafks',
     name: 'Person',
     exportId: 'sdflkjafks',
-    needsConfig: false
+    needsConfig: false,
+    typescriptType: '{ id: string, label: string, [k: string]: any }'
   },
   isSavedForTeam: true,
   isSavedForUser: false,
@@ -160,7 +170,8 @@ const actionInput2: InputJson = Object.freeze({
     id: 'Text',
     name: 'Text',
     exportId: 'Text',
-    needsConfig: false
+    needsConfig: false,
+    typescriptType: 'string'
   },
   isSavedForTeam: false,
   isSavedForUser: false,
@@ -187,7 +198,16 @@ const requiredAWSConfig2: RequiredAWSConfigJson = Object.freeze({
   }
 });
 
-const requiredOAuth2Config1: RequiredOAuth2ApplicationJson = Object.freeze({
+const requiredOAuth1Config1: RequiredOAuthApplicationJson = Object.freeze({
+  id: 'trello123',
+  exportId: requiredTrelloConfigId,
+  apiId: 'trello',
+  nameInCode: 'trello',
+  config: null,
+  recommendedScope: 'read'
+});
+
+const requiredOAuth2Config1: RequiredOAuthApplicationJson = Object.freeze({
   id: 'github123',
   exportId: requiredGithubConfigId,
   apiId: 'github',
@@ -196,7 +216,7 @@ const requiredOAuth2Config1: RequiredOAuth2ApplicationJson = Object.freeze({
   recommendedScope: 'repo'
 });
 
-const requiredOAuth2Config2: RequiredOAuth2ApplicationJson = Object.freeze({
+const requiredOAuth2Config2: RequiredOAuthApplicationJson = Object.freeze({
   id: 'github123',
   exportId: requiredGithubConfigId,
   apiId: 'github',
@@ -205,7 +225,7 @@ const requiredOAuth2Config2: RequiredOAuth2ApplicationJson = Object.freeze({
   recommendedScope: 'repo:readonly'
 });
 
-const requiredOAuth2Config3: RequiredOAuth2ApplicationJson = Object.freeze({
+const requiredOAuth2Config3: RequiredOAuthApplicationJson = Object.freeze({
   id: 'github12345',
   exportId: 'requiredGithubabcdef',
   apiId: 'github',
@@ -238,7 +258,7 @@ const behaviorGroupVersion1: BehaviorGroupJson = Object.freeze({
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion1],
   requiredAWSConfigs: [requiredAWSConfig1],
-  requiredOAuth2ApiConfigs: [requiredOAuth2Config1, requiredOAuth2Config3],
+  requiredOAuthApiConfigs: [requiredOAuth1Config1, requiredOAuth2Config1, requiredOAuth2Config3],
   requiredSimpleTokenApis: [requiredSimpleTokenApi1],
   actionInputs: [actionInput1, actionInput2],
   dataTypeInputs: [],
@@ -261,7 +281,7 @@ const behaviorGroupVersion2: BehaviorGroupJson = Object.freeze({
   groupId: 'group123456',
   behaviorVersions: [behaviorVersion2],
   requiredAWSConfigs: [requiredAWSConfig2],
-  requiredOAuth2ApiConfigs: [requiredOAuth2Config2, requiredOAuth2Config3],
+  requiredOAuthApiConfigs: [requiredOAuth1Config1, requiredOAuth2Config2, requiredOAuth2Config3],
   requiredSimpleTokenApis: [requiredSimpleTokenApi2],
   actionInputs: [actionInputChanged, actionInput2],
   dataTypeInputs: [],
@@ -284,7 +304,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "inputId": "fLL6qZ9rSR-gdVXrbz8sEQ",
     "exportId": "_lpHYaeKQfqd4Gghk3fhGg",
     "name": "whenToAnnounce",
-    "paramType": {"exportId": "Text", "name": "Text"},
+    "paramType": {"exportId": "Text", "name": "Text", typescriptType: "string"},
     "question": "What time should I send you your agenda for the day? e.g. “9 AM” or “10 AM Eastern time”, or “none” if you don’t want an agenda",
     "isSavedForTeam": false,
     "isSavedForUser": false
@@ -293,7 +313,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "inputId": "P1GZEO9nTKKFl5dP707j1A",
     "exportId": "w4C6zIa4SNO1X_91WiQTTQ",
     "name": "shouldRemind",
-    "paramType": {"exportId": "Yes/No", "name": "Yes/No"},
+    "paramType": {"exportId": "Yes/No", "name": "Yes/No", typescriptType: "boolean"},
     "question": "Would you like me to send you a reminder before each event begins?",
     "isSavedForTeam": false,
     "isSavedForUser": false
@@ -313,17 +333,17 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "what's on my calendar today",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
       "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
       "name": "Agenda",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
     "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
-    "knownEnvVarsUsed": []
   }, {
     "id": "BlFk7azKRjaCgH5ricykTA",
     "teamId": "v-i65oxZQDiBsZuXceONmA",
@@ -338,22 +358,23 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "deactivate my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }, {
       "text": "stop my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
-    }, {"text": "turn off my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
+    }, {"text": "turn off my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": TriggerType.MessageSent}],
     "config": {
       "exportId": "V-LAjv1AS4CoFimMANnxpg",
       "name": "Deactivate",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
     "exportId": "V-LAjv1AS4CoFimMANnxpg",
-    "knownEnvVarsUsed": []
   }, {
     "id": "AFV_L2J3Sp2DRxx4t9Qdjw",
     "teamId": "v-i65oxZQDiBsZuXceONmA",
@@ -364,16 +385,15 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "functionBody": "",
     "responseTemplate": "Ellipsis can show you what's happening on your calendar today, and send reminders when events are about to begin. (This skill requires access to your Google Calendar.)\n\n**Actions:**\n- `what's on my calendar today` — show your agenda (list all events) for the rest of the day\n- `what's on my calendar now` — show any events happening now or in the next 10 minutes\n- `setup my calendar` — set up the skill to send you your agenda each weekday, and send you reminders a few minutes before events begin\n- `stop my calendar` — turn off the scheduled agenda and reminders\n",
     "inputIds": [],
-    "triggers": [{"text": "my calendar help", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+    "triggers": [{"text": "my calendar help", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": TriggerType.MessageSent}],
     "config": {
       "exportId": "J0uB9LvZTo6_L-spEBrtqg",
       "name": "Help",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
     "exportId": "J0uB9LvZTo6_L-spEBrtqg",
-    "knownEnvVarsUsed": []
   }, {
     "id": "Eb6wNX-WS1KiobO6Khud6w",
     "teamId": "v-i65oxZQDiBsZuXceONmA",
@@ -388,17 +408,17 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "what's on my calendar now",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
       "exportId": "SBH4IfDzTGO8P7kV02yECw",
       "name": "Reminders",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
     "exportId": "SBH4IfDzTGO8P7kV02yECw",
-    "knownEnvVarsUsed": []
   }, {
     "id": "Sb6jPeE0RaSXGbLTBh-GSg",
     "teamId": "v-i65oxZQDiBsZuXceONmA",
@@ -413,17 +433,17 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "set up my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
-    }, {"text": "setup my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
+    }, {"text": "setup my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": TriggerType.MessageSent}],
     "config": {
       "exportId": "ioHMv3b3T4utFwwH0cwjLg",
       "name": "Setup",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
-    "exportId": "ioHMv3b3T4utFwwH0cwjLg",
-    "knownEnvVarsUsed": []
+    "exportId": "ioHMv3b3T4utFwwH0cwjLg"
   }],
   "libraryVersions": [{
     "id": "Q-h3QwrnSjiAU7YAmMPZYg",
@@ -436,7 +456,7 @@ const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "createdAt": "2018-04-17T10:19:13.74-04:00"
   }],
   "requiredAWSConfigs": [],
-  "requiredOAuth2ApiConfigs": [{
+  "requiredOAuthApiConfigs": [{
     "exportId": "aCJZZ3vgS8eU9BAqhxjz6w-RdG2Wm5DR0m2_4FZXf-yKA-googleCalendar",
     "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
     "recommendedScope": "https://www.googleapis.com/auth/calendar",
@@ -459,7 +479,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "inputId": "515vXugFTA6-wZnXl8CzYA",
     "exportId": "w4C6zIa4SNO1X_91WiQTTQ",
     "name": "shouldRemind",
-    "paramType": {"id": "Yes/No", "exportId": "Yes/No", "name": "Yes/No", "needsConfig": false},
+    "paramType": {"id": "Yes/No", "exportId": "Yes/No", "name": "Yes/No", "needsConfig": false, typescriptType: "boolean"},
     "question": "Would you like me to send you a reminder before each event begins?",
     "isSavedForTeam": false,
     "isSavedForUser": false
@@ -468,7 +488,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "inputId": "IiSaZaA1Rbe_4JvsIZsBfQ",
     "exportId": "_lpHYaeKQfqd4Gghk3fhGg",
     "name": "whenToAnnounce",
-    "paramType": {"id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false},
+    "paramType": {"id": "Text", "exportId": "Text", "name": "Text", "needsConfig": false, typescriptType: "string"},
     "question": "What time should I send you your agenda for the day? e.g. “9 AM” or “10 AM Eastern time”, or “none” if you don’t want an agenda",
     "isSavedForTeam": false,
     "isSavedForUser": false
@@ -489,22 +509,23 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "deactivate my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }, {
       "text": "stop my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
-    }, {"text": "turn off my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
+    }, {"text": "turn off my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": TriggerType.MessageSent}],
     "config": {
       "exportId": "V-LAjv1AS4CoFimMANnxpg",
       "name": "Deactivate",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
     "exportId": "V-LAjv1AS4CoFimMANnxpg",
-    "knownEnvVarsUsed": [],
     "createdAt": "2018-04-16T15:18:28.21-04:00"
   }, {
     "id": "pURDxka2SK6pMMtgp6P0kA",
@@ -517,16 +538,15 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "functionBody": "",
     "responseTemplate": "Ellipsis can show you what's happening on your calendar today, and send reminders when events are about to begin. (This skill requires access to your Google Calendar.)\n\n**Actions:**\n- `what's on my calendar today` — show your agenda (list all events) for the rest of the day\n- `what's on my calendar now` — show any events happening now or in the next 10 minutes\n- `setup my calendar` — set up the skill to send you your agenda each weekday, and send you reminders a few minutes before events begin\n- `stop my calendar` — turn off the scheduled agenda and reminders\n",
     "inputIds": [],
-    "triggers": [{"text": "my calendar help", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+    "triggers": [{"text": "my calendar help", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": TriggerType.MessageSent}],
     "config": {
       "exportId": "J0uB9LvZTo6_L-spEBrtqg",
       "name": "Help",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
     "exportId": "J0uB9LvZTo6_L-spEBrtqg",
-    "knownEnvVarsUsed": [],
     "createdAt": "2018-04-16T15:18:28.166-04:00"
   }, {
     "id": "yD5828gvSgifRejls5_G-A",
@@ -543,17 +563,17 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "set up my calendar",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
-    }, {"text": "setup my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false}],
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
+    }, {"text": "setup my calendar", "requiresMention": true, "isRegex": false, "caseSensitive": false, "triggerType": TriggerType.MessageSent}],
     "config": {
       "exportId": "ioHMv3b3T4utFwwH0cwjLg",
       "name": "Setup",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
     "exportId": "ioHMv3b3T4utFwwH0cwjLg",
-    "knownEnvVarsUsed": [],
     "createdAt": "2018-04-16T15:18:28.021-04:00"
   }, {
     "id": "dLhVuW9XRh2BUM9SmIEYww",
@@ -570,17 +590,17 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "what's on my calendar now",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
       "exportId": "SBH4IfDzTGO8P7kV02yECw",
       "name": "Reminders",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
     "exportId": "SBH4IfDzTGO8P7kV02yECw",
-    "knownEnvVarsUsed": [],
     "createdAt": "2018-04-16T15:18:28.189-04:00"
   }, {
     "id": "vgvsAlqBSXSoeR42UYR5Kg",
@@ -597,17 +617,17 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
       "text": "what's on my calendar today",
       "requiresMention": true,
       "isRegex": false,
-      "caseSensitive": false
+      "caseSensitive": false,
+      "triggerType": TriggerType.MessageSent
     }],
     "config": {
       "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
       "name": "Agenda",
-      "forcePrivateResponse": false,
+      "responseTypeId": normalResponseType,
       "isDataType": false,
       "isTest": false
     },
     "exportId": "BXUYJotxSaKz3QqZ_zSd-w",
-    "knownEnvVarsUsed": [],
     "createdAt": "2018-04-16T15:18:28.14-04:00"
   }],
   "libraryVersions": [{
@@ -621,7 +641,7 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
     "createdAt": "2018-04-16T15:18:27.809-04:00"
   }],
   "requiredAWSConfigs": [],
-  "requiredOAuth2ApiConfigs": [{
+  "requiredOAuthApiConfigs": [{
     "id": "y7d7pXsyScGEYN_lzrB2ow",
     "exportId": "aCJZZ3vgS8eU9BAqhxjz6w-RdG2Wm5DR0m2_4FZXf-yKA-googleCalendar",
     "apiId": "RdG2Wm5DR0m2_4FZXf-yKA",
@@ -638,25 +658,25 @@ const installedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
   "exportId": "9l9tTPMcQliQRua_UmJ8sw",
   "createdAt": "2018-04-16T15:18:27.673-04:00",
   "author": {
-    "id": "NeBjtWPSTBKnjMMt8zgx-g",
+    "ellipsisUserId": "NeBjtWPSTBKnjMMt8zgx-g",
     "userName": "Luke Andrews",
     "fullName": "Luke Andrews",
-    "tz": "America/New_York"
+    "timeZone": "America/New_York"
   },
   "metaData": {
     "groupId": "sxokL6idQ_a6Ks3QOD-Sug",
     "initialCreatedAt": "2018-04-11T15:32:34.921-04:00",
     "initialAuthor": {
-      "id": "NeBjtWPSTBKnjMMt8zgx-g",
+      "ellipsisUserId": "NeBjtWPSTBKnjMMt8zgx-g",
       "userName": "Luke Andrews",
       "fullName": "Luke Andrews",
-      "tz": "America/New_York"
+      "timeZone": "America/New_York"
     }
   },
   "isManaged": false
 });
 
-function textDiff(left, right) {
+function textDiff(left: string, right: string) {
   return MultiLineTextPropertyDiff.maybeFor("", left, right);
 }
 
@@ -789,9 +809,9 @@ describe('diffs', () => {
                 ]]
               },
               {
-                "label": "Always responds privately",
-                "modified": true,
-                "original": false
+                "label": "Response type",
+                "modified": "Private",
+                "original": "Normal",
               },
               {
                 "item": {
@@ -1049,9 +1069,9 @@ describe('diffs', () => {
       expect(maybeDiff).not.toBeNull();
       const diff = maybeDiff as ModifiedDiff<BehaviorGroup>;
       expect(diff.children.length).toBe(1);
-      const childDiff = diff.children[0] as ModifiedDiff<RequiredOAuth2Application>;
+      const childDiff = diff.children[0] as ModifiedDiff<RequiredOAuthApplication>;
       expect(childDiff).toBeInstanceOf(ModifiedDiff);
-      expect(childDiff.original).toBeInstanceOf(RequiredOAuth2Application);
+      expect(childDiff.original).toBeInstanceOf(RequiredOAuthApplication);
       expect(childDiff.original.config).toBeNull();
       expect(childDiff.modified.config).not.toBeNull();
     });

@@ -3,12 +3,14 @@ package models.behaviors.conversations.conversation
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
+import models.accounts.{MSAzureActiveDirectoryContext, MSTeamsContext, SlackContext}
 import models.behaviors._
 import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.SlackMessageActionConstants._
 import models.behaviors.events._
-import models.behaviors.triggers.messagetrigger.MessageTrigger
+import models.behaviors.events.MessageActionConstants._
+import models.behaviors.events.slack._
+import models.behaviors.triggers.Trigger
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackTimestamp
@@ -18,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait Conversation {
   val id: String
   val behaviorVersion: BehaviorVersion
-  val maybeTrigger: Option[MessageTrigger]
+  val maybeTrigger: Option[Trigger]
   val maybeTriggerMessage: Option[String]
   val maybeOriginalEventType: Option[EventType]
   val maybeParentId: Option[String]
@@ -57,16 +59,20 @@ trait Conversation {
       // TODO: Create a new class for placeholder events
       // https://github.com/ellipsis-ai/ellipsis/issues/1719
       } yield SlackMessageEvent(
-        botProfile,
-        maybeTeamIdForContext.getOrElse(botProfile.slackTeamId),
-        channel,
-        None,
-        userIdForContext,
+        SlackEventContext(
+          botProfile,
+          channel,
+          None,
+          userIdForContext
+        ),
         SlackMessage.blank,
         None,
         SlackTimestamp.now,
         None, // TODO: Pass the original event type down to here if we actually care about it, but it doesn't seem useful at present
-        isUninterruptedConversation = false
+        isUninterruptedConversation = false,
+        isEphemeral = false,
+        None,
+        beQuiet = false
       )
     }
   }
@@ -74,7 +80,7 @@ trait Conversation {
   def maybePlaceholderEventAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Event]] = {
     context match {
       case Conversation.SLACK_CONTEXT => maybeSlackPlaceholderEventAction(services)
-      case _ => DBIO.successful(None)
+      case _ => DBIO.successful(None) // TODO: MS Teams
     }
   }
 
@@ -122,11 +128,12 @@ trait Conversation {
       maybeEvent.map { event =>
         respondAction(event, isReminding=true, services).map { result =>
           val intro = s"Hey <@$userIdForContext>, don’t forget, I’m still waiting for your answer to this:"
-          val callbackId = stopConversationCallbackIdFor(event.userIdForContext, Some(id))
-          val actionList = Seq(SlackMessageActionButton(callbackId, "Stop asking", id))
+          val callbackId = stopConversationCallbackIdFor(event.eventContext.userIdForContext, Some(id))
+          val eventContext = event.eventContext
+          val actionList = Seq(eventContext.messageActionButtonFor(callbackId, "Stop asking", id))
           val question = result.text
-          val actionsGroup = SlackMessageActionsGroup(callbackId, actionList, Some(question), None, None)
-          Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.forcePrivateResponse, Seq(actionsGroup)))
+          val attachment = eventContext.messageAttachmentFor(maybeText = Some(question), maybeCallbackId = Some(callbackId), actions = actionList)
+          Some(TextWithAttachmentsResult(result.event, Some(this), intro, result.responseType, Seq(attachment)))
         }
       }.getOrElse(DBIO.successful(None))
     }
@@ -159,7 +166,9 @@ object Conversation {
   val PENDING_STATE = "pending"
   val DONE_STATE: String = "done"
 
-  val SLACK_CONTEXT = "slack"
+  val SLACK_CONTEXT = SlackContext.toString
+  val MS_TEAMS_CONTEXT = MSTeamsContext.toString
+  val MS_AAD_CONTEXT = MSAzureActiveDirectoryContext.toString
   val API_CONTEXT = "api"
 
   val LEARN_BEHAVIOR = "learn_behavior"

@@ -1,36 +1,35 @@
 import * as React from 'react';
 import BehaviorConfig from '../models/behavior_config';
-import CodeEditor from './code_editor';
-import DropdownMenu from '../shared_ui/dropdown_menu';
+import CodeEditor, {EditorCursorPosition} from './code_editor';
+import DropdownMenu, {DropdownMenuItem} from '../shared_ui/dropdown_menu';
 import HelpButton from '../help/help_button';
 import Input from '../models/input';
 import Notifications from '../notifications/notifications';
 import {RequiredAWSConfig} from '../models/aws';
-import {RequiredOAuth2Application} from '../models/oauth2';
+import {RequiredOAuthApplication} from '../models/oauth';
 import SectionHeading from '../shared_ui/section_heading';
 import SVGSettingsIcon from '../svg/settings';
 import SVGWarning from '../svg/warning';
 import ToggleGroup from '../form/toggle_group';
 import * as debounce from 'javascript-debounce';
-import OAuth2ApplicationUnusedNotificationData from "../models/notifications/oauth2_application_unused";
+import OAuthApplicationUnusedNotificationData from "../models/notifications/oauth_application_unused";
 import AWSUnusedNotificationData from "../models/notifications/aws_unused_notification_data";
 import NotificationData from "../models/notifications/notification_data";
 import autobind from "../lib/autobind";
-
-interface cursorCoordsProvider {
-  cursorCoords: (boolean) => {
-    bottom: number
-  }
-}
+import EllipsisObjectDefinitions from "../code_editor/definitions/ellipsis";
+import NodeModuleVersion from "../models/node_module_version";
+import LibraryVersion from "../models/library_version";
 
 interface Props {
+  availableHeight: number
+
   sectionNumber: string,
   codeHelpPanelName: string,
 
   activePanelName: string,
   activeDropdownName: string,
-  onToggleActiveDropdown: (string) => void,
-  onToggleActivePanel: (string) => void,
+  onToggleActiveDropdown: (s: string) => void,
+  onToggleActivePanel: (s: string) => void,
   animationIsDisabled: boolean,
 
   behaviorConfig: Option<BehaviorConfig>,
@@ -40,11 +39,15 @@ interface Props {
 
   requiredAWSConfigs: Array<RequiredAWSConfig>,
 
-  apiApplications: Array<RequiredOAuth2Application>,
+  oauthApiApplications: Array<RequiredOAuthApplication>,
+
+  libraries: Array<LibraryVersion>,
+
+  nodeModules: Array<NodeModuleVersion>,
 
   functionBody: string,
   onChangeFunctionBody: (s: string) => void,
-  onCursorChange: (cm: cursorCoordsProvider) => void,
+  onCursorChange: (newPosition: EditorCursorPosition) => void,
   useLineWrapping: boolean,
   onToggleCodeEditorLineWrapping: () => void,
 
@@ -61,7 +64,6 @@ interface State {
 
 class CodeConfiguration extends React.Component<Props, State> {
     updateNotifications: () => void;
-    codeEditor: Option<CodeEditor>;
     notificationComponent: Option<Notifications>;
 
     constructor(props: Props) {
@@ -93,11 +95,6 @@ class CodeConfiguration extends React.Component<Props, State> {
       this.props.onToggleActiveDropdown('codeEditorSettings');
     }
 
-    getCodeFunctionParams(): Array<string> {
-      const userParams = this.props.inputs.map(ea => ea.name);
-      return userParams.concat(this.props.systemParams);
-    }
-
     getCodeEditorDropdownLabel() {
       return (<SVGSettingsIcon label="Editor settings" />);
     }
@@ -111,7 +108,7 @@ class CodeConfiguration extends React.Component<Props, State> {
       return this.getFirstLineNumberForCode() + numLines;
     }
 
-    hasUsedOAuth2Application(code: string, nameInCode: string): boolean {
+    hasUsedOAuthApplication(code: string, nameInCode: string): boolean {
       var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${nameInCode}\\b`);
       return pattern.test(code);
     }
@@ -122,12 +119,12 @@ class CodeConfiguration extends React.Component<Props, State> {
     }
 
     buildNotifications(): Array<NotificationData> {
-      var oAuth2Notifications: Array<NotificationData> = [];
+      var oAuthNotifications: Array<NotificationData> = [];
       var awsNotifications: Array<NotificationData> = [];
-      this.props.apiApplications
-        .filter((ea) => ea && !this.hasUsedOAuth2Application(this.props.functionBody, ea.nameInCode))
+      this.props.oauthApiApplications
+        .filter((ea) => ea && !this.hasUsedOAuthApplication(this.props.functionBody, ea.nameInCode))
         .forEach((ea) => {
-          oAuth2Notifications.push(new OAuth2ApplicationUnusedNotificationData({
+          oAuthNotifications.push(new OAuthApplicationUnusedNotificationData({
             name: ea.config ? ea.config.displayName : "Unknown",
             code: `ellipsis.accessTokens.${ea.nameInCode}`
           }));
@@ -139,17 +136,29 @@ class CodeConfiguration extends React.Component<Props, State> {
             code: `ellipsis.aws.${ea.nameInCode}`
           }));
         });
-      return oAuth2Notifications.concat(awsNotifications);
+      return oAuthNotifications.concat(awsNotifications);
     }
 
-    getCodeAutocompletions(): Array<string> {
-      var apiTokens = this.props.apiApplications.map(ea => `ellipsis.accessTokens.${ea.nameInCode}`);
-      var envVars = this.props.envVariableNames.map(function(name) {
-        return `ellipsis.env.${name}`;
-      });
-      var awsTokens = this.props.requiredAWSConfigs.map(ea => `ellipsis.aws.${ea.nameInCode}`);
+    emptyModuleFor(name: string): string {
+      return `declare module "${name}";`;
+    }
 
-      return this.getCodeFunctionParams().concat(apiTokens, awsTokens, envVars);
+    getCodeDefinitions(): string {
+      const ellipsisObjectDefinitions = this.props.systemParams.includes("ellipsis") ?
+        EllipsisObjectDefinitions.buildFor({
+        requiredAWSConfigs: this.props.requiredAWSConfigs,
+        oauthApiApplications: this.props.oauthApiApplications,
+        envVariableNames: this.props.envVariableNames
+      }) : "";
+      return `
+${ellipsisObjectDefinitions}
+
+${this.props.inputs.map(ea => `declare var ${ea.name}: ${ea.paramType ? ea.paramType.typescriptType : "any"};`).join("\n")}
+
+${this.props.libraries.map((ea) => ea.name ? this.emptyModuleFor(ea.name) : "").join("\n")}
+
+${this.props.nodeModules.map((ea) => this.emptyModuleFor(ea.from)).join("\n")}
+`
     }
 
     unsetCanBeMemoized(): void {
@@ -220,7 +229,7 @@ class CodeConfiguration extends React.Component<Props, State> {
             </div>
           </div>
 
-          <div>
+          <div className="position-relative">
 
             <div className="pbxs">
               {this.renderToggleCanBeMemoized()}
@@ -228,7 +237,7 @@ class CodeConfiguration extends React.Component<Props, State> {
                 <div className="column column-shrink plxxxl prn align-r position-relative">
                   <code className="type-disabled type-s position-absolute position-top-right prxs">1</code>
                 </div>
-                <div className="column column-expand pll">
+                <div className="column column-expand pls">
                   <code className="type-s">
                     <span className="type-s type-weak">{
                       this.props.functionExecutesImmediately ?
@@ -245,7 +254,7 @@ class CodeConfiguration extends React.Component<Props, State> {
               </div>
             </div>
 
-            <div style={{ marginLeft: "60px" }}>
+            <div style={{ marginLeft: "54px" }}>
               <Notifications
                 ref={(el) => this.notificationComponent = el}
                 notifications={this.state.notifications}
@@ -253,20 +262,7 @@ class CodeConfiguration extends React.Component<Props, State> {
               />
             </div>
 
-          </div>
-
-          <div className="position-relative">
-            <CodeEditor
-              ref={(el) => this.codeEditor = el}
-              value={this.props.functionBody}
-              onChange={this.props.onChangeFunctionBody}
-              onCursorChange={this.props.onCursorChange}
-              firstLineNumber={this.getFirstLineNumberForCode()}
-              lineWrapping={this.props.useLineWrapping}
-              functionParams={this.getCodeFunctionParams()}
-              autocompletions={this.getCodeAutocompletions()}
-            />
-            <div className="position-absolute position-top-right position-z-popup-trigger">
+            <div className="position-absolute position-bottom-right position-z-popup-trigger">
               <DropdownMenu
                 openWhen={this.props.activeDropdownName === 'codeEditorSettings'}
                 label={this.getCodeEditorDropdownLabel()}
@@ -274,13 +270,26 @@ class CodeConfiguration extends React.Component<Props, State> {
                 menuClassName="popup-dropdown-menu-right"
                 toggle={this.toggleEditorSettingsMenu}
               >
-                <DropdownMenu.Item
+                <DropdownMenuItem
                   onClick={this.props.onToggleCodeEditorLineWrapping}
                   checkedWhen={this.props.useLineWrapping}
                   label="Enable line wrap"
                 />
               </DropdownMenu>
             </div>
+          </div>
+
+          <div>
+            <CodeEditor
+              availableHeight={this.props.availableHeight}
+              value={this.props.functionBody}
+              onChange={this.props.onChangeFunctionBody}
+              onCursorChange={this.props.onCursorChange}
+              firstLineNumber={this.getFirstLineNumberForCode()}
+              lineWrapping={this.props.useLineWrapping}
+              definitions={this.getCodeDefinitions()}
+              language={"javascript"}
+            />
           </div>
 
           <div className="pts mbxxl">

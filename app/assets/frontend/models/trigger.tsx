@@ -1,21 +1,29 @@
 import {Diffable, DiffableProp} from "./diffs";
 
+export enum TriggerType {
+  MessageSent = "MessageSent",
+  ReactionAdded = "ReactionAdded"
+}
+
 export interface TriggerJson {
   text: string,
   isRegex: boolean,
   requiresMention: boolean,
-  caseSensitive: boolean
+  caseSensitive: boolean,
+  triggerType: TriggerType
 }
 
-interface TriggerInterface extends TriggerJson {}
+export interface TriggerInterface extends TriggerJson {}
 
 class Trigger implements Diffable, TriggerInterface {
   readonly isRegex: boolean;
   readonly requiresMention: boolean;
   readonly caseSensitive: boolean;
   readonly text: string;
+  readonly triggerType: TriggerType;
 
   constructor(
+    triggerType: TriggerType,
     maybeText?: Option<string>,
     maybeIsRegex?: Option<boolean>,
     maybeRequiresMention?: Option<boolean>
@@ -38,6 +46,10 @@ class Trigger implements Diffable, TriggerInterface {
         },
         text: {
           value: maybeText || "",
+          enumerable: true
+        },
+        triggerType: {
+          value: triggerType,
           enumerable: true
         }
       });
@@ -68,6 +80,10 @@ class Trigger implements Diffable, TriggerInterface {
       }, {
         name: "Require user to mention Ellipsis",
         value: this.requiresMention
+      }, {
+        name: "Trigger type",
+        value: this.triggerType,
+        isCategorical: true
       }];
     }
 
@@ -116,24 +132,29 @@ class Trigger implements Diffable, TriggerInterface {
       }
     }
 
+    isMessageSentTrigger(): boolean {
+      return this.triggerType === TriggerType.MessageSent;
+    }
+
+    isReactionAddedTrigger(): boolean {
+      return this.triggerType === TriggerType.ReactionAdded;
+    }
+
     clone(props: Partial<TriggerInterface>): Trigger {
       return Trigger.fromProps(Object.assign({}, this, props));
     }
 
     static fromProps(props: TriggerInterface): Trigger {
       return new Trigger(
+        props.triggerType,
         props.text,
         props.isRegex,
-        props.requiresMention
+        props.requiresMention,
       );
     }
 
-    static triggersFromJson(jsonArrayOrNull: Option<Array<TriggerJson>>) {
-      if (jsonArrayOrNull) {
-        return jsonArrayOrNull.map((triggerObj) => Trigger.fromProps(triggerObj));
-      } else {
-        return null;
-      }
+    static triggersFromJson(jsonArray: Array<TriggerJson>) {
+      return jsonArray.map((triggerObj) => Trigger.fromProps(triggerObj));
     }
 }
 

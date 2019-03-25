@@ -3,7 +3,7 @@ package models
 import drivers.SlickPostgresDriver.api.{Database => PostgresDatabase}
 import json.{BehaviorGroupData, BehaviorParameterTypeData, BehaviorVersionData, DataTypeFieldData}
 import models.behaviors.behaviorgroup.BehaviorGroup
-import models.behaviors.behaviorparameter.TextType
+import models.behaviors.behaviorparameter.{BehaviorParameterType, TextType}
 import play.api.libs.json.Json
 import support.DBSpec
 
@@ -58,7 +58,8 @@ class BehaviorGroupVersionSpec extends DBSpec {
           dataTypeVersionData.id,
           dataTypeVersionData.exportId,
           dataTypeVersionData.name.get,
-          None
+          None,
+          Some(BehaviorParameterType.typescriptTypeForDataTypes)
         )
 
         val inputData = newInputDataFor(Some(dataTypeParamData))
@@ -139,7 +140,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         val firstDataTypeFields = runNow(dataService.dataTypeFields.allFor(firstDataTypeConfig))
 
         val behavior = runNow(dataService.behaviors.allForGroup(firstGroupVersion.group)).head
-        val savedItem = runNow(dataService.defaultStorageItems.createItemForBehavior(behavior, user, Json.toJson(Map("name" -> "foo"))))
+        val savedItem = runNow(dataService.defaultStorageItems.createItemForBehaviorVersion(firstBehaviorVersion, user, Json.toJson(Map("name" -> "foo"))))
 
         val groupVersionData = runNow(BehaviorGroupData.buildFor(firstGroupVersion, user, None, dataService, cacheService)).copyForNewVersionOf(group)
         val secondGroupVersion = runNow(dataService.behaviorGroupVersions.createFor(group, user, groupVersionData))

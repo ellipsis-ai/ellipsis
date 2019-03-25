@@ -2,11 +2,11 @@ package models.accounts.registration
 
 
 import models.team.Team
-import scala.concurrent.Future
+import slick.dbio.DBIO
 
 
 trait RegistrationService {
 
-  def registerNewTeam(teamName: String): Future[Team]
+  def registerNewTeamAction(name: String): DBIO[Team]
 
 }

@@ -28,7 +28,7 @@ object BehaviorVersionQueries {
       raw.maybeName,
       raw.maybeFunctionBody,
       raw.maybeResponseTemplate,
-      raw.forcePrivateResponse,
+      raw.responseType,
       raw.canBeMemoized,
       raw.isTest,
       raw.createdAt

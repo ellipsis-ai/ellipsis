@@ -19,9 +19,11 @@ class InvocationTokensTable(tag: Tag) extends Table[InvocationToken](tag, "invoc
   def userId = column[String]("user_id")
   def behaviorVersionId = column[String]("behavior_version_id")
   def maybeScheduledMessageId = column[Option[String]]("scheduled_message_id")
+  def maybeTeamIdForContext = column[Option[String]]("team_id_for_context")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, userId, behaviorVersionId, maybeScheduledMessageId, createdAt) <> ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
+  def * = (id, userId, behaviorVersionId, maybeScheduledMessageId, maybeTeamIdForContext, createdAt) <>
+    ((InvocationToken.apply _).tupled, InvocationToken.unapply _)
 }
 
 class InvocationTokenServiceImpl @Inject() (
@@ -55,8 +57,13 @@ class InvocationTokenServiceImpl @Inject() (
     }
   }
 
-  def createForAction(user: User, behaviorVersion: BehaviorVersion, maybeScheduled: Option[Scheduled]): DBIO[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, user.id, behaviorVersion.id, maybeScheduled.map(_.id), OffsetDateTime.now)
+  def createForAction(
+                       user: User,
+                       behaviorVersion: BehaviorVersion,
+                       maybeScheduled: Option[Scheduled],
+                       maybeTeamIdForContext: Option[String]
+                     ): DBIO[InvocationToken] = {
+    val newInstance = InvocationToken(IDs.next, user.id, behaviorVersion.id, maybeScheduled.map(_.id), maybeTeamIdForContext, OffsetDateTime.now)
     (all += newInstance).map(_ => newInstance)
   }
 

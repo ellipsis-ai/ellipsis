@@ -5,7 +5,6 @@ import ChannelName from './channel_name';
 import Collapsible from '../shared_ui/collapsible';
 import ConfirmActionPanel from '../panels/confirm_action';
 import DynamicLabelButton from '../form/dynamic_label_button';
-import Page from '../shared_ui/page';
 import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
@@ -17,10 +16,12 @@ import {PageRequiredProps} from '../shared_ui/page';
 import autobind from '../lib/autobind';
 import {UserMap} from "./loader";
 import User from '../models/user';
+import SVGWarning from "../svg/warning";
+import OrgChannels from "../models/org_channels";
 
 export interface SchedulingProps {
-  scheduledActions: Array<ScheduledAction>
-  channelList: Array<ScheduleChannel>,
+  scheduledActions: Array<ScheduledAction>,
+  orgChannels: OrgChannels,
   behaviorGroups: Array<BehaviorGroup>,
   teamId: string,
   teamTimeZone: Option<string>,
@@ -38,7 +39,8 @@ export interface SchedulingProps {
   newAction: Option<boolean>,
   isAdmin: boolean,
   userMap: UserMap,
-  onLoadUserData: (userId: string) => void
+  onLoadUserData: (userId: string) => void,
+  csrfToken: string
 }
 
 type Props = SchedulingProps & PageRequiredProps
@@ -53,18 +55,24 @@ type State = {
 
 type ScheduleGroup = {
   channel: Option<ScheduleChannel>,
-  channelName: string,
+  channelName: Option<string>,
   channelId: string,
   excludesBot: boolean,
   isArchived: boolean,
+  isMissing: boolean,
+  isReadOnly: boolean,
   actions: Array<ScheduledAction>
+}
+
+type SchedulesGroupedByName = {
+  [groupName: string]: ScheduleGroup | undefined
 }
 
 class Scheduling extends React.Component<Props, State> {
 
     static defaultProps: PageRequiredProps;
 
-    constructor(props) {
+    constructor(props: Props) {
       super(props);
       autobind(this);
       const selectedItem = this.getDefaultSelectedItem();
@@ -77,7 +85,7 @@ class Scheduling extends React.Component<Props, State> {
       };
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentWillReceiveProps(nextProps: Props): void {
       const justSaved = this.props.isSaving && !nextProps.isSaving;
       const justDeleted = this.props.isDeleting && !nextProps.isDeleting;
       const newAction = justSaved ? nextProps.justSavedAction : null;
@@ -104,12 +112,12 @@ class Scheduling extends React.Component<Props, State> {
       }
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
       this.renderNavItems();
       this.renderNavActions();
     }
 
-    componentDidUpdate(prevProps, prevState) {
+    componentDidUpdate(prevProps: Props, prevState: State): void {
       if (prevState.isEditing !== this.state.isEditing) {
         window.scrollTo(0, 0);
 
@@ -144,7 +152,7 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     hasChannelList(): boolean {
-      return Boolean(this.props.channelList) && this.props.channelList.length > 0;
+      return this.props.orgChannels.allChannels().length > 0;
     }
 
     getDefaultSelectedItem(): Option<ScheduledAction> {
@@ -175,42 +183,50 @@ class Scheduling extends React.Component<Props, State> {
       return this.state.selectedItem;
     }
 
-    updateSelectedItem(newItem, optionalCallback) {
+    updateSelectedItem(newItem: ScheduledAction, optionalCallback?: () => void): void {
       this.setState({
         selectedItem: newItem
       }, optionalCallback);
     }
 
-    findChannelFor(channelId): Option<ScheduleChannel> {
-      return this.hasChannelList() && this.props.channelList.find((ea) => ea.id === channelId) || null;
+    findChannelFor(channelId: string): Option<ScheduleChannel> {
+      return this.hasChannelList() && this.props.orgChannels.allChannels().find((ea) => ea.id === channelId) || null;
     }
 
     getScheduleByChannel(): Array<ScheduleGroup> {
-      const groupsByName = {};
+      const groupsByName: SchedulesGroupedByName = {};
       this.props.scheduledActions.forEach((action) => {
         const channel = this.findChannelFor(action.channel);
-        const channelName = channel ? channel.getFormattedName() : "Unknown";
-        const group = groupsByName[channelName] || {
+        const channelName = channel ? channel.getFormattedName() : null;
+        const groupName = channelName || "[unknown]";
+        const group: ScheduleGroup = groupsByName[groupName] || {
           channel: channel,
           channelName: channelName,
           channelId: channel ? channel.id : "unknown",
-          excludesBot: channel && !channel.isDm() && !channel.isBotMember,
-          isArchived: channel && channel.isArchived,
+          excludesBot: Boolean(channel && !channel.isDm() && !channel.isBotMember),
+          isArchived: Boolean(channel && channel.isArchived),
+          isMissing: !channel,
+          isReadOnly: Boolean(channel && channel.isReadOnly),
           actions: []
         };
         group.actions.push(action);
-        groupsByName[channelName] = group;
+        groupsByName[groupName] = group;
       });
-      const channelNames = Object.keys(groupsByName);
-      const sortedNames = Sort.arrayAlphabeticalBy(channelNames, (ea) => ea);
-      return sortedNames.map((channelName) => groupsByName[channelName]);
+      const groupArray = Object.keys(groupsByName).map((channelName) => {
+        const group = groupsByName[channelName] as ScheduleGroup;
+        group.actions = Sort.arrayAscending(group.actions, (action) => action.firstRecurrence ? Number(action.firstRecurrence) : Infinity);
+        return group;
+      });
+      return Sort.arrayAscending(groupArray, (group) => {
+        return group.actions[0].firstRecurrence ? Number(group.actions[0].firstRecurrence) : Infinity
+      });
     }
 
-    shouldShowChannel(channelId): boolean {
+    shouldShowChannel(channelId: string): boolean {
       return !this.state.filterChannelId || this.state.filterChannelId === channelId;
     }
 
-    toggleFilter(channelId) {
+    toggleFilter(channelId: string) {
       this.setState({
         filterChannelId: this.filterActiveFor(channelId) ? null : channelId
       });
@@ -222,11 +238,11 @@ class Scheduling extends React.Component<Props, State> {
       });
     }
 
-    filterActiveFor(channelId): boolean {
+    filterActiveFor(channelId: string): boolean {
       return this.state.filterChannelId === channelId;
     }
 
-    toggleEditor(action) {
+    toggleEditor(action: ScheduledAction) {
       this.props.onClearErrors();
       this.setState({
         selectedItem: action,
@@ -324,7 +340,7 @@ class Scheduling extends React.Component<Props, State> {
       return this.props.isSaving || this.props.isDeleting;
     }
 
-    renderSidebar(groups) {
+    renderSidebar(groups: Array<ScheduleGroup>) {
       return (
         <div>
           <div className="phxl mobile-phl mbs">
@@ -338,7 +354,7 @@ class Scheduling extends React.Component<Props, State> {
               }`}
               onClick={this.clearFilters}
             >
-              <span className={"type-bold"}>All channels</span>
+              <div className={"type-bold"}>All channels</div>
             </Button>
             {this.renderFilterList(groups)}
           </div>
@@ -346,23 +362,40 @@ class Scheduling extends React.Component<Props, State> {
       );
     }
 
-    renderFilterList(groups) {
+    renderFilterList(groups: Array<ScheduleGroup>) {
       if (groups.length > 1) {
         return groups.map((group) => (
           <Button
             className={`button-block width-full phxl mobile-phl pvxs mvxs ${
               this.filterActiveFor(group.channelId) ? "bg-blue type-white " : "type-link "
               }`}
-            key={`filter-${group.channelName}`}
+            key={`filter-${group.channelName || "[unknown]"}`}
             onClick={() => this.toggleFilter(group.channelId)}
           >
-            {group.channelName}
+            <div className="display-inline-block align-m">
+              {group.channelName || (
+                <i>Unknown channel</i>
+              )}
+            </div>
+            {this.renderGroupWarningIcon(group)}
           </Button>
         ));
+      } else {
+        return null;
       }
     }
 
-    renderGroupWarning(group) {
+    renderGroupWarningIcon(group: ScheduleGroup) {
+      if (group.isArchived || group.excludesBot || group.isMissing || group.isReadOnly) {
+        return (
+          <span className="mls display-inline-block type-pink height-xl align-m"><SVGWarning/></span>
+        );
+      } else {
+        return null;
+      }
+    }
+
+    renderGroupWarningText(group: ScheduleGroup) {
       if (group.isArchived) {
         return (
           <span className="type-s type-pink type-bold type-italic">
@@ -372,7 +405,19 @@ class Scheduling extends React.Component<Props, State> {
       } else if (group.excludesBot) {
         return (
           <span className="type-s type-pink type-bold type-italic">
-            — Warning: Ellipsis must be invited to this channel for any scheduled action to run.
+            — Warning: The bot must be invited to this channel for any scheduled action to run.
+          </span>
+        );
+      } else if (group.isMissing) {
+        return (
+          <span className="type-s type-pink type-bold type-italic">
+            — Warning: No information about this channel was found. It may be private and the bot is not a member, or it may no longer exist.
+          </span>
+        );
+      } else if (group.isReadOnly) {
+        return (
+          <span className="type-s type-pink type-bold type-italic">
+            — Warning: The bot is restricted from posting to this channel by the admin.
           </span>
         );
       } else {
@@ -380,21 +425,21 @@ class Scheduling extends React.Component<Props, State> {
       }
     }
 
-    renderGroups(groups) {
+    renderGroups(groups: Array<ScheduleGroup>) {
       return groups.map((group) => (
         <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
           <div className="ptxl pbxl">
             <div className="phxl mobile-phl">
               <h4 className="mvn">
                 <span className="mrxs"><ChannelName channel={group.channel} /></span>
-                {this.renderGroupWarning(group)}
+                {this.renderGroupWarningText(group)}
               </h4>
             </div>
 
             <div>
               {group.actions.map((action) => (
                 <ScheduledItem
-                  key={`${action.type}-${action.id}`}
+                  key={`${action.scheduleType}-${action.id}`}
                   className={`mhl mvs pal mobile-pam border border-light bg-white`}
                   scheduledAction={action}
                   behaviorGroups={this.props.behaviorGroups}
@@ -436,7 +481,7 @@ class Scheduling extends React.Component<Props, State> {
       );
     }
 
-    renderScheduleList(groups) {
+    renderScheduleList(groups: Array<ScheduleGroup>) {
       return groups.length > 0 ? this.renderGroups(groups) : this.renderNoSchedules();
     }
 
@@ -466,7 +511,7 @@ class Scheduling extends React.Component<Props, State> {
           <Collapsible revealWhen={this.isEditing()}>
             <ScheduledItemEditor
               scheduledAction={selectedItem}
-              channelList={this.props.channelList}
+              orgChannels={this.props.orgChannels}
               behaviorGroups={this.props.behaviorGroups}
               onChange={this.updateSelectedItem}
               teamTimeZone={this.props.teamTimeZone || "America/New_York"}
@@ -475,6 +520,7 @@ class Scheduling extends React.Component<Props, State> {
               slackBotUserId={this.props.slackBotUserId || ""}
               isAdmin={this.props.isAdmin}
               scheduleUser={selectedItem && selectedItem.userId ? this.lookupUser(selectedItem.userId) : null}
+              csrfToken={this.props.csrfToken}
             />
           </Collapsible>
 
@@ -585,7 +631,5 @@ class Scheduling extends React.Component<Props, State> {
       );
     }
 }
-
-Scheduling.defaultProps = Page.requiredPropDefaults();
 
 export default Scheduling;

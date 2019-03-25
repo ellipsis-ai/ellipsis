@@ -1,17 +1,20 @@
 {
   "compilerOptions": {
     "sourceMap": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noImplicitReturns": true,
+    "noImplicitThis": true,
     "strictFunctionTypes": true,
     "strictNullChecks": true,
+    "strictPropertyInitialization": false,
     "module": "es6",
     "target": "es5",
     "lib": ["es2016", "dom"],
     "jsx": "react",
     "allowJs": false,
     "outDir": "target/web/typescript",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "resolveJsonModule": true
   },
   "include": [
     "app/assets/frontend/**/*",

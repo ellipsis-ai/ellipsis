@@ -1,6 +1,7 @@
 package models.behaviors.builtins
 
 import akka.actor.ActorSystem
+import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.Event
 import models.behaviors.{BotResult, SimpleTextResult}
 import services.DefaultServices
@@ -28,7 +29,7 @@ case class ScheduleBehavior(
         scheduledMessage.successResponse(dataService)
       }.getOrElse(Future.successful(s"Sorry, I don’t know how to schedule `$recurrence`"))
     } yield {
-      SimpleTextResult(event, None, responseText, forcePrivateResponse = false)
+      SimpleTextResult(event, None, responseText, responseType = Normal)
     }
   }
 

@@ -3,7 +3,7 @@ package mocks
 import javax.inject.Inject
 
 import com.amazonaws.services.logs.AWSLogsAsyncClient
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services.{AWSLogsService, DataService}

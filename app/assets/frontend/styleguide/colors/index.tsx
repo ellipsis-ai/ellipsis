@@ -10,8 +10,8 @@ type Color = {
 
 class Colors extends React.Component<{}> {
     getColorClasses(): Array<Color> {
-      const colorList = [].slice.call(document.styleSheets).reduce((all, styleSheet) => {
-        let rules;
+      const colorList: Array<Color> = [].slice.call(document.styleSheets).reduce((all: Array<Color>, styleSheet: CSSStyleSheet) => {
+        let rules: Array<CSSStyleRule>;
         try {
           rules = [].slice.call(styleSheet.cssRules);
         } catch(e) {
@@ -21,20 +21,23 @@ class Colors extends React.Component<{}> {
             return ea.type === CSSRule.STYLE_RULE &&
               ea.selectorText.includes(".color-");
           })
-          .reduce((prev, cssRule) => {
+          .reduce((prev: Array<Color>, cssRule: CSSStyleRule) => {
             const colorName = cssRule.selectorText.replace(/\.color-/, "");
             const value = cssRule.style.getPropertyValue("color");
-            return prev.concat({
+            const rgba = RgbaColor.fromCSS(value);
+            return rgba ? prev.concat({
               className: cssRule.selectorText.replace(/^\./, ""),
               name: colorName,
               value: value,
-              rgba: RgbaColor.fromCSS(value)
-            });
+              rgba: rgba
+            }) : prev;
           }, [])
         );
       }, []);
       // Find the unique set by name
-      const byName = {};
+      const byName: {
+        [name: string]: Color
+      } = {};
       colorList.forEach((color) => {
         if (!byName[color.name]) {
           byName[color.name] = color;

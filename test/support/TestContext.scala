@@ -10,7 +10,7 @@ import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
 import models.team.Team
 import modules.ActorModule
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import play.api.inject._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
@@ -18,7 +18,7 @@ import play.api.{Application, Configuration}
 import services._
 import services.caching.CacheService
 import services.slack.{SlackApiService, SlackEventService, SlackEventServiceImpl}
-import utils.SlackFileMap
+import utils.FileMap
 
 import scala.concurrent.ExecutionContext
 
@@ -37,7 +37,7 @@ trait TestContext extends MockitoSugar{
       overrides(bind[SlackEventService].toInstance(mock[SlackEventServiceImpl])).
       overrides(bind[BotResultService].toInstance(mock[BotResultService])).
       overrides(bind[CacheService].to[MockCacheService]).
-      overrides(bind[SlackFileMap].toInstance(mock[SlackFileMap])).
+      overrides(bind[FileMap].toInstance(mock[FileMap])).
       overrides(bind[SlackApiService].toInstance(mock[SlackApiService])).
       disable[ActorModule]
   }
@@ -57,7 +57,7 @@ trait TestContext extends MockitoSugar{
   val cacheService = app.injector.instanceOf(classOf[CacheService])
   val ws = app.injector.instanceOf(classOf[WSClient])
   val configuration = app.injector.instanceOf(classOf[Configuration])
-  val slackFileMap = app.injector.instanceOf(classOf[SlackFileMap])
+  val fileMap = app.injector.instanceOf(classOf[FileMap])
   lazy val services = app.injector.instanceOf(classOf[DefaultServices])
   lazy implicit val ec = app.injector.instanceOf(classOf[ExecutionContext])
 

@@ -3,6 +3,7 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.IDs
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -11,15 +12,16 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.EventHandler
-import models.behaviors.scheduling.recurrence.Recurrence
+import models.behaviors.scheduling.recurrence.{Minutely, Recurrence}
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.team.Team
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.{DataService, DefaultServices}
+import slick.dbio.DBIO
 import support.TestContext
 
 import scala.concurrent.duration._
@@ -54,7 +56,8 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
                             behavior: Behavior,
                             team: Team,
                             channel: String = "C12345678",
-                            isForIndividualMembers: Boolean = false
+                            isForIndividualMembers: Boolean = false,
+                            recurrence: Recurrence = mock[Recurrence]
                           ): ScheduledBehavior = {
     ScheduledBehavior(
       id = IDs.next,
@@ -64,7 +67,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
       team = team,
       maybeChannel = Some(channel),
       isForIndividualMembers = isForIndividualMembers,
-      recurrence = mock[Recurrence],
+      recurrence,
       nextSentAt = OffsetDateTime.now,
       createdAt = OffsetDateTime.now
     )
@@ -148,9 +151,9 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val channel = "C12345678"
         val token = IDs.next
         val slackTeamId = "T1234567"
-        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         val userSlackId = "U1000"
-        val userSlackProfile = SlackProfile(slackTeamId, LoginInfo("slack", userSlackId))
+        val userSlackProfile = SlackProfile(SlackUserTeamIds(slackTeamId), LoginInfo("slack", userSlackId), None)
         when(services.dataService.users.maybeSlackProfileFor(user))
           .thenReturn(Future.successful(Some(userSlackProfile)))
         val sbSpy = scheduledBehaviorSpy(user, team, channel)
@@ -171,7 +174,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val channel = "C12345678"
         val token = IDs.next
         val slackTeamId = "T1234567"
-        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         when(services.dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(None))
         val sbSpy = scheduledBehaviorSpy(user, team, channel)
         val sent = sbSpy.send(eventHandler, botProfile, services, "Mock schedule")
@@ -191,7 +194,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val channel = "C12345678"
         val token = IDs.next
         val slackTeamId = "T1234567"
-        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         val sbSpy = scheduledBehaviorSpy(user, team, channel, isForIndividualMembers = true)
         val sent = sbSpy.send(eventHandler, botProfile, services, "Mock schedule")
         runNow(sent)
@@ -211,7 +214,7 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val channel = "D12345678"
         val token = IDs.next
         val slackTeamId = "T1234567"
-        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now)
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         when(services.dataService.users.maybeSlackProfileFor(user)).thenReturn(Future.successful(None))
         val sbSpy = scheduledBehaviorSpy(user, team, channel)
         val sent = sbSpy.send(eventHandler, botProfile, services, "Mock schedule")
@@ -229,6 +232,43 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
           any[SlackBotProfile],
           any[DefaultServices]
         )(any[ActorSystem], any[ExecutionContext])
+      }
+    }
+  }
+
+  // TODO: These tests could be improved by testing the return value of updateOrDeleteScheduleAction
+  // But it's unclear how to get the mock data service to reliably run DBIOActions and convert them into Futures
+  "updateOrDeleteScheduleAction" should {
+    "update if there is no times to run set on the recurrence" in new TestContext {
+      running(app) {
+        val behavior = newBehavior(team)
+        val sb = newScheduledBehavior(user, behavior, team, recurrence = Minutely(IDs.next, 1, 0, None))
+        when(dataService.scheduledBehaviors.updateForNextRunAction(sb)).thenReturn(DBIO.successful(sb))
+        sb.updateOrDeleteScheduleAction(dataService)
+        verify(dataService.scheduledBehaviors, times(1)).updateForNextRunAction(sb)
+        verify(dataService.scheduledBehaviors, times(0)).deleteAction(sb)
+      }
+    }
+
+    "update if there is at least one more run after this on the recurrence" in new TestContext {
+      running(app) {
+        val behavior = newBehavior(team)
+        val sb = newScheduledBehavior(user, behavior, team, recurrence = Minutely(IDs.next, 1, 0, Some(2)))
+        when(dataService.scheduledBehaviors.updateForNextRunAction(sb)).thenReturn(DBIO.successful(sb))
+        sb.updateOrDeleteScheduleAction(dataService)
+        verify(dataService.scheduledBehaviors, times(1)).updateForNextRunAction(sb)
+        verify(dataService.scheduledBehaviors, times(0)).deleteAction(sb)
+      }
+    }
+
+    "delete if there are no runs after this on the recurrence" in new TestContext {
+      running(app) {
+        val behavior = newBehavior(team)
+        val sb = newScheduledBehavior(user, behavior, team, recurrence = Minutely(IDs.next, 1, 1, Some(2)))
+        when(dataService.scheduledBehaviors.deleteAction(sb)).thenReturn(DBIO.successful(Some(sb)))
+        sb.updateOrDeleteScheduleAction(dataService)
+        verify(dataService.scheduledBehaviors, times(0)).updateForNextRunAction(sb)
+        verify(dataService.scheduledBehaviors, times(1)).deleteAction(sb)
       }
     }
   }

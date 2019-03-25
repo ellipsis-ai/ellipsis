@@ -41,4 +41,11 @@ object InputQueries {
   }
   val allForGroupVersionQuery = Compiled(uncompiledAllForGroupVersionQuery _)
 
+  def uncompiledFindByNameQuery(name: Rep[String], behaviorGroupVersionId: Rep[String]) = {
+    joined.
+      filter { case((raw, _), _) => raw.name === name }.
+      filter { case((raw, _), _) => raw.behaviorGroupVersionId === behaviorGroupVersionId }
+  }
+  val findByNameQuery = Compiled(uncompiledFindByNameQuery _)
+
 }

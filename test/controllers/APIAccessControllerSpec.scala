@@ -1,13 +1,11 @@
 package controllers
 
-import java.time.OffsetDateTime
-
 import com.mohiva.play.silhouette.test._
 import models.IDs
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
 import models.team.Team
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito._
 import org.scalatestplus.play.PlaySpec
 import play.api.test.FakeRequest
@@ -25,7 +23,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
         val appId = IDs.next
         when(dataService.oauth2Applications.find(appId)).thenReturn(Future.successful(None))
         val request =
-          FakeRequest(controllers.routes.APIAccessController.linkCustomOAuth2Service(appId, None, None, None, None)).
+          FakeRequest(controllers.routes.APIAccessController.linkCustomOAuth2Service(appId, None, None)).
             withAuthenticator(user.loginInfo)
         val result = route(app, request).get
         status(result) mustBe NOT_FOUND
@@ -39,7 +37,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.oauth2Applications.find(oauth2AppForOtherTeam.id)).thenReturn(Future.successful(Some(oauth2AppForOtherTeam)))
         when(dataService.teams.find(someOtherTeam.id, user)).thenReturn(Future.successful(None))
         val request =
-          FakeRequest(controllers.routes.APIAccessController.linkCustomOAuth2Service(oauth2AppForOtherTeam.id, None, None, None, None)).
+          FakeRequest(controllers.routes.APIAccessController.linkCustomOAuth2Service(oauth2AppForOtherTeam.id, None, None)).
             withAuthenticator(user.loginInfo)
         val result = route(app, request).get
         status(result) mustBe SEE_OTHER
@@ -63,7 +61,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.oauth2Applications.find(oauth2AppForOtherTeam.id)).thenReturn(Future.successful(Some(oauth2AppForOtherTeam)))
         when(dataService.teams.find(someOtherTeam.id, user)).thenReturn(Future.successful(None))
         implicit val request =
-          FakeRequest(controllers.routes.APIAccessController.linkCustomOAuth2Service(oauth2AppForOtherTeam.id, None, None, None, None)).
+          FakeRequest(controllers.routes.APIAccessController.linkCustomOAuth2Service(oauth2AppForOtherTeam.id, None, None)).
             withAuthenticator(user.loginInfo)
         val result = route(app, request).get
         status(result) mustBe SEE_OTHER
@@ -82,7 +80,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
         when(dataService.oauth2Applications.find(oauth2App.id)).thenReturn(Future.successful(Some(oauth2App)))
         when(dataService.teams.find(teamId, user)).thenReturn(Future.successful(Some(team)))
         implicit val request =
-          FakeRequest(controllers.routes.APIAccessController.linkCustomOAuth2Service(oauth2App.id, None, None, None, None)).
+          FakeRequest(controllers.routes.APIAccessController.linkCustomOAuth2Service(oauth2App.id, None, None)).
             withAuthenticator(user.loginInfo)
         val result = route(app, request).get
         status(result) mustBe SEE_OTHER

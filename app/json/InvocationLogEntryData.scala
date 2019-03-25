@@ -8,7 +8,9 @@ case class InvocationLogEntryData(
                                   messageText: String,
                                   resultText: String,
                                   context: String,
+                                  maybeChannel: Option[String],
                                   maybeUserIdForContext: Option[String],
+                                  maybeOriginalEventType: Option[String],
                                   runtimeInMilliseconds: Long,
                                   createdAt: OffsetDateTime
                                 )

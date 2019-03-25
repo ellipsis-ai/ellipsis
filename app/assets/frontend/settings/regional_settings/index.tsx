@@ -6,10 +6,9 @@ import Collapsible from '../../shared_ui/collapsible';
 import Button from '../../form/button';
 import SettingsPage from '../../shared_ui/settings_page';
 import TeamTimeZoneSetter from '../../time_zone/team_time_zone_setter';
-import Page from '../../shared_ui/page';
 import autobind from '../../lib/autobind';
 
-type RegionalSettingsProps = {
+export interface RegionalSettingsProps {
   csrfToken: string,
   isAdmin: boolean,
   teamId: string,
@@ -51,7 +50,7 @@ class RegionalSettings extends React.Component<Props, State> {
 
     getCurrentTime(): string {
       const time = moment().utc();
-      if (this.props.teamTimeZoneOffset) {
+      if (typeof this.props.teamTimeZoneOffset === "number") {
         time.add(this.props.teamTimeZoneOffset, 'seconds');
       }
       return time.format('h:mm:ss A');
@@ -71,7 +70,7 @@ class RegionalSettings extends React.Component<Props, State> {
     }
 
     renderCurrentTime() {
-      if (this.props.teamTimeZoneOffset) {
+      if (typeof this.props.teamTimeZoneOffset === "number") {
         return (
           <span> — {this.state.currentTime}</span>
         );
@@ -133,7 +132,5 @@ class RegionalSettings extends React.Component<Props, State> {
       );
     }
   }
-
-RegionalSettings.defaultProps = Page.requiredPropDefaults();
 
 export default RegionalSettings;

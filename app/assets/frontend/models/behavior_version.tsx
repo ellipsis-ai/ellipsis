@@ -6,7 +6,7 @@ import Editable, {EditableInterface, EditableJson} from './editable';
 import Input from './input';
 import ParamType from './param_type';
 import ResponseTemplate, {ResponseTemplateJson} from './response_template';
-import Trigger, {TriggerJson} from './trigger';
+import Trigger, {TriggerJson, TriggerType} from './trigger';
 import DataTypeField from "./data_type_field";
 import {Timestamp} from "../lib/formatter";
 import {NODE_JS_VERSION} from "../lib/constants";
@@ -24,7 +24,6 @@ export interface BehaviorVersionJson extends EditableJson {
   inputIds: Array<string>;
   triggers: Array<TriggerJson>;
   config: BehaviorConfigJson;
-  knownEnvVarsUsed: Array<string>;
 }
 
 export interface BehaviorVersionInterface extends EditableInterface, BehaviorVersionJson {
@@ -47,7 +46,6 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     readonly triggers: Array<Trigger>,
     readonly config: BehaviorConfig,
     readonly exportId: Option<string>,
-    readonly knownEnvVarsUsed: Array<string>,
     readonly createdAt: Option<Timestamp>,
     readonly isNew: Option<boolean>,
     readonly editorScrollPosition: Option<number>
@@ -70,8 +68,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         responseTemplate: { value: responseTemplate, enumerable: true },
         inputIds: { value: inputIds || [], enumerable: true },
         triggers: { value: triggers || [], enumerable: true },
-        config: { value: config, enumerable: true },
-        knownEnvVarsUsed: { value: knownEnvVarsUsed || [], enumerable: true }
+        config: { value: config, enumerable: true }
       });
   }
 
@@ -115,8 +112,9 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         value: this.getFunctionBody(),
         isCode: true
       }, {
-        name: "Always responds privately",
-        value: Boolean(this.config.forcePrivateResponse)
+        name: "Response type",
+        value: this.config.responseTypeId,
+        isCategorical: true
       }, {
         name: "Cache results",
         value: Boolean(this.config.canBeMemoized)
@@ -154,7 +152,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return `Cancel new ${this.kindLabel()}`;
     }
 
-    buildUpdatedGroupFor(group: BehaviorGroup, props: {}): BehaviorGroup {
+    buildUpdatedGroupFor(group: BehaviorGroup, props: Partial<BehaviorVersionInterface>): BehaviorGroup {
       const timestampedBehavior = this.clone(props).copyWithNewTimestamp();
       const updatedVersions = group.behaviorVersions.
         filter(ea => ea.behaviorId !== timestampedBehavior.behaviorId ).
@@ -189,6 +187,10 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     usesCode(): boolean {
       const config = this.getDataTypeConfig();
       return !this.isDataType() || Boolean(config && config.usesCode);
+    }
+
+    hasDefaultDataTypeSettings(): boolean {
+      return this.isDataType() && this.usesCode() && !this.functionBody;
     }
 
     getBehaviorVersionTypeName(): string {
@@ -289,10 +291,6 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       }
     }
 
-    getFunctionBody(): string {
-      return this.functionBody || "";
-    }
-
     includesText(queryString: string): boolean {
       var lowercase = queryString.toLowerCase().trim();
       return super.includesText(queryString) ||
@@ -320,7 +318,8 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return ParamType.fromProps({
         id: this.id || "unknown",
         exportId: this.exportId || "unknown",
-        name: this.name || "Unnamed data type"
+        name: this.name || "Unnamed data type",
+        typescriptType: ParamType.typescriptTypeForDataTypes()
       });
     }
 
@@ -358,7 +357,6 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         props.triggers,
         props.config,
         props.exportId,
-        props.knownEnvVarsUsed,
         props.createdAt,
         props.isNew,
         props.editorScrollPosition
@@ -384,7 +382,7 @@ const name = ellipsis.userInfo.fullName || "friend";
 ellipsis.success(\`Hello, \${name}.\`);
 `);
       const template = ResponseTemplate.fromString("{successResult}");
-      const triggers = [new Trigger(`run ${optionalName || "action"}`, false, true)];
+      const triggers = [new Trigger(TriggerType.MessageSent, `run ${optionalName || "action"}`, false, true)];
       const props: DefaultActionProps = {
         triggers: triggers,
         functionBody: functionBody,
@@ -396,10 +394,10 @@ ellipsis.success(\`Hello, \${name}.\`);
       return props;
     }
 
-    static defaultDataTypeCode(usesSearch): string {
+    static defaultDataTypeCode(): string {
       return (
 `// Write a Node.js (${NODE_JS_VERSION}) function that calls ellipsis.success() with an array of items.
-// ${usesSearch ? "Use searchQuery to filter on the user’s input." : ""}
+//
 // Each item should have a "label" and "id" property.
 //
 // Example:
@@ -409,6 +407,28 @@ ellipsis.success(\`Hello, \${name}.\`);
 //   { id: "2", label: "Two" }
 // ]);
 `);
+    }
+
+    icon(): string {
+      if (this.isDataType()) {
+        return BehaviorVersion.dataTypeIcon();
+      } else if (this.isTest()) {
+        return BehaviorVersion.testIcon();
+      } else {
+        return BehaviorVersion.actionIcon();
+      }
+    }
+
+    static actionIcon(): string {
+      return "🎬";
+    }
+
+    static dataTypeIcon(): string {
+      return "📁";
+    }
+
+    static testIcon(): string {
+      return "📐";
     }
 
 }

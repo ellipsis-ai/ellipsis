@@ -7,16 +7,18 @@ import drivers.SlickPostgresDriver.api._
 import javax.inject.{Inject, Provider}
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.registration.RegistrationService
-import models.behaviors.events.{EventType, SlackMessage, SlackMessageEvent}
+import models.accounts.user.User
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
+import models.behaviors.events.{EventType, SlackEventContext}
 import models.behaviors.{BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
 import play.api.libs.ws.WSClient
 import services.caching.CacheService
-import services.slack.{MalformedResponseException, SlackApiService, SlackEventService}
+import services.slack._
 import services.DataService
 import slick.dbio.DBIO
-import utils.{SlackChannels, SlackMessageReactionHandler, SlackTimestamp}
+import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -26,8 +28,9 @@ class SlackBotProfileTable(tag: Tag) extends Table[SlackBotProfile](tag, "slack_
   def slackTeamId = column[String]("slack_team_id")
   def token = column[String]("token")
   def createdAt = column[OffsetDateTime]("created_at")
+  def allowShortcutMention = column[Boolean]("allow_shortcut_mention")
 
-  def * = (userId, teamId, slackTeamId, token, createdAt) <> ((SlackBotProfile.apply _).tupled, SlackBotProfile.unapply _)
+  def * = (userId, teamId, slackTeamId, token, createdAt, allowShortcutMention) <> ((SlackBotProfile.apply _).tupled, SlackBotProfile.unapply _)
 
 }
 
@@ -54,8 +57,13 @@ class SlackBotProfileServiceImpl @Inject() (
 
   def allProfiles: Future[Seq[SlackBotProfile]] = dataService.run(all.result)
 
-  def uncompiledFindQuery(userId: Rep[String]) = {
+  def uncompiledAllForUserIdQuery(userId: Rep[String]) = {
     all.filter(_.userId === userId)
+  }
+  val allForUserIdQuery = Compiled(uncompiledAllForUserIdQuery _)
+
+  def uncompiledFindQuery(userId: Rep[String], slackTeamId: Rep[String]) = {
+    uncompiledAllForUserIdQuery(userId).filter(_.slackTeamId === slackTeamId)
   }
   val findQuery = Compiled(uncompiledFindQuery _)
 
@@ -72,13 +80,32 @@ class SlackBotProfileServiceImpl @Inject() (
     dataService.run(allForAction(team))
   }
 
+  def maybeFirstForAction(team: Team, user: User): DBIO[Option[SlackBotProfile]] = {
+    for {
+      botProfiles <- allForAction(team)
+      maybeUserProfiles <- DBIO.from(dataService.users.maybeSlackTeamIdsFor(user))
+    } yield {
+      botProfiles.find { botProfile =>
+        maybeUserProfiles.exists(_.contains(botProfile.slackTeamId))
+      }.orElse(botProfiles.headOption)
+    }
+  }
+
+  def maybeFirstFor(team: Team, user: User): Future[Option[SlackBotProfile]] = {
+    dataService.run(maybeFirstForAction(team, user))
+  }
+
   def uncompiledAllForSlackTeamQuery(slackTeamId: Rep[String]) = {
     all.filter(_.slackTeamId === slackTeamId)
   }
   val allForSlackTeamQuery = Compiled(uncompiledAllForSlackTeamQuery _)
 
+  def allForSlackTeamIdAction(slackTeamId: String): DBIO[Seq[SlackBotProfile]] = {
+    allForSlackTeamQuery(slackTeamId).result
+  }
+
   def allForSlackTeamId(slackTeamId: String): Future[Seq[SlackBotProfile]] = {
-    dataService.run(allForSlackTeamQuery(slackTeamId).result)
+    dataService.run(allForSlackTeamIdAction(slackTeamId))
   }
 
   def admin: Future[SlackBotProfile] = allForSlackTeamId(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID).map(_.head)
@@ -93,10 +120,10 @@ class SlackBotProfileServiceImpl @Inject() (
   }
 
   def ensure(userId: String, slackTeamId: String, slackTeamName: String, token: String): Future[SlackBotProfile] = {
-    val query = findQuery(userId)
+    val query = findQuery(userId, slackTeamId)
     val action = query.result.headOption.flatMap {
       case Some(existing) => {
-        val profile = SlackBotProfile(userId, existing.teamId, slackTeamId, token, existing.createdAt)
+        val profile = SlackBotProfile(userId, existing.teamId, slackTeamId, token, existing.createdAt, existing.allowShortcutMention)
         for {
           maybeTeam <- DBIO.from(dataService.teams.find(existing.teamId))
           _ <- query.update(profile)
@@ -105,30 +132,58 @@ class SlackBotProfileServiceImpl @Inject() (
           }.getOrElse(DBIO.successful(Unit))
         } yield profile
       }
-      case None => DBIO.from(registrationService.registerNewTeam(slackTeamName)).flatMap { team =>
-        val newProfile = SlackBotProfile(userId, team.id, slackTeamId, token, OffsetDateTime.now)
-        (all += newProfile).map { _ => newProfile }
+      case None => {
+        for {
+          maybeExistingTeamId <- allForUserIdQuery(userId).result.map(_.headOption.map(_.teamId))
+          maybeExistingTeam <- maybeExistingTeamId.map { existingTeamId =>
+            dataService.teams.findAction(existingTeamId)
+          }.getOrElse(DBIO.successful(None))
+          team <- maybeExistingTeam.map(DBIO.successful).getOrElse(registrationService.registerNewTeamAction(slackTeamName))
+          existingTeamSlackBotProfiles <- dataService.slackBotProfiles.allForAction(team)
+          profile <- {
+            val newProfile = SlackBotProfile(
+              userId,
+              team.id,
+              slackTeamId,
+              token,
+              OffsetDateTime.now,
+              allowShortcutMention = existingTeamSlackBotProfiles.headOption.map(_.allowShortcutMention).getOrElse {
+                SlackBotProfile.ALLOW_SHORTCUT_MENTION_DEFAULT
+              }
+            )
+            (all += newProfile).map { _ => newProfile }
+          }
+        } yield profile
       }
     }
     dataService.run(action)
   }
 
-  def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]] = {
+  def eventualMaybeEvent(
+                          slackTeamId: String,
+                          channelId: String,
+                          maybeUserId: Option[String],
+                          maybeOriginalEventType: Option[EventType]
+                        ): Future[Option[SlackMessageEvent]] = {
     allForSlackTeamId(slackTeamId).map { botProfiles =>
       botProfiles.headOption.map { botProfile =>
         // TODO: Create a new class for placeholder events
         // https://github.com/ellipsis-ai/ellipsis/issues/1719
         SlackMessageEvent(
-          botProfile,
-          slackTeamId,
-          channelId,
-          None,
-          maybeUserId.getOrElse(botProfile.userId),
+          SlackEventContext(
+            botProfile,
+            channelId,
+            None,
+            maybeUserId.getOrElse(botProfile.userId)
+          ),
           SlackMessage.blank,
           None,
           SlackTimestamp.now,
           maybeOriginalEventType,
-          isUninterruptedConversation = false
+          isUninterruptedConversation = false,
+          isEphemeral = false,
+          maybeResponseUrl = None,
+          beQuiet = false
         )
       }
     }
@@ -149,21 +204,39 @@ class SlackBotProfileServiceImpl @Inject() (
 
   def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]] = {
     val teamId = botProfile.teamId
-    slackEventService.maybeSlackUserDataFor(botProfile).map { maybeSlackUserData =>
+    val botDebugInfo = s"Slack user ID ${botProfile.userId} on Slack team ID ${botProfile.slackTeamId} for Ellipsis team ID ${botProfile.teamId}"
+    slackEventService.maybeSlackUserDataFor(botProfile).flatMap { maybeSlackUserData =>
       maybeSlackUserData.map { slackUserData =>
         val name = slackUserData.getDisplayName
-        cacheService.cacheBotName(name, teamId)
-        name
-      }.orElse {
-        Logger.error("No bot user data returned from Slack API; using fallback cache")
+        cacheService.cacheBotName(name, teamId).map { _ =>
+          Some(name)
+        }
+      }.getOrElse {
+        Logger.error(s"No bot user data returned from Slack API for ${botDebugInfo}; using fallback cache")
         cacheService.getBotName(teamId)
       }
-    }.recover {
-      case e: MalformedResponseException => {
-        Logger.warn("Couldn’t retrieve bot user data from Slack API because of an invalid response; using fallback cache", e)
+    }.recoverWith {
+      case e: InvalidResponseException => {
+        Logger.warn(s"Couldn’t retrieve bot user data from Slack API for ${botDebugInfo} because of an invalid/error response; using fallback cache", e)
         cacheService.getBotName(teamId)
       }
     }
+  }
+
+  // TODO: this might need to be at the team level for enterprise grid cases
+  def toggleMentionShortcut(botProfile: SlackBotProfile, enableShortcut: Boolean): Future[Option[Boolean]] = {
+    val query = findQuery(botProfile.userId, botProfile.slackTeamId)
+    val action = query.result.headOption.flatMap {
+      case Some(existing) => {
+        for {
+          _ <- query.update(existing.copy(allowShortcutMention = enableShortcut))
+        } yield {
+          Some(enableShortcut)
+        }
+      }
+      case None => DBIO.successful(None)
+    }
+    dataService.run(action)
   }
 
   private def sendResult(eventualMaybeResult: Future[Option[BotResult]]): Future[Option[String]] = {
@@ -178,36 +251,41 @@ class SlackBotProfileServiceImpl @Inject() (
   def sendResultWithNewEvent(
                               description: String,
                               getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
-                              userSlackTeamId: String,
                               botProfile: SlackBotProfile,
                               channelId: String,
                               userId: String,
                               originalMessageTs: String,
-                              maybeThreadTs: Option[String]
-  ): Future[Unit] = {
+                              maybeOriginalEventType: Option[EventType],
+                              maybeThreadTs: Option[String],
+                              isEphemeral: Boolean,
+                              maybeResponseUrl: Option[String],
+                              beQuiet: Boolean
+  ): Future[Option[String]] = {
     val delayMilliseconds = 1000
     val event = SlackMessageEvent(
-      botProfile,
-      userSlackTeamId,
-      channelId,
-      maybeThreadTs,
-      userId,
+      SlackEventContext(
+        botProfile,
+        channelId,
+        maybeThreadTs,
+        userId
+      ),
       SlackMessage.blank,
       None,
-      SlackTimestamp.now,
-      None,
-      isUninterruptedConversation = false
+      maybeThreadTs.getOrElse(originalMessageTs),
+      maybeOriginalEventType,
+      isUninterruptedConversation = false,
+      isEphemeral,
+      maybeResponseUrl,
+      beQuiet
     )
-    (for {
-      _ <- {
-        val eventualResult = getEventualMaybeResult(event)
-        sendResult(eventualResult)
-        SlackMessageReactionHandler.handle(slackApiService.clientFor(botProfile), eventualResult, channelId, originalMessageTs, delayMilliseconds)
-      }
-    } yield {}).recover {
-      case t: Throwable => {
-        Logger.error(s"Exception responding to a Slack action: $description", t)
-      }
-    }
+    val eventualResult = sendResult(getEventualMaybeResult(event))
+    SlackMessageReactionHandler.handle(
+      slackApiService.clientFor(botProfile),
+      eventualResult,
+      channelId,
+      originalMessageTs,
+      delayMilliseconds
+    )
+    eventualResult
   }
 }

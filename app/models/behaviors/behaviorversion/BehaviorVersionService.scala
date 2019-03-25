@@ -1,5 +1,6 @@
 package models.behaviors.behaviorversion
 
+import akka.actor.ActorSystem
 import json.BehaviorVersionData
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
@@ -23,6 +24,8 @@ trait BehaviorVersionService {
   def allForGroupVersion(groupVersion: BehaviorGroupVersion): Future[Seq[BehaviorVersion]]
 
   def allCurrentForTeam(team: Team): Future[Seq[BehaviorVersion]]
+
+  def allWithSubstringInGroupVersions(substring: String, behaviorGroupVersionIds: Seq[String]): Future[Seq[BehaviorVersion]]
 
   def dataTypesForGroupVersionAction(groupVersion: BehaviorGroupVersion)(implicit ec: ExecutionContext): DBIO[Seq[BehaviorVersion]] = {
     allForGroupVersionAction(groupVersion).map { all =>
@@ -77,14 +80,14 @@ trait BehaviorVersionService {
                        parametersWithValues: Seq[ParameterWithValue],
                        event: Event,
                        maybeConversation: Option[Conversation]
-                     ): DBIO[BotResult]
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult]
 
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  event: Event,
                  maybeConversation: Option[Conversation]
-               ): Future[BotResult]
+               )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult]
 
   def unlearn(behaviorVersion: BehaviorVersion): Future[Unit]
 

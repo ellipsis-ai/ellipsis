@@ -3,9 +3,10 @@ package services.slack
 import akka.actor.ActorSystem
 import javax.inject._
 import json.{SlackUserData, SlackUserProfileData}
+import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
-import models.behaviors.events.{EventHandler, SlackMessageEvent}
+import models.behaviors.events.{Event, EventHandler}
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import services.DataService
@@ -26,7 +27,7 @@ class SlackEventServiceImpl @Inject()(
 
   implicit val ec: ExecutionContext = actorSystem.dispatcher
 
-  def onEvent(event: SlackMessageEvent): Future[Unit] = {
+  def onEvent(event: Event): Future[Unit] = {
     if (!event.isBotMessage) {
       for {
         maybeConversation <- event.maybeOngoingConversation(dataService)
@@ -47,9 +48,8 @@ class SlackEventServiceImpl @Inject()(
 
   def slackUserDataList(slackUserIds: Set[String], botProfile: SlackBotProfile): Future[Set[SlackUserData]] = {
     val client = clientFor(botProfile)
-    val slackTeamId = botProfile.slackTeamId
     Future.sequence(slackUserIds.map { userId =>
-      maybeSlackUserDataFor(userId, slackTeamId, client, (e) => {
+      maybeSlackUserDataFor(userId, client, (e) => {
         Logger.info(
           s"""Slack API reported user not found while trying to convert user IDs to username:
             |Slack user ID: ${userId}
@@ -61,48 +61,45 @@ class SlackEventServiceImpl @Inject()(
     }).map(_.flatten)
   }
 
-  private def slackUserDataFromSlackUser(user: SlackUser, slackTeamId: String): SlackUserData = {
-    val maybeProfile = user.profile.map { profile =>
-      SlackUserProfileData(
-        profile.display_name,
-        profile.first_name,
-        profile.last_name,
-        profile.real_name,
-        profile.email,
-        profile.phone
-      )
-    }
-    SlackUserData(
-      user.id,
-      user.team_id.getOrElse(slackTeamId),
-      user.name,
-      isPrimaryOwner = user.is_primary_owner.getOrElse(false),
-      isOwner = user.is_owner.getOrElse(false),
-      isRestricted = user.is_restricted.getOrElse(false),
-      isUltraRestricted = user.is_ultra_restricted.getOrElse(false),
-      isBot = user.is_bot.getOrElse(false),
-      tz = user.tz,
-      user.deleted.getOrElse(false),
-      maybeProfile
-    )
+  private def slackUserDataFromSlackUser(user: SlackUser, client: SlackApiClient): SlackUserData = {
+    SlackUserData.fromSlackUser(user, client.profile)
   }
 
   def fetchSlackUserDataFn(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: (SlackApiError => Option[SlackUser])): SlackUserDataCacheKey => Future[Option[SlackUserData]] = {
     key: SlackUserDataCacheKey => {
       for {
-        maybeInfo <- client.getUserInfo(key.slackUserId)
+        maybeInfo <- client.getUserInfo(key.slackUserId).map { maybeSlackUser =>
+          maybeSlackUser.foreach { slackUser =>
+            cacheService.cacheFallbackSlackUser(slackUserId, slackTeamId, slackUser)
+          }
+          maybeSlackUser
+        }.recoverWith {
+          case e: InvalidResponseException => {
+            Logger.error(s"Invalid response while fetching user info for Slack user ID ${slackUserId} on Slack team ${slackTeamId}. Trying fallback cache...", e)
+            cacheService.getFallbackSlackUser(slackUserId, slackTeamId).map { maybeSlackUser =>
+              if (maybeSlackUser.isDefined) {
+                Logger.error(s"Slack user ID ${slackUserId} on Slack team ${slackTeamId} found in fallback cache")
+                maybeSlackUser
+              } else {
+                Logger.error(s"Slack user ID ${slackUserId} on Slack team ${slackTeamId} not found in fallback cache. Giving up.")
+                throw e
+              }
+            }
+          }
+        }
       } yield {
-        maybeInfo.map(info => slackUserDataFromSlackUser(info, slackTeamId))
+        maybeInfo.map(info => slackUserDataFromSlackUser(info, client))
       }
     }
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, slackTeamId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
+  def maybeSlackUserDataFor(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
+    val slackTeamId = client.profile.slackTeamId
     cacheService.getSlackUserData(SlackUserDataCacheKey(slackUserId, slackTeamId), fetchSlackUserDataFn(slackUserId, slackTeamId, client, onUserNotFound))
   }
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
-    maybeSlackUserDataFor(botProfile.userId, botProfile.slackTeamId, clientFor(botProfile), (e) => {
+    maybeSlackUserDataFor(botProfile.userId, clientFor(botProfile), (e) => {
       Logger.error(s"Slack said the Ellipsis bot Slack user could not be found for Ellipsis team ${botProfile.teamId} on Slack team ${botProfile.slackTeamId} with slack user ID ${botProfile.userId}", e)
       None
     })
@@ -117,7 +114,23 @@ class SlackEventServiceImpl @Inject()(
       for {
         maybeInfo <- client.getUserInfoByEmail(key.email)
       } yield {
-        maybeInfo.map(info => slackUserDataFromSlackUser(info, key.slackTeamId))
+        maybeInfo.map(info => slackUserDataFromSlackUser(info, client))
+      }
+    }
+  }
+
+  def isUserValidForBot(slackUserId: String, botProfile: SlackBotProfile, maybeEnterpriseId: Option[String]): Future[Boolean] = {
+    cacheService.getSlackUserIsValidForBotTeam(slackUserId, botProfile, maybeEnterpriseId).flatMap { maybeCachedValid =>
+      maybeCachedValid.map(Future.successful).getOrElse {
+        for {
+          maybeUserData <- maybeSlackUserDataFor(slackUserId, clientFor(botProfile), _ => None)
+        } yield {
+          maybeUserData.exists { userData =>
+            val userIsValid = userData.canTriggerBot(botProfile, maybeEnterpriseId)
+            cacheService.cacheSlackUserIsValidForBotTeam(slackUserId, botProfile, maybeEnterpriseId, userIsValid)
+            userIsValid
+          }
+        }
       }
     }
   }

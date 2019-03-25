@@ -31,11 +31,13 @@ case class BehaviorVersion(
                             maybeName: Option[String],
                             maybeFunctionBody: Option[String],
                             maybeResponseTemplate: Option[String],
-                            forcePrivateResponse: Boolean,
+                            responseType: BehaviorResponseType,
                             canBeMemoized: Boolean,
                             isTest: Boolean,
                             createdAt: OffsetDateTime
                           ) extends BehaviorVersionForDataTypeSchema {
+
+  val forcePrivateResponse: Boolean = responseType == Private
 
   lazy val jsName: String = s"${BehaviorVersion.dirName}/$id.js"
 
@@ -84,6 +86,8 @@ case class BehaviorVersion(
     }.isDefined
   }
 
+  val isHelpAction: Boolean = BehaviorVersion.nameIsHelpAction(maybeName)
+
   def resultFor(
                  payload: ByteBuffer,
                  logResult: AWSLambdaLogResult,
@@ -110,12 +114,13 @@ case class BehaviorVersion(
         invocationJson,
         maybeResponseTemplate,
         logResultOption,
-        forcePrivateResponse,
-        developerContext
+        responseType,
+        developerContext,
+        dataService
       )
     }.getOrElse {
       if ((json \ NO_RESPONSE_KEY).toOption.exists(_.as[Boolean])) {
-        NoResponseResult(event, this, maybeConversation, json, logResultOption)
+        NoResponseForBehaviorVersionResult(event, this, maybeConversation, json, logResultOption)
       } else {
         if (json.toString == "null") {
           NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration, developerContext)
@@ -137,7 +142,7 @@ case class BehaviorVersion(
       maybeName,
       maybeFunctionBody,
       maybeResponseTemplate,
-      forcePrivateResponse,
+      responseType,
       canBeMemoized,
       isTest,
       createdAt
@@ -149,6 +154,8 @@ case class BehaviorVersion(
 object BehaviorVersion {
 
   val dirName: String = "behavior_versions"
+
+  def nameIsHelpAction(maybeName: Option[String]): Boolean = maybeName.exists(_.trim.equalsIgnoreCase("help"))
 
   def codeFor(functionBody: String): String = {
     s"module.exports = ${functionBody.trim};"
