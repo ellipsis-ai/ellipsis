@@ -14,7 +14,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSResponse
 import services.DefaultServices
 import services.slack.apiModels._
-import utils.{SlackConversation, SlackTimestamp}
+import utils.SlackConversation
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,6 +40,8 @@ case class SlackApiClient(
 
   private val API_BASE_URL = "https://slack.com/api/"
   private val ws = services.ws
+
+  val slackEventService = services.slackEventService
 
   private def urlFor(method: String): String = s"$API_BASE_URL/$method"
 
@@ -149,15 +151,15 @@ case class SlackApiClient(
       }
   }
 
-  case class SlackMessageJson(user: String, text: String, ts: String)
+  case class SlackMessageJson(user: String, text: String, ts: String, thread_ts: Option[String])
   implicit val slackMessageFormat = Json.format[SlackMessageJson]
 
-  def findReaction(channel: String, messageTs: String, slackEventService: SlackEventService): Future[Option[SlackMessage]] = {
+  def findReaction(channel: String, messageTs: String): Future[Option[SlackMessage]] = {
     val params = Seq(("channel", channel), ("timestamp", messageTs))
     getResponseFor("reactions.get", params).
       flatMap { r =>
-        val text = extract[SlackMessageJson](r, "message").text
-        SlackMessage.fromFormattedText(text, profile, slackEventService, Some(messageTs)).map(Some(_))
+        val msg = extract[SlackMessageJson](r, "message")
+        SlackMessage.fromFormattedText(msg.text, profile, slackEventService, Some(messageTs), msg.thread_ts).map(Some(_))
       }.
       recover {
         case SlackApiError(err) => {
@@ -285,7 +287,7 @@ case class SlackApiClient(
                       parse: Option[String] = None, linkNames: Option[String] = None, attachments: Option[Seq[Attachment]] = None,
                       unfurlLinks: Option[Boolean] = None, unfurlMedia: Option[Boolean] = None, iconUrl: Option[String] = None,
                       iconEmoji: Option[String] = None, replaceOriginal: Option[Boolean]= None,
-                      deleteOriginal: Option[Boolean] = None, threadTs: Option[String] = None, replyBroadcast: Option[Boolean] = None): Future[String] = {
+                      deleteOriginal: Option[Boolean] = None, threadTs: Option[String] = None, replyBroadcast: Option[Boolean] = None): Future[SlackMessage] = {
 
     val params = Map(
       "channel" -> channelId,
@@ -305,8 +307,9 @@ case class SlackApiClient(
       "thread_ts" -> threadTs,
       "reply_broadcast" -> replyBroadcast
     )
-    postResponseFor("chat.postMessage", params).map { r =>
-      extract[String](r, "ts")
+    postResponseFor("chat.postMessage", params).flatMap { r =>
+      val msg = extract[SlackMessageJson](r, "message")
+      SlackMessage.fromFormattedText(msg.text, profile, slackEventService, Some(msg.ts), msg.thread_ts)
     }
   }
 

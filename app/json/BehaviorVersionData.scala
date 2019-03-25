@@ -46,7 +46,7 @@ case class BehaviorVersionData(
   }
 
   def maybeExportName: Option[String] = {
-    name.orElse(exportId)
+    name.filter(_.trim.nonEmpty).orElse(exportId)
   }
 
   def copyForImportableForTeam(team: Team, inputsData: Seq[InputData], maybeExistingGroupData: Option[BehaviorGroupData]): BehaviorVersionData = {

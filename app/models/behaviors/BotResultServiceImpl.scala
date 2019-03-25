@@ -44,7 +44,8 @@ class BotResultServiceImpl @Inject() (
   private def runNextAction(
                              nextAction: NextAction,
                              botResult: BotResult,
-                             maybeMessageTs: Option[String]
+                             maybeMessageTs: Option[String],
+                             maybeThreadId: Option[String]
                            )(implicit actorSystem: ActorSystem): DBIO[Unit] = {
     for {
       maybeOriginatingResponseChannel <- botResult.maybeBehaviorVersion.map { behaviorVersion =>
@@ -58,7 +59,7 @@ class BotResultServiceImpl @Inject() (
           behaviorVersion <- maybeBehaviorVersion
           channel <- maybeOriginatingResponseChannel
         } yield {
-          botResult.event.eventContext.newRunEventFor(botResult, nextAction, behaviorVersion, channel, maybeMessageTs)
+          botResult.event.eventContext.newRunEventFor(botResult, nextAction, behaviorVersion, channel, maybeMessageTs, maybeThreadId)
         }
       )
       _ <- if (maybeBehaviorVersion.isDefined) {
@@ -103,9 +104,9 @@ class BotResultServiceImpl @Inject() (
         )
       )
       _ <- botResult.maybeNextAction.map { nextAction =>
-        runNextAction(nextAction, botResult, sendResult)
+        runNextAction(nextAction, botResult, sendResult.flatMap(_.maybeId), sendResult.flatMap(_.maybeThreadId))
       }.getOrElse(DBIO.successful({}))
-    } yield sendResult
+    } yield sendResult.flatMap(_.maybeId)
   }
 
   def sendIn(

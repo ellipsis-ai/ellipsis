@@ -56,7 +56,8 @@ class APIController @Inject() (
       "channel" -> optional(nonEmptyText),
       "token" -> nonEmptyText,
       "originalEventType" -> optional(nonEmptyText),
-      "originalMessageId" -> optional(nonEmptyText)
+      "originalMessageId" -> optional(nonEmptyText),
+      "originalMessageThreadId" -> optional(nonEmptyText)
     )(RunActionInfo.apply)(RunActionInfo.unapply) verifying(actionNameAndTriggerError, checkActionNameAndTrigger _)
   )
 
@@ -214,7 +215,9 @@ class APIController @Inject() (
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
       "token" -> nonEmptyText,
-      "originalEventType" -> optional(nonEmptyText)
+      "originalEventType" -> optional(nonEmptyText),
+      "originalMessageId" -> optional(nonEmptyText),
+      "originalMessageThreadId" -> optional(nonEmptyText)
     )(PostMessageInfo.apply)(PostMessageInfo.unapply)
   )
 
@@ -226,7 +229,13 @@ class APIController @Inject() (
       info => {
         val eventualResult = for {
           context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
-          maybeEvent <- context.maybeMessageEventFor(info.message, Some(info.channel), EventType.maybeFrom(info.originalEventType), None)
+          maybeEvent <- context.maybeMessageEventFor(
+            info.message,
+            Some(info.channel),
+            EventType.maybeFrom(info.originalEventType),
+            info.originalMessageId,
+            info.originalMessageThreadId
+          )
           result <- context.runBehaviorFor(maybeEvent, Right(info.message))
         } yield result
 
@@ -243,7 +252,9 @@ class APIController @Inject() (
       "responseContext" -> nonEmptyText,
       "channel" -> nonEmptyText,
       "token" -> nonEmptyText,
-      "originalEventType" -> optional(nonEmptyText)
+      "originalEventType" -> optional(nonEmptyText),
+      "originalMessageId" -> optional(nonEmptyText),
+      "originalMessageThreadId" -> optional(nonEmptyText)
     )(SayInfo.apply)(SayInfo.unapply)
   )
 
@@ -255,7 +266,13 @@ class APIController @Inject() (
       info => {
         val eventualResult = for {
           context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
-          maybeEvent <- context.maybeMessageEventFor(info.message, Some(info.channel), EventType.maybeFrom(info.originalEventType), None)
+          maybeEvent <- context.maybeMessageEventFor(
+            info.message,
+            Some(info.channel),
+            EventType.maybeFrom(info.originalEventType),
+            info.originalMessageId,
+            info.originalMessageThreadId
+          )
           result <- maybeEvent.map { event =>
             val botResult = SimpleTextResult(event, None, info.message, responseType = Normal, shouldInterrupt = false)
             botResultService.sendIn(botResult, None).map { _ =>

@@ -5,7 +5,7 @@ import json.UserData
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.ellipsisobject.Message
+import models.behaviors.ellipsisobject.MessageObject
 import models.behaviors.events.{Event, EventType, SlackEventContext}
 import models.team.Team
 import services.DefaultServices
@@ -33,8 +33,8 @@ case class SlackReactionAddedEvent(
   override def maybeMessageInfoAction(
                                        maybeConversation: Option[Conversation],
                                        services: DefaultServices
-                                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[Message]] = {
-    Message.buildForAction(this, maybeConversation, services).map(Some(_))
+                                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[MessageObject]] = {
+    MessageObject.buildForAction(this, maybeConversation, services).map(Some(_))
   }
 
   override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
@@ -51,7 +51,7 @@ case class SlackReactionAddedEvent(
 
   override val maybeReactionAdded: Option[String] = Some(reaction)
 
-  val maybeMessageIdForReaction: Option[String] = None
+  val maybeMessageId: Option[String] = maybeMessage.flatMap(_.maybeTs)
 
   def allBehaviorResponsesFor(
                                maybeTeam: Option[Team],

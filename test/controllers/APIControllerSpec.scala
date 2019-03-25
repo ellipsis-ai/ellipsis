@@ -86,7 +86,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     when(mockSlackClient.postChatMessage(anyString, anyString, any[Option[String]], any[Option[Boolean]], any[Option[String]],
       any[Option[String]], any[Option[Seq[Attachment]]], any[Option[Boolean]], any[Option[Boolean]],
       any[Option[String]], any[Option[String]], any[Option[Boolean]], any[Option[Boolean]],
-      any[Option[String]], any[Option[Boolean]])).thenReturn(Future.successful(SlackTimestamp.now))
+      any[Option[String]], any[Option[Boolean]])).thenReturn(Future.successful(SlackMessage.blank))
 
     val event = SlackMessageEvent(
       SlackEventContext(
@@ -95,9 +95,9 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
         None,
         defaultSlackUserId
       ),
-      SlackMessage.fromUnformattedText("foo", botProfile, None),
+      SlackMessage.fromUnformattedText("foo", botProfile, None, None),
       None,
-      SlackTimestamp.now,
+      None,
       Some(EventType.api),
       isUninterruptedConversation = false,
       isEphemeral = false,

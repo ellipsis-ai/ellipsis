@@ -16,7 +16,7 @@ case class MSTeamsRunEvent(
 
   override type EC = MSTeamsEventContext
 
-  val maybeMessageIdForReaction: Option[String] = maybeTriggeringMessageTs
+  val maybeMessageId: Option[String] = maybeTriggeringMessageTs
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {
     this.copy(maybeOriginalEventType = Some(originalEventType))

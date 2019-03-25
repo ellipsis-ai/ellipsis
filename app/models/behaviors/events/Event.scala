@@ -29,7 +29,7 @@ trait Event {
   val maybeChannel: Option[String] = eventContext.maybeChannel
   lazy val maybeThreadId: Option[String] = eventContext.maybeThreadId
   val messageText: String
-  val maybeMessageIdForReaction: Option[String]
+  val maybeMessageId: Option[String]
   val relevantMessageText: String = messageText
   val relevantMessageTextWithFormatting: String = messageText
   lazy val maybeMessageText: Option[String] = Option(messageText).filter(_.trim.nonEmpty)
@@ -95,7 +95,7 @@ trait Event {
   def maybeMessageInfoAction(
                         maybeConversation: Option[Conversation],
                         services: DefaultServices
-                      )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[Message]] = {
+                      )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[MessageObject]] = {
     DBIO.successful(None)
   }
 
@@ -201,7 +201,7 @@ trait Event {
 
   def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)
                            (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
-    eventContext.reactionHandler(eventualResults, maybeMessageIdForReaction, services)
+    eventContext.reactionHandler(eventualResults, maybeMessageId, services)
   }
 
   def sendMessage(
@@ -215,7 +215,7 @@ trait Event {
                    choices: Seq[ActionChoice],
                    developerContext: DeveloperContext,
                    services: DefaultServices
-                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]] = {
     eventContext.sendMessage(this, text, maybeBehaviorVersion, responseType, maybeShouldUnfurl, maybeConversation, attachments, files, choices, developerContext, services)
   }
 

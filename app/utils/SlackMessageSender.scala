@@ -80,7 +80,8 @@ case class SlackMessageSender(
                                developerContext: DeveloperContext,
                                originatingChannel: String,
                                maybeDMChannel: Option[String],
-                               maybeThreadId: Option[String],
+                               maybeTriggeringMessageId: Option[String],
+                               maybeExistingThreadId: Option[String],
                                maybeShouldUnfurl: Option[Boolean],
                                maybeConversation: Option[Conversation],
                                attachments: Seq[MessageAttachment] = Seq(),
@@ -95,6 +96,8 @@ case class SlackMessageSender(
                                beQuiet: Boolean,
                                maybeBehaviorVersion: Option[BehaviorVersion]
                              ) {
+
+  val slackEventService = services.slackEventService
 
   def choicesAttachments(implicit ec: ExecutionContext): Future[Seq[SlackMessageAttachment]] = {
     if (choices.isEmpty) {
@@ -172,7 +175,7 @@ case class SlackMessageSender(
     // We can't always use the response url, as it's a bit quirky:
     // - using the response url in a thread results in a message back in the main channel, for <%= reason %>
     // - posts to the response url don't give back a message ts
-    if (channel == originatingChannel && maybeThreadId.isEmpty && isEphemeral) {
+    if (channel == originatingChannel && maybeExistingThreadId.isEmpty && isEphemeral) {
       maybeResponseUrl
     } else {
       None
@@ -180,12 +183,12 @@ case class SlackMessageSender(
   }
 
   private def maybeThreadTsToUse(channel: String) = {
-    responseType.maybeThreadTsToUseFor(channel, originatingChannel, maybeConversation, maybeThreadId)
+    responseType.maybeThreadTsToUseFor(channel, originatingChannel, maybeConversation, maybeExistingThreadId, maybeTriggeringMessageId)
   }
 
   private def channelToUse(maybeChannelToForce: Option[String] = None): String = {
     maybeChannelToForce.getOrElse {
-      responseType.channelToUseFor(originatingChannel, maybeConversation, maybeThreadId, maybeDMChannel)
+      responseType.channelToUseFor(originatingChannel, maybeConversation, maybeExistingThreadId, maybeDMChannel)
     }
   }
 
@@ -205,7 +208,7 @@ case class SlackMessageSender(
                                text: String,
                                maybeAttachments: Option[Seq[Attachment]] = None,
                                maybeChannelToForce: Option[String] = None
-                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[SlackMessage]] = {
     val responseChannel = channelToUse(maybeChannelToForce)
     val maybeThreadTs = maybeThreadTsToUse(responseChannel)
     maybeResponseUrlToUse(responseChannel).map { responseUrl =>
@@ -232,7 +235,7 @@ case class SlackMessageSender(
           replyBroadcast = None
         ).
           recover(postErrorRecovery(responseChannel, text)).
-          flatMap(ts => logInvolvedFor(responseChannel).map(_ => Some(ts)))
+          flatMap(msg => logInvolvedFor(responseChannel).map(_ => Some(msg)))
       }
     }
   }
@@ -265,7 +268,7 @@ case class SlackMessageSender(
     if (formattedText.nonEmpty) {
       maybePreambleText.map { preambleMessage =>
         if (beQuiet) {
-          postEphemeralMessage(preambleMessage, None, originatingChannel, maybeThreadId)
+          postEphemeralMessage(preambleMessage, None, originatingChannel, maybeExistingThreadId)
         } else {
           postChatMessage(preambleMessage, None, Some(originatingChannel))
         }
@@ -281,10 +284,10 @@ case class SlackMessageSender(
                                   maybeShouldUnfurl: Option[Boolean],
                                   attachments: Seq[Attachment],
                                   maybeConversation: Option[Conversation],
-                                  maybePreviousTs: Option[String]
-                                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+                                  maybePreviousMessage: Option[SlackMessage]
+                                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[SlackMessage]] = {
     if (segments.isEmpty) {
-      Future.successful(maybePreviousTs)
+      Future.successful(maybePreviousMessage)
     } else {
       val segment = segments.head.trim
       // Slack API gives an error for empty messages
@@ -301,7 +304,9 @@ case class SlackMessageSender(
           segment,
           maybeAttachmentsForSegment
         )
-      }.flatMap { maybeTs => sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeTs)}
+      }.flatMap { maybeMessage =>
+        sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeMessage)
+      }
     }
   }
 
@@ -322,7 +327,7 @@ case class SlackMessageSender(
     Future.sequence(files.map(sendFile)).map(_ => {})
   }
 
-  def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
+  def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[SlackMessage]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, userDataList)
     for {
       attachments <- attachmentsToUse.map { att =>
@@ -332,9 +337,9 @@ case class SlackMessageSender(
         }
       }
       _ <- sendPreamble(formattedText)
-      maybeLastTs <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
+      maybeLastMsg <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
       _ <- sendFiles
-    } yield maybeLastTs
+    } yield maybeLastMsg
   }
 
   private def postErrorRecovery[U](channel: String, text: String): PartialFunction[Throwable, U] = {
