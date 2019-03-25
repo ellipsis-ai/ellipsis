@@ -59,7 +59,8 @@ class MockAWSLambdaService @Inject() (
                                   groupVersion: BehaviorGroupVersion,
                                   behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                                   libraries: Seq[LibraryVersion],
-                                  apiConfigInfo: ApiConfigInfo
+                                  apiConfigInfo: ApiConfigInfo,
+                                  forceNode6: Boolean
                                 ): Future[Unit] = Future.successful({})
 
   override def invokeAction(
