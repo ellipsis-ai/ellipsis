@@ -37,7 +37,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         runNow(dataService.savedAnswers.find(maybeInput.get, user)).map(_.valueString) mustBe Some(savedAnswer.valueString)
 
         val groupVersionData = runNow(BehaviorGroupData.buildFor(firstGroupVersion, user, None, dataService, cacheService)).copyForNewVersionOf(group)
-        val secondGroupVersion = runNow(dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, groupVersionData))
+        val secondGroupVersion = runNow(dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, groupVersionData, forceNode6 = false))
         val maybeSecondInputVersion = runNow(dataService.inputs.allForGroupVersion(secondGroupVersion)).headOption
 
         maybeSecondInputVersion.isDefined mustBe true
@@ -143,7 +143,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         val savedItem = runNow(dataService.defaultStorageItems.createItemForBehaviorVersion(firstBehaviorVersion, user, Json.toJson(Map("name" -> "foo"))))
 
         val groupVersionData = runNow(BehaviorGroupData.buildFor(firstGroupVersion, user, None, dataService, cacheService)).copyForNewVersionOf(group)
-        val secondGroupVersion = runNow(dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, groupVersionData))
+        val secondGroupVersion = runNow(dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, groupVersionData, forceNode6 = false))
 
         val secondBehaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(secondGroupVersion)).head
         val secondDataTypeConfig = runNow(dataService.dataTypeConfigs.maybeFor(secondBehaviorVersion)).get

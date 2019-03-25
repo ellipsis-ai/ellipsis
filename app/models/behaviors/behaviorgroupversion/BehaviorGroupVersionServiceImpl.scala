@@ -129,7 +129,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                                   group: BehaviorGroup,
                                   user: User,
                                   data: BehaviorGroupData,
-                                  forceNode6: Boolean = false
+                                  forceNode6: Boolean
                                 ): Future[BehaviorGroupVersion] = {
     val action = (for {
       groupVersion <- createForAction(group, user, data.name, data.icon, data.description, data.gitSHA)

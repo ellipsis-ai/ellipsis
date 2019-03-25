@@ -1010,7 +1010,10 @@ class BehaviorEditor extends React.Component<Props, State> {
     this.toggleActivePanel('saving', true);
     DataRequest.jsonPost(
       jsRoutes.controllers.BehaviorEditorController.updateNodeModules().url,
-      { behaviorGroupId: this.getBehaviorGroup().id },
+      {
+        behaviorGroupId: this.getBehaviorGroup().id,
+        forceNode6: this.state.forceNode6
+      },
       this.props.csrfToken
     )
       .then((json: BehaviorGroupJson) => {

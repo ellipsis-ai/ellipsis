@@ -218,11 +218,12 @@ self.MonacoEnvironment = {
     )
   }
 
-  case class UpdateNodeModulesInfo(behaviorGroupId: String)
+  case class UpdateNodeModulesInfo(behaviorGroupId: String, forceNode6: Option[Boolean])
 
   private val updateNodeModulesForm = Form(
     mapping(
-      "behaviorGroupId" -> nonEmptyText
+      "behaviorGroupId" -> nonEmptyText,
+      "forceNode6" -> optional(boolean)
     )(UpdateNodeModulesInfo.apply)(UpdateNodeModulesInfo.unapply)
   )
 
@@ -240,7 +241,7 @@ self.MonacoEnvironment = {
             group <- maybeGroup
             groupData <- maybeGroupData
           } yield {
-            dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, groupData.copyForNewVersionOf(group)).map(Some(_))
+            dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, groupData.copyForNewVersionOf(group), info.forceNode6.getOrElse(false)).map(Some(_))
           }).getOrElse(Future.successful(None))
           maybeUpdatedGroupData <- maybeSavedGroupVersion.map { groupVersion =>
             BehaviorGroupData.buildFor(groupVersion, user, None, dataService, cacheService).map(Some(_))
