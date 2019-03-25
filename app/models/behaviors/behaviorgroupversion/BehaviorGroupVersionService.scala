@@ -43,11 +43,12 @@ trait BehaviorGroupVersionService {
                  maybeGitSHA: Option[String] = None
                ): Future[BehaviorGroupVersion]
 
-  def createFor(
-                 group: BehaviorGroup,
-                 user: User,
-                 data: BehaviorGroupData
-               ): Future[BehaviorGroupVersion]
+  def createForBehaviorGroupData(
+                                  group: BehaviorGroup,
+                                  user: User,
+                                  data: BehaviorGroupData,
+                                  forceNode6: Boolean = false
+                                ): Future[BehaviorGroupVersion]
 
   def redeploy(groupVersion: BehaviorGroupVersion): Future[Unit]
 

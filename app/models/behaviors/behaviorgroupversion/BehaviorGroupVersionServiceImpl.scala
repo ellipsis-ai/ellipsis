@@ -125,11 +125,12 @@ class BehaviorGroupVersionServiceImpl @Inject() (
 
   def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == services.AWSLambdaConstants.CONTEXT_PARAM)
 
-  def createFor(
-                 group: BehaviorGroup,
-                 user: User,
-                 data: BehaviorGroupData
-               ): Future[BehaviorGroupVersion] = {
+  def createForBehaviorGroupData(
+                                  group: BehaviorGroup,
+                                  user: User,
+                                  data: BehaviorGroupData,
+                                  forceNode6: Boolean = false
+                                ): Future[BehaviorGroupVersion] = {
     val action = (for {
       groupVersion <- createForAction(group, user, data.name, data.icon, data.description, data.gitSHA)
       _ <- DBIO.sequence(data.dataTypeInputs.map { ea =>
@@ -214,7 +215,8 @@ class BehaviorGroupVersionServiceImpl @Inject() (
         groupVersion,
         behaviorVersionsWithParams,
         libraries,
-        apiConfig
+        apiConfig,
+        forceNode6
       )
       groupVersion
     }) transactionally
@@ -239,7 +241,8 @@ class BehaviorGroupVersionServiceImpl @Inject() (
         groupVersion,
         behaviorVersionsWithParams,
         libraries,
-        apiConfig
+        apiConfig,
+        forceNode6 = false
       )
       _ <- dataService.run(lambdaService.ensureNodeModuleVersionsFor(groupVersion))
     } yield {}

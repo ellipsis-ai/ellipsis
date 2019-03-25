@@ -89,6 +89,7 @@ import Trigger from "../models/trigger";
 import BehaviorConfig, {BehaviorConfigInterface} from "../models/behavior_config";
 import {EditorCursorPosition} from "./code_editor";
 import QuickSearchPanel from "./quick_search_panel";
+import ToggleGroup, {ToggleGroupItem} from "../form/toggle_group";
 
 export interface BehaviorEditorProps {
   group: BehaviorGroup
@@ -162,6 +163,7 @@ interface State {
   updatingNodeModules: boolean
   testResults: Array<BehaviorTestResult>
   runningTests: boolean
+  forceNode6: boolean
 }
 
 interface CodeConfigProps {
@@ -219,7 +221,8 @@ class BehaviorEditor extends React.Component<Props, State> {
       isModifyingGithubRepo: false,
       updatingNodeModules: false,
       testResults: [],
-      runningTests: false
+      runningTests: false,
+      forceNode6: false
     };
   }
 
@@ -1035,7 +1038,8 @@ class BehaviorEditor extends React.Component<Props, State> {
 
   doBackgroundSave(optionalCallback?: () => void) {
     DataRequest.jsonPost(this.getFormAction(), {
-      dataJson: JSON.stringify(this.getBehaviorGroup())
+      dataJson: JSON.stringify(this.getBehaviorGroup()),
+      forceNode6: this.state.forceNode6
     }, this.props.csrfToken)
       .then((json: BehaviorGroup) => {
         if (json.id) {
@@ -1162,6 +1166,24 @@ class BehaviorEditor extends React.Component<Props, State> {
       } else {
         BrowserUtils.removeQueryParam("showVersions");
       }
+    });
+  }
+
+  canUseNode6(): boolean {
+    const NODE_6_CUTOFF = Date.UTC(2019, 4, 30, 0, 0, 0, 0);
+    const now = Date.now();
+    return now < NODE_6_CUTOFF;
+  }
+
+  useNode6(): void {
+    this.setState({
+      forceNode6: true
+    });
+  }
+
+  useNode8(): void {
+    this.setState({
+      forceNode6: false
     });
   }
 
@@ -2188,6 +2210,14 @@ class BehaviorEditor extends React.Component<Props, State> {
             <Notifications notifications={this.getNotifications()} />
             <div className="container container-wide ptm border-top">
               <div>
+                {this.canUseNode6() ? (
+                  <div className="pbm">
+                    <ToggleGroup className={"form-toggle-group-s"}>
+                      <ToggleGroupItem activeWhen={!this.state.forceNode6} label={"Node 8.10"} onClick={this.useNode8} />
+                      <ToggleGroupItem activeWhen={this.state.forceNode6} label={"Node 6.10"} onClick={this.useNode6} />
+                    </ToggleGroup>
+                  </div>
+                ) : null}
                 <div>
                   <DynamicLabelButton
                     onClick={this.onSaveClick}

@@ -169,7 +169,7 @@ class BehaviorGroupServiceImpl @Inject() (
         dataService.behaviorGroups.delete(ea.group)
       })
       mergedGroup <- dataService.behaviorGroups.createFor(mergedData.exportId, team)
-      mergedGroupVersion <- dataService.behaviorGroupVersions.createFor(mergedGroup, user, mergedData.copyForNewVersionOf(mergedGroup))
+      mergedGroupVersion <- dataService.behaviorGroupVersions.createForBehaviorGroupData(mergedGroup, user, mergedData.copyForNewVersionOf(mergedGroup))
     } yield mergedGroupVersion.group
   }
 

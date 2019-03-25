@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZoneOffset}
 import java.util.Base64
 
 import akka.actor.ActorSystem
@@ -430,11 +430,19 @@ class AWSLambdaServiceImpl @Inject() (
                          groupVersion: BehaviorGroupVersion,
                          behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                          libraries: Seq[LibraryVersion],
-                         apiConfigInfo: ApiConfigInfo
+                         apiConfigInfo: ApiConfigInfo,
+                         forceNode6: Boolean
                     ): Future[Unit] = {
 
     val isNoCode: Boolean = behaviorVersionsWithParams.forall { case(bv, _) => bv.functionBody.trim.isEmpty }
     val functionName = groupVersion.functionName
+    // TODO: the Node runtime switch code will be useless starting April 30, 2019 (Node 6 EOL on Lambda)
+    val NODE_6_CUTOFF = OffsetDateTime.of(2019, 4, 30, 0, 0, 0, 0, ZoneOffset.UTC)
+    val runtime = if (forceNode6 && OffsetDateTime.now.isBefore(NODE_6_CUTOFF)) {
+      com.amazonaws.services.lambda.model.Runtime.Nodejs610
+    } else {
+      com.amazonaws.services.lambda.model.Runtime.Nodejs810
+    }
 
     deleteFunction(functionName).andThen {
       case Failure(t) => Future.successful({})
@@ -454,7 +462,7 @@ class AWSLambdaServiceImpl @Inject() (
               withFunctionName(functionName).
               withCode(functionCode).
               withRole(configuration.get[String]("aws.role")).
-              withRuntime(com.amazonaws.services.lambda.model.Runtime.Nodejs810).
+              withRuntime(runtime).
               withHandler("index.handler").
               withTimeout(invocationTimeoutSeconds)
           )

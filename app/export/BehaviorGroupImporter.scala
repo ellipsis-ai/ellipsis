@@ -25,7 +25,7 @@ case class BehaviorGroupImporter(
       }
       oauth1Applications <- dataService.oauth1Applications.allUsableFor(team)
       oauth2Applications <- dataService.oauth2Applications.allUsableFor(team)
-      _ <- dataService.behaviorGroupVersions.createFor(
+      _ <- dataService.behaviorGroupVersions.createForBehaviorGroupData(
         group,
         user,
         data.copyForNewVersionOf(group).copyWithApiApplicationsIfAvailable(oauth1Applications ++ oauth2Applications)
