@@ -1923,6 +1923,21 @@ class BehaviorEditor extends React.Component<Props, State> {
     return selected ? selected.confirmDeleteText() : "";
   }
 
+  renderNodeVersionToggle() {
+    if (this.canUseNode6()) {
+      return (
+        <div className="pbm">
+          <ToggleGroup className={"form-toggle-group-s"}>
+            <ToggleGroupItem activeWhen={!this.state.forceNode6} label={"Node 8.10"} onClick={this.useNode8} />
+            <ToggleGroupItem activeWhen={this.state.forceNode6} label={"Node 6.10"} onClick={this.useNode6} />
+          </ToggleGroup>
+        </div>
+      );
+    } else {
+      return null;
+    }
+  }
+
   confirmRevertText() {
     const versionText = this.state.revertToVersion && this.state.revertToVersionTitle ? (
       <p>
@@ -2048,6 +2063,7 @@ class BehaviorEditor extends React.Component<Props, State> {
           >
             <ConfirmActionPanel confirmText="Switch versions" onConfirmClick={this.doRevert} onCancelClick={this.toggleConfirmRevert}>
               {this.confirmRevertText()}
+              {this.renderNodeVersionToggle()}
             </ConfirmActionPanel>
           </Collapsible>
 
@@ -2210,14 +2226,7 @@ class BehaviorEditor extends React.Component<Props, State> {
             <Notifications notifications={this.getNotifications()} />
             <div className="container container-wide ptm border-top">
               <div>
-                {this.canUseNode6() ? (
-                  <div className="pbm">
-                    <ToggleGroup className={"form-toggle-group-s"}>
-                      <ToggleGroupItem activeWhen={!this.state.forceNode6} label={"Node 8.10"} onClick={this.useNode8} />
-                      <ToggleGroupItem activeWhen={this.state.forceNode6} label={"Node 6.10"} onClick={this.useNode6} />
-                    </ToggleGroup>
-                  </div>
-                ) : null}
+                {this.renderNodeVersionToggle()}
                 <div>
                   <DynamicLabelButton
                     onClick={this.onSaveClick}
