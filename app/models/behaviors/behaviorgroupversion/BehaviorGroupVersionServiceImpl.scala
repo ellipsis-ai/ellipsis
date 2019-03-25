@@ -23,7 +23,8 @@ case class RawBehaviorGroupVersion(
                                    maybeIcon: Option[String],
                                    maybeDescription: Option[String],
                                    maybeAuthorId: Option[String],
-                                   createdAt: OffsetDateTime
+                                   createdAt: OffsetDateTime,
+                                   maybeUseNode8: Option[Boolean]
                                  )
 
 class BehaviorGroupVersionsTable(tag: Tag) extends Table[RawBehaviorGroupVersion](tag, "behavior_group_versions") {
@@ -35,9 +36,10 @@ class BehaviorGroupVersionsTable(tag: Tag) extends Table[RawBehaviorGroupVersion
   def maybeDescription = column[Option[String]]("description")
   def maybeAuthorId = column[Option[String]]("author_id")
   def createdAt = column[OffsetDateTime]("created_at")
+  def maybeUseNode8 = column[Option[Boolean]]("use_node_8")
 
   def * =
-    (id, groupId, name, maybeIcon, maybeDescription, maybeAuthorId, createdAt) <>
+    (id, groupId, name, maybeIcon, maybeDescription, maybeAuthorId, createdAt, maybeUseNode8) <>
       ((RawBehaviorGroupVersion.apply _).tupled, RawBehaviorGroupVersion.unapply _)
 }
 
@@ -101,7 +103,8 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                  maybeName: Option[String] = None,
                  maybeIcon: Option[String] = None,
                  maybeDescription: Option[String] = None,
-                 maybeGitSHA: Option[String] = None
+                 maybeGitSHA: Option[String] = None,
+                 maybeUseNode8: Option[Boolean] = None
                ): DBIO[BehaviorGroupVersion] = {
     val newInstance = BehaviorGroupVersion(IDs.next, group, maybeName.getOrElse(""), maybeIcon, maybeDescription, Some(user), OffsetDateTime.now)
     (for {
@@ -118,9 +121,10 @@ class BehaviorGroupVersionServiceImpl @Inject() (
                  maybeName: Option[String] = None,
                  maybeIcon: Option[String] = None,
                  maybeDescription: Option[String] = None,
-                 maybeGitSHA: Option[String] = None
+                 maybeGitSHA: Option[String] = None,
+                 maybeUseNode8: Option[Boolean] = None
                ): Future[BehaviorGroupVersion] = {
-    dataService.run(createForAction(group, user, maybeName, maybeIcon, maybeDescription, maybeGitSHA))
+    dataService.run(createForAction(group, user, maybeName, maybeIcon, maybeDescription, maybeGitSHA, maybeUseNode8))
   }
 
   def withoutBuiltin(params: Array[String]) = params.filterNot(ea => ea == services.AWSLambdaConstants.CONTEXT_PARAM)

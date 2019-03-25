@@ -61,7 +61,8 @@ case class BehaviorGroupVersion(
       maybeIcon,
       maybeDescription,
       maybeAuthor.map(_.id),
-      createdAt
+      createdAt,
+      None
     )
   }
 
