@@ -25,6 +25,7 @@ case class ScheduledActionsConfig(
                                    slackUserId: Option[String],
                                    slackBotUserId: Option[String],
                                    selectedScheduleId: Option[String],
+                                   filterChannelId: Option[String],
                                    newAction: Option[Boolean],
                                    isAdmin: Boolean
                                  )
@@ -134,6 +135,7 @@ object ScheduledActionsConfig {
                       services: DefaultServices,
                       maybeScheduledId: Option[String],
                       maybeNewSchedule: Option[Boolean],
+                      maybeFilterChannelId: Option[String],
                       maybeCsrfToken: Option[String],
                       forceAdmin: Boolean
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ScheduledActionsConfig]] = {
@@ -169,6 +171,13 @@ object ScheduledActionsConfig {
           BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
         }).map(_.flatten.sorted)
       } yield {
+        val filterChannelId = maybeFilterChannelId.filter { channelIdWanted =>
+          teamChannelsData.exists { data =>
+            data.channelList.exists { channel =>
+              channel.id == channelIdWanted
+            }
+          }
+        }
         Some(ScheduledActionsConfig(
           containerId = "scheduling",
           csrfToken = maybeCsrfToken,
@@ -187,6 +196,7 @@ object ScheduledActionsConfig {
           slackUserId = maybeSlackUserProfile.map(_.slackUserId),
           slackBotUserId = botProfiles.headOption.map(_.userId),
           selectedScheduleId = maybeScheduledId,
+          filterChannelId = filterChannelId,
           newAction = maybeNewSchedule,
           isAdmin = forceAdmin || teamAccess.isAdminAccess
         ))

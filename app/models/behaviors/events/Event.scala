@@ -132,7 +132,7 @@ trait Event {
   def navLinkList(lambdaService: AWSLambdaService): Seq[(String, String)] = {
     lambdaService.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
       val skillsListPath = baseUrl + controllers.routes.ApplicationController.index(Some(ellipsisTeamId))
-      val schedulingPath = baseUrl + controllers.routes.ScheduledActionsController.index(None, None, Some(ellipsisTeamId))
+      val schedulingPath = baseUrl + controllers.routes.ScheduledActionsController.index(None, None, None, Some(ellipsisTeamId))
       val settingsPath = baseUrl + controllers.web.settings.routes.EnvironmentVariablesController.list(Some(ellipsisTeamId))
       Seq(
         "View and install skills" -> skillsListPath,

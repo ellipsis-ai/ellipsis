@@ -16,7 +16,7 @@ object NavItem {
 
   def scheduling(link: Boolean, maybeTeamId: Option[String]): NavItem = {
     NavItem("Scheduling", if (link) {
-      Some(controllers.routes.ScheduledActionsController.index(None, None, maybeTeamId))
+      Some(controllers.routes.ScheduledActionsController.index(None, None, None, maybeTeamId))
     } else {
       None
     })

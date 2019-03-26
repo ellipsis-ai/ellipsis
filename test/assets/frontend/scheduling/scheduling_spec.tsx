@@ -73,6 +73,7 @@ const emptyConfig: SchedulingProps = {
   onClearErrors: emptyFn,
   justSavedAction: null,
   selectedScheduleId: null,
+  filterChannelId: null,
   newAction: false,
   isAdmin: false,
   userMap: {},

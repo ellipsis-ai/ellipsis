@@ -24,6 +24,7 @@ interface Props {
   slackUserId: string
   slackBotUserId: string
   selectedScheduleId: Option<string>
+  filterChannelId: Option<string>
   newAction: Option<boolean>
   isAdmin: boolean
 }
@@ -183,6 +184,7 @@ class SchedulingLoader extends React.Component<Props, State> {
                 slackUserId={this.props.slackUserId}
                 slackBotUserId={this.props.slackBotUserId}
                 selectedScheduleId={this.props.selectedScheduleId}
+                filterChannelId={this.props.filterChannelId}
                 newAction={this.props.newAction}
                 isAdmin={this.props.isAdmin}
                 userMap={this.state.userMap}

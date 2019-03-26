@@ -56,7 +56,7 @@ case class UnscheduleBehavior(
 
   private def viewAllLink: String = {
     services.configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(None, None, Some(event.ellipsisTeamId))
+      val path = controllers.routes.ScheduledActionsController.index(None, None, None, Some(event.ellipsisTeamId))
       s"[View all scheduled items]($baseUrl$path)"
     }.getOrElse("")
   }
