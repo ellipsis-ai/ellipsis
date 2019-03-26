@@ -114,6 +114,7 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     componentDidMount(): void {
+      this.updateURL();
       this.renderNavItems();
       this.renderNavActions();
     }

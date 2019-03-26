@@ -63,7 +63,7 @@ declare var jsRoutes: {
     },
     ScheduledActionsController: {
       delete: () => JsRoute,
-      index: (selectedId?: Option<string>, isNewSchedule?: Option<boolean>, filterChannelId?: Option<string>, teamId?: Option<string>, forceAdmin?: Option<boolean>) => JsRoute,
+      index: (selectedId: Option<string>, isNewSchedule: Option<boolean>, filterChannelId: Option<string>, teamId: Option<string>, forceAdmin: Option<boolean>) => JsRoute,
       save: () => JsRoute,
       validateRecurrence: () => JsRoute
     },
