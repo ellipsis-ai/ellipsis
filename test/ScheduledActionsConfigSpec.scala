@@ -118,7 +118,16 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
       running(app) {
         setup(user, team, services)(actorSystem, ec)
         val teamAccess = UserTeamAccess(user, otherTeam, None, None, isAdminAccess = false)
-        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(user, teamAccess, services, None, None, maybeCsrfToken, forceAdmin = false)(actorSystem, ec))
+        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(
+          user = user,
+          teamAccess = teamAccess,
+          services = services,
+          maybeScheduledId = None,
+          maybeNewSchedule = None,
+          maybeFilterChannelId = None,
+          maybeCsrfToken = maybeCsrfToken,
+          forceAdmin = false
+        )(actorSystem, ec))
         maybeConfig mustEqual None
       }
     }
@@ -128,7 +137,16 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
         setup(user, team, services)(actorSystem, ec)
         val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
         val schedules = setupSchedules(team, dataService)
-        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(user, teamAccess, services, None, None, maybeCsrfToken, forceAdmin = false)(actorSystem, ec))
+        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(
+          user = user,
+          teamAccess = teamAccess,
+          services = services,
+          maybeScheduledId = None,
+          maybeNewSchedule = None,
+          maybeFilterChannelId = None,
+          maybeCsrfToken = maybeCsrfToken,
+          forceAdmin = false
+        )(actorSystem, ec))
         maybeConfig.map { config =>
           config.scheduledActions.length mustBe 1
           config.scheduledActions.head.id.get mustEqual schedules.head.id
@@ -144,7 +162,16 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
         setup(user, team, services, userSlackTeamId = slackAdminTeamId)(actorSystem, ec)
         val teamAccess = UserTeamAccess(user, otherTeam, Some(team), Some("TestBot"), isAdminAccess = true)
         val schedules = setupSchedules(team, dataService)
-        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(user, teamAccess, services, None, None, maybeCsrfToken, forceAdmin = false)(actorSystem, ec))
+        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(
+          user = user,
+          teamAccess = teamAccess,
+          services = services,
+          maybeScheduledId = None,
+          maybeNewSchedule = None,
+          maybeFilterChannelId = None,
+          maybeCsrfToken = maybeCsrfToken,
+          forceAdmin = false
+        )(actorSystem, ec))
         maybeConfig.map { config =>
           config.scheduledActions.length mustBe 2
           config.scheduledActions.head.id.get mustEqual schedules.head.id
@@ -161,7 +188,16 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
         setup(user, team, services)(actorSystem, ec)
         val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
         val schedules = setupSchedules(team, dataService)
-        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(user, teamAccess, services, None, None, maybeCsrfToken, forceAdmin = true)(actorSystem, ec))
+        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(
+          user = user,
+          teamAccess = teamAccess,
+          services = services,
+          maybeScheduledId = None,
+          maybeNewSchedule = None,
+          maybeFilterChannelId = None,
+          maybeCsrfToken = maybeCsrfToken,
+          forceAdmin = true
+        )(actorSystem, ec))
         maybeConfig.map { config =>
           config.scheduledActions.length mustBe 2
           config.scheduledActions.head.id.get mustEqual schedules.head.id
@@ -178,7 +214,16 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
         setup(user, team, services, blowup = true)(actorSystem, ec)
         val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
         val schedules = setupSchedules(team, dataService)
-        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(user, teamAccess, services, None, None, maybeCsrfToken, forceAdmin = false)(actorSystem, ec))
+        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(
+          user = user,
+          teamAccess = teamAccess,
+          services = services,
+          maybeScheduledId = None,
+          maybeNewSchedule = None,
+          maybeFilterChannelId = None,
+          maybeCsrfToken = maybeCsrfToken,
+          forceAdmin = false
+        )(actorSystem, ec))
         maybeConfig.map { config =>
           config.scheduledActions.length mustBe 0
           config.orgChannels.teamChannels.length mustEqual 0
@@ -193,7 +238,16 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
         setup(user, team, services, blowup = true)(actorSystem, ec)
         val teamAccess = UserTeamAccess(user, otherTeam, Some(team), Some("TestBot"), isAdminAccess = true)
         val schedules = setupSchedules(team, dataService)
-        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(user, teamAccess, services, None, None, maybeCsrfToken, forceAdmin = false)(actorSystem, ec))
+        val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(
+          user = user,
+          teamAccess = teamAccess,
+          services = services,
+          maybeScheduledId = None,
+          maybeNewSchedule = None,
+          maybeFilterChannelId = None,
+          maybeCsrfToken = maybeCsrfToken,
+          forceAdmin = false
+        )(actorSystem, ec))
         maybeConfig.map { config =>
           config.scheduledActions.length mustBe 2
           config.orgChannels.teamChannels.length mustEqual 0
