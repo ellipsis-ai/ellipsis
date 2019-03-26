@@ -173,7 +173,7 @@ describe('Scheduling', () => {
   });
 
   describe('getInitialState', () => {
-    it("doesn't set the selected item or filter channels if no selected item is provided", () => {
+    it("doesn't set the selected item or filter channels if no selected item or channel ID is provided", () => {
       const channels = [newChannel()];
       const schedules = [newSchedule({
         channel: channels[0].id
@@ -183,7 +183,8 @@ describe('Scheduling', () => {
         orgChannels: emptyConfig.orgChannels.clone({
           teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: channels })]
         }),
-        selectedScheduleId: null
+        selectedScheduleId: null,
+        filterChannelId: null
       }));
       const page = wrapper.page;
       expect(page.state.selectedItem).toBe(null);
@@ -191,7 +192,7 @@ describe('Scheduling', () => {
       expect(page.state.filterChannelId).toBe(null);
     });
 
-    it('sets the selected item, in editing state, with the channels filtered to that channel', () => {
+    it('sets the selected item, in editing state', () => {
       const channels = [newChannel()];
       const schedules = [newSchedule({
         channel: channels[0].id
@@ -204,13 +205,59 @@ describe('Scheduling', () => {
             channelList: channels
           }]
         }),
-        selectedScheduleId: schedules[0].id
+        selectedScheduleId: schedules[0].id,
+        filterChannelId: null
+      }));
+      const page = wrapper.page;
+      expect(page.state.selectedItem).toBe(schedules[0]);
+      expect(page.state.isEditing).toBe(true);
+      expect(page.state.filterChannelId).toEqual(null);
+    });
+
+    it('sets the channel filter', () => {
+      const channels = [newChannel()];
+      const schedules = [newSchedule({
+        channel: channels[0].id
+      }), newSchedule()];
+      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
+        scheduledActions: schedules,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [{
+            teamName: "Test team",
+            channelList: channels
+          }]
+        }),
+        selectedScheduleId: null,
+        filterChannelId: channels[0].id
+      }));
+      const page = wrapper.page;
+      expect(page.state.selectedItem).toBe(null);
+      expect(page.state.isEditing).toBe(false);
+      expect(page.state.filterChannelId).toEqual(channels[0].id);
+    });
+
+    it('sets the selected item in editing state and the channel filter', () => {
+      const channels = [newChannel()];
+      const schedules = [newSchedule({
+        channel: channels[0].id
+      }), newSchedule()];
+      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
+        scheduledActions: schedules,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [{
+            teamName: "Test team",
+            channelList: channels
+          }]
+        }),
+        selectedScheduleId: schedules[0].id,
+        filterChannelId: channels[0].id
       }));
       const page = wrapper.page;
       expect(page.state.selectedItem).toBe(schedules[0]);
       expect(page.state.isEditing).toBe(true);
       expect(page.state.filterChannelId).toEqual(channels[0].id);
     });
+
   });
 
   describe('componentWillReceiveProps', () => {
