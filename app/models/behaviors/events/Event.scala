@@ -135,7 +135,7 @@ trait Event {
       val schedulingPath = baseUrl + controllers.routes.ScheduledActionsController.index(
         selectedId = None,
         newSchedule = None,
-        channelId = None,
+        channelId = maybeChannel,
         teamId = Some(ellipsisTeamId),
         forceAdmin = None
       )
