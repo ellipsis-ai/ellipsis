@@ -19,6 +19,7 @@ case class ListScheduledBehavior(
 
   val configuration: Configuration = services.configuration
   val dataService: DataService = services.dataService
+  val baseUrl: String = configuration.get[String]("application.apiBaseUrl")
 
   private def noMessagesResponse: String = {
     if (maybeChannel.isDefined) {
@@ -32,37 +33,45 @@ case class ListScheduledBehavior(
   }
 
   private def viewAllLink: String = {
-    configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(
-        selectedId = None,
-        newSchedule = None,
-        channelId = None,
-        teamId = Some(event.ellipsisTeamId),
-        forceAdmin = None
-      )
-      s"[View all scheduled items]($baseUrl$path)"
-    }.getOrElse("")
+    val path = controllers.routes.ScheduledActionsController.index(
+      selectedId = None,
+      newSchedule = None,
+      channelId = None,
+      teamId = Some(event.ellipsisTeamId),
+      forceAdmin = None
+    )
+    s"[View all scheduled items]($baseUrl$path)"
   }
 
   private def newScheduleLink: String = {
-    configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(
-        selectedId = None,
-        newSchedule = Some(true),
-        channelId = None,
-        teamId = Some(event.ellipsisTeamId),
-        forceAdmin = None
-      )
-      s"[Schedule something new]($baseUrl$path)"
-    }.getOrElse("")
+    val path = controllers.routes.ScheduledActionsController.index(
+      selectedId = None,
+      newSchedule = Some(true),
+      channelId = None,
+      teamId = Some(event.ellipsisTeamId),
+      forceAdmin = None
+    )
+    s"[Schedule something new]($baseUrl$path)"
+  }
+
+  private def viewChannelURL(channelId: String): String = {
+    val path = controllers.routes.ScheduledActionsController.index(
+      selectedId = None,
+      newSchedule = None,
+      channelId = Some(channelId),
+      teamId = Some(event.ellipsisTeamId),
+      forceAdmin = None
+    )
+    baseUrl + path.url
   }
 
   private def intro: String = {
     maybeChannel.map { channel =>
+      val url = viewChannelURL(channel)
       if (event.isPublicChannel) {
-        s"Here’s what you have scheduled in <#$channel>:"
+        s"Here’s what you have [scheduled in <#$channel>]($url):"
       } else {
-        "Here’s what you have scheduled in this channel:"
+        s"Here’s what you have [scheduled in this channel]($url):"
       }
     }.getOrElse {
       "Here’s everything that has been scheduled for this team:"

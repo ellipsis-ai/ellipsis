@@ -198,32 +198,45 @@ class Scheduling extends React.Component<Props, State> {
       return this.hasChannelList() && this.props.orgChannels.allChannels().find((ea) => ea.id === channelId) || null;
     }
 
+    groupForChannel(channel: Option<ScheduleChannel>, channelName: Option<string>): ScheduleGroup {
+      return {
+        channel: channel,
+        channelName: channelName,
+        channelId: channel ? channel.id : "unknown",
+        excludesBot: Boolean(channel && !channel.isDm() && !channel.isBotMember),
+        isArchived: Boolean(channel && channel.isArchived),
+        isMissing: !channel,
+        isReadOnly: Boolean(channel && channel.isReadOnly),
+        actions: []
+      };
+    }
+
     getScheduleByChannel(): Array<ScheduleGroup> {
       const groupsByName: SchedulesGroupedByName = {};
       this.props.scheduledActions.forEach((action) => {
         const channel = this.findChannelFor(action.channel);
         const channelName = channel ? channel.getFormattedName() : null;
         const groupName = channelName || "[unknown]";
-        const group: ScheduleGroup = groupsByName[groupName] || {
-          channel: channel,
-          channelName: channelName,
-          channelId: channel ? channel.id : "unknown",
-          excludesBot: Boolean(channel && !channel.isDm() && !channel.isBotMember),
-          isArchived: Boolean(channel && channel.isArchived),
-          isMissing: !channel,
-          isReadOnly: Boolean(channel && channel.isReadOnly),
-          actions: []
-        };
+        const group = groupsByName[groupName] || this.groupForChannel(channel, channelName);
         group.actions.push(action);
         groupsByName[groupName] = group;
       });
+      if (this.props.filterChannelId && !this.props.scheduledActions.some((ea) => ea.channel === this.props.filterChannelId)) {
+        const channel = this.findChannelFor(this.props.filterChannelId);
+        const channelName = channel ? channel.getFormattedName() : null;
+        const groupName = channelName || "[unknown]";
+        if (!groupsByName[groupName]) {
+          groupsByName[groupName] = this.groupForChannel(channel, channelName);
+        }
+      }
       const groupArray = Object.keys(groupsByName).map((channelName) => {
         const group = groupsByName[channelName] as ScheduleGroup;
         group.actions = Sort.arrayAscending(group.actions, (action) => action.firstRecurrence ? Number(action.firstRecurrence) : Infinity);
         return group;
       });
       return Sort.arrayAscending(groupArray, (group) => {
-        return group.actions[0].firstRecurrence ? Number(group.actions[0].firstRecurrence) : Infinity
+        const firstAction = group.actions[0];
+        return firstAction && firstAction.firstRecurrence ? Number(firstAction.firstRecurrence) : Infinity
       });
     }
 
@@ -431,30 +444,37 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     renderGroups(groups: Array<ScheduleGroup>) {
-      return groups.map((group) => (
-        <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
-          <div className="ptxl pbxl">
-            <div className="phxl mobile-phl">
-              <h4 className="mvn">
-                <span className="mrxs"><ChannelName channel={group.channel} /></span>
-                {this.renderGroupWarningText(group)}
-              </h4>
-            </div>
+      return groups.map((group) => {
+        const hasActions = group.actions.length > 0;
+        return (
+          <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
+            <div className="ptxl pbxl">
+              <div className="phxl mobile-phl">
+                <h4 className="mvn">
+                  <span className="mrxs"><ChannelName channel={group.channel} /></span>
+                  {this.renderGroupWarningText(group)}
+                </h4>
+              </div>
 
-            <div>
-              {group.actions.map((action) => (
-                <ScheduledItem
-                  key={`${action.scheduleType}-${action.id}`}
-                  className={`mhl mvs pal mobile-pam border border-light bg-white`}
-                  scheduledAction={action}
-                  behaviorGroups={this.props.behaviorGroups}
-                  onClick={this.toggleEditor}
-                />
-              ))}
+              <div>
+                {hasActions ? group.actions.map((action) => (
+                  <ScheduledItem
+                    key={`${action.scheduleType}-${action.id}`}
+                    className={`mhl mvs pal mobile-pam border border-light bg-white`}
+                    scheduledAction={action}
+                    behaviorGroups={this.props.behaviorGroups}
+                    onClick={this.toggleEditor}
+                  />
+                )) : (
+                  <div className="mhl mvs pal mobile-pam border border-light bg-white">
+                    There are no scheduled actions in this channel.
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </Collapsible>
-      ));
+          </Collapsible>
+        );
+      });
     }
 
     renderNoSchedules() {
