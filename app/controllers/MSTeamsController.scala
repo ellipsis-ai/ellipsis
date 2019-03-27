@@ -135,6 +135,7 @@ class MSTeamsController @Inject() (
             value,
             Seq(),
             None,
+            maybeScheduled = None,
             isUninterruptedConversation = false,
             isEphemeral = false,
             None,
@@ -340,6 +341,7 @@ class MSTeamsController @Inject() (
             info.maybeTextToUse.getOrElse(""), // TODO: formatting
             info.attachments.getOrElse(Seq()),
             None,
+            maybeScheduled = None,
             isUninterruptedConversation = false,
             isEphemeral = false,
             None,

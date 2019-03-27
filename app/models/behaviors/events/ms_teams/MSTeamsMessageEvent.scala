@@ -5,6 +5,7 @@ import json.UserData
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
+import models.behaviors.scheduling.Scheduled
 import services.ms_teams.apiModels.{Attachment, File, Image}
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -17,6 +18,7 @@ case class MSTeamsMessageEvent(
                                 message: String,
                                 attachments: Seq[Attachment],
                                 maybeOriginalEventType: Option[EventType],
+                                maybeScheduled: Option[Scheduled],
                                 override val isUninterruptedConversation: Boolean,
                                 override val isEphemeral: Boolean,
                                 override val maybeResponseUrl: Option[String],
@@ -42,6 +44,10 @@ case class MSTeamsMessageEvent(
   override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     Future.successful(None) // TODO: maybe implement this
     // eventContext.maybePermalinkFor(ts, services)
+  }
+
+  def withSchedule(schedule: Scheduled): Event = {
+    this.copy(maybeScheduled = Some(schedule))
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {

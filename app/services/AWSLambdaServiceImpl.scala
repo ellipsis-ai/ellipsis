@@ -251,7 +251,7 @@ class AWSLambdaServiceImpl @Inject() (
           behaviorVersion,
           userInfo,
           teamInfo,
-          EventInfo.buildFor(event, eventUser, maybeMessage),
+          EventInfo.buildFor(event, eventUser, maybeMessage, configuration),
           parametersWithValues,
           environmentVariables,
           token

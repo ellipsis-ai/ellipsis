@@ -30,6 +30,7 @@ sealed trait ScheduledEvent extends Event {
   val eventType: EventType = EventType.scheduled
   val maybeOriginalEventType: Option[EventType] = None
   def withOriginalEventType(originalEventType: EventType, isUninterruptedConversation: Boolean): Event = this
+  def withSchedule(schedule: Scheduled): Event = this
 
   override def sendMessage(
                             text: String,

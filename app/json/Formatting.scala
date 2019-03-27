@@ -220,6 +220,7 @@ object Formatting {
   lazy implicit val eventUserFormat = Json.format[EventUser]
   lazy implicit val channelInfoFormat = Json.format[Channel]
   lazy implicit val messageInfoFormat = Json.format[MessageObject]
+  lazy implicit val scheduleInfoFormat = Json.format[ScheduleInfo]
   lazy implicit val eventInfoFormat = Json.format[EventInfo]
   lazy implicit val AWSConfigInfoFormat = Json.format[AWSConfigInfo]
   lazy implicit val teamInfoFormat = Json.format[TeamInfo]

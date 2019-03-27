@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import models.behaviors.BotResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventType, RunEvent, SlackEventContext}
+import models.behaviors.scheduling.Scheduled
 import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,6 +15,7 @@ case class SlackRunEvent(
                            arguments: Map[String, String],
                            eventType: EventType,
                            maybeOriginalEventType: Option[EventType],
+                           maybeScheduled: Option[Scheduled],
                            override val isEphemeral: Boolean,
                            override val maybeResponseUrl: Option[String],
                            maybeTriggeringMessageTs: Option[String]
@@ -25,6 +27,10 @@ case class SlackRunEvent(
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {
     this.copy(maybeOriginalEventType = Some(originalEventType))
+  }
+
+  def withSchedule(schedule: Scheduled): Event = {
+    this.copy(maybeScheduled = Some(schedule))
   }
 
   override def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)

@@ -66,6 +66,7 @@ case class ScheduledBehavior(
             arguments,
             EventType.scheduled,
             Some(EventType.scheduled),
+            maybeScheduled = Some(this),
             isEphemeral = false,
             None,
             None

@@ -65,6 +65,7 @@ case class SlackApiMethodContext(
           None,
           maybeMessageTs,
           maybeOriginalEventType,
+          maybeScheduled = maybeScheduledMessage,
           isUninterruptedConversation = false,
           isEphemeral = false,
           None,
@@ -117,6 +118,7 @@ case class SlackApiMethodContext(
           argumentsMap,
           eventType,
           maybeOriginalEventType,
+          maybeScheduled = maybeScheduledMessage,
           isEphemeral = false,
           None,
           maybeTriggeringMessageId

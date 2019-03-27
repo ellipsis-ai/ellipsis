@@ -7,6 +7,7 @@ import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.{Event, EventType, SlackEventContext}
+import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import services.DefaultServices
 import slick.dbio.DBIO
@@ -25,6 +26,10 @@ case class SlashCommandEvent(
   val channel: String = eventContext.channel
 
   val eventType: EventType = EventType.chat
+
+  val maybeScheduled: Option[Scheduled] = None
+
+  def withSchedule(schedule: Scheduled): Event = this
 
   override val isEphemeral: Boolean = true
   override val maybeResponseUrl: Option[String] = Some(responseUrl)

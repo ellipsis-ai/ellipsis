@@ -9,6 +9,7 @@ import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.scheduling.Scheduled
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -63,7 +64,14 @@ class InvocationTokenServiceImpl @Inject() (
                        maybeScheduled: Option[Scheduled],
                        maybeTeamIdForContext: Option[String]
                      ): DBIO[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, user.id, behaviorVersion.id, maybeScheduled.map(_.id), maybeTeamIdForContext, OffsetDateTime.now)
+    // TODO: scheduled behaviors aren't allowed in invocation tokens, only scheduled messages (which is dumb and we should fix)
+    val maybeScheduledMessageId = maybeScheduled.flatMap { scheduled =>
+      scheduled match {
+        case sm: ScheduledMessage => Some(sm.id)
+        case _ => None
+      }
+    }
+    val newInstance = InvocationToken(IDs.next, user.id, behaviorVersion.id, maybeScheduledMessageId, maybeTeamIdForContext, OffsetDateTime.now)
     (all += newInstance).map(_ => newInstance)
   }
 

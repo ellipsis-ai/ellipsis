@@ -132,6 +132,7 @@ class MSTeamsBotProfileServiceImpl @Inject() (
       "",
       Seq(),
       maybeOriginalEventType,
+      maybeScheduled = None,
       isUninterruptedConversation = false,
       isEphemeral,
       Some(info.responseUrl),
