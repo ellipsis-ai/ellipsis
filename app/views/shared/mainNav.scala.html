@@ -32,7 +32,13 @@
 
                 <li>
                   <a class="button button-dropdown-item plm"
-                  href='@routes.ScheduledActionsController.index(None, None, config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
+                  href='@routes.ScheduledActionsController.index(
+                    selectedId = None,
+                    newSchedule = None,
+                    channelId = None,
+                    teamId = config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId),
+                    forceAdmin = None
+                  )'
                   >Scheduling</a>
                 </li>
 

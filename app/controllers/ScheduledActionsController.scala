@@ -38,6 +38,7 @@ class ScheduledActionsController @Inject()(
   def index(
              maybeScheduledId: Option[String],
              maybeNewSchedule: Option[Boolean],
+             maybeChannelId: Option[String],
              maybeTeamId: Option[String],
              maybeForceAdmin: Option[Boolean]
            ) = silhouette.SecuredAction.async { implicit request =>
@@ -51,13 +52,14 @@ class ScheduledActionsController @Inject()(
             userIsAdmin && maybeForceAdmin.contains(true)
           }
           maybeConfig <- ScheduledActionsConfig.buildConfigFor(
-            user,
-            teamAccess,
-            services,
-            maybeScheduledId,
-            maybeNewSchedule,
-            CSRF.getToken(request).map(_.value),
-            forceAdmin
+            user = user,
+            teamAccess = teamAccess,
+            services = services,
+            maybeScheduledId = maybeScheduledId,
+            maybeNewSchedule = maybeNewSchedule,
+            maybeFilterChannelId = maybeChannelId,
+            maybeCsrfToken = CSRF.getToken(request).map(_.value),
+            forceAdmin = forceAdmin
           )
         } yield {
           maybeConfig.map { config =>
@@ -77,7 +79,14 @@ class ScheduledActionsController @Inject()(
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
           teamAccess.maybeTargetTeam.map { _ =>
-            Ok(views.html.scheduledactions.index(viewConfig(Some(teamAccess)), maybeScheduledId, maybeNewSchedule, maybeTeamId, maybeForceAdmin))
+            Ok(views.html.scheduledactions.index(
+              viewConfig(Some(teamAccess)),
+              maybeScheduledId,
+              maybeNewSchedule,
+              maybeChannelId,
+              maybeTeamId,
+              maybeForceAdmin
+            ))
           }.getOrElse {
             NotFound(views.html.error.notFound(viewConfig(None), Some("Team not found"), None))
           }

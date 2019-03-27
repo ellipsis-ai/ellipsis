@@ -36,6 +36,7 @@ export interface SchedulingProps {
   onClearErrors: () => void,
   justSavedAction: Option<ScheduledAction>,
   selectedScheduleId: Option<string>,
+  filterChannelId: Option<string>,
   newAction: Option<boolean>,
   isAdmin: boolean,
   userMap: UserMap,
@@ -77,7 +78,7 @@ class Scheduling extends React.Component<Props, State> {
       autobind(this);
       const selectedItem = this.getDefaultSelectedItem();
       this.state = {
-        filterChannelId: selectedItem && this.hasChannelList() ? selectedItem.channel : null,
+        filterChannelId: this.props.filterChannelId,
         selectedItem: selectedItem,
         justSaved: false,
         justDeleted: false,
@@ -113,6 +114,7 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     componentDidMount(): void {
+      this.updateURL();
       this.renderNavItems();
       this.renderNavActions();
     }
@@ -120,13 +122,16 @@ class Scheduling extends React.Component<Props, State> {
     componentDidUpdate(prevProps: Props, prevState: State): void {
       if (prevState.isEditing !== this.state.isEditing) {
         window.scrollTo(0, 0);
-
-        const explicitTeamId = BrowserUtils.hasQueryParam("teamId") ? this.props.teamId : null;
-        const forceAdmin = BrowserUtils.hasQueryParamWithValue("forceAdmin", true) || null;
-        BrowserUtils.replaceURL(this.getCorrectedURL(explicitTeamId, forceAdmin));
       }
+      this.updateURL();
       this.renderNavItems();
       this.renderNavActions();
+    }
+
+    updateURL(): void {
+      const explicitTeamId = BrowserUtils.hasQueryParam("teamId") ? this.props.teamId : null;
+      const forceAdmin = BrowserUtils.hasQueryParamWithValue("forceAdmin", true) || null;
+      BrowserUtils.replaceURL(this.getCorrectedURL(explicitTeamId, forceAdmin));
     }
 
     renderNavItems() {
@@ -167,11 +172,11 @@ class Scheduling extends React.Component<Props, State> {
 
     getCorrectedURL(explicitTeamId: Option<string>, forceAdmin: Option<boolean>): string {
       if (this.state.isEditing && this.state.selectedItem && !this.state.selectedItem.isNew()) {
-        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, explicitTeamId, forceAdmin).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, this.state.filterChannelId, explicitTeamId, forceAdmin).url;
       } else if (this.state.isEditing && this.state.selectedItem) {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, true, explicitTeamId, forceAdmin).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(null, true, this.state.filterChannelId, explicitTeamId, forceAdmin).url;
       } else {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, null, explicitTeamId, forceAdmin).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(null, null, this.state.filterChannelId, explicitTeamId, forceAdmin).url;
       }
     }
 

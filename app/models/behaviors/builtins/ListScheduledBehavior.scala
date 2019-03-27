@@ -33,14 +33,26 @@ case class ListScheduledBehavior(
 
   private def viewAllLink: String = {
     configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(None, None, Some(event.ellipsisTeamId))
+      val path = controllers.routes.ScheduledActionsController.index(
+        selectedId = None,
+        newSchedule = None,
+        channelId = None,
+        teamId = Some(event.ellipsisTeamId),
+        forceAdmin = None
+      )
       s"[View all scheduled items]($baseUrl$path)"
     }.getOrElse("")
   }
 
   private def newScheduleLink: String = {
     configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(None, Some(true), Some(event.ellipsisTeamId))
+      val path = controllers.routes.ScheduledActionsController.index(
+        selectedId = None,
+        newSchedule = Some(true),
+        channelId = None,
+        teamId = Some(event.ellipsisTeamId),
+        forceAdmin = None
+      )
       s"[Schedule something new]($baseUrl$path)"
     }.getOrElse("")
   }

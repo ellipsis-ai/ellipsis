@@ -50,7 +50,7 @@ trait Scheduled {
 
   def maybeEditScheduleUrlFor(configuration: Configuration): Option[String] = {
     configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(Some(id), None, Some(team.id))
+      val path = controllers.routes.ScheduledActionsController.index(Some(id), None, maybeChannel, Some(team.id), None)
       baseUrl + path
     }
   }
