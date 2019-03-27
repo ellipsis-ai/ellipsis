@@ -299,16 +299,23 @@ class MSTeamsController @Inject() (
       if (shouldRemoveActions) {
         replyToId.map { rtid =>
           val client = apiService.profileClientFor(botProfile)
-          val updated = ResponseInfo.newForMessage(
-            recipient,
-            conversation,
-            Some(from),
-            maybeResultText.getOrElse("updated"),
-            "markdown",
-            Some(rtid),
-            Some(Seq())
-          )
-          client.updateMessage(serviceUrl, conversation.id, rtid, Json.toJson(updated)).map(_ => {})
+          val maybeTeamId = channelData.team.map(_.id)
+          for {
+            members <- maybeTeamId.map(client.getTeamMemberDetails).getOrElse(Future.successful(Seq()))
+            _ <- {
+              val updated = ResponseInfo.newForMessage(
+                recipient,
+                conversation,
+                Some(from),
+                maybeResultText.getOrElse("updated"),
+                "markdown",
+                Some(rtid),
+                Some(Seq()),
+                members
+              )
+              client.updateMessage(serviceUrl, conversation.id, rtid, Json.toJson(updated)).map(_ => {})
+            }
+          } yield {}
         }.getOrElse(Future.successful({}))
       } else {
         Future.successful({})

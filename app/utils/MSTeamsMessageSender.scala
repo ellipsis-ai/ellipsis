@@ -166,52 +166,64 @@ case class MSTeamsMessageSender(
                                text: String,
                                maybeAttachments: Option[Seq[Attachment]] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
-    info match {
-      case activityInfo: ActivityInfo => {
-        val conversation = maybeConversationOverride.getOrElse(activityInfo.conversation)
-        val response = ResponseInfo.newForMessage(
-          info.botParticipant,
-          conversation,
-          activityInfo.maybeUserParticipant,
-          text,
-          "markdown",
-          maybeReplyToId,
-          maybeAttachments
-        )
-        client.postToResponseUrl(
-          activityInfo.responseUrlFor(conversation.id, maybeReplyToId),
-          Json.toJson(response)
-        ).
-          recover(postErrorRecovery(activityInfo.conversation.id, text)).
-          flatMap { res =>
-            logInvolvedFor(activityInfo).map(_ => res)
-          }
+    for {
+      maybeChannel <- info.channelData.channel.map { channel =>
+        client.maybeBotProfile.map { profile =>
+          services.cacheService.getMSTeamsChannelFor(profile, channel.idWithoutMessage)
+        }.getOrElse(Future.successful(None))
+      }.getOrElse(Future.successful(None))
+      members <- maybeChannel.map { channel =>
+        client.getTeamMemberDetails(channel.team.id)
+      }.getOrElse(Future.successful(Seq()))
+      result <- info match {
+        case activityInfo: ActivityInfo => {
+          val conversation = maybeConversationOverride.getOrElse(activityInfo.conversation)
+          val response = ResponseInfo.newForMessage(
+            info.botParticipant,
+            conversation,
+            activityInfo.maybeUserParticipant,
+            text,
+            "markdown",
+            maybeReplyToId,
+            maybeAttachments,
+            members
+          )
+          client.postToResponseUrl(
+            activityInfo.responseUrlFor(conversation.id, maybeReplyToId),
+            Json.toJson(response)
+          ).
+            recover(postErrorRecovery(activityInfo.conversation.id, text)).
+            flatMap { res =>
+              logInvolvedFor(activityInfo).map(_ => res)
+            }
+        }
+        case firstMessageInfo: FirstMessageInfo => {
+          val convoId = firstMessageInfo.channel
+          for {
+            result <- {
+              val response = ResponseInfo.newForMessage(
+                firstMessageInfo.botParticipant,
+                ConversationAccount(convoId, Some(firstMessageInfo.isPublicChannel), None, firstMessageInfo.conversationType),
+                firstMessageInfo.maybeUserParticipant,
+                text,
+                "markdown",
+                maybeReplyToId,
+                maybeAttachments,
+                members
+              )
+              client.postToResponseUrl(
+                s"${firstMessageInfo.serviceUrl}/v3/conversations/$convoId/activities",
+                Json.toJson(response)
+              ).
+                recover(postErrorRecovery(convoId, text)).
+                flatMap { res =>
+                  logInvolvedFor(firstMessageInfo).map(_ => res)
+                }
+            }
+          } yield result
+        }
       }
-      case firstMessageInfo: FirstMessageInfo => {
-        val convoId = firstMessageInfo.channel
-        for {
-          result <- {
-            val response = ResponseInfo.newForMessage(
-              firstMessageInfo.botParticipant,
-              ConversationAccount(convoId, Some(firstMessageInfo.isPublicChannel), None, firstMessageInfo.conversationType),
-              firstMessageInfo.maybeUserParticipant,
-              text,
-              "markdown",
-              maybeReplyToId,
-              maybeAttachments
-            )
-            client.postToResponseUrl(
-              s"${firstMessageInfo.serviceUrl}/v3/conversations/$convoId/activities",
-              Json.toJson(response)
-            ).
-              recover(postErrorRecovery(convoId, text)).
-              flatMap { res =>
-                logInvolvedFor(firstMessageInfo).map(_ => res)
-              }
-          }
-        } yield result
-      }
-    }
+    } yield result
   }
 
   private def messageSegmentsFor(formattedText: String): List[String] = {

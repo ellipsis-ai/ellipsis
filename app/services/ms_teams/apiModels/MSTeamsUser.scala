@@ -9,4 +9,10 @@ case class MSTeamsUser(
                          mailBoxSettings: Option[MailBoxSettings]
                       ) {
   val formattedLink: Option[String] = displayName.map(d => s"<at>$d</at>")
+
+  def maybeMentionEntity: Option[MentionEntity] = {
+    displayName.map { name =>
+      MentionEntity(ChannelAccount(id, name), s"<at>$name</at>")
+    }
+  }
 }

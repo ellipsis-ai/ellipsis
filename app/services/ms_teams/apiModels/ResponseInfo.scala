@@ -26,13 +26,14 @@ object ResponseInfo {
                      text: String,
                      textFormat: String,
                      maybeReplyToId: Option[String],
-                     attachments: Option[Seq[Attachment]]
+                     attachments: Option[Seq[Attachment]],
+                     members: Seq[MSTeamsUser]
                    ): ResponseInfo = {
     val node = Parser.builder().build().parse(text)
     val collector = new MentionCollector()
     node.accept(collector)
     val mentionStrings = collector.mentionStrings
-    val entities = Seq(Some(from.toMentionEntity), maybeRecipient.map(_.toMentionEntity)).flatten.flatMap{ ea =>
+    val entities = members.flatMap(_.maybeMentionEntity).flatMap{ ea =>
       if (mentionStrings.contains(ea.text)) {
         Some(ea)
       } else {
