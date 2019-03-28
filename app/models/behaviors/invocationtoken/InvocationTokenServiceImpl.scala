@@ -64,14 +64,8 @@ class InvocationTokenServiceImpl @Inject() (
                        maybeScheduled: Option[Scheduled],
                        maybeTeamIdForContext: Option[String]
                      ): DBIO[InvocationToken] = {
-    // TODO: scheduled behaviors aren't allowed in invocation tokens, only scheduled messages (which is dumb and we should fix)
-    val maybeScheduledMessageId = maybeScheduled.flatMap { scheduled =>
-      scheduled match {
-        case sm: ScheduledMessage => Some(sm.id)
-        case _ => None
-      }
-    }
-    val newInstance = InvocationToken(IDs.next, user.id, behaviorVersion.id, maybeScheduledMessageId, maybeTeamIdForContext, OffsetDateTime.now)
+    // TODO: Trying to write scheduled things here blows up because we sometimes delete those things, and the table uses it as a foreign key
+    val newInstance = InvocationToken(IDs.next, user.id, behaviorVersion.id, None, maybeTeamIdForContext, OffsetDateTime.now)
     (all += newInstance).map(_ => newInstance)
   }
 
