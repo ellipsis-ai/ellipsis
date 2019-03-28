@@ -8,6 +8,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack.SlackMessageEvent
 import models.behaviors._
+import play.api.Logger
 import services.DefaultServices
 import utils.Color
 
@@ -182,6 +183,15 @@ class EventHandler @Inject() (
       startInvokeConversationFor(event)
     }).recover {
       case e: FetchValidValuesBadResultException => Seq(e.result)
+      case t: Throwable => {
+        val msg =
+          s"""Error handling event:
+             |
+             |${event.errorText}
+           """.stripMargin
+        Logger.error(msg, t)
+        throw t
+      }
     }
   }
 }
