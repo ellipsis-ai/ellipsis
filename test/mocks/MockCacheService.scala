@@ -15,7 +15,7 @@ import org.scalatest.mockito.MockitoSugar
 import sangria.schema.Schema
 import services.caching._
 import services.ms_teams.ChannelWithTeam
-import services.ms_teams.apiModels.{Application, MSTeamsUser}
+import services.ms_teams.apiModels.{Application, MSAADUser}
 import services.slack.apiModels.SlackUser
 
 import scala.concurrent.Future
@@ -72,7 +72,7 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getMSTeamsChannelFor(profile: MSTeamsBotProfile, channelId: String): Future[Option[ChannelWithTeam]] = Future.successful(None)
 
-  def getMSTeamsUser(key: String, dataFn: String => Future[Option[MSTeamsUser]]): Future[Option[MSTeamsUser]] = Future.successful(None)
+  def getMSAADUser(key: String, dataFn: String => Future[Option[MSAADUser]]): Future[Option[MSAADUser]] = Future.successful(None)
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Future[Unit] = Future.successful({})
 

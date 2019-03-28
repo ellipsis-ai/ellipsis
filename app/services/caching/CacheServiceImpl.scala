@@ -22,7 +22,7 @@ import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import sangria.schema.Schema
-import services.ms_teams.apiModels.{Application, MSTeamsUser}
+import services.ms_teams.apiModels.{Application, MSAADUser}
 import services.ms_teams.{ChannelWithTeam, MSTeamsApiService}
 import services.slack.SlackEventService
 import services.slack.apiModels.{SlackUser, SlackUserProfile}
@@ -285,9 +285,9 @@ class CacheServiceImpl @Inject() (
     } yield channelMap.get(channelId)
   }
 
-  private val msTeamsUserCache: Cache[String, Option[MSTeamsUser]] = LfuCache(cacheSettingsWithTimeToLive(msTeamsApiCallExpiry))
+  private val msTeamsUserCache: Cache[String, Option[MSAADUser]] = LfuCache(cacheSettingsWithTimeToLive(msTeamsApiCallExpiry))
 
-  def getMSTeamsUser(key: String, dataFn: String => Future[Option[MSTeamsUser]]): Future[Option[MSTeamsUser]] = {
+  def getMSAADUser(key: String, dataFn: String => Future[Option[MSAADUser]]): Future[Option[MSAADUser]] = {
     msTeamsUserCache.getOrLoad(key, dataFn)
   }
 
