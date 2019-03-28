@@ -7,10 +7,14 @@ import json.UserData
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
+import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.ellipsisobject._
 import models.behaviors.events.{EventType, TestEventContext}
 import models.behaviors.invocationtoken.InvocationToken
+import models.behaviors.scheduling.recurrence.Minutely
+import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.testing.TestMessageEvent
 import models.team.Team
 import org.mockito.Matchers._
@@ -37,6 +41,7 @@ class EllipsisObjectSpec extends DBSpec {
   val maybePermalink: Option[String] = Some("perma.link")
   val maybeReactionAdded: Option[String] = None
   val maybeConversation: Option[Conversation] = None
+  val recurrence = Minutely(IDs.next, 1, 0, Some(1))
 
   def setUpMocksFor(
                    event: TestMessageEvent,
@@ -64,6 +69,18 @@ class EllipsisObjectSpec extends DBSpec {
     when(event.eventContext).thenReturn(eventContext)
     when(eventContext.name).thenReturn(platformName)
     when(eventContext.description).thenReturn(platformDesc)
+    when(eventContext.team).thenReturn(team)
+    when(event.maybeScheduled).thenReturn(Some(ScheduledMessage(
+      IDs.next,
+      messageText,
+      Some(user),
+      team,
+      maybeChannel,
+      isForIndividualMembers = false,
+      recurrence,
+      OffsetDateTime.now,
+      OffsetDateTime.now
+    )))
     when(services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)).thenReturn(DBIO.successful(Seq()))
     when(services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)).thenReturn(DBIO.successful(Seq()))
     when(services.dataService.linkedSimpleTokens.allForUserAction(user)).thenReturn(DBIO.successful(Seq()))
@@ -107,6 +124,17 @@ class EllipsisObjectSpec extends DBSpec {
         resultEventMessage.text mustBe messageText
         resultEventMessage.channel.flatMap(_.name) must contain(channel)
         resultEventMessage.permalink mustBe maybePermalink
+
+        val scheduledEditUrl = controllers.routes.ScheduledActionsController.index(
+          selectedId = event.maybeScheduled.map(_.id),
+          newSchedule = None,
+          channelId = maybeChannel,
+          teamId = Some(event.ellipsisTeamId),
+          forceAdmin = None
+        ).url
+        val resultEventSchedule = resultEvent.schedule.get
+        resultEventSchedule.editLink must endWith(scheduledEditUrl)
+        resultEventSchedule.recurrence mustEqual recurrence.displayString
 
         // deprecated stuff:
         val resultUserInfo = resultObject.userInfo
