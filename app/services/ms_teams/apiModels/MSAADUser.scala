@@ -1,6 +1,6 @@
 package services.ms_teams.apiModels
 
-case class MSTeamsUser(
+case class MSAADUser(
                          id: String,
                          displayName: Option[String],
                          givenName: Option[String],
@@ -9,4 +9,5 @@ case class MSTeamsUser(
                          mailBoxSettings: Option[MailBoxSettings]
                       ) {
   val formattedLink: Option[String] = displayName.map(d => s"<at>$d</at>")
+
 }

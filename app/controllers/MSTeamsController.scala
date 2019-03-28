@@ -20,7 +20,7 @@ import play.api.{Environment, Logger}
 import services._
 import services.ms_teams.apiModels.Formatting._
 import services.ms_teams.apiModels._
-import services.ms_teams.{MSTeamsApiService, MSTeamsEventService}
+import services.ms_teams.{MSTeamsApiService, MSTeamsEventService, MSTeamsUser}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
@@ -299,16 +299,28 @@ class MSTeamsController @Inject() (
       if (shouldRemoveActions) {
         replyToId.map { rtid =>
           val client = apiService.profileClientFor(botProfile)
-          val updated = ResponseInfo.newForMessage(
-            recipient,
-            conversation,
-            Some(from),
-            maybeResultText.getOrElse("updated"),
-            "markdown",
-            Some(rtid),
-            Some(Seq())
-          )
-          client.updateMessage(serviceUrl, conversation.id, rtid, Json.toJson(updated)).map(_ => {})
+          val maybeTeamId = channelData.team.map(_.id)
+          for {
+            aadUserMembers <- maybeTeamId.map(client.getTeamMemberDetails).getOrElse(Future.successful(Seq()))
+            members <- Future.sequence(aadUserMembers.map { ea =>
+              client.maybeEllipsisTeamId.map { teamId =>
+                MSTeamsUser.maybeForMSAADUser(ea, teamId, services.dataService)
+              }.getOrElse(Future.successful(None))
+            }).map(_.flatten)
+            _ <- {
+              val updated = ResponseInfo.newForMessage(
+                recipient,
+                conversation,
+                Some(from),
+                maybeResultText.getOrElse("updated"),
+                "markdown",
+                Some(rtid),
+                Some(Seq()),
+                members
+              )
+              client.updateMessage(serviceUrl, conversation.id, rtid, Json.toJson(updated)).map(_ => {})
+            }
+          } yield {}
         }.getOrElse(Future.successful({}))
       } else {
         Future.successful({})

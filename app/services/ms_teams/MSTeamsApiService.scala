@@ -68,6 +68,8 @@ trait MSTeamsApiClient {
     }
   }
 
+  def maybeBotProfile: Option[MSTeamsBotProfile]
+
   private def urlFor(method: String): String = s"$API_BASE_URL$method"
 
   private def responseToJson(response: WSResponse, maybeField: Option[String] = None): JsValue = {
@@ -278,9 +280,9 @@ trait MSTeamsApiClient {
       }
   }
 
-  def getUserInfo(userId: String): Future[Option[MSTeamsUser]] = {
+  def getUserInfo(userId: String): Future[Option[MSAADUser]] = {
     getResponseFor(s"users/$userId", Seq()).
-      map(r => Some(extract[MSTeamsUser](r, Seq()))).
+      map(r => Some(extract[MSAADUser](r, Seq()))).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -387,6 +389,15 @@ trait MSTeamsApiClient {
       }
   }
 
+  def getTeamMemberDetails(teamId: String): Future[Seq[MSAADUser]] = {
+    for {
+      members <- getTeamMembers(teamId)
+      withDetails <- Future.sequence(members.map { ea =>
+        getUserInfo(ea.id)
+      }).map(_.flatten)
+    } yield withDetails
+  }
+
   val userIdForContext = services.configuration.get[String]("silhouette.ms_teams.clientID")
   val botIdWithPrefix: String = s"28:${userIdForContext}"
 
@@ -403,6 +414,9 @@ case class MSTeamsApiTenantClient(
 
   val maybeEllipsisTeamId: Option[String] = None
 
+  def maybeBotProfile: Option[MSTeamsBotProfile] = None
+
+
 }
 
 case class MSTeamsApiProfileClient(
@@ -414,6 +428,9 @@ case class MSTeamsApiProfileClient(
 
   val maybeEllipsisTeamId: Option[String] = Some(profile.teamId)
   val tenantId: String = profile.tenantId
+
+  def maybeBotProfile: Option[MSTeamsBotProfile] = Some(profile)
+
 
 }
 
