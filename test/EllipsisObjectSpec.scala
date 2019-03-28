@@ -84,7 +84,7 @@ class EllipsisObjectSpec extends DBSpec {
       } yield {
         val maybeChannelObj = Some(Channel(channel, maybeChannel, Some(s"<@$channel>"), None))
         val maybeMessage = Some(MessageObject(messageText, maybeMessageId, maybeChannelObj, maybeThread, usersMentioned = Set(), permalink = maybePermalink, reactionAdded = None))
-        val eventInfo = EventInfo.buildFor(event, eventUser, maybeMessage)
+        val eventInfo = EventInfo.buildFor(event, eventUser, maybeMessage, configuration)
         val token = InvocationToken(IDs.next, user.id, IDs.next, None, None, OffsetDateTime.now)
         val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, Seq(), "test.ellipsis", token))
         Logger.info(Json.prettyPrint(json))
