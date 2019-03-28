@@ -44,10 +44,6 @@ case class SlackMessageEvent(
     this.copy(maybeOriginalEventType = Some(originalEventType), isUninterruptedConversation = isUninterrupted)
   }
 
-  def withSchedule(schedule: Scheduled): Event = {
-    this.copy(maybeScheduled = Some(schedule))
-  }
-
   override def contextualBotPrefix(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     if (eventContext.isDirectMessage) {
       Future.successful("")

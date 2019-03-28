@@ -46,10 +46,6 @@ case class MSTeamsMessageEvent(
     // eventContext.maybePermalinkFor(ts, services)
   }
 
-  def withSchedule(schedule: Scheduled): Event = {
-    this.copy(maybeScheduled = Some(schedule))
-  }
-
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = {
     this.copy(maybeOriginalEventType = Some(originalEventType), isUninterruptedConversation = isUninterrupted)
   }

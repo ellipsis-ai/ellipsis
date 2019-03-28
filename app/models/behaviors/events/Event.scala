@@ -55,8 +55,6 @@ trait Event {
 
   def withOriginalEventType(originalEventType: EventType, isUninterruptedConversation: Boolean): Event
 
-  def withSchedule(schedule: Scheduled): Event
-
   def logTextForResultSource: String = s"in response to ${eventContext.name} message"
 
   def logTextFor(result: BotResult, maybeSource: Option[String]): String = {

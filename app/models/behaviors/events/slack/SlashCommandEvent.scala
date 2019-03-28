@@ -29,8 +29,6 @@ case class SlashCommandEvent(
 
   val maybeScheduled: Option[Scheduled] = None
 
-  def withSchedule(schedule: Scheduled): Event = this
-
   override val isEphemeral: Boolean = true
   override val maybeResponseUrl: Option[String] = Some(responseUrl)
 

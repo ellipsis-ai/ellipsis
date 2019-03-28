@@ -90,6 +90,4 @@ case class SlackReactionAddedEvent(
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
-
-  override def withSchedule(schedule: Scheduled): Event = this
 }

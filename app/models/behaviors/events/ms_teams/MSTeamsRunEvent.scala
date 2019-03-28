@@ -24,8 +24,4 @@ case class MSTeamsRunEvent(
     this.copy(maybeOriginalEventType = Some(originalEventType))
   }
 
-  def withSchedule(schedule: Scheduled): Event = {
-    this.copy(maybeScheduled = Some(schedule))
-  }
-
 }

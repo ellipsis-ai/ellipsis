@@ -20,7 +20,6 @@ trait TestEvent extends Event {
   val maybeOriginalEventType: Option[EventType] = None
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
   val maybeScheduled: Option[Scheduled] = None
-  def withSchedule(schedule: Scheduled): Event = this
 
   val botUserIdForContext: String = "TEST_BOT_ID"
 

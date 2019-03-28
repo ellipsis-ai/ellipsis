@@ -29,10 +29,6 @@ case class SlackRunEvent(
     this.copy(maybeOriginalEventType = Some(originalEventType))
   }
 
-  def withSchedule(schedule: Scheduled): Event = {
-    this.copy(maybeScheduled = Some(schedule))
-  }
-
   override def resultReactionHandler(eventualResults: Future[Seq[BotResult]], services: DefaultServices)
                                     (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
     eventContext.reactionHandler(eventualResults, maybeTriggeringMessageTs, services)
