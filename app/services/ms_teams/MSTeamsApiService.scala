@@ -280,9 +280,9 @@ trait MSTeamsApiClient {
       }
   }
 
-  def getUserInfo(userId: String): Future[Option[MSTeamsUser]] = {
+  def getUserInfo(userId: String): Future[Option[MSAADUser]] = {
     getResponseFor(s"users/$userId", Seq()).
-      map(r => Some(extract[MSTeamsUser](r, Seq()))).
+      map(r => Some(extract[MSAADUser](r, Seq()))).
       recover {
         case MSTeamsApiError(err) => {
           Logger.error(
@@ -389,7 +389,7 @@ trait MSTeamsApiClient {
       }
   }
 
-  def getTeamMemberDetails(teamId: String): Future[Seq[MSTeamsUser]] = {
+  def getTeamMemberDetails(teamId: String): Future[Seq[MSAADUser]] = {
     for {
       members <- getTeamMembers(teamId)
       withDetails <- Future.sequence(members.map { ea =>

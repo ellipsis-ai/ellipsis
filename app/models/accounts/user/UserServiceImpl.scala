@@ -7,7 +7,6 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
-import json.Formatting._
 import json.{SlackUserData, UserData}
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
@@ -20,7 +19,7 @@ import models.behaviors.events.slack.SlackMessageEvent
 import models.team.Team
 import play.api.Logger
 import services.DefaultServices
-import services.ms_teams.apiModels.MSTeamsUser
+import services.ms_teams.apiModels.MSAADUser
 import services.slack.SlackApiClient
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -196,16 +195,16 @@ class UserServiceImpl @Inject() (
     } else {
       for {
         maybeSlackUserData <- maybeSlackUserDataFor(user, team)
-        maybeMSTeamsUser <- maybeMSTeamsUserFor(user, team)
+        maybeMSAADUser <- maybeMSAADUserFor(user, team)
       } yield {
-        userDataFor(user, team, maybeSlackUserData, maybeMSTeamsUser)
+        userDataFor(user, team, maybeSlackUserData, maybeMSAADUser)
       }
     }
   }
 
-  private def userDataFor(user: User, team: Team, maybeSlackUserData: Option[SlackUserData], maybeMSTeamsUser: Option[MSTeamsUser]): UserData = {
+  private def userDataFor(user: User, team: Team, maybeSlackUserData: Option[SlackUserData], maybeMSAADUser: Option[MSAADUser]): UserData = {
     maybeSlackUserData.map(d => UserData.fromSlackUserData(user, d)).getOrElse {
-      maybeMSTeamsUser.map(d => UserData.fromMSTeamsUser(user, d)).getOrElse {
+      maybeMSAADUser.map(d => UserData.fromMSAADUser(user, d)).getOrElse {
         UserData.withoutProfile(user.id)
       }
     }
@@ -279,7 +278,7 @@ class UserServiceImpl @Inject() (
     }
   }
 
-  private def fetchMSTeamsUserFor(user: User, team: Team): String => Future[Option[MSTeamsUser]] = {
+  private def fetchMSAADUserFor(user: User, team: Team): String => Future[Option[MSAADUser]] = {
     _ => {
       for {
         botProfiles <- dataService.msTeamsBotProfiles.allFor(team.id)
@@ -295,8 +294,8 @@ class UserServiceImpl @Inject() (
     }
   }
 
-  private def maybeMSTeamsUserFor(user: User, team: Team): Future[Option[MSTeamsUser]] = {
-    cacheService.getMSTeamsUser(user.id, fetchMSTeamsUserFor(user, team))
+  private def maybeMSAADUserFor(user: User, team: Team): Future[Option[MSAADUser]] = {
+    cacheService.getMSAADUser(user.id, fetchMSAADUserFor(user, team))
   }
 
   def maybeMSTeamsProfileFor(user: User): Future[Option[MSTeamsProfile]] = {

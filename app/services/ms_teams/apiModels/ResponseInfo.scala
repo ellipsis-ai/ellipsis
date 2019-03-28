@@ -2,6 +2,7 @@ package services.ms_teams.apiModels
 
 import org.commonmark.node._
 import org.commonmark.parser.Parser
+import services.ms_teams.MSTeamsUser
 
 import scala.collection.mutable
 

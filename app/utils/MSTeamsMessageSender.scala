@@ -16,7 +16,7 @@ import models.behaviors.{ActionChoice, DeveloperContext}
 import models.team.{Team => EllipsisTeam}
 import play.api.libs.json.Json
 import services.DefaultServices
-import services.ms_teams.{MSTeamsApiClient, MSTeamsApiProfileClient}
+import services.ms_teams.{MSTeamsApiClient, MSTeamsApiProfileClient, MSTeamsUser}
 import services.ms_teams.apiModels.{ActivityInfo, ResponseInfo, _}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -172,9 +172,14 @@ case class MSTeamsMessageSender(
           services.cacheService.getMSTeamsChannelFor(profile, channel.idWithoutMessage)
         }.getOrElse(Future.successful(None))
       }.getOrElse(Future.successful(None))
-      members <- maybeChannel.map { channel =>
+      aadUserMembers <- maybeChannel.map { channel =>
         client.getTeamMemberDetails(channel.team.id)
       }.getOrElse(Future.successful(Seq()))
+      members <- Future.sequence(aadUserMembers.map { ea =>
+        client.maybeEllipsisTeamId.map { teamId =>
+          MSTeamsUser.maybeForMSAADUser(ea, teamId, services.dataService)
+        }.getOrElse(Future.successful(None))
+      }).map(_.flatten)
       result <- info match {
         case activityInfo: ActivityInfo => {
           val conversation = maybeConversationOverride.getOrElse(activityInfo.conversation)

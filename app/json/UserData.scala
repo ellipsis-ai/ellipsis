@@ -4,7 +4,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import services.DefaultServices
-import services.ms_teams.apiModels.MSTeamsUser
+import services.ms_teams.apiModels.MSAADUser
 import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
@@ -37,7 +37,7 @@ object UserData {
     )
   }
 
-  def fromMSTeamsUser(user: User, msTeamsUser: MSTeamsUser): UserData = {
+  def fromMSAADUser(user: User, msTeamsUser: MSAADUser): UserData = {
     UserData(
       ellipsisUserId = user.id,
       context = Some(Conversation.MS_TEAMS_CONTEXT),
