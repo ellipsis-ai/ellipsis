@@ -69,7 +69,7 @@ case class ListScheduledBehavior(
     maybeChannel.map { channel =>
       val url = viewChannelURL(channel)
       if (event.isPublicChannel) {
-        s"Here’s what you have [scheduled in <#$channel>]($url):"
+        s"Here’s [what you have scheduled]($url) in <#$channel>:"
       } else {
         s"Here’s what you have [scheduled in this channel]($url):"
       }

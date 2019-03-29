@@ -70,6 +70,16 @@ trait Event {
     s"$logIntro\n${result.filesAsLogText}"
   }
 
+  def errorText: String = {
+    s"""
+       |Event type: ${eventContext.name}
+       |Channel: ${maybeChannel.getOrElse("<unknown>")}
+       |Context user ID: ${eventContext.userIdForContext}
+       |Context team ID: ${eventContext.teamIdForContext}
+       |Ellipsis team ID: ${eventContext.ellipsisTeamId}
+     """.stripMargin
+  }
+
   def ensureUserAction(dataService: DataService): DBIO[User] = eventContext.ensureUserAction(dataService)
 
   def ensureUser(dataService: DataService)(implicit ec: ExecutionContext): Future[User] = {
