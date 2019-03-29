@@ -32,6 +32,7 @@ object AWSLambdaConstants {
   val ERROR_CLASS: String = loadStaticJs("error.js")
   val OVERRIDE_CONSOLE: String = loadStaticJs("console.js")
   val CALLBACK_FUNCTION: String = loadStaticJs("callback.js")
+  val ELLIPSIS_REQUIRE_FUNCTION: String = loadStaticJs("ellipsis_require.js")
 
   val FETCH_FUNCTION_FOR_FILE_PARAM_NAME = "fetch_function_for_file_param"
   val FETCH_FUNCTION_FOR_FILE_PARAM: String = {
