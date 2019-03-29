@@ -104,7 +104,7 @@ case class AWSLambdaIndexCodeBuilder(
        |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
        |  $CONTEXT_PARAM.Error = EllipsisError;
        |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
-       |  $CONTEXT_PARAM.require = function(module) { return require(module.replace(/@.+$$/, "")); }
+       |  $CONTEXT_PARAM.require = function(module) { return require(module.replace(/(@?.+)@.+$$/, "$$1")); }
        |  process.removeAllListeners('unhandledRejection');
        |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
        |  process.removeAllListeners('uncaughtException');
