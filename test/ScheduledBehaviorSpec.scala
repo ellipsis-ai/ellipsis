@@ -11,7 +11,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.EventHandler
+import models.behaviors.events.{EventHandler, RunEvent}
 import models.behaviors.scheduling.recurrence.{Minutely, Recurrence}
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.team.Team
@@ -269,6 +269,26 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         sb.updateOrDeleteScheduleAction(dataService)
         verify(dataService.scheduledBehaviors, times(0)).updateForNextRunAction(sb)
         verify(dataService.scheduledBehaviors, times(1)).deleteAction(sb)
+      }
+    }
+  }
+
+  "eventFor" should {
+    "synthesize a run event with the ScheduledBehavior present" in new TestContext {
+      running(app) {
+        val slackTeamId = "T1234567"
+        val token = IDs.next
+        val behavior = newBehavior(team)
+        val behaviorVersion = mock[BehaviorVersion]
+        val sb = newScheduledBehavior(user, behavior, team, recurrence = Minutely(IDs.next, 1, 0, None))
+        val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
+        when(dataService.scheduledBehaviors.updateForNextRunAction(sb)).thenReturn(DBIO.successful(sb))
+        when(dataService.behaviors.maybeCurrentVersionFor(behavior)).thenReturn(Future.successful(Some(behaviorVersion)))
+        val maybeEvent = runNow(sb.eventFor("C1234567", "U1234567", botProfile, services)(ec))
+        val event = maybeEvent.get
+        event mustBe a[RunEvent]
+        val eventScheduled = event.maybeScheduled.get
+        eventScheduled mustBe sb
       }
     }
   }
