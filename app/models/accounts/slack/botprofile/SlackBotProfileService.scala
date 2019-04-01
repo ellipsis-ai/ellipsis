@@ -101,7 +101,6 @@ trait SlackBotProfileService {
                                (implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     event.eventContext match {
       case slackEventContext: SlackEventContext => slackEventContext.eventualMaybeDMChannel(services)
-      case scheduledEvent: ScheduledEvent => maybeDmChannelFor(scheduledEvent.underlying, services)
       case _ => {
         Logger.error("Non-Slack event provided to Slack bot profile service while trying to warn a user by DM")
         Future.successful(None)

@@ -10,7 +10,7 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
 import models.behaviors.BotResult
-import models.behaviors.events.{EventHandler, ScheduledBehaviorSlackEvent, ScheduledEvent}
+import models.behaviors.events.{Event, EventHandler}
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.{Configuration, Logger}
@@ -174,7 +174,7 @@ trait Scheduled {
     } yield {}
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[ScheduledEvent]]
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[Event]]
 
   // TODO: don't be slack-specific
   def sendFor(
@@ -234,7 +234,7 @@ trait Scheduled {
 
   def sendResult(
                   result: BotResult,
-                  event: ScheduledEvent,
+                  event: Event,
                   services: DefaultServices
                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val dataService = services.dataService
@@ -248,7 +248,7 @@ trait Scheduled {
   }
 
   def sendResultFn(
-                    event: ScheduledEvent,
+                    event: Event,
                     slackUserId: String,
                     profile: SlackBotProfile,
                     services: DefaultServices

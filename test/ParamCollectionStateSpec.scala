@@ -12,7 +12,7 @@ class ParamCollectionStateSpec extends DBSpec {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
-        val event = TestMessageEvent(TestEventContext(user, team), "foo", includesBotMention = false)
+        val event = TestMessageEvent(TestEventContext(user, team), "foo", includesBotMention = false, maybeScheduled = None)
         val group = newSavedBehaviorGroupFor(team)
 
         val inputData = newInputDataFor(isSavedForTeam = Some(true))
@@ -43,7 +43,7 @@ class ParamCollectionStateSpec extends DBSpec {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
-        val event = TestMessageEvent(TestEventContext(user, team), "foo", includesBotMention = false)
+        val event = TestMessageEvent(TestEventContext(user, team), "foo", includesBotMention = false, maybeScheduled = None)
         val group = newSavedBehaviorGroupFor(team)
 
         val inputData = newInputDataFor(isSavedForUser = Some(true))
@@ -74,7 +74,7 @@ class ParamCollectionStateSpec extends DBSpec {
       withEmptyDB(dataService, { () =>
         val team = newSavedTeam
         val user = newSavedUserOn(team)
-        val event = TestMessageEvent(TestEventContext(user, team), "foo", includesBotMention = false)
+        val event = TestMessageEvent(TestEventContext(user, team), "foo", includesBotMention = false, maybeScheduled = None)
         val group = newSavedBehaviorGroupFor(team)
 
         val inputData = newInputDataFor()
