@@ -21,9 +21,9 @@ import services._
 import services.ms_teams.apiModels.Formatting._
 import services.ms_teams.apiModels._
 import services.ms_teams.{MSTeamsApiService, MSTeamsEventService, MSTeamsUser}
+import utils.MSTeamsUtils
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.matching.Regex
 
 class MSTeamsController @Inject() (
                                   val silhouette: Silhouette[EllipsisEnv],
@@ -63,22 +63,22 @@ class MSTeamsController @Inject() (
                                           entities: Option[JsValue]
                                          ) extends ActionsTriggeredInfo {
 
-    val emojiRegex = new Regex("""<img alt=\"(.+?)\" class=\"emojione\".+?>""", "altText")
-
-    private def contentFromHtml(str: String): String = {
-      val withoutDivs = """<div itemprop=\"(.+?)\">|<div style="(.+?)">|<div>|</div>""".r.replaceAllIn(str, "")
-      val withEmojiAltText = emojiRegex.replaceAllIn(withoutDivs, m => m.group("altText"))
-      withEmojiAltText
-    }
-
     val maybeHtmlText: Option[String] = attachments.flatMap { att =>
       att.find(_.isHtml).flatMap(_.content match {
-        case Some(UnknownAttachmentContent(str: JsString)) => Some(contentFromHtml(str.value.trim))
+        case Some(UnknownAttachmentContent(str: JsString)) => Some(str.value.trim)
         case _ => None
       })
     }
 
-    val maybeTextToUse: Option[String] = maybeHtmlText.orElse(text)
+    val maybeTextToUse: Option[String] = {
+      maybeHtmlText.flatMap { htmlText =>
+        if (MSTeamsUtils.emojiRegex.findAllIn(htmlText).isEmpty) {
+          text
+        } else {
+          Some(htmlText)
+        }
+      }.orElse(text)
+    }
 
     val maybeTenantId: Option[String] = channelData.tenant.map(_.id)
 
