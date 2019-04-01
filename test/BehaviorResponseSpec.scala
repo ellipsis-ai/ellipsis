@@ -23,7 +23,7 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar {
 
     "choose the most specific trigger" in new TestContext {
       running(app) {
-        val event = TestMessageEvent(TestEventContext(user, team), "trigger me this batman", includesBotMention = true)
+        val event = TestMessageEvent(TestEventContext(user, team), "trigger me this batman", includesBotMention = true, maybeScheduled = None)
         val version = mock[BehaviorVersion]
         val generalTrigger = TemplateTrigger(
           IDs.next,

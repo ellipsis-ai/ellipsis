@@ -152,7 +152,8 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     val event = TestMessageEvent(
       TestEventContext(user, team),
       "foo",
-      includesBotMention = true
+      includesBotMention = true,
+      maybeScheduled = None
     )
     when(dataService.slackBotProfiles.allForSlackTeamId(any[String])).thenReturn(Future.successful(Seq()))
     val loginInfo = LoginInfo(defaultContext, defaultSlackUserId)

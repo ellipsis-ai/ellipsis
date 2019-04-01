@@ -11,7 +11,6 @@ import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.SlackTimestamp
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -31,31 +30,26 @@ case class ScheduledMessage(
     Future.successful(s"`$text`")
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[ScheduledMessageSlackEvent]] = {
-    Future.successful(
-      Some(
-        ScheduledMessageSlackEvent(
-          SlackMessageEvent(
-            SlackEventContext(
-              profile,
-              channel,
-              None,
-              slackUserId
-            ),
-            SlackMessage.fromUnformattedText(text, profile, None, None),
-            None,
-            None,
-            Some(EventType.scheduled),
-            maybeScheduled = Some(this),
-            isUninterruptedConversation = false,
-            isEphemeral = false,
-            None,
-            beQuiet = false
-          ),
-          this
-        )
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[SlackMessageEvent]] = {
+    Future.successful(Some(
+      SlackMessageEvent(
+        SlackEventContext(
+          profile,
+          channel,
+          None,
+          slackUserId
+        ),
+        SlackMessage.fromUnformattedText(text, profile, None, None),
+        maybeFile = None,
+        maybeTs = None,
+        maybeOriginalEventType = Some(EventType.scheduled),
+        maybeScheduled = Some(this),
+        isUninterruptedConversation = false,
+        isEphemeral = false,
+        maybeResponseUrl = None,
+        beQuiet = false
       )
-    )
+    ))
   }
 
   def updatedWithNextRunAfter(when: OffsetDateTime): ScheduledMessage = {

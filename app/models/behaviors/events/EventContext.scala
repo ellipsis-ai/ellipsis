@@ -723,7 +723,8 @@ case class TestEventContext(
     TestRunEvent(
       copy(),
       behaviorVersion,
-      nextAction.argumentsMap
+      nextAction.argumentsMap,
+      maybeScheduled = None
     )
   }
 

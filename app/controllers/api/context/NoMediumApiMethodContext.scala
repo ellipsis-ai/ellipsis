@@ -5,7 +5,7 @@ import controllers.api.APIResponder
 import controllers.api.exceptions.InvalidTokenException
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.events.{Event, EventType, ScheduledMessageTestEvent, TestEventContext}
+import models.behaviors.events.{Event, EventType, TestEventContext}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.testing.{TestMessageEvent, TestRunEvent}
@@ -34,10 +34,6 @@ case class NoMediumApiMethodContext(
 
   def getFileFetchToken: Future[String] = Future.successful("no medium, no token")
 
-  def maybeBaseMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[TestMessageEvent]] = {
-    Future.successful(Some(TestMessageEvent(TestEventContext(user, team), message, includesBotMention = true)))
-  }
-
   def maybeMessageEventFor(
                             message: String,
                             maybeChannel: Option[String],
@@ -45,14 +41,7 @@ case class NoMediumApiMethodContext(
                             maybeOriginalMessageId: Option[String],
                             maybeOriginalMessageThreadId: Option[String]
                           ): Future[Option[Event]] = {
-    maybeBaseMessageEventFor(message, maybeChannel, maybeOriginalEventType).map { maybeBaseEvent =>
-      maybeBaseEvent.map { messageEvent =>
-        val event: Event = maybeScheduledMessage.map { scheduledMessage =>
-          ScheduledMessageTestEvent(messageEvent, scheduledMessage)
-        }.getOrElse(messageEvent)
-        event
-      }
-    }
+    Future.successful(Some(TestMessageEvent(TestEventContext(user, team), message, includesBotMention = true, maybeScheduledMessage)))
   }
 
   def maybeRunEventFor(
@@ -68,7 +57,8 @@ case class NoMediumApiMethodContext(
       TestRunEvent(
         TestEventContext(user, team),
         behaviorVersion,
-        argumentsMap
+        argumentsMap,
+        maybeScheduled = None
       )
     ))
   }

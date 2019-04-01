@@ -6,14 +6,13 @@ import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.slack.SlackRunEvent
-import models.behaviors.events.{EventType, ScheduledBehaviorSlackEvent, SlackEventContext}
+import models.behaviors.events.{EventType, SlackEventContext}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
 import play.api.libs.json.Json
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.SlackTimestamp
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -51,27 +50,24 @@ case class ScheduledBehavior(
     }
   }
 
-  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[ScheduledBehaviorSlackEvent]] = {
+  def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[SlackRunEvent]] = {
     services.dataService.behaviors.maybeCurrentVersionFor(behavior).map { maybeBehaviorVersion =>
       maybeBehaviorVersion.map { behaviorVersion =>
-        ScheduledBehaviorSlackEvent(
-          SlackRunEvent(
-            SlackEventContext(
-              profile,
-              channel,
-              None,
-              slackUserId
-            ),
-            behaviorVersion,
-            arguments,
-            EventType.scheduled,
-            Some(EventType.scheduled),
-            maybeScheduled = Some(this),
-            isEphemeral = false,
+        SlackRunEvent(
+          SlackEventContext(
+            profile,
+            channel,
             None,
-            None
+            slackUserId
           ),
-          this
+          behaviorVersion,
+          arguments,
+          EventType.scheduled,
+          Some(EventType.scheduled),
+          maybeScheduled = Some(this),
+          isEphemeral = false,
+          None,
+          None
         )
       }
     }

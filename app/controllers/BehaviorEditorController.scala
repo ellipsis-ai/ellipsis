@@ -347,7 +347,7 @@ self.MonacoEnvironment = {
             dataService.behaviors.maybeCurrentVersionFor(behavior)
           }.getOrElse(Future.successful(None))
           maybeReport <- maybeBehaviorVersion.map { behaviorVersion =>
-            val event = TestMessageEvent(TestEventContext(user, behaviorVersion.team), info.message, includesBotMention = true)
+            val event = TestMessageEvent(TestEventContext(user, behaviorVersion.team), info.message, includesBotMention = true, maybeScheduled = None)
             TriggerTester(services).test(event, behaviorVersion).map(Some(_))
           }.getOrElse(Future.successful(None))
 

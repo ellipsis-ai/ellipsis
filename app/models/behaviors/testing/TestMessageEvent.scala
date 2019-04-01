@@ -3,6 +3,7 @@ package models.behaviors.testing
 import json.UserData
 import models.accounts.user.User
 import models.behaviors.events._
+import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import services.DefaultServices
 import slick.dbio.DBIO
@@ -13,7 +14,8 @@ import scala.concurrent.ExecutionContext
 case class TestMessageEvent(
                             eventContext: TestEventContext,
                             messageText: String,
-                            includesBotMention: Boolean
+                            includesBotMention: Boolean,
+                            maybeScheduled: Option[Scheduled]
                           ) extends TestEvent with MessageEvent {
 
   override type EC = TestEventContext

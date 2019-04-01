@@ -50,7 +50,13 @@ case class SlackApiMethodContext(
     }.getOrElse(Future.successful(None))
   }
 
-  def maybeBaseMessageEventFor(message: String, maybeChannel: Option[String], maybeOriginalEventType: Option[EventType], maybeMessageTs: Option[String], maybeThreadId: Option[String]): Future[Option[SlackMessageEvent]] = {
+  def maybeMessageEventFor(
+                            message: String,
+                            maybeChannel: Option[String],
+                            maybeOriginalEventType: Option[EventType],
+                            maybeMessageTs: Option[String],
+                            maybeThreadId: Option[String]
+                          ): Future[Option[Event]] = {
     maybeSlackChannelIdFor(maybeChannel).map { maybeSlackChannelId =>
       val maybeChannelToUse = maybeSlackChannelId.orElse(maybeChannel)
       maybeChannelToUse.map { channel =>
@@ -62,32 +68,15 @@ case class SlackApiMethodContext(
             slackProfile.loginInfo.providerKey
           ),
           SlackMessage.fromUnformattedText(message, botProfile, maybeMessageTs, maybeThreadId),
-          None,
-          maybeMessageTs,
-          maybeOriginalEventType,
+          maybeFile = None,
+          maybeTs = maybeMessageTs,
+          maybeOriginalEventType = maybeOriginalEventType,
           maybeScheduled = maybeScheduledMessage,
           isUninterruptedConversation = false,
           isEphemeral = false,
-          None,
+          maybeResponseUrl = None,
           beQuiet = false
         )
-      }
-    }
-  }
-
-  def maybeMessageEventFor(
-                            message: String,
-                            maybeChannel: Option[String],
-                            maybeOriginalEventType: Option[EventType],
-                            maybeMessageTs: Option[String],
-                            maybeThreadId: Option[String]
-                          ): Future[Option[Event]] = {
-    maybeBaseMessageEventFor(message, maybeChannel, maybeOriginalEventType, maybeMessageTs, maybeThreadId).map { maybeBaseEvent =>
-      maybeBaseEvent.map { messageEvent =>
-        val event: Event = maybeScheduledMessage.map { scheduledMessage =>
-          ScheduledMessageSlackEvent(messageEvent, scheduledMessage)
-        }.getOrElse(messageEvent)
-        event
       }
     }
   }
@@ -118,7 +107,7 @@ case class SlackApiMethodContext(
           argumentsMap,
           eventType,
           maybeOriginalEventType,
-          maybeScheduled = maybeScheduledMessage,
+          maybeScheduled = None, // This should be set once we have a way of retrieving scheduled behaviors in the API context
           isEphemeral = false,
           None,
           maybeTriggeringMessageId
