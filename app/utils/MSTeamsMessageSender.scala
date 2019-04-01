@@ -76,6 +76,7 @@ case class MSTeamsMessageSender(
         MSTeamsMessageActionButton(ea.label, ACTION_CHOICE, Json.obj(ACTION_CHOICE -> Json.toJson(ea)))
       }
       Seq(MSTeamsMessageAttachment(
+        maybeText = Some("Choose an option"),
         maybeColor = Some(Color.BLUE_LIGHTER),
         maybeCallbackId = Some(ACTION_CHOICES),
         actions = actionList
