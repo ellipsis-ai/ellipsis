@@ -9,7 +9,7 @@ import models.behaviors.scheduling.Scheduled
 import services.ms_teams.apiModels.{Attachment, File, Image}
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
-import utils.FileReference
+import utils.{FileReference, MSTeamsUtils}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -64,8 +64,19 @@ case class MSTeamsMessageEvent(
 
   val botMentionRegex = s"""(?:<at>${eventContext.info.botParticipant.name}</at>)*(?:<span itemscope="" itemtype="http://schema.skype.com/Mention" itemid="\\d+">${eventContext.info.botParticipant.name}</span>)*"""
 
+  // All of this is necessary because we need to use the HTML message rather than the plain text one, because
+  // the plain text simply leaves out things like emoji
+  private def contentFromHtml(str: String): String = {
+    val withoutDivs = """<div itemprop=\"(.+?)\">|<div style="(.+?)">|<div>|</div>""".r.replaceAllIn(str, "")
+    val withoutBotMentions = withoutDivs.replaceAll(botMentionRegex, "")
+    val withoutNbsp = withoutBotMentions.replaceAll(MSTeamsUtils.nbspRegex, "")
+    val withoutSpans = """<span(.+?)>|</span>""".r.replaceAllIn(withoutNbsp, "")
+    val withEmojiAltText = MSTeamsUtils.emojiRegex.replaceAllIn(withoutSpans, m => m.group("altText"))
+    withEmojiAltText.trim
+  }
+
   override val relevantMessageText: String = {
-    message.replaceAll(botMentionRegex, "").trim
+    contentFromHtml(message)
   }
 
   override val relevantMessageTextWithFormatting: String = {
