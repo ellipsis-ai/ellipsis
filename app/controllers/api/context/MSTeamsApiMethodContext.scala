@@ -66,6 +66,7 @@ case class MSTeamsApiMethodContext(
           message,
           attachments = Seq(),
           maybeOriginalEventType,
+          maybeScheduled = None,
           isUninterruptedConversation = true,
           isEphemeral = false,
           maybeResponseUrl = None,
