@@ -300,9 +300,8 @@ class MSTeamsController @Inject() (
       if (shouldRemoveActions) {
         replyToId.map { rtid =>
           val client = apiService.profileClientFor(botProfile)
-          val maybeTeamId = channelData.team.map(_.id)
           for {
-            aadUserMembers <- maybeTeamId.map(client.getTeamMemberDetails).getOrElse(Future.successful(Seq()))
+            aadUserMembers <- client.getAllUsers
             members <- Future.sequence(aadUserMembers.map { ea =>
               client.maybeEllipsisTeamId.map { teamId =>
                 MSTeamsUser.maybeForMSAADUser(ea, teamId, services.dataService)
