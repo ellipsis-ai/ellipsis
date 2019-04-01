@@ -398,6 +398,22 @@ trait MSTeamsApiClient {
     } yield withDetails
   }
 
+  def getAllUsers: Future[Seq[MSAADUser]] = {
+    getResponseFor(s"users", Seq()).
+      map(r => extractValue[Seq[MSAADUser]](r)).
+      recover {
+        case MSTeamsApiError(err) => {
+          Logger.error(
+            s"""
+               |Failed to retrieve users: $err
+               |
+               |Tenant ID: ${tenantId}
+             """.stripMargin)
+          Seq()
+        }
+      }
+  }
+
   val userIdForContext = services.configuration.get[String]("silhouette.ms_teams.clientID")
   val botIdWithPrefix: String = s"28:${userIdForContext}"
 

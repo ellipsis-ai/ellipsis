@@ -168,14 +168,7 @@ case class MSTeamsMessageSender(
                                maybeAttachments: Option[Seq[Attachment]] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {
     for {
-      maybeChannel <- info.channelData.channel.map { channel =>
-        client.maybeBotProfile.map { profile =>
-          services.cacheService.getMSTeamsChannelFor(profile, channel.idWithoutMessage)
-        }.getOrElse(Future.successful(None))
-      }.getOrElse(Future.successful(None))
-      aadUserMembers <- maybeChannel.map { channel =>
-        client.getTeamMemberDetails(channel.team.id)
-      }.getOrElse(Future.successful(Seq()))
+      aadUserMembers <- client.getAllUsers
       members <- Future.sequence(aadUserMembers.map { ea =>
         client.maybeEllipsisTeamId.map { teamId =>
           MSTeamsUser.maybeForMSAADUser(ea, teamId, services.dataService)
