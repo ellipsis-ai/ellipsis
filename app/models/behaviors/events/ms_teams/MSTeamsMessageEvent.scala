@@ -62,10 +62,13 @@ case class MSTeamsMessageEvent(
 
   val messageText: String = message
 
+  // All of this is necessary because we need to use the HTML message rather than the plain text one, because
+  // the plain text simply leaves out things like emoji
   val botMentionRegex = s"""(?:<at>${eventContext.info.botParticipant.name}</at>)*(?:<span itemscope="" itemtype="http://schema.skype.com/Mention" itemid="\\d+">${eventContext.info.botParticipant.name}</span>)*"""
+  val nbspRegex = s"""&nbsp;"""
 
   override val relevantMessageText: String = {
-    message.replaceAll(botMentionRegex, "").trim
+    message.replaceAll(botMentionRegex, "").replaceAll(nbspRegex, " ").trim
   }
 
   override val relevantMessageTextWithFormatting: String = {

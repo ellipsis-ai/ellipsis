@@ -66,7 +66,7 @@ class MSTeamsController @Inject() (
     val emojiRegex = new Regex("""<img alt=\"(.+?)\" class=\"emojione\".+?>""", "altText")
 
     private def contentFromHtml(str: String): String = {
-      val withoutDivs = """<div>|</div>""".r.replaceAllIn(str, "")
+      val withoutDivs = """<div itemprop=\"(.+?)\">|<div style="(.+?)">|<div>|</div>""".r.replaceAllIn(str, "")
       val withEmojiAltText = emojiRegex.replaceAllIn(withoutDivs, m => m.group("altText"))
       withEmojiAltText
     }
