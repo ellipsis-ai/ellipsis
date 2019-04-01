@@ -8,7 +8,7 @@ import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events._
-import models.behaviors.events.ms_teams.MSTeamsRunEvent
+import models.behaviors.events.ms_teams.{MSTeamsMessageEvent, MSTeamsRunEvent}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
@@ -42,7 +42,38 @@ case class MSTeamsApiMethodContext(
                             maybeOriginalEventType: Option[EventType],
                             maybeMessageTs: Option[String],
                             maybeThreadId: Option[String]
-                          ): Future[Option[Event]] = ???
+                          ): Future[Option[Event]] = {
+    val client = services.msTeamsApiService.profileClientFor(botProfile)
+    client.getApplicationInfo.map { maybeAppInfo =>
+      for {
+        appInfo <- maybeAppInfo
+        channel <- maybeChannel
+      } yield {
+        MSTeamsMessageEvent(
+          MSTeamsEventContext(
+            botProfile,
+            FirstMessageInfo(
+              MessageParticipantInfo(profile.msTeamsUserId, "", None),
+              MessageParticipantInfo(client.botIdWithPrefix, appInfo.displayName, None),
+              ChannelDataInfo(
+                None,
+                Some(TenantInfo(botProfile.tenantId)),
+                Some(ChannelDataChannel(channel, None)),
+                Some(ChannelDataTeam(botProfile.teamIdForContext, None))
+              )
+            )
+          ),
+          message,
+          attachments = Seq(),
+          maybeOriginalEventType,
+          isUninterruptedConversation = true,
+          isEphemeral = false,
+          maybeResponseUrl = None,
+          beQuiet = false
+        )
+      }
+    }
+  }
 
   def maybeRunEventFor(
                    behaviorVersion: BehaviorVersion,
