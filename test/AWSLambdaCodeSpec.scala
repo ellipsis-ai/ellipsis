@@ -93,10 +93,11 @@ class AWSLambdaCodeSpec extends PlaySpec with MockitoSugar {
           None,
           None
         ),
-        "chat",
-        "test",
-        "Test",
-        None
+        originalEventType = "chat",
+        platformName = "test",
+        platformDescription = "Test",
+        message = None,
+        schedule = None
       )
     )
   }

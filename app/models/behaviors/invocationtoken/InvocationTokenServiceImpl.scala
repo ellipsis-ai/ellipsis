@@ -9,6 +9,7 @@ import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.scheduling.Scheduled
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import services.{AWSLambdaService, DataService}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -63,7 +64,8 @@ class InvocationTokenServiceImpl @Inject() (
                        maybeScheduled: Option[Scheduled],
                        maybeTeamIdForContext: Option[String]
                      ): DBIO[InvocationToken] = {
-    val newInstance = InvocationToken(IDs.next, user.id, behaviorVersion.id, maybeScheduled.map(_.id), maybeTeamIdForContext, OffsetDateTime.now)
+    // TODO: Trying to write scheduled things here blows up because we sometimes delete those things, and the table uses it as a foreign key
+    val newInstance = InvocationToken(IDs.next, user.id, behaviorVersion.id, None, maybeTeamIdForContext, OffsetDateTime.now)
     (all += newInstance).map(_ => newInstance)
   }
 

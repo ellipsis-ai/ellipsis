@@ -155,6 +155,7 @@ class CacheServiceImpl @Inject() (
               event.maybeFile,
               event.ts,
               EventType.maybeFrom(event.maybeOriginalEventType),
+              maybeScheduled = None,
               event.isUninterruptedConversation,
               event.isEphemeral,
               event.maybeResponseUrl,

@@ -7,6 +7,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.ellipsisobject.MessageObject
 import models.behaviors.events.{Event, EventType, SlackEventContext}
+import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import services.DefaultServices
 import slick.dbio.DBIO
@@ -18,6 +19,8 @@ case class SlackReactionAddedEvent(
                                     reaction: String,
                                     maybeMessage: Option[SlackMessage]
                                   ) extends Event {
+
+  override val maybeScheduled: Option[Scheduled] = None
 
   override type EC = SlackEventContext
 
@@ -87,5 +90,4 @@ case class SlackReactionAddedEvent(
   }
 
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
-
 }

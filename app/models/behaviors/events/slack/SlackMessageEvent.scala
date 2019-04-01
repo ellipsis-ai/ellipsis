@@ -5,6 +5,7 @@ import json.UserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
+import models.behaviors.scheduling.Scheduled
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 
@@ -17,6 +18,7 @@ case class SlackMessageEvent(
                               maybeFile: Option[SlackFile],
                               maybeTs: Option[String],
                               protected val maybeOriginalEventType: Option[EventType],
+                              maybeScheduled: Option[Scheduled],
                               override val isUninterruptedConversation: Boolean,
                               override val isEphemeral: Boolean,
                               override val maybeResponseUrl: Option[String],

@@ -33,7 +33,7 @@ trait Event {
   val relevantMessageText: String = messageText
   val relevantMessageTextWithFormatting: String = messageText
   lazy val maybeMessageText: Option[String] = Option(messageText).filter(_.trim.nonEmpty)
-  val maybeScheduled: Option[Scheduled] = None
+  val maybeScheduled: Option[Scheduled]
   val eventType: EventType
   protected val maybeOriginalEventType: Option[EventType]
   val isResponseExpected: Boolean

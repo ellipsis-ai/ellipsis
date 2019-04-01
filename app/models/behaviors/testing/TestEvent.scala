@@ -5,6 +5,7 @@ import models.accounts.user.User
 import models.behaviors.ellipsisobject.DeprecatedUserInfo
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events._
+import models.behaviors.scheduling.Scheduled
 import models.team.Team
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -18,6 +19,7 @@ trait TestEvent extends Event {
   val eventType: EventType = EventType.test
   val maybeOriginalEventType: Option[EventType] = None
   def withOriginalEventType(originalEventType: EventType, isUninterrupted: Boolean): Event = this
+  val maybeScheduled: Option[Scheduled] = None
 
   val botUserIdForContext: String = "TEST_BOT_ID"
 

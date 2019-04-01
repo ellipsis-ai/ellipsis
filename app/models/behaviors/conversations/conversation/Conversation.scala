@@ -66,12 +66,13 @@ trait Conversation {
           userIdForContext
         ),
         SlackMessage.blank,
-        None,
-        None,
-        None, // TODO: Pass the original event type down to here if we actually care about it, but it doesn't seem useful at present
+        maybeFile = None,
+        maybeTs = None,
+        maybeOriginalEventType = None, // TODO: Pass the original event type down to here if we actually care about it, but it doesn't seem useful at present
+        maybeScheduled = None,
         isUninterruptedConversation = false,
         isEphemeral = false,
-        None,
+        maybeResponseUrl = None,
         beQuiet = false
       )
     }

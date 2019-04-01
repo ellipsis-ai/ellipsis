@@ -2,6 +2,7 @@ package models.behaviors.events.ms_teams
 
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventType, MSTeamsEventContext, RunEvent}
+import models.behaviors.scheduling.Scheduled
 
 case class MSTeamsRunEvent(
                           eventContext: MSTeamsEventContext,
@@ -9,6 +10,7 @@ case class MSTeamsRunEvent(
                           arguments: Map[String, String],
                           eventType: EventType,
                           maybeOriginalEventType: Option[EventType],
+                          maybeScheduled: Option[Scheduled],
                           override val isEphemeral: Boolean,
                           override val maybeResponseUrl: Option[String],
                           maybeTriggeringMessageTs: Option[String]

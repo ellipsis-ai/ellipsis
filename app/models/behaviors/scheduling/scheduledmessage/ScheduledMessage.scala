@@ -46,6 +46,7 @@ case class ScheduledMessage(
             None,
             None,
             Some(EventType.scheduled),
+            maybeScheduled = Some(this),
             isUninterruptedConversation = false,
             isEphemeral = false,
             None,

@@ -221,6 +221,14 @@ declare namespace ellipsis {
     phone?: string
   }
 
+  interface Schedule {
+    /** A link to edit the schedule that triggered this action */
+    editLink: string
+
+    /** Description of how this schedule is configured to repeat */
+    recurrence: string
+  }
+
   interface EllipsisError extends Error {
     /** An error message appropriate to display to users of this skill */
     userMessage: string | null
@@ -348,7 +356,7 @@ declare namespace ellipsis {
      */
     originalEventType: EventType
     
-    /* The user who triggered the event */
+    /** The user who triggered the event */
     user: EventUser & UserData
     
     /** The name of the event platform, e.g. "slack" or "msTeams" */
@@ -357,8 +365,11 @@ declare namespace ellipsis {
     /** The human-readable description of the event platform, e.g. "Slack" or "Microsoft Teams" */
     platformDescription: string
     
-    /* The associated message, if a message event */
+    /** The associated message, if a message event */
     message?: Message
+
+    /** Information about the schedule that triggered this event, if applicable */ 
+    schedule?: Schedule
   }
 }
 `;

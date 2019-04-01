@@ -45,9 +45,10 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
         defaultSlackUserId
       ),
       SlackMessage.blank,
-      None,
-      None,
-      None,
+      maybeFile = None,
+      maybeTs = None,
+      maybeOriginalEventType = None,
+      maybeScheduled = None,
       isUninterruptedConversation = false,
       isEphemeral = false,
       maybeResponseUrl = None,

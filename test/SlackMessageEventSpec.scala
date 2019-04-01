@@ -34,9 +34,10 @@ class SlackMessageEventSpec extends PlaySpec with MockitoSugar {
         IDs.next
       ),
       SlackMessage("oh hai", "oh hai", "oh hai", Set.empty[SlackUserData], Some(ts), None),
-      None,
-      Some(ts),
-      None,
+      maybeFile = None,
+      maybeTs = Some(ts),
+      maybeOriginalEventType = None,
+      maybeScheduled = None,
       isUninterruptedConversation = false,
       isEphemeral = false,
       maybeResponseUrl = None,

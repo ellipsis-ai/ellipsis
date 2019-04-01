@@ -25,13 +25,14 @@ class MessageListenerSpec extends DBSpec {
             slackUserId
           ),
           SlackMessage.fromUnformattedText("foo", botProfile, Some(ts), None),
-          None,
-          Some(ts),
-          None,
-          false,
-          false,
-          None,
-          false
+          maybeFile = None,
+          maybeTs = Some(ts),
+          maybeOriginalEventType = None,
+          maybeScheduled = None,
+          isUninterruptedConversation = false,
+          isEphemeral = false,
+          maybeResponseUrl = None,
+          beQuiet = false
         )
         val group = newSavedBehaviorGroupFor(team)
 

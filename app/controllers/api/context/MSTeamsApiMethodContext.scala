@@ -77,6 +77,7 @@ case class MSTeamsApiMethodContext(
           argumentsMap,
           eventType,
           maybeOriginalEventType,
+          maybeScheduled = None,
           isEphemeral = false,
           None,
           maybeTriggeringMessageId
