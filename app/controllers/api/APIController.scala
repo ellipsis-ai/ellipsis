@@ -7,7 +7,7 @@ import com.google.inject.Provider
 import controllers.api.context.ApiMethodContextBuilder
 import controllers.api.exceptions.InvalidTokenException
 import controllers.api.json.Formatting._
-import controllers.api.json._
+import controllers.api.json.{AddChannelMemberListenerInfo, _}
 import controllers.{EllipsisController, RemoteAssets}
 import javax.inject.Inject
 import models.behaviors.behaviorversion.Normal
@@ -200,6 +200,38 @@ class APIController @Inject() (
         val eventualResult = for {
           context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
           result <- context.addMessageListener(info)
+        } yield result
+
+        eventualResult.recover {
+          case e: InvalidTokenException => responder.invalidTokenRequest(info)
+        }
+      }
+    )
+  }
+
+  private val addChannelMemberListenerForm = Form(
+    mapping(
+      "actionName" -> nonEmptyText,
+      "arguments" -> seq(
+        mapping(
+          "name" -> nonEmptyText,
+          "value" -> nonEmptyText
+        )(RunActionArgumentInfo.apply)(RunActionArgumentInfo.unapply)
+      ),
+      "userId" -> nonEmptyText,
+      "medium" -> nonEmptyText,
+      "channel" -> nonEmptyText,
+      "token" -> nonEmptyText
+    )(AddChannelMemberListenerInfo.apply)(AddChannelMemberListenerInfo.unapply)
+  )
+
+  def addChannelMemberListener = Action.async { implicit request =>
+    addChannelMemberListenerForm.bindFromRequest.fold(
+      formWithErrors => Future.successful(responder.resultForFormErrors(formWithErrors)),
+      info => {
+        val eventualResult = for {
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
+          result <- context.addChannelMemberListener(info)
         } yield result
 
         eventualResult.recover {

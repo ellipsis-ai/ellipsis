@@ -14,6 +14,8 @@ object Formatting {
 
   implicit val addMessageListenerInfoWrites = Json.writes[AddMessageListenerInfo]
 
+  implicit val addChannelMemberListenerInfoWrites = Json.writes[AddChannelMemberListenerInfo]
+
   implicit val scheduleActionResultFormat = Json.format[ScheduleActionResult]
   implicit val scheduleResultFormat = Json.format[ScheduleResult]
 
