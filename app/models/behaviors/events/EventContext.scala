@@ -369,7 +369,7 @@ case class SlackEventContext(
     SlackRunEvent(
       eventContext,
       behaviorVersion,
-      nextAction.argumentsMap,
+      nextAction.ensuredArgs,
       EventType.nextAction,
       Some(botResult.event.originalEventType),
       maybeScheduled = None,
@@ -576,7 +576,7 @@ case class MSTeamsEventContext(
     MSTeamsRunEvent(
       eventContext,
       behaviorVersion,
-      nextAction.argumentsMap,
+      nextAction.ensuredArgs,
       EventType.nextAction,
       Some(botResult.event.originalEventType),
       maybeScheduled = None,
@@ -723,7 +723,7 @@ case class TestEventContext(
     TestRunEvent(
       copy(),
       behaviorVersion,
-      nextAction.argumentsMap,
+      nextAction.ensuredArgs,
       maybeScheduled = None
     )
   }

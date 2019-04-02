@@ -1,10 +1,9 @@
 package controllers.api.json
 
+import json.Formatting._
 import play.api.libs.json.Json
 
 object Formatting {
-
-  implicit val runActionArgumentInfoFormat = Json.format[RunActionArgumentInfo]
 
   implicit val runActionInfoWrites = Json.writes[RunActionInfo]
 

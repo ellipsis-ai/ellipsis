@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import controllers.api.APIResponder
 import controllers.api.exceptions.InvalidTokenException
 import models.accounts.user.User
+import models.behaviors.ActionArg
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventType, TestEventContext}
 import models.behaviors.invocationtoken.InvocationToken
@@ -45,19 +46,19 @@ case class NoMediumApiMethodContext(
   }
 
   def maybeRunEventFor(
-                   behaviorVersion: BehaviorVersion,
-                   argumentsMap: Map[String, String],
-                   maybeChannel: Option[String],
-                   eventType: EventType,
-                   maybeOriginalEventType: Option[EventType],
-                   maybeTriggeringMessageId: Option[String],
-                   maybeTriggeringMessageThreadId: Option[String]
+                        behaviorVersion: BehaviorVersion,
+                        arguments: Seq[ActionArg],
+                        maybeChannel: Option[String],
+                        eventType: EventType,
+                        maybeOriginalEventType: Option[EventType],
+                        maybeTriggeringMessageId: Option[String],
+                        maybeTriggeringMessageThreadId: Option[String]
                  ): Future[Option[TestRunEvent]] = {
     Future.successful(Some(
       TestRunEvent(
         TestEventContext(user, team),
         behaviorVersion,
-        argumentsMap,
+        arguments,
         maybeScheduled = None
       )
     ))

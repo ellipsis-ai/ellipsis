@@ -1,9 +1,11 @@
 package controllers.api.json
 
+import models.behaviors.ActionArg
+
 case class ScheduleActionInfo(
                                actionName: Option[String],
                                trigger: Option[String],
-                               arguments: Seq[RunActionArgumentInfo],
+                               arguments: Seq[ActionArg],
                                recurrenceString: String,
                                useDM: Boolean,
                                channel: String,

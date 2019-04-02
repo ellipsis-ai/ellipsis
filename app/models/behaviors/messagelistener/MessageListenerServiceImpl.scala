@@ -7,6 +7,7 @@ import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
 import models.IDs
 import models.accounts.user.User
+import models.behaviors.ActionArg
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
 import models.team.Team
@@ -52,7 +53,7 @@ class MessageListenerServiceImpl @Inject() (
 
   def createForAction(
                        behavior: Behavior,
-                       arguments: Map[String, String],
+                       arguments: Seq[ActionArg],
                        user: User,
                        team: Team,
                        medium: String,
@@ -74,7 +75,7 @@ class MessageListenerServiceImpl @Inject() (
 
   def createFor(
                  behavior: Behavior,
-                 arguments: Map[String, String],
+                 arguments: Seq[ActionArg],
                  user: User,
                  team: Team,
                  medium: String,

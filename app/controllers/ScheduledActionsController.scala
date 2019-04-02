@@ -145,19 +145,18 @@ class ScheduledActionsController @Inject()(
         behavior <- maybeBehavior
         recurrence <- maybeNewRecurrence
       } yield {
-        val newArguments = newData.arguments.map(ea => ea.name -> ea.value).toMap
         val maybeChannel = Option(newData.channel).filter(_.trim.nonEmpty)
         maybeOriginal.map { original =>
           dataService.scheduledBehaviors.save(original.copy(
             behavior = behavior,
-            arguments = newArguments,
+            arguments = newData.arguments,
             recurrence = recurrence,
             nextSentAt = recurrence.nextAfter(OffsetDateTime.now),
             maybeChannel = maybeChannel,
             isForIndividualMembers = newData.useDM
           ))
         }.getOrElse {
-          dataService.scheduledBehaviors.createFor(behavior, newArguments, recurrence, user, team, maybeChannel, newData.useDM)
+          dataService.scheduledBehaviors.createFor(behavior, newData.arguments, recurrence, user, team, maybeChannel, newData.useDM)
         }.map(Some(_))
       }).getOrElse(Future.successful(None))
     } yield maybeNewScheduledBehavior

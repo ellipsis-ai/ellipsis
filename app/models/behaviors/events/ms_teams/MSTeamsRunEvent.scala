@@ -1,5 +1,6 @@
 package models.behaviors.events.ms_teams
 
+import models.behaviors.ActionArg
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventType, MSTeamsEventContext, RunEvent}
 import models.behaviors.scheduling.Scheduled
@@ -7,7 +8,7 @@ import models.behaviors.scheduling.Scheduled
 case class MSTeamsRunEvent(
                           eventContext: MSTeamsEventContext,
                           behaviorVersion: BehaviorVersion,
-                          arguments: Map[String, String],
+                          arguments: Seq[ActionArg],
                           eventType: EventType,
                           maybeOriginalEventType: Option[EventType],
                           maybeScheduled: Option[Scheduled],

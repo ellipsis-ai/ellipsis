@@ -2,8 +2,10 @@ package models.behaviors.scheduling.scheduledbehavior
 
 import java.time.OffsetDateTime
 
+import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
+import models.behaviors.ActionArg
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.slack.SlackRunEvent
 import models.behaviors.events.{EventType, SlackEventContext}
@@ -19,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class ScheduledBehavior(
                               id: String,
                               behavior: Behavior,
-                              arguments: Map[String, String],
+                              arguments: Seq[ActionArg],
                               maybeUser: Option[User],
                               team: Team,
                               maybeChannel: Option[String],

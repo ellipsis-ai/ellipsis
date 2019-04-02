@@ -9,6 +9,7 @@ import models.accounts.oauth1application.OAuth1Application
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.behaviors.ResultType.ResultType
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Normal, Private}
 import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
@@ -21,7 +22,7 @@ import play.api.libs.json._
 import play.api.mvc.Call
 import services.AWSLambdaConstants._
 import services.caching.CacheService
-import services.{AWSLambdaLogResult, DataService, DefaultServices}
+import services.{AWSLambdaConstants, AWSLambdaLogResult, DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.{Color, UploadFileSpec}
 
@@ -35,14 +36,20 @@ object ResultType extends Enumeration {
 
 trait WithActionArgs {
   val args: Option[Seq[ActionArg]]
-  val argumentsMap: Map[String, String] = {
-    args.getOrElse(Seq()).map { ea =>
-      (ea.name, ea.value)
+  val ensuredArgs: Seq[ActionArg] = args.getOrElse(Seq())
+  def invocationParamsFor(params: Seq[BehaviorParameter]): Map[String, String] = {
+    ensuredArgs.flatMap { ea =>
+      for {
+        param <- params.find(_.name == ea.name)
+        value <- ea.value
+      } yield {
+        (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+      }
     }.toMap
   }
 }
 
-case class ActionArg(name: String, value: String)
+case class ActionArg(name: String, value: Option[String], `type`: Option[String], question: Option[String])
 
 case class NextAction(actionName: String, args: Option[Seq[ActionArg]]) extends WithActionArgs
 

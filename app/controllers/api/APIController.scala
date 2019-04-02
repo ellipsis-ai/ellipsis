@@ -12,7 +12,7 @@ import controllers.{EllipsisController, RemoteAssets}
 import javax.inject.Inject
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
-import models.behaviors.{BotResultService, SimpleTextResult}
+import models.behaviors.{ActionArg, BotResultService, SimpleTextResult}
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
@@ -49,8 +49,10 @@ class APIController @Inject() (
       "arguments" -> seq(
         mapping(
           "name" -> nonEmptyText,
-          "value" -> nonEmptyText
-        )(RunActionArgumentInfo.apply)(RunActionArgumentInfo.unapply)
+          "value" -> optional(nonEmptyText),
+          "type" -> optional(nonEmptyText),
+          "question" -> optional(nonEmptyText)
+        )(ActionArg.apply)(ActionArg.unapply)
       ),
       "responseContext" -> nonEmptyText,
       "channel" -> optional(nonEmptyText),
@@ -101,8 +103,10 @@ class APIController @Inject() (
       "arguments" -> seq(
         mapping(
           "name" -> nonEmptyText,
-          "value" -> nonEmptyText
-        )(RunActionArgumentInfo.apply)(RunActionArgumentInfo.unapply)
+          "value" -> optional(nonEmptyText),
+          "type" -> optional(nonEmptyText),
+          "question" -> optional(nonEmptyText)
+        )(ActionArg.apply)(ActionArg.unapply)
       ),
       "recurrence" -> nonEmptyText,
       "useDM" -> boolean,
@@ -180,8 +184,10 @@ class APIController @Inject() (
       "arguments" -> seq(
         mapping(
           "name" -> nonEmptyText,
-          "value" -> nonEmptyText
-        )(RunActionArgumentInfo.apply)(RunActionArgumentInfo.unapply)
+          "value" -> optional(nonEmptyText),
+          "type" -> optional(nonEmptyText),
+          "question" -> optional(nonEmptyText)
+        )(ActionArg.apply)(ActionArg.unapply)
       ),
       "userId" -> nonEmptyText,
       "medium" -> nonEmptyText,

@@ -2,12 +2,14 @@ package models.behaviors.scheduling.scheduledbehavior
 
 import java.sql.Timestamp
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import json.Formatting._
+import javax.inject.Inject
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.IDs
 import models.accounts.user.{User, UserQueries}
+import models.behaviors.ActionArg
 import models.behaviors.behavior.{Behavior, BehaviorQueries}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.{RawRecurrence, Recurrence, RecurrenceQueries}
@@ -79,9 +81,9 @@ class ScheduledBehaviorServiceImpl @Inject() (
     val team = tuple._1._2
     val recurrence = Recurrence.buildFor(tuple._1._1._2, team.timeZone)
     val maybeUser = tuple._2
-    val arguments: Map[String, String] = raw.arguments.validate[Map[String, String]] match {
+    val arguments: Seq[ActionArg] = raw.arguments.validate[Seq[ActionArg]] match {
       case JsSuccess(data, jsPath) => data
-      case e: JsError => Map()
+      case e: JsError => Seq()
     }
     ScheduledBehavior(
       raw.id,
@@ -221,7 +223,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
   }
 
   def maybeCreateWithRecurrenceText(behavior: Behavior,
-                                    arguments: Map[String, String],
+                                    arguments: Seq[ActionArg],
                                     recurrenceText: String,
                                     user: User,
                                     team: Team,
@@ -237,7 +239,7 @@ class ScheduledBehaviorServiceImpl @Inject() (
 
   def createFor(
                       behavior: Behavior,
-                      arguments: Map[String, String],
+                      arguments: Seq[ActionArg],
                       recurrence: Recurrence,
                       user: User,
                       team: Team,

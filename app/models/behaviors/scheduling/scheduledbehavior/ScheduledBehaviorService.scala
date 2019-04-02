@@ -3,6 +3,7 @@ package models.behaviors.scheduling.scheduledbehavior
 import java.time.OffsetDateTime
 
 import models.accounts.user.User
+import models.behaviors.ActionArg
 import models.behaviors.behavior.Behavior
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -30,7 +31,7 @@ trait ScheduledBehaviorService {
 
   def maybeCreateWithRecurrenceText(
                       behavior: Behavior,
-                      arguments: Map[String, String],
+                      arguments: Seq[ActionArg],
                       recurrenceText: String,
                       user: User,
                       team: Team,
@@ -40,7 +41,7 @@ trait ScheduledBehaviorService {
 
   def createFor(
                  behavior: Behavior,
-                 arguments: Map[String, String],
+                 arguments: Seq[ActionArg],
                  recurrence: Recurrence,
                  user: User,
                  team: Team,

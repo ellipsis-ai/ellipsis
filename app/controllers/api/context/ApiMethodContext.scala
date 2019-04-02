@@ -10,7 +10,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events._
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
-import models.behaviors.{BotResult, BotResultService}
+import models.behaviors.{ActionArg, BotResult, BotResultService}
 import models.team.Team
 import play.api.Logger
 import play.api.http.{HttpEntity, MimeTypes}
@@ -68,18 +68,18 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                           ): Future[Option[Event]]
 
   def maybeRunEventFor(
-                   behaviorVersion: BehaviorVersion,
-                   argumentsMap: Map[String, String],
-                   maybeChannel: Option[String],
-                   eventType: EventType,
-                   maybeOriginalEventType: Option[EventType],
-                   maybeTriggeringMessageId: Option[String],
-                   maybeTriggeringMessageThreadId: Option[String]
+                        behaviorVersion: BehaviorVersion,
+                        arguments: Seq[ActionArg],
+                        maybeChannel: Option[String],
+                        eventType: EventType,
+                        maybeOriginalEventType: Option[EventType],
+                        maybeTriggeringMessageId: Option[String],
+                        maybeTriggeringMessageThreadId: Option[String]
                  ): Future[Option[RunEvent]]
 
   def maybeRunEventForName(
                             actionName: String,
-                            argumentsMap: Map[String, String],
+                            arguments: Seq[ActionArg],
                             maybeChannel: Option[String],
                             maybeOriginalEventType: Option[EventType],
                             maybeOriginatingBehaviorVersion: Option[BehaviorVersion],
@@ -89,7 +89,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
     for {
       maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
       maybeEvent <- maybeBehaviorVersion.map { behaviorVersion =>
-        maybeRunEventFor(behaviorVersion, argumentsMap, maybeChannel, eventType, maybeOriginalEventType, maybeOriginalMessageId, maybeOriginalMessageThreadId)
+        maybeRunEventFor(behaviorVersion, arguments, maybeChannel, eventType, maybeOriginalEventType, maybeOriginalMessageId, maybeOriginalMessageThreadId)
       }.getOrElse(Future.successful(None))
     } yield maybeEvent
   }
@@ -130,7 +130,7 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
       maybeBehaviorVersion <- maybeBehaviorVersionFor(actionName, maybeOriginatingBehaviorVersion)
       maybeEvent <- maybeRunEventForName(
         actionName,
-        info.argumentsMap,
+        info.arguments,
         info.maybeChannel,
         info.originalEventType.flatMap(EventType.find),
         maybeOriginatingBehaviorVersion,

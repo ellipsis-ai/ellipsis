@@ -1,7 +1,7 @@
 package models.behaviors.events.slack
 
 import akka.actor.ActorSystem
-import models.behaviors.BotResult
+import models.behaviors.{ActionArg, BotResult}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventType, RunEvent, SlackEventContext}
 import models.behaviors.scheduling.Scheduled
@@ -12,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class SlackRunEvent(
                            eventContext: SlackEventContext,
                            behaviorVersion: BehaviorVersion,
-                           arguments: Map[String, String],
+                           arguments: Seq[ActionArg],
                            eventType: EventType,
                            maybeOriginalEventType: Option[EventType],
                            maybeScheduled: Option[Scheduled],

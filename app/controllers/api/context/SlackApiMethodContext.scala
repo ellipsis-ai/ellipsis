@@ -3,26 +3,25 @@ package controllers.api.context
 import akka.actor.ActorSystem
 import controllers.api.APIResponder
 import controllers.api.exceptions.InvalidTokenException
-import controllers.api.json._
 import controllers.api.json.Formatting._
+import controllers.api.json._
 import json.APIErrorData
+import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.BotResult
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events._
 import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent, SlackRunEvent}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
+import models.behaviors.{ActionArg, BotResult}
 import models.team.Team
 import play.api.Logger
-import play.api.http.HttpEntity
 import play.api.libs.json.Json
-import play.api.libs.ws.WSResponse
 import play.api.mvc.{AnyContent, Request, Result}
 import services.DefaultServices
-import utils.{SlackMessageSenderChannelException, SlackTimestamp}
+import utils.SlackMessageSenderChannelException
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -82,13 +81,13 @@ case class SlackApiMethodContext(
   }
 
   def maybeRunEventFor(
-                   behaviorVersion: BehaviorVersion,
-                   argumentsMap: Map[String, String],
-                   maybeChannel: Option[String],
-                   eventType: EventType,
-                   maybeOriginalEventType: Option[EventType],
-                   maybeTriggeringMessageId: Option[String],
-                   maybeTriggeringMessageThreadId: Option[String]
+                        behaviorVersion: BehaviorVersion,
+                        arguments: Seq[ActionArg],
+                        maybeChannel: Option[String],
+                        eventType: EventType,
+                        maybeOriginalEventType: Option[EventType],
+                        maybeTriggeringMessageId: Option[String],
+                        maybeTriggeringMessageThreadId: Option[String]
                  ): Future[Option[SlackRunEvent]] = {
     for {
       maybeChannelToUse <- maybeSlackChannelIdFor(maybeChannel).map { maybeSlackChannelId =>
@@ -104,7 +103,7 @@ case class SlackApiMethodContext(
             slackProfile.loginInfo.providerKey
           ),
           behaviorVersion,
-          argumentsMap,
+          arguments,
           eventType,
           maybeOriginalEventType,
           maybeScheduled = None, // This should be set once we have a way of retrieving scheduled behaviors in the API context
@@ -176,7 +175,7 @@ case class SlackApiMethodContext(
           user <- dataService.users.ensureUserFor(slackProfile.loginInfo, Seq(), behaviorVersion.team.id)
           maybeScheduled <- dataService.scheduledBehaviors.maybeCreateWithRecurrenceText(
             behaviorVersion.behavior,
-            info.argumentsMap,
+            info.arguments,
             info.recurrenceString,
             user,
             behaviorVersion.team,
@@ -272,7 +271,7 @@ case class SlackApiMethodContext(
                   ScheduleActionResult(
                     actionName = Some(actionName),
                     trigger = None,
-                    arguments = Some(scheduled.arguments.map { case (key, value) => RunActionArgumentInfo(key, value) }.toSeq),
+                    arguments = Some(scheduled.arguments),
                     recurrence = scheduled.recurrence.displayString,
                     firstRecurrence = None,
                     secondRecurrence = None,
@@ -341,7 +340,7 @@ case class SlackApiMethodContext(
           user <- dataService.users.ensureUserFor(slackProfile.loginInfo, Seq(), behaviorVersion.team.id)
           listener <- dataService.messageListeners.createFor(
             behaviorVersion.behavior,
-            info.argumentsMap,
+            info.arguments,
             user,
             team,
             info.medium,

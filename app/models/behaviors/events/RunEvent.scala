@@ -1,7 +1,7 @@
 package models.behaviors.events
 
 import json.UserData
-import models.behaviors.BehaviorResponse
+import models.behaviors.{ActionArg, BehaviorResponse}
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.team.Team
@@ -15,7 +15,7 @@ trait RunEvent extends Event {
   val eventType: EventType
 
   val behaviorVersion: BehaviorVersion
-  val arguments: Map[String, String]
+  val arguments:Seq[ActionArg]
 
   val messageText: String = ""
   val includesBotMention: Boolean = false
@@ -32,11 +32,14 @@ trait RunEvent extends Event {
     val dataService = services.dataService
     for {
       params <- dataService.behaviorParameters.allFor(behaviorVersion)
-      invocationParams <- Future.successful(arguments.flatMap { case(name, value) =>
-        params.find(_.name == name).map { param =>
+      invocationParams <- Future.successful(arguments.flatMap { ea =>
+        for {
+          param <- params.find(_.name == ea.name)
+          value <- ea.value
+        } yield {
           (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
         }
-      })
+      }.toMap)
       response <- dataService.behaviorResponses.buildFor(
         this,
         behaviorVersion,

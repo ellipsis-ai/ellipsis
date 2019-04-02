@@ -1,17 +1,13 @@
 package controllers.api.json
 
+import models.behaviors.ActionArg
+
 case class AddMessageListenerInfo(
                                    actionName: String,
-                                   arguments: Seq[RunActionArgumentInfo],
+                                   arguments: Seq[ActionArg],
                                    userId: String,
                                    medium: String,
                                    channel: String,
                                    threadId: Option[String],
                                    token: String
-                                 ) extends ApiMethodInfo {
-  val argumentsMap: Map[String, String] = {
-    arguments.map { ea =>
-      (ea.name, ea.value)
-    }.toMap
-  }
-}
+                                 ) extends ApiMethodInfo

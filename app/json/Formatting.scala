@@ -15,6 +15,8 @@ import utils._
 
 object Formatting {
 
+  lazy implicit val actionArgFormat = Json.format[ActionArg]
+
   lazy implicit val behaviorParameterTypeReads = Json.reads[BehaviorParameterTypeData]
   lazy implicit val behaviorParameterTypeWrites = Json.writes[BehaviorParameterTypeData]
 
@@ -123,9 +125,6 @@ object Formatting {
   lazy implicit val invocationLogEntriesByDayReads = Json.reads[InvocationLogsByDayData]
   lazy implicit val invocationLogEntriesByDayWrites = Json.writes[InvocationLogsByDayData]
 
-  lazy implicit val scheduledActionArgumentDataReads = Json.reads[ScheduledActionArgumentData]
-  lazy implicit val scheduledActionArgumentDataWrites = Json.writes[ScheduledActionArgumentData]
-
   lazy implicit val ScheduledActionRecurrenceTimeDataReads = Json.reads[ScheduledActionRecurrenceTimeData]
   lazy implicit val ScheduledActionRecurrenceTimeDataWrites = Json.writes[ScheduledActionRecurrenceTimeData]
 
@@ -199,7 +198,6 @@ object Formatting {
 
   lazy implicit val integrationListConfigFormat = Json.format[IntegrationListConfig]
 
-  lazy implicit val actionArgFormat = Json.format[ActionArg]
   lazy implicit val nextActionFormat = Json.format[NextAction]
   lazy implicit val skillCodeActionChoiceFormat = Json.format[SkillCodeActionChoice]
   lazy implicit val actionChoiceFormat = Json.format[ActionChoice]

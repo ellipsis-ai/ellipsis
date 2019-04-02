@@ -774,11 +774,7 @@ class SlackController @Inject() (
             params <- maybeBehaviorVersion.map { behaviorVersion =>
               dataService.behaviorParameters.allFor(behaviorVersion)
             }.getOrElse(Future.successful(Seq()))
-            invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
-              params.find(_.name == name).map { param =>
-                (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
-              }
-            })
+            invocationParams <- Future.successful(actionChoice.invocationParamsFor(params))
             maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
               dataService.behaviorResponses.buildFor(
                 event,

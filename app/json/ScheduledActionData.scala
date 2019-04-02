@@ -3,6 +3,7 @@ package json
 import java.time.OffsetDateTime
 
 import models.accounts.user.UserTeamAccess
+import models.behaviors.ActionArg
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
@@ -10,15 +11,13 @@ import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ScheduledActionArgumentData(name: String, value: String)
-
 case class ScheduledActionData(
                                 id: Option[String],
                                 scheduleType: String,
                                 behaviorId: Option[String],
                                 behaviorGroupId: Option[String],
                                 trigger: Option[String],
-                                arguments: Seq[ScheduledActionArgumentData],
+                                arguments: Seq[ActionArg],
                                 recurrence: ScheduledActionRecurrenceData,
                                 firstRecurrence: Option[OffsetDateTime],
                                 secondRecurrence: Option[OffsetDateTime],
@@ -46,14 +45,13 @@ object ScheduledActionData {
   }
 
   def fromScheduledBehavior(scheduledBehavior: ScheduledBehavior): ScheduledActionData = {
-    val arguments = scheduledBehavior.arguments.map { case (key, value) => ScheduledActionArgumentData(key, value) }.toSeq
     ScheduledActionData(
       id = Some(scheduledBehavior.id),
       scheduleType = "behavior",
       behaviorId = Some(scheduledBehavior.behavior.id),
       behaviorGroupId = Some(scheduledBehavior.behavior.group.id),
       trigger = None,
-      arguments = arguments,
+      arguments = scheduledBehavior.arguments,
       recurrence = ScheduledActionRecurrenceData.fromRecurrence(scheduledBehavior.recurrence),
       firstRecurrence = Some(scheduledBehavior.nextSentAt),
       secondRecurrence = scheduledBehavior.maybeFollowingSentAt,

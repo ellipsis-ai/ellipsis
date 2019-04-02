@@ -1,11 +1,7 @@
 package controllers.api.json
 
-trait ApiMethodWithActionAndArgumentsInfo extends ApiMethodWithActionInfo {
-  val arguments: Seq[RunActionArgumentInfo]
+import models.behaviors.ActionArg
 
-  val argumentsMap: Map[String, String] = {
-    arguments.map { ea =>
-      (ea.name, ea.value)
-    }.toMap
-  }
+trait ApiMethodWithActionAndArgumentsInfo extends ApiMethodWithActionInfo {
+  val arguments: Seq[ActionArg]
 }

@@ -1,9 +1,11 @@
 package models.behaviors.messagelistener
 
 import drivers.SlickPostgresDriver.api._
+import json.Formatting.actionArgFormat
 import models.accounts.user.{User, UserQueries, UsersTable}
+import models.behaviors.ActionArg
 import models.behaviors.behavior.BehaviorQueries
-import play.api.libs.json.{JsObject, JsString}
+import play.api.libs.json.JsSuccess
 
 object MessageListenerQueries {
 
@@ -17,12 +19,9 @@ object MessageListenerQueries {
   def tuple2Listener(tuple: TupleType): MessageListener = {
     val raw = tuple._1._1
     val behavior = BehaviorQueries.tuple2Behavior(tuple._1._2)
-    val arguments: Map[String, String] = raw.arguments match {
-      case obj: JsObject => obj.value.map {
-        case(k: String, v: JsString) => (k, v.value)
-        case(k, v) => (k, v.toString)
-      }.toMap
-      case _ => Map[String, String]()
+    val arguments: Seq[ActionArg] = raw.arguments.validate[Seq[ActionArg]] match {
+      case JsSuccess(args, _) => args
+      case _ => Seq()
     }
     val user = tuple._2
     MessageListener(

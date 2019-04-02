@@ -6,6 +6,7 @@ import controllers.api.exceptions.InvalidTokenException
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.ms_teams.profile.MSTeamsProfile
 import models.accounts.user.User
+import models.behaviors.ActionArg
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events._
 import models.behaviors.events.ms_teams.{MSTeamsMessageEvent, MSTeamsRunEvent}
@@ -77,13 +78,13 @@ case class MSTeamsApiMethodContext(
   }
 
   def maybeRunEventFor(
-                   behaviorVersion: BehaviorVersion,
-                   argumentsMap: Map[String, String],
-                   maybeChannel: Option[String],
-                   eventType: EventType,
-                   maybeOriginalEventType: Option[EventType],
-                   maybeTriggeringMessageId: Option[String],
-                   maybeTriggeringMessageThreadId: Option[String]
+                        behaviorVersion: BehaviorVersion,
+                        arguments: Seq[ActionArg],
+                        maybeChannel: Option[String],
+                        eventType: EventType,
+                        maybeOriginalEventType: Option[EventType],
+                        maybeTriggeringMessageId: Option[String],
+                        maybeTriggeringMessageThreadId: Option[String]
                  ): Future[Option[MSTeamsRunEvent]] = {
     val client = services.msTeamsApiService.profileClientFor(botProfile)
     client.getApplicationInfo.map { maybeAppInfo =>
@@ -106,7 +107,7 @@ case class MSTeamsApiMethodContext(
             )
           ),
           behaviorVersion,
-          argumentsMap,
+          arguments,
           eventType,
           maybeOriginalEventType,
           maybeScheduled = None,

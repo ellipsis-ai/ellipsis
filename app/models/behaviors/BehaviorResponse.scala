@@ -53,6 +53,10 @@ case class BehaviorResponse(
     parametersWithValues.forall(_.hasValidValue)
   }
 
+  def hasAllExtraParamValues: Boolean = {
+    true // TODO: implement me
+  }
+
   def hasAllSimpleTokens(implicit ec: ExecutionContext): Future[Boolean] = {
     for {
       user <- event.ensureUser(dataService)
@@ -64,7 +68,7 @@ case class BehaviorResponse(
     for {
       hasSimpleTokens <- hasAllSimpleTokens
     } yield {
-      hasSimpleTokens && hasAllParamValues
+      hasSimpleTokens && hasAllParamValues && hasAllExtraParamValues
     }
   }
 
