@@ -2392,9 +2392,28 @@ class BehaviorEditor extends React.Component<Props, State> {
     DataRequest.jsonGet(url)
       .then((json: BehaviorVersionJson) => {
         const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id })).clone(optionalDefaultProps || {});
-        const groupWithNewBehavior = group.withNewBehaviorVersion(newVersion);
-        this.updateGroupStateWith(groupWithNewBehavior, () => {
-          this.onSelect(groupWithNewBehavior.id, newVersion.behaviorId);
+        const inputs = this.getInputs();
+        const newInputs: Array<Input> = [];
+        const withNewInputs = newVersion.clone({
+          inputIds: newVersion.inputIds.map((oldInputId) => {
+            const oldInput = inputs.find((ea) => Boolean(ea.inputId && ea.inputId === oldInputId));
+            if (oldInput) {
+              const newInput = oldInput.clone({
+                id: ID.next(),
+                inputId: ID.next(),
+                exportId: ID.next()
+              });
+              newInputs.push(newInput);
+              return newInput.inputId as string;
+            } else {
+              return oldInputId;
+            }
+          })
+        });
+        const groupWithNewBehavior = group.withNewBehaviorVersion(withNewInputs);
+        const groupWithNewInputs = groupWithNewBehavior.copyWithInputsForBehaviorVersion(newInputs, newVersion);
+        this.updateGroupStateWith(groupWithNewInputs, () => {
+          this.onSelect(groupWithNewInputs.id, newVersion.behaviorId);
         });
       });
   }
