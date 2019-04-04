@@ -182,7 +182,9 @@ POST        /api/v1/delete_saved_answers              @controllers.api.APIContro
 DELETE   /api/v1/inputs/:inputName/user_saved_answer/:token  @controllers.api.APIController.deleteUserSavedAnswer(inputName: String, token: String)
 #NOCSRF
 DELETE   /api/v1/inputs/:inputName/team_saved_answers/:token @controllers.api.APIController.deleteTeamSavedAnswers(inputName: String, token: String)
+
 GET         /api/v1/skill_versions/:skillId/:token    @controllers.api.APIController.getCurrentSkillVersionFor(skillId: String, token: String)
+GET         /api/v1/skill_versions/:token             @controllers.api.APIController.getNewSkill(token: String)
 #NOCSRF
 POST        /api/v1/skill_versions                    @controllers.api.APIController.saveSkillVersion
 

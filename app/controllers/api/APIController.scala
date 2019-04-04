@@ -1,5 +1,7 @@
 package controllers.api
 
+import java.time.OffsetDateTime
+
 import _root_.json.Formatting._
 import _root_.json._
 import akka.actor.ActorSystem
@@ -460,6 +462,48 @@ class APIController @Inject() (
       maybeGroupData <- context.maybeUser.map { user =>
         BehaviorGroupData.maybeFor(groupId, user, dataService, cacheService)
       }.getOrElse(Future.successful(None))
+    } yield {
+      maybeGroupData.map { data =>
+        Ok(Json.toJson(data))
+      }.getOrElse(NotFound(""))
+    }
+  }
+
+  def getNewSkill(token: String) = Action.async { implicit request =>
+    for {
+      context <- ApiMethodContextBuilder.createFor(token, services, responder)
+      maybeGroupData <- (for {
+        user <- context.maybeUser
+        team <- context.maybeTeam
+      } yield {
+        dataService.users.userDataFor(user, team).map { userData =>
+          Some(
+            BehaviorGroupData(
+              id = None,
+              teamId = team.id,
+              name = None,
+              description = None,
+              icon = None,
+              actionInputs = Seq(),
+              dataTypeInputs = Seq(),
+              behaviorVersions = Seq(),
+              libraryVersions = Seq(),
+              requiredAWSConfigs = Seq(),
+              requiredOAuthApiConfigs = Seq(),
+              requiredSimpleTokenApis = Seq(),
+              gitSHA = None,
+              exportId = None,
+              Some(OffsetDateTime.now),
+              Some(userData),
+              deployment = None,
+              metaData = None,
+              isManaged = false,
+              managedContact = None,
+              linkedGithubRepo = None
+            )
+          )
+        }
+      }).getOrElse(Future.successful(None))
     } yield {
       maybeGroupData.map { data =>
         Ok(Json.toJson(data))

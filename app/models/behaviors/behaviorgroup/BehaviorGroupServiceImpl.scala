@@ -2,18 +2,17 @@ package models.behaviors.behaviorgroup
 
 import java.time.OffsetDateTime
 
-import javax.inject.Inject
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
-import json.BehaviorGroupData
+import javax.inject.Inject
 import json.Formatting._
+import json._
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import services.DataService
-import services.caching.CacheService
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,13 +35,14 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
 }
 
 class BehaviorGroupServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService],
-                                          cacheServiceProvider: Provider[CacheService],
+                                          servicesProvider: Provider[DefaultServices],
                                           implicit val ec: ExecutionContext
                                         ) extends BehaviorGroupService {
 
-  def dataService = dataServiceProvider.get
-  def cacheService = cacheServiceProvider.get
+  def services = servicesProvider.get
+  def dataService = services.dataService
+  def cacheService = services.cacheService
+  def ws = services.ws
 
   import BehaviorGroupQueries._
 
@@ -206,16 +206,16 @@ class BehaviorGroupServiceImpl @Inject() (
               dataService.behaviorGroups.createFor(data.exportId, team).map(Some(_))
             }.getOrElse(Future.successful(None))
           }
-          oauth1Appications <- teamAccess.maybeTargetTeam.map { team =>
+          oauth1Applications <- teamAccess.maybeTargetTeam.map { team =>
             dataService.oauth1Applications.allUsableFor(team)
           }.getOrElse(Future.successful(Seq()))
-          oauth2Appications <- teamAccess.maybeTargetTeam.map { team =>
+          oauth2Applications <- teamAccess.maybeTargetTeam.map { team =>
             dataService.oauth2Applications.allUsableFor(team)
           }.getOrElse(Future.successful(Seq()))
           _ <- maybeGroup.map { group =>
             val dataForNewVersion = data.copyForNewVersionOf(group)
             val dataToUse = if (isReinstall.exists(identity)) {
-              dataForNewVersion.copyWithApiApplicationsIfAvailable(oauth1Appications ++ oauth2Appications)
+              dataForNewVersion.copyWithApiApplicationsIfAvailable(oauth1Applications ++ oauth2Applications)
             } else {
               dataForNewVersion
             }
