@@ -983,6 +983,30 @@ class BehaviorEditor extends React.Component<Props, State> {
     this.resetNotificationsImmediately();
   }
 
+  onNewBehaviorError(isDataType: boolean, isTest: boolean, behaviorIdToClone: Option<string>): void {
+    let error: string;
+    if (behaviorIdToClone) {
+      if (isDataType) {
+        error = "An error occurred while trying to clone the data type";
+      } else if (isTest) {
+        error = "An error occurred while trying to clone the test";
+      } else {
+        error = "An error occurred while trying to clone the action";
+      }
+    } else {
+      if (isDataType) {
+        error = "An error occurred while trying to add a new data type";
+      } else if (isTest) {
+        error = "An error occurred while trying to add a new test";
+      } else {
+        error = "An error occurred while trying to add a new action";
+      }
+    }
+    this.setState({
+      error: error
+    });
+  }
+
   deploy(callback?: () => void): void {
     this.setState({ error: null });
     DataRequest.jsonPost(
@@ -2386,17 +2410,33 @@ class BehaviorEditor extends React.Component<Props, State> {
   }
 
   addNewBehavior(isDataType: boolean, isTest: boolean, behaviorIdToClone: Option<string>, optionalDefaultProps?: Partial<BehaviorVersionInterface>): void {
-    const group = this.getBehaviorGroup();
+    const originalGroup = this.getBehaviorGroup();
     const newName = optionalDefaultProps ? optionalDefaultProps.name : null;
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, isTest, group.teamId, behaviorIdToClone, newName).url;
-    DataRequest.jsonGet(url)
-      .then((json: BehaviorVersionJson) => {
-        const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id })).clone(optionalDefaultProps || {});
-        const groupWithNewBehavior = group.withNewBehaviorVersion(newVersion);
-        this.updateGroupStateWith(groupWithNewBehavior, () => {
-          this.onSelect(groupWithNewBehavior.id, newVersion.behaviorId);
-        });
+    const url = jsRoutes.controllers.BehaviorEditorController.groupWithNewUnsavedBehavior().url;
+    const body = {
+      behaviorGroupDataJson: JSON.stringify(originalGroup),
+      isDataType: isDataType,
+      isTest: isTest,
+      behaviorIdToClone: behaviorIdToClone,
+      name: newName
+    };
+    this.setState({ error: null });
+    DataRequest.jsonPost(url, body, this.props.csrfToken).then((json: BehaviorGroupJson) => {
+      const newGroup = BehaviorGroup.fromJson(json);
+      const newBehavior = newGroup.behaviorVersions.find((newBehaviorVersion) => {
+        return !originalGroup.behaviorVersions.some((oldBehaviorVersion) => oldBehaviorVersion.behaviorId === newBehaviorVersion.behaviorId)
       });
+      const newBehaviorId = newBehavior ? newBehavior.behaviorId : null;
+      if (newBehaviorId) {
+        this.updateGroupStateWith(newGroup, () => {
+          this.onSelect(newGroup.id, newBehaviorId);
+        });
+      } else {
+        throw new Error("No new behavior data was found");
+      }
+    }).catch(() => {
+      this.onNewBehaviorError(isDataType, isTest, behaviorIdToClone);
+    });
   }
 
   addNewAction(): void {

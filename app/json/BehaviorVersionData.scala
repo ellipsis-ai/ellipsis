@@ -61,14 +61,15 @@ case class BehaviorVersionData(
     )
   }
 
-  def copyForClone: BehaviorVersionData = {
+  def copyForClone(newInputIds: Seq[String]): BehaviorVersionData = {
     copy(
       id = Some(IDs.next),
       behaviorId = Some(IDs.next),
       exportId = None,
       name = name.map(n => s"${n}Copy"),
       config = config.copyForClone,
-      isNew = Some(true)
+      isNew = Some(true),
+      inputIds = newInputIds
     )
   }
 
@@ -92,6 +93,8 @@ case class BehaviorVersionData(
   }
 
   lazy val isDataType: Boolean = config.isDataType
+
+  lazy val isTest: Boolean = config.isTest.contains(true)
 
   lazy val maybeFirstTrigger: Option[String] = triggers.filterNot(_.isRegex).map(_.text.toLowerCase).sorted.headOption
 
@@ -155,7 +158,7 @@ object BehaviorVersionData {
     )
   }
 
-  def newUnsavedFor(teamId: String, isDataType: Boolean, isTest: Boolean, maybeName: Option[String], dataService: DataService): BehaviorVersionData = {
+  def newUnsavedFor(teamId: String, isDataType: Boolean, isTest: Boolean, maybeName: Option[String]): BehaviorVersionData = {
     val maybeDataTypeConfig = maybeDataTypeConfigFor(isDataType, maybeName)
     buildFor(
       id = Some(IDs.next),

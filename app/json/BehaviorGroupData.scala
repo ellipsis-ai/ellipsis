@@ -119,6 +119,34 @@ case class BehaviorGroupData(
     copy(requiredOAuthApiConfigs = required)
   }
 
+  def withUnsavedNewBehavior(isDataType: Boolean, isTest: Boolean, maybeName: Option[String]): BehaviorGroupData = {
+    copy(behaviorVersions = this.behaviorVersions :+ BehaviorVersionData.newUnsavedFor(this.teamId, isDataType, isTest, maybeName))
+  }
+
+  def withUnsavedClonedBehavior(behaviorIdToClone: String, maybeName: Option[String]): BehaviorGroupData = {
+    val maybeBehaviorVersion = this.behaviorVersions.find(_.behaviorId.contains(behaviorIdToClone))
+    val newInputs = maybeBehaviorVersion.map { behaviorVersion =>
+      behaviorVersion.inputIds.flatMap { inputId =>
+        this.inputs.find(_.inputId.contains(inputId)).map(_.copyForClone)
+      }
+    }.getOrElse(Seq.empty)
+    val maybeNewBehaviorVersion = maybeBehaviorVersion.map { oldBehaviorVersion =>
+      oldBehaviorVersion.copyForClone(newInputs.flatMap(_.inputId))
+    }
+    maybeNewBehaviorVersion.map { newBehaviorVersion =>
+      val newBehaviorVersions = this.behaviorVersions :+ newBehaviorVersion
+      if (newBehaviorVersion.isTest) {
+        this.copy(behaviorVersions = newBehaviorVersions)
+      } else if (newBehaviorVersion.isDataType) {
+        this.copy(behaviorVersions = newBehaviorVersions, dataTypeInputs = this.dataTypeInputs ++ newInputs)
+      } else {
+        this.copy(behaviorVersions = newBehaviorVersions, actionInputs = this.actionInputs ++ newInputs)
+      }
+    }.getOrElse {
+      this
+    }
+  }
+
   lazy val sortedActionBehaviorVersions = {
     behaviorVersions.filterNot(_.isDataType).sortBy(_.maybeFirstTrigger)
   }

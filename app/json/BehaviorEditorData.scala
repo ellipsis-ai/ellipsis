@@ -191,7 +191,7 @@ object BehaviorEditorData {
       }.getOrElse(Future.successful(None))
     } yield {
       val data = maybeGroupData.getOrElse {
-        val newBehaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None, dataService);
+        val newBehaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None);
         BehaviorGroupData(
           None,
           team.id,

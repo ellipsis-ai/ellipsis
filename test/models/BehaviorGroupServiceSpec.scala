@@ -17,7 +17,7 @@ class BehaviorGroupServiceSpec extends DBSpec {
         val groupVersion = {
           val inputsData = 1.to(3).map(_ => newInputDataFor())
           val behaviorVersionsData = inputsData.map { inputData =>
-            BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, isTest = false, maybeName = None, dataService).copy(
+            BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, isTest = false, maybeName = None).copy(
               inputIds = Seq(inputData.inputId.get)
             )
           }
@@ -51,7 +51,7 @@ class BehaviorGroupServiceSpec extends DBSpec {
         val groupVersions = groups.map { ea =>
           val inputsData = 1.to(3).map(_ => newInputDataFor())
           val behaviorVersionsData = inputsData.map { inputData =>
-            BehaviorVersionData.newUnsavedFor(ea.team.id, isDataType = false, isTest = false, maybeName = None, dataService).copy(
+            BehaviorVersionData.newUnsavedFor(ea.team.id, isDataType = false, isTest = false, maybeName = None).copy(
               inputIds = Seq(inputData.inputId.get)
             )
           }
