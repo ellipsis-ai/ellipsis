@@ -54,6 +54,7 @@ class AWSLambdaCodeSpec extends PlaySpec with MockitoSugar {
   )
   val params: Seq[BehaviorParameter] = Seq()
   def teamInfoFor(team: Team) = TeamInfo(
+    team.id,
     Seq(),
     Map(),
     None,
