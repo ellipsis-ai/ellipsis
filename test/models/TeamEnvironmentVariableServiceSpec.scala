@@ -11,7 +11,7 @@ class TeamEnvironmentVariableServiceSpec extends DBSpec {
         val team = newSavedTeam
         val user = newSavedUserOn(team)
         val group = newSavedBehaviorGroupFor(team)
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, None, dataService).copy(
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, None).copy(
           functionBody =
             """
               |ellipsis.success(

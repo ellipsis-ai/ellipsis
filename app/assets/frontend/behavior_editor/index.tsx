@@ -2388,32 +2388,24 @@ class BehaviorEditor extends React.Component<Props, State> {
   addNewBehavior(isDataType: boolean, isTest: boolean, behaviorIdToClone: Option<string>, optionalDefaultProps?: Partial<BehaviorVersionInterface>): void {
     const group = this.getBehaviorGroup();
     const newName = optionalDefaultProps ? optionalDefaultProps.name : null;
-    const url = jsRoutes.controllers.BehaviorEditorController.newUnsavedBehavior(isDataType, isTest, group.teamId, behaviorIdToClone, newName).url;
-    DataRequest.jsonGet(url)
-      .then((json: BehaviorVersionJson) => {
-        const newVersion = BehaviorVersion.fromJson(Object.assign({}, json, { groupId: group.id })).clone(optionalDefaultProps || {});
-        const inputs = this.getInputs();
-        const newInputs: Array<Input> = [];
-        const withNewInputs = newVersion.clone({
-          inputIds: newVersion.inputIds.map((oldInputId) => {
-            const oldInput = inputs.find((ea) => Boolean(ea.inputId && ea.inputId === oldInputId));
-            if (oldInput) {
-              const newInput = oldInput.clone({
-                id: ID.next(),
-                inputId: ID.next(),
-                exportId: ID.next()
-              });
-              newInputs.push(newInput);
-              return newInput.inputId as string;
-            } else {
-              return oldInputId;
-            }
-          })
+    const url = jsRoutes.controllers.BehaviorEditorController.groupWithNewUnsavedBehavior().url;
+    DataRequest.jsonPost(url, {
+      behaviorGroupData: JSON.stringify(group),
+      isDataType: isDataType,
+      isTest: isTest,
+      behaviorIdToClone: behaviorIdToClone,
+      name: newName
+    }, this.props.csrfToken)
+      .then((json: BehaviorGroupJson) => {
+        const newGroupVersion = BehaviorGroup.fromJson(json);
+        const newBehavior = newGroupVersion.behaviorVersions.find((newBehaviorVersion) => {
+          return !group.behaviorVersions.some((oldBehaviorVersion) => oldBehaviorVersion.behaviorId === newBehaviorVersion.behaviorId)
         });
-        const groupWithNewBehavior = group.withNewBehaviorVersion(withNewInputs);
-        const groupWithNewInputs = groupWithNewBehavior.copyWithInputsForBehaviorVersion(newInputs, newVersion);
-        this.updateGroupStateWith(groupWithNewInputs, () => {
-          this.onSelect(groupWithNewInputs.id, newVersion.behaviorId);
+        const newBehaviorId = newBehavior ? newBehavior.behaviorId : null;
+        this.updateGroupStateWith(newGroupVersion, () => {
+          if (newBehaviorId) {
+            this.onSelect(newGroupVersion.id, newBehaviorId);
+          }
         });
       });
   }

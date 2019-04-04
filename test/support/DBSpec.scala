@@ -150,23 +150,23 @@ trait DBSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar {
   }
 
   def newBehaviorVersionDataFor(behavior: Behavior): BehaviorVersionData = {
-    BehaviorVersionData.newUnsavedFor(behavior.team.id, behavior.isDataType, isTest = false, None, dataService).copy(
+    BehaviorVersionData.newUnsavedFor(behavior.team.id, behavior.isDataType, isTest = false, None).copy(
       behaviorId = Some(behavior.id),
       isNew = Some(false)
     )
   }
 
   def newBehaviorVersionDataFor(group: BehaviorGroup, isDataType: Boolean): BehaviorVersionData = {
-    BehaviorVersionData.newUnsavedFor(group.team.id, isDataType, isTest = false, None, dataService)
+    BehaviorVersionData.newUnsavedFor(group.team.id, isDataType, isTest = false, None)
   }
 
   def defaultGroupVersionDataFor(group: BehaviorGroup, user: User): BehaviorGroupData = {
     val input1Data = newInputDataFor()
     val input2Data = newInputDataFor()
-    val behaviorVersion1Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, isTest = false, maybeName = None, dataService).copy(
+    val behaviorVersion1Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, isTest = false, maybeName = None).copy(
       inputIds = Seq(input1Data.inputId.get)
     )
-    val behaviorVersion2Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, isTest = false, maybeName = None, dataService).copy(
+    val behaviorVersion2Data = BehaviorVersionData.newUnsavedFor(group.team.id, isDataType = false, isTest = false, maybeName = None).copy(
       inputIds = Seq(input2Data.inputId.get)
     )
     newGroupVersionDataFor(group, user).copy(

@@ -31,7 +31,7 @@ declare var jsRoutes: {
       metaData: (groupId: string) => JsRoute,
       newFromGithub: () => JsRoute,
       newGroup: (teamId: string, selectedId?: Option<string>) => JsRoute,
-      newUnsavedBehavior: (isDataType: boolean, isTest: boolean, teamId: string, behaviorIdToClone: Option<string>, newName: Option<string>) => JsRoute,
+      groupWithNewUnsavedBehavior: () => JsRoute,
       newUnsavedLibrary: (teamId: string, libraryIdToClone: Option<string>) => JsRoute,
       nodeModuleVersionsFor: (groupId: string) => JsRoute,
       testResults: (groupId: string) => JsRoute,

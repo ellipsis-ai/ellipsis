@@ -58,6 +58,14 @@ case class InputData(
     copy(id = Some(newId))
   }
 
+  def copyForClone: InputData = {
+    copy(id = Some(IDs.next), inputId = Some(IDs.next), exportId = Some(IDs.next))
+  }
+
+  def copyForComparison: InputData = {
+    copy(id = None, inputId = None, exportId = None)
+  }
+
 }
 
 object InputData {

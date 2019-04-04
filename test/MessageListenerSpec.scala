@@ -36,7 +36,7 @@ class MessageListenerSpec extends DBSpec {
         )
         val group = newSavedBehaviorGroupFor(team)
 
-        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None, dataService)
+        val behaviorVersionData = BehaviorVersionData.newUnsavedFor(team.id, isDataType = false, isTest = false, maybeName = None)
         val groupData = newGroupVersionDataFor(group, user).copy(
           behaviorVersions = Seq(behaviorVersionData)
         )

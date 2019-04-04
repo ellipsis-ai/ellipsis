@@ -19,7 +19,7 @@
   routes.javascript.BehaviorEditorController.edit,
   routes.javascript.BehaviorEditorController.metaData,
   routes.javascript.BehaviorEditorController.newGroup,
-  routes.javascript.BehaviorEditorController.newUnsavedBehavior,
+  routes.javascript.BehaviorEditorController.groupWithNewUnsavedBehavior,
   routes.javascript.BehaviorEditorController.newUnsavedLibrary,
   routes.javascript.BehaviorEditorController.queryDefaultStorage,
   routes.javascript.BehaviorEditorController.regexValidationErrorsFor,

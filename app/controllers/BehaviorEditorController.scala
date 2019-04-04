@@ -257,26 +257,43 @@ self.MonacoEnvironment = {
     )
   }
 
-  def newUnsavedBehavior(
-                          isDataType: Boolean,
-                          isTest: Boolean,
-                          teamId: String,
-                          maybeBehaviorIdToClone: Option[String],
-                          maybeName: Option[String]
-                        ) = silhouette.SecuredAction.async { implicit request =>
-    maybeBehaviorIdToClone.map { behaviorIdToClone =>
-      BehaviorVersionData.maybeFor(behaviorIdToClone, request.identity, dataService, None, None).map { maybeBehaviorVersionData =>
-        maybeBehaviorVersionData.map(_.copyForClone)
+  case class UpdateGroupWithNewUnsavedBehavior(
+                                                behaviorGroupData: String,
+                                                isDataType: Boolean,
+                                                isTest: Boolean,
+                                                maybeBehaviorIdToClone: Option[String],
+                                                maybeName: Option[String]
+                                              )
+
+  private val updateGroupWithNewUnsavedBehaviorForm = Form(
+    mapping(
+      "behaviorGroupData" -> nonEmptyText,
+      "isDataType" -> boolean,
+      "isTest" -> boolean,
+      "behaviorIdToClone" -> optional(nonEmptyText),
+      "name" -> optional(nonEmptyText)
+    )(UpdateGroupWithNewUnsavedBehavior.apply)(UpdateGroupWithNewUnsavedBehavior.unapply)
+  )
+
+  def groupWithNewUnsavedBehavior = silhouette.SecuredAction.async { implicit request =>
+    updateGroupWithNewUnsavedBehaviorForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        Json.parse(info.behaviorGroupData).validate[BehaviorGroupData] match {
+          case JsSuccess(behaviorGroupData, _) => {
+            val newGroupData = info.maybeBehaviorIdToClone.map { behaviorIdToClone =>
+              behaviorGroupData.withUnsavedClonedBehavior(behaviorIdToClone, info.maybeName)
+            }.getOrElse {
+              behaviorGroupData.withUnsavedNewBehavior(info.isDataType, info.isTest, info.maybeName)
+            }
+            Future.successful(Ok(Json.toJson(newGroupData)))
+          }
+          case e: JsError => Future.successful(BadRequest("Malformatted data"))
+        }
       }
-    }.getOrElse {
-      Future.successful(Some(BehaviorVersionData.newUnsavedFor(teamId, isDataType, isTest, maybeName, dataService)))
-    }.map { maybeVersionData =>
-      maybeVersionData.map { data =>
-        Ok(Json.toJson(data))
-      }.getOrElse {
-        NotFound(s"""Action not found: ${maybeBehaviorIdToClone.getOrElse("")}""")
-      }
-    }
+    )
   }
 
   def newUnsavedLibrary(
