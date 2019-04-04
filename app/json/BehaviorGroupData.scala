@@ -334,4 +334,32 @@ object BehaviorGroupData {
     )
   }
 
+  def forNewGroupFor(user: User, team: Team, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
+    dataService.users.userDataFor(user, team).map { userData =>
+      BehaviorGroupData(
+        id = None,
+        teamId = team.id,
+        name = None,
+        description = None,
+        icon = None,
+        actionInputs = Seq(),
+        dataTypeInputs = Seq(),
+        behaviorVersions = Seq(),
+        libraryVersions = Seq(),
+        requiredAWSConfigs = Seq(),
+        requiredOAuthApiConfigs = Seq(),
+        requiredSimpleTokenApis = Seq(),
+        gitSHA = None,
+        exportId = None,
+        Some(OffsetDateTime.now),
+        Some(userData),
+        deployment = None,
+        metaData = None,
+        isManaged = false,
+        managedContact = None,
+        linkedGithubRepo = None
+      )
+    }
+  }
+
 }

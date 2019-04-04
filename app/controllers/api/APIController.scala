@@ -12,6 +12,7 @@ import controllers.api.json.Formatting._
 import controllers.api.json._
 import controllers.{EllipsisController, RemoteAssets}
 import javax.inject.Inject
+import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
 import models.behaviors.{BotResultService, SimpleTextResult}
@@ -456,57 +457,36 @@ class APIController @Inject() (
     )
   }
 
-  def getCurrentSkillVersionFor(groupId: String, token: String) = Action.async { implicit request =>
+  case class SkillEditingContext(
+                                  skill: BehaviorGroupData,
+                                  builtinParamTypes: Seq[BehaviorParameterTypeData]
+                                )
+
+  implicit val skillEditingContextFormat = Json.format[SkillEditingContext]
+
+  def getSkillEditingContextFor(token: String, maybeExistingGroupId: Option[String])= Action.async { implicit request =>
     for {
       context <- ApiMethodContextBuilder.createFor(token, services, responder)
       maybeGroupData <- context.maybeUser.map { user =>
-        BehaviorGroupData.maybeFor(groupId, user, dataService, cacheService)
+        maybeExistingGroupId.map { groupId =>
+          BehaviorGroupData.maybeFor(groupId, user, dataService, cacheService)
+        }.getOrElse {
+          context.maybeTeam.map { team =>
+            BehaviorGroupData.forNewGroupFor(user, team, dataService).map(Some(_))
+          }.getOrElse(Future.successful(None))
+        }
       }.getOrElse(Future.successful(None))
+      builtinParamTypeData <- Future.sequence(BehaviorParameterType.allBuiltin.map(ea => BehaviorParameterTypeData.from(ea, dataService)))
     } yield {
       maybeGroupData.map { data =>
-        Ok(Json.toJson(data))
-      }.getOrElse(NotFound(""))
-    }
-  }
-
-  def getNewSkill(token: String) = Action.async { implicit request =>
-    for {
-      context <- ApiMethodContextBuilder.createFor(token, services, responder)
-      maybeGroupData <- (for {
-        user <- context.maybeUser
-        team <- context.maybeTeam
-      } yield {
-        dataService.users.userDataFor(user, team).map { userData =>
-          Some(
-            BehaviorGroupData(
-              id = None,
-              teamId = team.id,
-              name = None,
-              description = None,
-              icon = None,
-              actionInputs = Seq(),
-              dataTypeInputs = Seq(),
-              behaviorVersions = Seq(),
-              libraryVersions = Seq(),
-              requiredAWSConfigs = Seq(),
-              requiredOAuthApiConfigs = Seq(),
-              requiredSimpleTokenApis = Seq(),
-              gitSHA = None,
-              exportId = None,
-              Some(OffsetDateTime.now),
-              Some(userData),
-              deployment = None,
-              metaData = None,
-              isManaged = false,
-              managedContact = None,
-              linkedGithubRepo = None
+        Ok(
+          Json.toJson(
+            SkillEditingContext(
+              data,
+              builtinParamTypeData
             )
           )
-        }
-      }).getOrElse(Future.successful(None))
-    } yield {
-      maybeGroupData.map { data =>
-        Ok(Json.toJson(data))
+        )
       }.getOrElse(NotFound(""))
     }
   }
