@@ -18,6 +18,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result}
+import services.caching.CacheService
 import services.slack.SlackApiError
 import services.{DataService, DefaultServices}
 import utils.{SlackMessageSenderChannelException, SlackMessageSenderException}
@@ -34,6 +35,7 @@ class APIController @Inject() (
   extends EllipsisController {
 
   val dataService: DataService = services.dataService
+  val cacheService: CacheService = services.cacheService
   val botResultService: BotResultService = services.botResultService
   val responder = APIResponder(this)
 
@@ -451,4 +453,45 @@ class APIController @Inject() (
       info => deleteSavedAnswersFor(info)
     )
   }
+
+  def getCurrentSkillVersionFor(groupId: String, token: String) = Action.async { implicit request =>
+    for {
+      context <- ApiMethodContextBuilder.createFor(token, services, responder)
+      maybeGroupData <- context.maybeUser.map { user =>
+        BehaviorGroupData.maybeFor(groupId, user, dataService, cacheService)
+      }.getOrElse(Future.successful(None))
+    } yield {
+      maybeGroupData.map { data =>
+        Ok(Json.toJson(data))
+      }.getOrElse(NotFound(""))
+    }
+  }
+
+  case class SaveSkillVersionInfo(dataJson: String, token: String) extends ApiMethodInfo
+
+  private val saveSkillVersionForm = Form(
+    mapping(
+      "dataJson" -> nonEmptyText,
+      "token" -> nonEmptyText
+    )(SaveSkillVersionInfo.apply)(SaveSkillVersionInfo.unapply)
+  )
+
+  def saveSkillVersion= Action.async { implicit request =>
+    saveSkillVersionForm.bindFromRequest.fold(
+      formWithErrors => Future.successful(responder.resultForFormErrors(formWithErrors)),
+      info => {
+        for {
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
+          maybeResultJson <- context.maybeUser.map { user =>
+            dataService.behaviorGroups.saveVersionFor(user, info.dataJson, isReinstall = None, forceNode6 = None)
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeResultJson.map { resultJson =>
+            Ok(resultJson)
+          }.getOrElse(NotFound(""))
+        }
+      }
+    )
+  }
+
 }
