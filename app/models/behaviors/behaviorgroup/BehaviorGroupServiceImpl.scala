@@ -1,17 +1,18 @@
 package models.behaviors.behaviorgroup
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
-import json.BehaviorGroupData
+import javax.inject.Inject
+import json.Formatting._
+import json._
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
-import services.DataService
-import services.caching.CacheService
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,13 +35,14 @@ class BehaviorGroupsTable(tag: Tag) extends Table[RawBehaviorGroup](tag, "behavi
 }
 
 class BehaviorGroupServiceImpl @Inject() (
-                                          dataServiceProvider: Provider[DataService],
-                                          cacheServiceProvider: Provider[CacheService],
+                                          servicesProvider: Provider[DefaultServices],
                                           implicit val ec: ExecutionContext
                                         ) extends BehaviorGroupService {
 
-  def dataService = dataServiceProvider.get
-  def cacheService = cacheServiceProvider.get
+  def services = servicesProvider.get
+  def dataService = services.dataService
+  def cacheService = services.cacheService
+  def ws = services.ws
 
   import BehaviorGroupQueries._
 
@@ -188,6 +190,50 @@ class BehaviorGroupServiceImpl @Inject() (
 
   def maybeCurrentVersionFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]] = {
     dataService.behaviorGroupVersions.maybeCurrentFor(group)
+  }
+
+  def saveVersionFor(user: User, jsonString: String, isReinstall: Option[Boolean], forceNode6: Option[Boolean]): Future[Option[JsValue]] = {
+    val json = Json.parse(jsonString)
+    json.validate[BehaviorGroupData] match {
+      case JsSuccess(data, _) => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
+          maybeExistingGroup <- data.id.map { groupId =>
+            dataService.behaviorGroups.findWithoutAccessCheck(groupId)
+          }.getOrElse(Future.successful(None))
+          maybeGroup <- maybeExistingGroup.map(g => Future.successful(Some(g))).getOrElse {
+            teamAccess.maybeTargetTeam.map { team =>
+              dataService.behaviorGroups.createFor(data.exportId, team).map(Some(_))
+            }.getOrElse(Future.successful(None))
+          }
+          oauth1Applications <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.oauth1Applications.allUsableFor(team)
+          }.getOrElse(Future.successful(Seq()))
+          oauth2Applications <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.oauth2Applications.allUsableFor(team)
+          }.getOrElse(Future.successful(Seq()))
+          _ <- maybeGroup.map { group =>
+            val dataForNewVersion = data.copyForNewVersionOf(group)
+            val dataToUse = if (isReinstall.exists(identity)) {
+              dataForNewVersion.copyWithApiApplicationsIfAvailable(oauth1Applications ++ oauth2Applications)
+            } else {
+              dataForNewVersion
+            }
+            dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, dataToUse, forceNode6.getOrElse(false)).map(Some(_))
+          }.getOrElse(Future.successful(None))
+          maybeGroupData <- maybeGroup.map { group =>
+            BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeGroupData.map { groupData =>
+            Json.toJson(groupData)
+          }
+        }
+      }
+      case e: JsError => {
+        throw MalformedBehaviorGroupDataException(s"Malformatted data: ${e.errors.mkString("\n")}")
+      }
+    }
   }
 
 }

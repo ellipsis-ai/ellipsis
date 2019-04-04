@@ -9,6 +9,7 @@ import javax.inject.Inject
 import json.Formatting._
 import json._
 import models.IDs
+import models.behaviors.behaviorgroup.MalformedBehaviorGroupDataException
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.events.TestEventContext
 import models.behaviors.testing.{InvocationTester, TestMessageEvent, TriggerTester}
@@ -171,48 +172,12 @@ self.MonacoEnvironment = {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       info => {
-        val json = Json.parse(info.dataJson)
-        json.validate[BehaviorGroupData] match {
-          case JsSuccess(data, jsPath) => {
-            for {
-              teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
-              maybeExistingGroup <- data.id.map { groupId =>
-                dataService.behaviorGroups.findWithoutAccessCheck(groupId)
-              }.getOrElse(Future.successful(None))
-              maybeGroup <- maybeExistingGroup.map(g => Future.successful(Some(g))).getOrElse {
-                teamAccess.maybeTargetTeam.map { team =>
-                  dataService.behaviorGroups.createFor(data.exportId, team).map(Some(_))
-                }.getOrElse(Future.successful(None))
-              }
-              oauth1Appications <- teamAccess.maybeTargetTeam.map { team =>
-                dataService.oauth1Applications.allUsableFor(team)
-              }.getOrElse(Future.successful(Seq()))
-              oauth2Appications <- teamAccess.maybeTargetTeam.map { team =>
-                dataService.oauth2Applications.allUsableFor(team)
-              }.getOrElse(Future.successful(Seq()))
-              _ <- maybeGroup.map { group =>
-                val dataForNewVersion = data.copyForNewVersionOf(group)
-                val dataToUse = if (info.isReinstall.exists(identity)) {
-                  dataForNewVersion.copyWithApiApplicationsIfAvailable(oauth1Appications ++ oauth2Appications)
-                } else {
-                  dataForNewVersion
-                }
-                dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, dataToUse, info.forceNode6.getOrElse(false)).map(Some(_))
-              }.getOrElse(Future.successful(None))
-              maybeGroupData <- maybeGroup.map { group =>
-                BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
-              }.getOrElse(Future.successful(None))
-            } yield {
-              maybeGroupData.map { groupData =>
-                Ok(Json.toJson(groupData))
-              }.getOrElse {
-                NotFound("")
-              }
-            }
-          }
-          case e: JsError => {
-            Future.successful(BadRequest(s"Malformatted data: ${e.errors.mkString("\n")}"))
-          }
+        dataService.behaviorGroups.saveVersionFor(user, info.dataJson, info.isReinstall, info.forceNode6).map { maybeJson =>
+          maybeJson.map { json =>
+            Ok(json)
+          }.getOrElse(NotFound(""))
+        }.recover {
+          case e: MalformedBehaviorGroupDataException => BadRequest(e.message)
         }
       }
     )

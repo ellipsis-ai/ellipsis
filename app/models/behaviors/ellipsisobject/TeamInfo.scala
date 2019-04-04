@@ -15,6 +15,7 @@ case class AWSConfigInfo(
                         )
 
 case class TeamInfo(
+                     ellipsisTeamId: String,
                      links: Seq[IdentityInfo],
                      aws: Map[String, AWSConfigInfo],
                      botName: Option[String],
@@ -51,6 +52,7 @@ object TeamInfo {
       }
     }).map { links =>
       TeamInfo(
+        team.id,
         links,
         aws,
         maybeBotInfo.map(_.name),

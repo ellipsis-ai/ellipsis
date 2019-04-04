@@ -4,6 +4,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import play.api.Configuration
+import play.api.libs.json.JsValue
 
 import scala.concurrent.Future
 
@@ -32,5 +33,7 @@ trait BehaviorGroupService {
   }
 
   def maybeCurrentVersionFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]]
+
+  def saveVersionFor(user: User, jsonString: String, isReinstall: Option[Boolean], forceNode6: Option[Boolean]): Future[Option[JsValue]]
 
 }
