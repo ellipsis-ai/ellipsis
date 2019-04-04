@@ -258,7 +258,7 @@ self.MonacoEnvironment = {
   }
 
   case class UpdateGroupWithNewUnsavedBehavior(
-                                                behaviorGroupData: String,
+                                                behaviorGroupDataJson: String,
                                                 isDataType: Boolean,
                                                 isTest: Boolean,
                                                 maybeBehaviorIdToClone: Option[String],
@@ -267,7 +267,7 @@ self.MonacoEnvironment = {
 
   private val updateGroupWithNewUnsavedBehaviorForm = Form(
     mapping(
-      "behaviorGroupData" -> nonEmptyText,
+      "behaviorGroupDataJson" -> nonEmptyText,
       "isDataType" -> boolean,
       "isTest" -> boolean,
       "behaviorIdToClone" -> optional(nonEmptyText),
@@ -281,7 +281,7 @@ self.MonacoEnvironment = {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       info => {
-        Json.parse(info.behaviorGroupData).validate[BehaviorGroupData] match {
+        Json.parse(info.behaviorGroupDataJson).validate[BehaviorGroupData] match {
           case JsSuccess(behaviorGroupData, _) => {
             val newGroupData = info.maybeBehaviorIdToClone.map { behaviorIdToClone =>
               behaviorGroupData.withUnsavedClonedBehavior(behaviorIdToClone, info.maybeName)
