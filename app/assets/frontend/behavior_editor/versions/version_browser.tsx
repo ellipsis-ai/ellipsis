@@ -18,6 +18,7 @@ import autobind from '../../lib/autobind';
 import SVGWarning from '../../svg/warning';
 import {GithubFetchError} from '../../models/github/github_fetch_error';
 import {UpdateFromGithubSuccessData} from "../loader";
+import GithubRepoActions from "./github_repo_actions";
 
 const versionSources = {
   local: "local",
@@ -45,7 +46,6 @@ type Props = {
 
 type State = {
   selectedMenuItem: string,
-  diffFromSelectedToCurrent: boolean,
   footerHeight: number,
   branch: string,
   isChangingBranchName: boolean,
@@ -80,7 +80,6 @@ class VersionBrowser extends React.Component<Props, State> {
     autobind(this);
     this.state = {
       selectedMenuItem: this.getDefaultSelectedItem(props),
-      diffFromSelectedToCurrent: true,
       footerHeight: 0,
       branch: props.linkedGithubRepo && props.linkedGithubRepo.currentBranch ? props.linkedGithubRepo.currentBranch : "master",
       isFetching: false,
@@ -341,18 +340,12 @@ class VersionBrowser extends React.Component<Props, State> {
     return this.props.versions[index];
   }
 
-  invertDiffDirection(): void {
-    this.setState({
-      diffFromSelectedToCurrent: !this.state.diffFromSelectedToCurrent
-    });
-  }
-
   getDiffForSelectedVersion(selectedVersion: Option<BehaviorGroup>): Option<ModifiedDiff<BehaviorGroup>> {
     // original.maybeDiffFor(modified) shows changes from original to modified
     if (selectedVersion) {
-      return this.state.diffFromSelectedToCurrent ?
-        maybeDiffFor(selectedVersion, this.props.currentGroup, null, false) :
-        maybeDiffFor(this.props.currentGroup, selectedVersion, null, false);
+      return this.selectedIsNewer() ?
+        maybeDiffFor(this.props.currentGroup, selectedVersion, null, false) :
+        maybeDiffFor(selectedVersion, this.props.currentGroup, null, false);
     } else {
       return null;
     }
@@ -435,22 +428,18 @@ class VersionBrowser extends React.Component<Props, State> {
     }
   }
 
-  renderSelectableVersion(caption: any) {
-    const githubMode = this.compareGithubVersions();
+  renderSelectableVersion() {
     return (
-      <div>
-        <Collapsible revealWhen={!this.state.isChangingBranchName}>
-          {caption}
+      <Collapsible revealWhen={!this.state.isChangingBranchName}>
+        <div className="bg-lightest border-bottom container container-wide ptm pbs">
+          <span className="align-button align-button-s align-t type-label mrs">Select version to compare:</span>
           <Select className="align-b form-select-s mrs mbs" value={this.state.selectedMenuItem}
             onChange={this.onClickMenuItem}>
             {this.renderVersionOptions()}
           </Select>
           {this.renderSelectedVersionNote()}
-          {githubMode ? this.renderGithubBranch() : null}
-          {githubMode ? this.renderGithubStatus() : null}
-        </Collapsible>
-        {githubMode ? this.renderGithubBranchInput() : null}
-      </div>
+        </div>
+      </Collapsible>
     );
   }
 
@@ -460,7 +449,7 @@ class VersionBrowser extends React.Component<Props, State> {
 
   renderNoteForVersion(note: string) {
     return (
-      <span className="align-button align-button-s mrs mbs type-weak">({note})</span>
+      <span className="mrs type-weak">({note})</span>
     );
   }
 
@@ -481,16 +470,36 @@ class VersionBrowser extends React.Component<Props, State> {
     }
   }
 
-  renderCurrentVersionPlaceholder(caption: any) {
+  renderCurrentVersionPlaceholder() {
     return (
-      <div>
-        {caption}
-        <div className="align-button align-button-s type-bold mrs mbs">
+      <span>
+        <span className="type-bold mrs">
           {this.props.currentGroupIsModified ? "Current version (unsaved)" : "Current saved version"}
-        </div>
+        </span>
         {this.renderCurrentVersionNote()}
-      </div>
+      </span>
     );
+  }
+
+  renderSelectedVersionPlaceholder() {
+    const selectedVersion = this.getSelectedVersion();
+    const githubVersionTitle = this.props.linkedGithubRepo ? (
+      <span>
+        <span className="mrxs">Branch</span>
+        <span className="type-monospace">{this.props.linkedGithubRepo.currentBranch}</span>
+        <span className="mlxs">on GitHub</span>
+      </span>
+    ) : "";
+    return (
+      <span>
+        <span className="type-bold mrs">
+          {this.compareGithubVersions() ? githubVersionTitle : "Previous version"}
+        </span>
+        {this.renderNoteForVersion(selectedVersion && selectedVersion.createdAt ?
+          Formatter.formatTimestampShort(selectedVersion.createdAt) :
+          "Date unknown")}
+      </span>
+    )
   }
 
   renderSaveButton() {
@@ -516,11 +525,20 @@ class VersionBrowser extends React.Component<Props, State> {
   renderRevertButtonTitle(selectedVersion: Option<BehaviorGroup>, hasChanges: boolean) {
     if (this.compareGithubVersions()) {
       const branch = this.getSavedBranch();
-      return branch ? (
-        <span>Revert current version to {this.renderBranchTitle(branch)}…</span>
-      ) : (
-        <span>Revert…</span>
-      );
+      const selectedIsNewer = this.selectedIsNewer();
+      if (selectedIsNewer) {
+        return branch ? (
+          <span>Update current version to {this.renderBranchTitle(branch)}…</span>
+        ) : (
+          <span>Pull…</span>
+        );
+      } else {
+        return branch ? (
+          <span>Revert current version to {this.renderBranchTitle(branch)}…</span>
+        ) : (
+          <span>Revert…</span>
+        );
+      }
     } else {
       if (selectedVersion && hasChanges) {
         return (
@@ -534,22 +552,34 @@ class VersionBrowser extends React.Component<Props, State> {
     }
   }
 
+  renderCommitButtonLabel(branchTitle: React.ReactNode, githubIsNewer: boolean) {
+    if (this.state.isNewBranch) {
+      return (
+        <span>Create new {branchTitle} on GitHub…</span>
+      );
+    } else if (githubIsNewer) {
+      const currentDate = this.props.currentGroup.createdAt ? Formatter.formatTimestampShort(this.props.currentGroup.createdAt) : "current version";
+      return (
+        <span>Revert {branchTitle} to {currentDate}…</span>
+      );
+    } else {
+      return (
+        <span>Push changes to {branchTitle} on GitHub…</span>
+      );
+    }
+  }
+
   renderCommitButton(selectedVersion: Option<BehaviorGroup>, hasChanges: boolean) {
     if (this.getLinkedGithubRepo() && this.compareGithubVersions()) {
       const unsavedChanges = this.props.currentGroupIsModified;
       const githubVersionIsIdentical = Boolean(selectedVersion && !hasChanges);
       const branchTitle = this.renderBranchTitle(this.getSavedBranch());
-      const label = this.state.isNewBranch ? (
-        <span>Push new {branchTitle} to GitHub…</span>
-      ) : (
-        <span>Update {branchTitle} with current version…</span>
-      );
       return (
         <Button
           onClick={this.toggleCommitting}
           disabled={unsavedChanges || githubVersionIsIdentical}
           className="mrs mbm"
-        >{label}</Button>
+        >{this.renderCommitButtonLabel(branchTitle, this.selectedIsNewer())}</Button>
       );
     } else {
       return null;
@@ -576,10 +606,6 @@ class VersionBrowser extends React.Component<Props, State> {
   changeBranch(): void {
     this.setState({
       isChangingBranchName: true
-    }, () => {
-      if (this.newBranchInput) {
-        this.newBranchInput.select();
-      }
     });
   }
 
@@ -596,16 +622,23 @@ class VersionBrowser extends React.Component<Props, State> {
     }, this.onUpdateFromGithub);
   }
 
+  onBranchNameSectionToggle(isRevealed: boolean): void {
+    if (isRevealed && this.newBranchInput) {
+      this.newBranchInput.select();
+    }
+  }
+
   renderGithubBranch() {
     return (
-      <div className="display-inline-block mbs">
+      <div className="display-inline-block">
         <div className="align-button align-button-s mrs">
-          <div className="type-monospace type-bold">{this.getCurrentBranch() || "(no branch)"}</div>
+          <span className="type-label mrs">Branch:</span>
+          <span className="type-monospace type-bold">{this.getCurrentBranch() || "(no branch)"}</span>
         </div>
         <DynamicLabelButton
           className="button-shrink button-s mrs"
           onClick={this.onUpdateFromGithub}
-          disabledWhen={this.state.isFetching || !this.getCurrentBranch()}
+          disabledWhen={this.state.isFetching || !this.getCurrentBranch() || this.state.isChangingBranchName}
           labels={[{
             text: "Refresh",
             displayWhen: !this.state.isFetching
@@ -614,39 +647,41 @@ class VersionBrowser extends React.Component<Props, State> {
             displayWhen: this.state.isFetching
           }]}
         />
-        <Button onClick={this.changeBranch} className="button-shrink button-s mrs">Change branch</Button>
+        <Button onClick={this.changeBranch} className="button-shrink button-s mrs" disabled={this.state.isChangingBranchName}>Change branch</Button>
       </div>
     );
   }
 
   renderGithubBranchInput() {
     return (
-      <Collapsible revealWhen={this.state.isChangingBranchName}>
-        <span className="align-button align-button-s type-label mrs mbs">Enter branch name:</span>
-        <FormInput
-          ref={(el) => this.newBranchInput = el}
-          className="form-input-borderless form-input-s type-monospace width-15 mrs mbs"
-          placeholder="Branch (e.g. master)"
-          onChange={this.onBranchChange}
-          onEnterKey={this.onBranchEnterKey}
-          value={this.getCurrentBranch()}
-        />
-        <DynamicLabelButton
-          className="button-shrink button-s mrs mbs"
-          onClick={this.doBranchChange}
-          disabledWhen={this.state.isFetching || !this.getCurrentBranch() || this.isBranchUnchanged()}
-          labels={[{
-            text: "Select branch",
-            displayWhen: !this.state.isFetching
-          }, {
-            text: "Updating…",
-            displayWhen: this.state.isFetching
-          }]}
-        />
-        <Button
-          className="button-shrink button-s mbs"
-          onClick={this.cancelChangeBranch}
-        >Cancel</Button>
+      <Collapsible revealWhen={this.state.isChangingBranchName} onChange={this.onBranchNameSectionToggle}>
+        <div className="ptm">
+          <span className="align-button align-button-s type-label mrs mbs">Enter branch name:</span>
+          <FormInput
+            ref={(el) => this.newBranchInput = el}
+            className="form-input-borderless form-input-s type-monospace width-15 mrs mbs"
+            placeholder="Branch (e.g. master)"
+            onChange={this.onBranchChange}
+            onEnterKey={this.onBranchEnterKey}
+            value={this.getCurrentBranch()}
+          />
+          <DynamicLabelButton
+            className="button-shrink button-s mrs mbs"
+            onClick={this.doBranchChange}
+            disabledWhen={this.state.isFetching || !this.getCurrentBranch() || this.isBranchUnchanged()}
+            labels={[{
+              text: "Select branch",
+              displayWhen: !this.state.isFetching
+            }, {
+              text: "Updating…",
+              displayWhen: this.state.isFetching
+            }]}
+          />
+          <Button
+            className="button-shrink button-s mbs"
+            onClick={this.cancelChangeBranch}
+          >Cancel</Button>
+        </div>
       </Collapsible>
     );
   }
@@ -654,7 +689,7 @@ class VersionBrowser extends React.Component<Props, State> {
   renderGithubStatus() {
     if (this.state.error) {
       return (
-        <div className="align-button align-button-s mbs">
+        <div className="mvs">
           <GithubErrorNotification error={this.state.error} />
         </div>
       );
@@ -663,45 +698,35 @@ class VersionBrowser extends React.Component<Props, State> {
     }
   }
 
-  renderLeftCaption() {
-    return (
-      <div className="align-button align-button-s mrs mbs">Compare</div>
-    );
+  selectedIsNewer(): boolean {
+    const selectedVersion = this.getSelectedVersion();
+    const selectedVersionTimestamp = selectedVersion ? selectedVersion.createdAt : null;
+    const selectedVersionDate = selectedVersionTimestamp ? new Date(selectedVersionTimestamp) : null;
+    const currentVersionDate = this.props.currentGroup.createdAt ? new Date(this.props.currentGroup.createdAt) : null;
+    return Boolean(selectedVersionDate && currentVersionDate && Number(selectedVersionDate) > Number(currentVersionDate));
   }
 
-  renderRightCaption() {
-    return (
-      <div className="align-button align-button-s mrs mbs">to</div>
-    );
-  }
-
-  renderVersionSelector(hasChanges: boolean) {
+  renderVersionSelector() {
+    const shouldInvert = this.selectedIsNewer();
     if (this.props.versions.length > 0) {
       return (
-        <div>
-          <div className="columns type-s">
-            <div className="column column-one-half border-right mrneg1 ptl pbs">
-              <div>
-                {this.state.diffFromSelectedToCurrent ?
-                  this.renderSelectableVersion(this.renderLeftCaption()) :
-                  this.renderCurrentVersionPlaceholder(this.renderLeftCaption())
+        <div className="type-s">
+          {this.renderSelectableVersion()}
+          <div className="bg-lightest border-emphasis-bottom border-pink container container-wide">
+            <div className="columns">
+              <div className="column column-one-half border-right mrneg1 ptl pbs">
+                <span>Older: </span>
+                {shouldInvert ?
+                  this.renderCurrentVersionPlaceholder() :
+                  this.renderSelectedVersionPlaceholder()
                 }
               </div>
-            </div>
-            <div className="column column-one-half border-left pll ptl pbs">
-              <div className="columns columns-elastic">
-                <div className="column column-expand">
-                  {this.state.diffFromSelectedToCurrent ?
-                    this.renderCurrentVersionPlaceholder(this.renderRightCaption()) :
-                    this.renderSelectableVersion(this.renderRightCaption())
-                  }
-                </div>
-                <div className="column column-shrink">
-                  {hasChanges ? (
-                    <Button onClick={this.invertDiffDirection} className="button-s button-shrink"
-                      title="Invert the direction changes are shown">⇄</Button>
-                  ) : null}
-                </div>
+              <div className="column column-one-half border-left pll ptl pbs">
+                <span>Newer: </span>
+                {shouldInvert ?
+                  this.renderSelectedVersionPlaceholder() :
+                  this.renderCurrentVersionPlaceholder()
+                }
               </div>
             </div>
           </div>
@@ -709,7 +734,7 @@ class VersionBrowser extends React.Component<Props, State> {
       );
     } else {
       return (
-        <div className="pvl">
+        <div className="bg-lightest border-emphasis-bottom border-pink container container-wide pvl">
           <div className="align-button align-button-s pulse type-italic type-weak">Loading…</div>
         </div>
       );
@@ -776,6 +801,7 @@ class VersionBrowser extends React.Component<Props, State> {
     const selectedVersion = this.getSelectedVersion();
     const diff = this.getDiffForSelectedVersion(selectedVersion);
     const hasChanges = Boolean(diff);
+    const hasGithubRepo = Boolean(this.props.linkedGithubRepo);
     return (
       <div className="flex-row-cascade" style={this.getContainerStyle()}>
 
@@ -793,9 +819,31 @@ class VersionBrowser extends React.Component<Props, State> {
               </div>
             </Collapsible>
 
-            <div className="bg-lightest border-emphasis-bottom border-pink container container-wide">
-              {this.renderVersionSelector(hasChanges)}
+            <div className="bg-light border-bottom pvm container container-wide">
+              <div className="display-inline-block mrxl">
+                <GithubRepoActions
+                  linkedGithubRepo={this.props.linkedGithubRepo}
+                  isLinkedToGithub={this.props.isLinkedToGithub}
+                  currentGroupIsModified={this.props.currentGroupIsModified}
+                  onChangeGithubRepo={this.props.onChangedGithubRepo}
+                  currentGroup={this.props.currentGroup}
+                  currentSelectedId={this.props.currentSelectedId}
+                />
+              </div>
+              {hasGithubRepo ? (
+                <div className="display-inline-block">
+                  {this.renderGithubBranch()}
+                </div>
+              ) : null}
+              <div>
+                {this.renderGithubStatus()}
+              </div>
+              <div>
+                {hasGithubRepo ? this.renderGithubBranchInput() : null}
+              </div>
             </div>
+
+            {this.renderVersionSelector()}
 
             <div className="container container container-wide pvxl">
               {this.renderSelectedVersion(selectedVersion, diff)}
@@ -823,6 +871,7 @@ class VersionBrowser extends React.Component<Props, State> {
               onPushBranch={this.onPushBranch}
               onDoneClick={this.toggleCommitting}
               csrfToken={this.props.csrfToken}
+              localIsOlder={this.selectedIsNewer()}
             />
           </Collapsible>
         </FixedFooter>
