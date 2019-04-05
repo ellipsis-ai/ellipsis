@@ -1,7 +1,7 @@
 package export
 
 import java.io.{ByteArrayOutputStream, File, FileInputStream}
-import java.time.OffsetDateTime
+import java.time.{DateTimeException, Instant, OffsetDateTime, ZoneId}
 import java.util.zip.{ZipEntry, ZipInputStream}
 
 import json.Formatting._
@@ -122,6 +122,12 @@ case class BehaviorGroupZipImporter(
       )
     }.toSeq
 
+    val createdAt = try {
+      OffsetDateTime.ofInstant(Instant.ofEpochMilli(zipFile.lastModified()), ZoneId.of("UTC"))
+    } catch {
+      case _: DateTimeException => OffsetDateTime.now
+    }
+
     for {
       alreadyInstalled <- dataService.behaviorGroups.allFor(team)
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
@@ -145,7 +151,8 @@ case class BehaviorGroupZipImporter(
           maybeGitSHA = None,
           maybeExportId,
           Some(userData),
-          maybeLinkedGithubRepoData = None
+          maybeLinkedGithubRepoData = None,
+          maybeCreatedAt = Some(createdAt)
         ).copyForImportableForTeam(team, maybeExistingGroupData)
       )
       maybeImported <- BehaviorGroupImporter(team, user, data, dataService).run

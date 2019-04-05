@@ -1,6 +1,7 @@
 package json
 
 import java.time.OffsetDateTime
+import java.time.format.DateTimeParseException
 
 import models.accounts.{OAuthApi, OAuthApplication}
 import models.accounts.user.User
@@ -320,6 +321,18 @@ object BehaviorGroupData {
     } yield data
   }
 
+  def createdAtFor(maybeTimestamp: Option[String]): OffsetDateTime = {
+    maybeTimestamp.flatMap { timestamp =>
+      try {
+        Some(OffsetDateTime.parse(timestamp))
+      } catch {
+        case _: DateTimeParseException => None
+      }
+    }.getOrElse {
+      OffsetDateTime.now
+    }
+  }
+
   def fromExport(
                   teamId: String,
                   maybeName: Option[String],
@@ -335,7 +348,8 @@ object BehaviorGroupData {
                   maybeGitSHA: Option[String],
                   maybeExportId: Option[String],
                   maybeAuthor: Option[UserData],
-                  maybeLinkedGithubRepoData: Option[LinkedGithubRepoData]
+                  maybeLinkedGithubRepoData: Option[LinkedGithubRepoData],
+                  maybeCreatedAt: Option[OffsetDateTime]
                 ): BehaviorGroupData = {
     BehaviorGroupData(
       id = None,
@@ -352,7 +366,7 @@ object BehaviorGroupData {
       requiredSimpleTokenApis,
       maybeGitSHA,
       maybeExportId,
-      createdAt = Some(OffsetDateTime.now),
+      createdAt = maybeCreatedAt,
       author = None,
       deployment = None,
       metaData = None,

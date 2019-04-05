@@ -27,6 +27,7 @@ case class GithubSingleBehaviorGroupFetcher(
        |      target {
        |        ... on Commit {
        |        	oid
+       |          authoredDate
        |        }
        |      }
        |    }
@@ -91,7 +92,8 @@ case class GithubSingleBehaviorGroupFetcher(
         repoData \ "object" \ "entries" match {
           case JsDefined(_) => {
             val maybeGitSHA = (repoData \ "ref" \ "target" \ "oid").asOpt[String]
-            GithubBehaviorGroupDataBuilder((repoData \ "object").get, team, owner, repoName, maybeBranch, maybeGitSHA, dataService).
+            val maybeTimestamp = (repoData \ "ref" \ "target" \ "authoredDate").asOpt[String]
+            GithubBehaviorGroupDataBuilder((repoData \ "object").get, team, owner, repoName, maybeBranch, maybeGitSHA, maybeTimestamp, dataService).
               build.
               copyForImportableForTeam(team, maybeExistingGroup)
           }

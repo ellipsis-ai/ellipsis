@@ -30,6 +30,7 @@ case class GithubSingleCommitFetcher(
       |  repository(name:"$repoName", owner:"$owner") {
       |     object(expression:"$oid") {
       |     	... on Commit {
+      |         authoredDate
       |         tree {
       |           entries {
       |             name
@@ -88,9 +89,10 @@ case class GithubSingleCommitFetcher(
         )
       }
       case _ => {
+        val maybeTimestamp = (repoData \ "object" \ "authoredDate").asOpt[String]
         repoData \ "object" \ "tree" \ "entries" match {
           case JsDefined(_) => {
-            GithubBehaviorGroupDataBuilder((repoData \ "object" \ "tree").get, team, owner, repoName, maybeBranch, Some(oid), dataService).
+            GithubBehaviorGroupDataBuilder((repoData \ "object" \ "tree").get, team, owner, repoName, maybeBranch, Some(oid), maybeTimestamp, dataService).
               build.
               copyForImportableForTeam(team, maybeExistingGroup)
           }
