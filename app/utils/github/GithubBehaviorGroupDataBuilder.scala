@@ -1,6 +1,7 @@
 package utils.github
 
 import java.time.OffsetDateTime
+import java.time.format.DateTimeParseException
 
 import json.Formatting._
 import json._
@@ -15,6 +16,7 @@ case class GithubBehaviorGroupDataBuilder(
                                            repoName: String,
                                            maybeBranch: Option[String],
                                            maybeSHA: Option[String],
+                                           maybeTimestamp: Option[String],
                                            dataService: DataService
                                         ) {
 
@@ -97,6 +99,16 @@ case class GithubBehaviorGroupDataBuilder(
     }
   }
 
+  lazy val maybeCreatedAt: Option[OffsetDateTime] = {
+    maybeTimestamp.flatMap { timestamp =>
+      try {
+        Some(OffsetDateTime.parse(timestamp))
+      } catch {
+        case _: DateTimeParseException => None
+      }
+    }
+  }
+
   def build: BehaviorGroupData = {
     val entries = data \ "entries"
     val maybeConfig = for {
@@ -132,7 +144,8 @@ case class GithubBehaviorGroupDataBuilder(
       maybeSHA,
       maybeExportId,
       maybeAuthor = None,
-      Some(LinkedGithubRepoData(owner, repoName, maybeBranch))
+      Some(LinkedGithubRepoData(owner, repoName, maybeBranch)),
+      maybeCreatedAt
     )
   }
 
