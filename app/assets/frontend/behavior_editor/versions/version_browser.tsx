@@ -430,16 +430,14 @@ class VersionBrowser extends React.Component<Props, State> {
 
   renderSelectableVersion() {
     return (
-      <Collapsible revealWhen={!this.state.isChangingBranchName}>
-        <div className="bg-lightest border-bottom container container-wide ptm pbs">
-          <span className="align-button align-button-s align-t type-label mrs">Select version to compare:</span>
-          <Select className="align-b form-select-s mrs mbs" value={this.state.selectedMenuItem}
-            onChange={this.onClickMenuItem}>
-            {this.renderVersionOptions()}
-          </Select>
-          {this.renderSelectedVersionNote()}
-        </div>
-      </Collapsible>
+      <div className="bg-lightest border-bottom container container-wide ptm pbs">
+        <span className="align-button align-button-s align-t type-label mrs">Select version to compare:</span>
+        <Select className="align-b form-select-s mrs mbs" value={this.state.selectedMenuItem}
+          onChange={this.onClickMenuItem}>
+          {this.renderVersionOptions()}
+        </Select>
+        {this.renderSelectedVersionNote()}
+      </div>
     );
   }
 
@@ -654,35 +652,37 @@ class VersionBrowser extends React.Component<Props, State> {
 
   renderGithubBranchInput() {
     return (
-      <Collapsible revealWhen={this.state.isChangingBranchName} onChange={this.onBranchNameSectionToggle}>
-        <div className="ptm">
-          <span className="align-button align-button-s type-label mrs mbs">Enter branch name:</span>
-          <FormInput
-            ref={(el) => this.newBranchInput = el}
-            className="form-input-borderless form-input-s type-monospace width-15 mrs mbs"
-            placeholder="Branch (e.g. master)"
-            onChange={this.onBranchChange}
-            onEnterKey={this.onBranchEnterKey}
-            value={this.getCurrentBranch()}
-          />
-          <DynamicLabelButton
-            className="button-shrink button-s mrs mbs"
-            onClick={this.doBranchChange}
-            disabledWhen={this.state.isFetching || !this.getCurrentBranch() || this.isBranchUnchanged()}
-            labels={[{
-              text: "Select branch",
-              displayWhen: !this.state.isFetching
-            }, {
-              text: "Updating…",
-              displayWhen: this.state.isFetching
-            }]}
-          />
-          <Button
-            className="button-shrink button-s mbs"
-            onClick={this.cancelChangeBranch}
-          >Cancel</Button>
-        </div>
-      </Collapsible>
+      <div className="position-absolute position-top-left position-top-right position-z-above">
+        <Collapsible revealWhen={this.state.isChangingBranchName} onChange={this.onBranchNameSectionToggle}>
+          <div className="bg-white border-bottom ptm pbs container container-wide">
+            <span className="align-button align-button-s type-label mrs mbs">Enter branch name:</span>
+            <FormInput
+              ref={(el) => this.newBranchInput = el}
+              className="form-input-borderless form-input-s type-monospace width-15 mrs mbs"
+              placeholder="Branch (e.g. master)"
+              onChange={this.onBranchChange}
+              onEnterKey={this.onBranchEnterKey}
+              value={this.getCurrentBranch()}
+            />
+            <DynamicLabelButton
+              className="button-shrink button-s mrs mbs"
+              onClick={this.doBranchChange}
+              disabledWhen={this.state.isFetching || !this.getCurrentBranch() || this.isBranchUnchanged()}
+              labels={[{
+                text: "Select branch",
+                displayWhen: !this.state.isFetching
+              }, {
+                text: "Updating…",
+                displayWhen: this.state.isFetching
+              }]}
+            />
+            <Button
+              className="button-shrink button-s mbs"
+              onClick={this.cancelChangeBranch}
+            >Cancel</Button>
+          </div>
+        </Collapsible>
+      </div>
     );
   }
 
@@ -819,7 +819,7 @@ class VersionBrowser extends React.Component<Props, State> {
               </div>
             </Collapsible>
 
-            <div className="bg-light border-bottom pvm container container-wide">
+            <div className={`bg-white pvm container container-wide border-bottom ${this.state.isChangingBranchName ? "border-light" : ""}`}>
               <div className="display-inline-block mrxl">
                 <GithubRepoActions
                   linkedGithubRepo={this.props.linkedGithubRepo}
@@ -838,9 +838,10 @@ class VersionBrowser extends React.Component<Props, State> {
               <div>
                 {this.renderGithubStatus()}
               </div>
-              <div>
-                {hasGithubRepo ? this.renderGithubBranchInput() : null}
-              </div>
+            </div>
+
+            <div className="position-relative">
+              {hasGithubRepo ? this.renderGithubBranchInput() : null}
             </div>
 
             {this.renderVersionSelector()}
