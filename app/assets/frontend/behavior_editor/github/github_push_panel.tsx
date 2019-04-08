@@ -20,7 +20,8 @@ type Props = {
   linked: Option<LinkedGithubRepo>,
   onPushBranch: (info: LastSavedInfo) => void,
   onDoneClick: () => void,
-  csrfToken: string
+  csrfToken: string,
+  localIsOlder: boolean
 };
 
 type State = {
@@ -145,7 +146,9 @@ class GithubPushPanel extends React.Component<Props, State> {
       return (
         <div>
 
-          <h4 className="mtn">Push current version to GitHub</h4>
+          <h4 className="mtn">{this.props.localIsOlder ?
+            "Revert GitHub to current version (force push)" : "Push current version to GitHub"
+          }</h4>
 
           <div className="columns columns-elastic">
             <div className="column-group">

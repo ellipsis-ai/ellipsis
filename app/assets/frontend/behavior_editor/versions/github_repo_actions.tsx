@@ -61,10 +61,8 @@ class GithubRepoActions extends React.Component<Props> {
     if (this.props.linkedGithubRepo && this.props.isLinkedToGithub) {
       return (
         <div>
-            <span className="mrm">
-              <span className="type-label mrs">GitHub repository:</span>
-              <GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo} />
-            </span>
+          <span className="type-label">GitHub repository: </span>
+          <span className="mrm"><GithubOwnerRepoReadonly linked={this.props.linkedGithubRepo} /></span>
           {this.renderChangeRepoButton()}
         </div>
       );
@@ -79,7 +77,7 @@ class GithubRepoActions extends React.Component<Props> {
 
   render() {
     return (
-      <div className="mtl">
+      <div>
         {this.renderGithubActions()}
       </div>
     );

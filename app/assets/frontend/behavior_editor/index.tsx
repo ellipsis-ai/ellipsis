@@ -60,7 +60,6 @@ import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import * as debounce from 'javascript-debounce';
 import Sort from '../lib/sort';
 import DeploymentStatus from "./deployment_status";
-import GithubRepoActions from "./versions/github_repo_actions";
 import {MOBILE_MAX_WIDTH} from "../lib/constants";
 import DataTypeDuplicateFieldsNotificationData from "../models/notifications/data_type_duplicate_fields_notification_data";
 import DataTypeMissingFieldsNotificationData from "../models/notifications/data_type_missing_fields_notification_data";
@@ -2916,22 +2915,9 @@ class BehaviorEditor extends React.Component<Props, State> {
     );
   }
 
-  renderGithubRepoActions() {
-    return (
-      <GithubRepoActions
-        linkedGithubRepo={this.props.linkedGithubRepo}
-        isLinkedToGithub={this.props.isLinkedToGithub}
-        currentGroupIsModified={this.isModified()}
-        currentGroup={this.getBehaviorGroup()}
-        currentSelectedId={this.getSelectedId()}
-        onChangeGithubRepo={this.toggleChangeGithubRepo}
-      />
-    );
-  }
-
-  renderNavActions() {
+ renderNavActions() {
     if (this.state.versionBrowserOpen) {
-      this.props.onRenderNavActions(this.renderGithubRepoActions());
+      this.props.onRenderNavActions(null);
     } else {
       this.props.onRenderNavActions(this.renderDeployStatus());
     }
