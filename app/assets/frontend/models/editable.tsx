@@ -13,7 +13,6 @@ export interface EditableJson {
   description?: Option<string>;
   functionBody: string;
   exportId?: Option<string>;
-  editorScrollPosition?: Option<number>;
   createdAt?: Option<Timestamp>;
 }
 
@@ -29,7 +28,6 @@ abstract class Editable implements EditableInterface {
     readonly description: Option<string>,
     readonly functionBody: string,
     readonly exportId: Option<string>,
-    readonly editorScrollPosition: Option<number>,
     readonly createdAt: Option<Timestamp>
   ) {
       Object.defineProperties(this, {
@@ -41,7 +39,6 @@ abstract class Editable implements EditableInterface {
         description: { value: description, enumerable: true },
         functionBody: { value: functionBody, enumerable: true },
         exportId: { value: exportId, enumerable: true },
-        editorScrollPosition: { value: editorScrollPosition, enumerable: true },
         createdAt: {value: createdAt, enumerable: true }
       });
   }
@@ -144,9 +141,7 @@ abstract class Editable implements EditableInterface {
 
     // Used by JSON.stringify for submitting data to the server
     toJSON(): Editable {
-      return this.clone({
-        editorScrollPosition: null
-      });
+      return this;
     }
 
     abstract forEqualityComparison(): Editable

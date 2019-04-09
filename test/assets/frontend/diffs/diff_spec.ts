@@ -28,7 +28,7 @@ const normalResponseType = "Normal";
 
 const privateResponseType = "Private";
 
-const behaviorVersion1: BehaviorVersionJson = Object.freeze({
+const behaviorVersion1: BehaviorVersionJson = {
   "id": "abcdef",
   teamId: "1",
   "name": "First name",
@@ -38,7 +38,6 @@ const behaviorVersion1: BehaviorVersionJson = Object.freeze({
   "behaviorId": behaviorId,
   "functionBody": "use strict;",
   "responseTemplate": "A template",
-  "params": [],
   "triggers": [{
     "text": "B",
     "requiresMention": false,
@@ -62,10 +61,9 @@ const behaviorVersion1: BehaviorVersionJson = Object.freeze({
     dataTypeConfig: null
   },
   "createdAt": 1468338136532,
-  isNew: false,
-  editorScrollPosition: null
-});
-const behaviorVersion2: BehaviorVersionJson = Object.freeze({
+  isNew: false
+};
+const behaviorVersion2: BehaviorVersionJson = {
   "id": "abcdef",
   teamId: "1",
   "name": "Second name",
@@ -75,7 +73,6 @@ const behaviorVersion2: BehaviorVersionJson = Object.freeze({
   "behaviorId": behaviorId,
   "functionBody": "use strict; // so strict",
   "responseTemplate": "Another template",
-  "params": [],
   "triggers": [{
     "text": "B",
     "requiresMention": true,
@@ -99,11 +96,10 @@ const behaviorVersion2: BehaviorVersionJson = Object.freeze({
     dataTypeConfig: null
   },
   "createdAt": 1468359271138,
-  isNew: false,
-  editorScrollPosition: null
-});
+  isNew: false
+};
 
-const libraryVersion1: LibraryVersionJson = Object.freeze({
+const libraryVersion1: LibraryVersionJson = {
   id: 'abcdef',
   name: 'some-lib',
   description: 'A library',
@@ -111,13 +107,12 @@ const libraryVersion1: LibraryVersionJson = Object.freeze({
   groupId: groupId,
   teamId: teamId,
   libraryId: libraryId,
-  editorScrollPosition: 0,
   isNew: false,
   exportId: 'abcdef',
   createdAt: Date.now()
-});
+};
 
-const libraryVersion2: LibraryVersionJson = Object.freeze({
+const libraryVersion2: LibraryVersionJson = {
   id: 'abcdef',
   name: 'some-lib-revised',
   description: 'A library (revised)',
@@ -125,13 +120,12 @@ const libraryVersion2: LibraryVersionJson = Object.freeze({
   groupId: groupId,
   teamId: teamId,
   libraryId: libraryId,
-  editorScrollPosition: 10,
   isNew: false,
   exportId: 'abcdef',
   createdAt: Date.now()
-});
+};
 
-const actionInput1: InputJson = Object.freeze({
+const actionInput1: InputJson = {
   name: 'clown',
   question: 'what drives the car?',
   paramType: {
@@ -145,9 +139,9 @@ const actionInput1: InputJson = Object.freeze({
   isSavedForUser: true,
   inputId: inputId,
   exportId: inputId
-});
+};
 
-const actionInputChanged: InputJson = Object.freeze({
+const actionInputChanged: InputJson = {
   name: 'clown',
   question: 'who drives the car?',
   paramType: {
@@ -161,9 +155,9 @@ const actionInputChanged: InputJson = Object.freeze({
   isSavedForUser: false,
   inputId: inputId,
   exportId: inputId
-});
+};
 
-const actionInput2: InputJson = Object.freeze({
+const actionInput2: InputJson = {
   name: 'somethingElse',
   question: 'and now for something?',
   paramType: {
@@ -177,17 +171,17 @@ const actionInput2: InputJson = Object.freeze({
   isSavedForUser: false,
   inputId: inputId2,
   exportId: inputId2
-});
+};
 
-const requiredAWSConfig1: RequiredAWSConfigJson = Object.freeze({
+const requiredAWSConfig1: RequiredAWSConfigJson = {
   id: 'aws123',
   exportId: requiredAWSConfigId,
   apiId: 'aws',
   nameInCode: 'prod',
   config: null
-});
+};
 
-const requiredAWSConfig2: RequiredAWSConfigJson = Object.freeze({
+const requiredAWSConfig2: RequiredAWSConfigJson = {
   id: 'aws123',
   exportId: requiredAWSConfigId,
   apiId: 'aws',
@@ -196,66 +190,65 @@ const requiredAWSConfig2: RequiredAWSConfigJson = Object.freeze({
     id: 'aws-prod',
     displayName: 'AWS Prod'
   }
-});
+};
 
-const requiredOAuth1Config1: RequiredOAuthApplicationJson = Object.freeze({
+const requiredOAuth1Config1: RequiredOAuthApplicationJson = {
   id: 'trello123',
   exportId: requiredTrelloConfigId,
   apiId: 'trello',
   nameInCode: 'trello',
   config: null,
   recommendedScope: 'read'
-});
+};
 
-const requiredOAuth2Config1: RequiredOAuthApplicationJson = Object.freeze({
+const requiredOAuth2Config1: RequiredOAuthApplicationJson = {
   id: 'github123',
   exportId: requiredGithubConfigId,
   apiId: 'github',
   nameInCode: 'github',
   config: null,
   recommendedScope: 'repo'
-});
+};
 
-const requiredOAuth2Config2: RequiredOAuthApplicationJson = Object.freeze({
+const requiredOAuth2Config2: RequiredOAuthApplicationJson = {
   id: 'github123',
   exportId: requiredGithubConfigId,
   apiId: 'github',
   nameInCode: 'githubReadonly',
   config: null,
   recommendedScope: 'repo:readonly'
-});
+};
 
-const requiredOAuth2Config3: RequiredOAuthApplicationJson = Object.freeze({
+const requiredOAuth2Config3: RequiredOAuthApplicationJson = {
   id: 'github12345',
   exportId: 'requiredGithubabcdef',
   apiId: 'github',
   nameInCode: 'githubReadwrite',
   config: null,
   recommendedScope: 'repo'
-});
+};
 
-const requiredSimpleTokenApi1: RequiredSimpleTokenApiJson = Object.freeze({
+const requiredSimpleTokenApi1: RequiredSimpleTokenApiJson = {
   id: 'pivotalTracker123',
   exportId: requiredPivotalTrackerConfigId,
   apiId: 'pivotalTracker',
   nameInCode: 'pivotalTracker',
-});
+};
 
-const requiredSimpleTokenApi2: RequiredSimpleTokenApiJson = Object.freeze({
+const requiredSimpleTokenApi2: RequiredSimpleTokenApiJson = {
   id: 'pivotalTracker123',
   exportId: requiredPivotalTrackerConfigId,
   apiId: 'pivotalTracker',
   nameInCode: 'pivotalTracker2',
-});
+};
 
-const behaviorGroupVersion1: BehaviorGroupJson = Object.freeze({
+const behaviorGroupVersion1: BehaviorGroupJson = {
   id: "1",
   teamId: "1",
   createdAt: Date.now(),
   name: "Some skill",
   icon: "🚀",
   description: null,
-  groupId: 'group123456',
   behaviorVersions: [behaviorVersion1],
   requiredAWSConfigs: [requiredAWSConfig1],
   requiredOAuthApiConfigs: [requiredOAuth1Config1, requiredOAuth2Config1, requiredOAuth2Config3],
@@ -269,16 +262,15 @@ const behaviorGroupVersion1: BehaviorGroupJson = Object.freeze({
   deployment: null,
   metaData: null,
   isManaged: false
-});
+};
 
-const behaviorGroupVersion2: BehaviorGroupJson = Object.freeze({
+const behaviorGroupVersion2: BehaviorGroupJson = {
   id: "1",
   teamId: "1",
   createdAt: Date.now(),
   name: "Some updated skill",
   icon: null,
   description: "With a description",
-  groupId: 'group123456',
   behaviorVersions: [behaviorVersion2],
   requiredAWSConfigs: [requiredAWSConfig2],
   requiredOAuthApiConfigs: [requiredOAuth1Config1, requiredOAuth2Config2, requiredOAuth2Config3],
@@ -292,7 +284,7 @@ const behaviorGroupVersion2: BehaviorGroupJson = Object.freeze({
   deployment: null,
   metaData: null,
   isManaged: false
-});
+};
 
 const publishedMyCalendar: BehaviorGroup = BehaviorGroup.fromJson({
   "teamId": "v-i65oxZQDiBsZuXceONmA",

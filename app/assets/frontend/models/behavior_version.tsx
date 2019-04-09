@@ -47,8 +47,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
     readonly config: BehaviorConfig,
     readonly exportId: Option<string>,
     readonly createdAt: Option<Timestamp>,
-    readonly isNew: Option<boolean>,
-    readonly editorScrollPosition: Option<number>
+    readonly isNew: Option<boolean>
   ) {
       super(
         id,
@@ -59,7 +58,6 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         description,
         functionBody,
         exportId,
-        editorScrollPosition,
         createdAt
       );
 
@@ -358,8 +356,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
         props.config,
         props.exportId,
         props.createdAt,
-        props.isNew,
-        props.editorScrollPosition
+        props.isNew
       );
     }
 
