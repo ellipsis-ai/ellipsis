@@ -29,6 +29,7 @@ type Props = {
   csrfToken: string,
   currentGroup: BehaviorGroup,
   currentGroupIsModified: boolean,
+  currentGroupTimestamp: Option<Timestamp>,
   currentUserId: string,
   currentSelectedId?: Option<string>,
   versions: Array<BehaviorGroup>,
@@ -461,8 +462,8 @@ class VersionBrowser extends React.Component<Props, State> {
   }
 
   renderCurrentVersionNote() {
-    if (!this.props.currentGroupIsModified && this.props.currentGroup.createdAt) {
-      return this.renderNoteForVersion(Formatter.formatTimestampShort(this.props.currentGroup.createdAt));
+    if (!this.props.currentGroupIsModified && this.props.currentGroupTimestamp) {
+      return this.renderNoteForVersion(Formatter.formatTimestampShort(this.props.currentGroupTimestamp));
     } else {
       return null;
     }
@@ -556,7 +557,7 @@ class VersionBrowser extends React.Component<Props, State> {
         <span>Create new {branchTitle} on GitHub…</span>
       );
     } else if (githubIsNewer) {
-      const currentDate = this.props.currentGroup.createdAt ? Formatter.formatTimestampShort(this.props.currentGroup.createdAt) : "current version";
+      const currentDate = this.props.currentGroupTimestamp ? Formatter.formatTimestampShort(this.props.currentGroupTimestamp) : "current version";
       return (
         <span>Revert {branchTitle} to {currentDate}…</span>
       );
@@ -702,7 +703,7 @@ class VersionBrowser extends React.Component<Props, State> {
     const selectedVersion = this.getSelectedVersion();
     const selectedVersionTimestamp = selectedVersion ? selectedVersion.createdAt : null;
     const selectedVersionDate = selectedVersionTimestamp ? new Date(selectedVersionTimestamp) : null;
-    const currentVersionDate = this.props.currentGroup.createdAt ? new Date(this.props.currentGroup.createdAt) : null;
+    const currentVersionDate = this.props.currentGroupTimestamp ? new Date(this.props.currentGroupTimestamp) : null;
     return Boolean(selectedVersionDate && currentVersionDate && Number(selectedVersionDate) > Number(currentVersionDate));
   }
 
