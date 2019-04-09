@@ -22,7 +22,6 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
     readonly libraryId: string,
     readonly exportId: Option<string>,
     readonly isNew: Option<boolean>,
-    readonly editorScrollPosition: Option<number>,
     readonly createdAt: Option<Timestamp>
   ) {
       super(
@@ -34,7 +33,6 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
         description,
         functionBody,
         exportId,
-        editorScrollPosition,
         createdAt
       );
 
@@ -143,7 +141,6 @@ class LibraryVersion extends Editable implements Diffable, LibraryVersionInterfa
         props.libraryId,
         props.exportId,
         props.isNew,
-        props.editorScrollPosition,
         props.createdAt
       );
     }

@@ -179,20 +179,19 @@ describe('BehaviorVersion', () => {
       const version2 = version1.clone({ name: "Thing2" });
       expect(version1.isIdenticalToVersion(version2)).toBe(false);
     });
-    it('finds two versions equal with different editor scroll positions and timestamps', () => {
-      const version1 = BehaviorVersion.fromJson(behaviorVersionTask1).clone({ editorScrollPosition: 0, createdAt: 1450000000000 });
-      const version2 = version1.clone({ editorScrollPosition: 100, createdAt: 1451000000000 });
+    it('finds two versions equal with different timestamps', () => {
+      const version1 = BehaviorVersion.fromJson(behaviorVersionTask1).clone({ createdAt: 1450000000000 });
+      const version2 = version1.clone({ createdAt: 1451000000000 });
       expect(version1.isIdenticalToVersion(version2)).toBe(true);
     });
   });
 
   describe('toJSON', () => {
-    it('nulls out createdAt and editorScrollPosition from JSON stringify for save/export', () => {
-      const version = BehaviorVersion.fromJson(behaviorVersionTask1).clone({ editorScrollPosition: 100 });
+    it('nulls out createdAt from JSON stringify for save/export', () => {
+      const version = BehaviorVersion.fromJson(behaviorVersionTask1).clone({ createdAt: 1450000000000 });
       const versionJson = JSON.stringify(version);
       const jsonObjectProps = JSON.parse(versionJson);
       expect(jsonObjectProps.createdAt).toBe(null);
-      expect(jsonObjectProps.editorScrollPosition).toBe(null);
     });
   });
 
