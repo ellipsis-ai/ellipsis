@@ -132,6 +132,10 @@ interface ActiveDropdown {
   name: string
 }
 
+interface EditorScrollPosition {
+  [editableId: string]: number | undefined
+}
+
 interface State {
   group: BehaviorGroup
   selectedId: Option<string>
@@ -182,6 +186,7 @@ class BehaviorEditor extends React.Component<Props, State> {
   behaviorForm: Option<HTMLFormElement>;
   envVariableSetterPanel: Option<EnvVariableSetter>;
   checkForUpdateTimer: number | undefined;
+  scrollPosition: EditorScrollPosition;
 
   constructor(props: Props) {
     super(props);
@@ -191,6 +196,10 @@ class BehaviorEditor extends React.Component<Props, State> {
       this.resetNotificationsImmediately();
     }, 1000);
 
+    this.scrollPosition = {};
+    if (this.props.selectedId) {
+      this.scrollPosition[this.props.selectedId] = window.scrollY;
+    }
     this.state = {
       group: this.props.group,
       selectedId: this.props.selectedId,
@@ -390,6 +399,14 @@ class BehaviorEditor extends React.Component<Props, State> {
       return this.state.group;
     } else {
       return this.props.group;
+    }
+  }
+
+  getCorrectedGroupTimestamp(): Option<Timestamp> {
+    if (this.isModified()) {
+      return this.getBehaviorGroup().createdAt;
+    } else {
+      return this.props.group.createdAt;
     }
   }
 
@@ -900,10 +917,9 @@ class BehaviorEditor extends React.Component<Props, State> {
   }
 
   updateBehaviorScrollPosition(): void {
-    if (this.getSelected()) {
-      this.setEditableProps({
-        editorScrollPosition: window.scrollY
-      });
+    const selectedId = this.getSelectedId();
+    if (selectedId) {
+      this.scrollPosition[selectedId] = window.scrollY;
     }
   }
 
@@ -2370,8 +2386,8 @@ class BehaviorEditor extends React.Component<Props, State> {
   }
 
   getEditorScrollPosition(): number {
-    const selected = this.getSelected();
-    return selected && selected.editorScrollPosition || 0;
+    const selectedId = this.getSelectedId();
+    return selectedId && this.scrollPosition[selectedId] || 0;
   }
 
   onSelect(groupId: Option<string>, editableId: Option<string>, optionalCallback?: () => void) {
@@ -2866,6 +2882,7 @@ class BehaviorEditor extends React.Component<Props, State> {
         csrfToken={this.props.csrfToken}
         currentGroup={this.getBehaviorGroup()}
         currentGroupIsModified={this.isModified()}
+        currentGroupTimestamp={this.getCorrectedGroupTimestamp()}
         currentUserId={this.props.userId}
         currentSelectedId={this.getSelectedId()}
         versions={this.getVersions()}
