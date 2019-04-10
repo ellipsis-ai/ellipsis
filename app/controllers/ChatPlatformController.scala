@@ -180,8 +180,15 @@ trait ChatPlatformController {
 
     def buildFor(actionChoice: ActionChoice, info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[ActionChoicePermission] = {
       for {
+        user <- dataService.users.ensureUserFor(info.loginInfo, info.otherLoginInfos, botProfile.teamId)
         maybeOriginatingBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(actionChoice.originatingBehaviorVersionId)
-        maybeGroupVersion <- Future.successful(maybeOriginatingBehaviorVersion.map(_.groupVersion))
+        maybeOtherBehaviorGroup <- actionChoice.skillId.map { otherSkillId =>
+          dataService.behaviorGroups.find(otherSkillId, user)
+        }.getOrElse(Future.successful(None))
+        maybeOtherBehaviorGroupVersion <- maybeOtherBehaviorGroup.map { otherBehaviorGroup =>
+          dataService.behaviorGroups.maybeCurrentVersionFor(otherBehaviorGroup)
+        }.getOrElse(Future.successful(None))
+        maybeGroupVersion <- Future.successful(maybeOtherBehaviorGroupVersion.orElse(maybeOriginatingBehaviorVersion.map(_.groupVersion)))
         maybeActiveGroupVersion <- maybeGroupVersion.map { groupVersion =>
           dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(groupVersion.group, info.contextName, info.channelId)
         }.getOrElse(Future.successful(None))

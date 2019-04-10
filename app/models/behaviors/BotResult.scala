@@ -52,7 +52,8 @@ case class SkillCodeActionChoice(
                                    args: Option[Seq[ActionArg]],
                                    allowOthers: Option[Boolean],
                                    allowMultipleSelections: Option[Boolean],
-                                   quiet: Option[Boolean]
+                                   quiet: Option[Boolean],
+                                   skillId: Option[String]
                                ) extends WithActionArgs {
   def toActionChoiceWith(user: User, behaviorVersion: BehaviorVersion): ActionChoice = {
     ActionChoice(
@@ -63,7 +64,8 @@ case class SkillCodeActionChoice(
       allowMultipleSelections,
       user.id,
       behaviorVersion.id,
-      quiet
+      quiet,
+      skillId
     )
   }
 }
@@ -76,7 +78,8 @@ case class ActionChoice(
                          allowMultipleSelections: Option[Boolean],
                          userId: String,
                          originatingBehaviorVersionId: String,
-                         quiet: Option[Boolean]
+                         quiet: Option[Boolean],
+                         skillId: Option[String]
                        ) extends WithActionArgs {
 
   val areOthersAllowed: Boolean = allowOthers.contains(true)

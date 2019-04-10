@@ -78,8 +78,8 @@ class ExecutionInfoSpec extends PlaySpec {
         """.stripMargin
       ))
       info.choices mustEqual Seq(
-        SkillCodeActionChoice("A label", "Foo", None, None, None, None),
-        SkillCodeActionChoice("Another label", "Bar", Some(Seq(ActionArg("foo", "bar"))), Some(true), Some(true), Some(true))
+        SkillCodeActionChoice("A label", "Foo", None, None, None, None, None),
+        SkillCodeActionChoice("Another label", "Bar", Some(Seq(ActionArg("foo", "bar"))), Some(true), Some(true), Some(true), None)
       )
       info.errors mustBe empty
     }

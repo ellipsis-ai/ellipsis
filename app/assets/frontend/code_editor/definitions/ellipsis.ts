@@ -55,6 +55,9 @@ declare namespace ellipsis {
     /** Whether to provide feedback about who triggered this action in a channel */
     quiet?: boolean
     
+    /** ID of another skill on the same team */
+    skillId?: string
+    
   }
 
   export interface InlineFileAttachment {
