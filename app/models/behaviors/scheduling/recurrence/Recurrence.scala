@@ -66,6 +66,7 @@ sealed trait Recurrence {
   }
   def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = when.withSecond(0).withNano(0)
   def displayString: String
+  def couldRunAt(when: OffsetDateTime): Boolean
 
   def timesToRunString: String = {
     maybeTotalTimesToRun.map { timesToRun =>
@@ -134,6 +135,8 @@ case class Minutely(id: String, frequency: Int, timesHasRun: Int, maybeTotalTime
   protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime = {
     withStandardAdjustments(start)
   }
+
+  def couldRunAt(when: OffsetDateTime): Boolean = true
 }
 
 object Minutely {
@@ -201,6 +204,10 @@ case class Hourly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesT
     } else {
       withAdjustments(start)
     }
+  }
+
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    when.getMinute == minuteOfHour
   }
 
   val typeName = Hourly.recurrenceType
@@ -305,6 +312,9 @@ case class Daily(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesTo
   val typeName = Daily.recurrenceType
   override val maybeTimeOfDay = Some(timeOfDay)
 
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    when.getMinute == timeOfDay.getMinute && when.getHour == timeOfDay.getHour
+  }
 }
 
 object Daily {
@@ -433,6 +443,10 @@ case class Weekly(
     }
   }
 
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    when.getMinute == timeOfDay.getMinute && when.getHour == timeOfDay.getHour && daysOfWeek.contains(when.getDayOfWeek)
+  }
+
   val typeName = Weekly.recurrenceType
   override val maybeTimeOfDay = Some(timeOfDay)
 
@@ -530,6 +544,10 @@ case class MonthlyByDayOfMonth(id: String, frequency: Int, timesHasRun: Int, may
     }
   }
 
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    when.getMinute == timeOfDay.getMinute && when.getHour == timeOfDay.getHour && when.getDayOfMonth == dayOfMonth
+  }
+
   val typeName = MonthlyByDayOfMonth.recurrenceType
   override val maybeDayOfMonth = Some(dayOfMonth)
   override val maybeTimeOfDay = Some(timeOfDay)
@@ -605,6 +623,11 @@ case class MonthlyByNthDayOfWeek(id: String, frequency: Int, timesHasRun: Int, m
     } else {
       targetInMonthMatching(start)
     }
+  }
+
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    val target = targetInMonthMatching(when)
+    when.getMinute == timeOfDay.getMinute && when.getHour == timeOfDay.getHour && when.getDayOfMonth == target.getDayOfMonth
   }
 
   val typeName = MonthlyByNthDayOfWeek.recurrenceType
@@ -693,6 +716,10 @@ case class Yearly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesT
     } else {
       withAdjustments(start)
     }
+  }
+
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    when.getMinute == timeOfDay.getMinute && when.getHour == timeOfDay.getHour && when.getDayOfMonth == dayOfMonth && when.getMonthValue == month
   }
 
   val typeName = Yearly.recurrenceType

@@ -109,6 +109,7 @@ class ScheduledItemEditor extends React.Component<Props> {
             <RecurrenceEditor
               onChange={this.updateRecurrence}
               recurrence={scheduledAction.recurrence}
+              scheduledAction={scheduledAction}
               teamTimeZone={this.props.teamTimeZone}
               teamTimeZoneName={this.props.teamTimeZoneName}
               csrfToken={this.props.csrfToken}
