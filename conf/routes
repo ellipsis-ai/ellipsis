@@ -186,6 +186,8 @@ DELETE   /api/v1/inputs/:inputName/team_saved_answers/:token @controllers.api.AP
 GET         /api/v1/skill_editing_context/:token      @controllers.api.APIController.getSkillEditingContextFor(token: String, skillId: Option[String])
 #NOCSRF
 POST        /api/v1/skill_versions                    @controllers.api.APIController.saveSkillVersion
+#NOCSRF
+POST        /api/v1/skill_version_deployments         @controllers.api.APIController.deploySkillVersion
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                             @controllers.RemoteAssets.getAsset(path="/public", file: Asset)

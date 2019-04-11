@@ -752,19 +752,8 @@ self.MonacoEnvironment = {
       formWithErrors => {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
-      info => {
-        for {
-          maybeGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
-          maybeCurrentGroupVersion <- maybeGroup.map { group =>
-            dataService.behaviorGroups.maybeCurrentVersionFor(group)
-          }.getOrElse(Future.successful(None))
-          maybeDeployment <- maybeCurrentGroupVersion.map { groupVersion =>
-            dataService.behaviorGroupDeployments.deploy(groupVersion, user.id, None).map(Some(_))
-          }.getOrElse(Future.successful(None))
-          maybeDeploymentData <- maybeDeployment.map { deployment =>
-            BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
-          }.getOrElse(Future.successful(None))
-        } yield maybeDeploymentData.map { deployment =>
+      info => dataService.behaviorGroups.deploy(info.behaviorGroupId, user).map { maybeDeploymentData =>
+        maybeDeploymentData.map { deployment =>
           Ok(Json.toJson(deployment))
         }.getOrElse {
           NotFound(s"Couldn't find skill with ID: ${info.behaviorGroupId}")

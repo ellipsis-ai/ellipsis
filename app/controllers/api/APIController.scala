@@ -500,7 +500,7 @@ class APIController @Inject() (
     )(SaveSkillVersionInfo.apply)(SaveSkillVersionInfo.unapply)
   )
 
-  def saveSkillVersion= Action.async { implicit request =>
+  def saveSkillVersion = Action.async { implicit request =>
     saveSkillVersionForm.bindFromRequest.fold(
       formWithErrors => Future.successful(responder.resultForFormErrors(formWithErrors)),
       info => {
@@ -512,6 +512,33 @@ class APIController @Inject() (
         } yield {
           maybeResultJson.map { resultJson =>
             Ok(resultJson)
+          }.getOrElse(NotFound(""))
+        }
+      }
+    )
+  }
+
+  case class DeploySkillVersionInfo(skillId: String, token: String) extends ApiMethodInfo
+
+  private val deploySkillVersionForm = Form(
+    mapping(
+      "skillId" -> nonEmptyText,
+      "token" -> nonEmptyText
+    )(DeploySkillVersionInfo.apply)(DeploySkillVersionInfo.unapply)
+  )
+
+  def deploySkillVersion = Action.async { implicit request =>
+    deploySkillVersionForm.bindFromRequest.fold(
+      formWithErrors => Future.successful(responder.resultForFormErrors(formWithErrors)),
+      info => {
+        for {
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
+          maybeResult <- context.maybeUser.map { user =>
+            dataService.behaviorGroups.deploy(info.skillId, user)
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeResult.map { result =>
+            Ok(Json.toJson(result))
           }.getOrElse(NotFound(""))
         }
       }

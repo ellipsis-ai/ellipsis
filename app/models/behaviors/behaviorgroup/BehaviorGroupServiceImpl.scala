@@ -236,4 +236,19 @@ class BehaviorGroupServiceImpl @Inject() (
     }
   }
 
+  def deploy(behaviorGroupId: String, user: User): Future[Option[BehaviorGroupDeploymentData]] = {
+    for {
+      maybeGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
+      maybeCurrentGroupVersion <- maybeGroup.map { group =>
+        dataService.behaviorGroups.maybeCurrentVersionFor(group)
+      }.getOrElse(Future.successful(None))
+      maybeDeployment <- maybeCurrentGroupVersion.map { groupVersion =>
+        dataService.behaviorGroupDeployments.deploy(groupVersion, user.id, None).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      maybeDeploymentData <- maybeDeployment.map { deployment =>
+        BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
+      }.getOrElse(Future.successful(None))
+    } yield maybeDeploymentData
+  }
+
 }
