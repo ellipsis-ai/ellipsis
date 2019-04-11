@@ -1,5 +1,6 @@
 package models.behaviors.behaviorgroup
 
+import json.BehaviorGroupDeploymentData
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
@@ -35,5 +36,7 @@ trait BehaviorGroupService {
   def maybeCurrentVersionFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]]
 
   def saveVersionFor(user: User, jsonString: String, isReinstall: Option[Boolean], forceNode6: Option[Boolean]): Future[Option[JsValue]]
+
+  def deploy(behaviorGroupId: String, user: User): Future[Option[BehaviorGroupDeploymentData]]
 
 }
