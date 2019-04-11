@@ -67,6 +67,15 @@ sealed trait Recurrence {
   def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = when.withSecond(0).withNano(0)
   def displayString: String
   def couldRunAt(when: OffsetDateTime): Boolean
+  def expectedNextRunFor(start: OffsetDateTime, maybeProposedNextRun: Option[OffsetDateTime]): OffsetDateTime = {
+    val expectedFirstRun = initialAfter(start)
+    val expectedSecondRun = nextAfter(expectedFirstRun)
+    // Keep the proposed next run as long as it would happen before the second possible run after now
+    maybeProposedNextRun.filter { proposedNextRun =>
+      couldRunAt(proposedNextRun) && proposedNextRun.isAfter(start) && proposedNextRun.isBefore(expectedSecondRun)
+    }.getOrElse(expectedFirstRun)
+  }
+
 
   def timesToRunString: String = {
     maybeTotalTimesToRun.map { timesToRun =>

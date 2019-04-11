@@ -153,7 +153,7 @@ class ScheduledActionsController @Inject()(
             behavior = behavior,
             arguments = newArguments,
             recurrence = recurrence,
-            nextSentAt = earliestNextRunFor(recurrence, Some(original.nextSentAt)),
+            nextSentAt = recurrence.expectedNextRunFor(OffsetDateTime.now, Some(original.nextSentAt)),
             maybeChannel = maybeChannel,
             isForIndividualMembers = newData.useDM
           ))
@@ -181,7 +181,7 @@ class ScheduledActionsController @Inject()(
             dataService.scheduledMessages.save(original.copy(
               text = trigger,
               recurrence = recurrence,
-              nextSentAt = earliestNextRunFor(recurrence, Some(original.nextSentAt)),
+              nextSentAt = recurrence.expectedNextRunFor(OffsetDateTime.now, Some(original.nextSentAt)),
               maybeChannel = maybeChannel,
               isForIndividualMembers = newData.useDM
             ))
@@ -228,17 +228,6 @@ class ScheduledActionsController @Inject()(
       }
     } yield {
       maybeNewScheduledBehavior.map(ScheduledActionData.fromScheduledBehavior)
-    }
-  }
-
-  private def earliestNextRunFor(recurrence: Recurrence, maybeOriginalNextRun: Option[OffsetDateTime]): OffsetDateTime = {
-    val expectedFirstRun = recurrence.initialAfter(OffsetDateTime.now)
-    val expectedSecondRun = recurrence.nextAfter(expectedFirstRun)
-    // Keep the proposed next run as long as it would happen before the second possible run after now
-    if (maybeOriginalNextRun.exists(nextRun => recurrence.couldRunAt(nextRun) && nextRun.isBefore(expectedSecondRun))) {
-      maybeOriginalNextRun.getOrElse(expectedFirstRun)
-    } else {
-      expectedFirstRun
     }
   }
 
@@ -342,7 +331,7 @@ class ScheduledActionsController @Inject()(
             math.max(0, totalTimes - recurrence.timesHasRun)
           }
           val maybeFirst = if (maybeRemainingRuns.isEmpty || maybeRemainingRuns.exists(_ > 0)) {
-            Some(earliestNextRunFor(recurrence, validationData.nextRun))
+            Some(recurrence.expectedNextRunFor(OffsetDateTime.now, validationData.nextRun))
           } else {
             None
           }
