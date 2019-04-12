@@ -36,6 +36,7 @@ trait LinkedAccountService {
 
   def maybeForMSTeamsFor(user: User): Future[Option[LinkedAccount]]
 
+  def maybeForMSAzureActiveDirectoryForAction(user: User): DBIO[Option[LinkedAccount]]
   def maybeForMSAzureActiveDirectoryFor(user: User): Future[Option[LinkedAccount]]
 
   def maybeForGithubFor(user: User): Future[Option[LinkedAccount]]

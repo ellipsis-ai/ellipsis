@@ -12,6 +12,7 @@ import play.api.i18n.MessagesApi
 import services.DataService
 import services.caching.{CacheService, SlackUserDataByEmailCacheKey, SlackUserDataCacheKey}
 import services.slack.apiModels.SlackUser
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -93,9 +94,13 @@ class SlackEventServiceImpl @Inject()(
     }
   }
 
-  def maybeSlackUserDataFor(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
+  def maybeSlackUserDataForAction(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): DBIO[Option[SlackUserData]] = {
     val slackTeamId = client.profile.slackTeamId
-    cacheService.getSlackUserData(SlackUserDataCacheKey(slackUserId, slackTeamId), fetchSlackUserDataFn(slackUserId, slackTeamId, client, onUserNotFound))
+    DBIO.from(cacheService.getSlackUserData(SlackUserDataCacheKey(slackUserId, slackTeamId), fetchSlackUserDataFn(slackUserId, slackTeamId, client, onUserNotFound)))
+  }
+
+  def maybeSlackUserDataFor(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
+    dataService.run(maybeSlackUserDataForAction(slackUserId, client, onUserNotFound))
   }
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {

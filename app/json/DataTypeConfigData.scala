@@ -3,6 +3,7 @@ package json
 import export.BehaviorGroupExporter
 import models.behaviors.datatypeconfig.DataTypeConfig
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,11 +42,11 @@ case class DataTypeConfigData(
 
 object DataTypeConfigData {
 
-  def forConfig(config: DataTypeConfig, dataService: DataService)(implicit ec: ExecutionContext): Future[DataTypeConfigData] = {
+  def forConfigAction(config: DataTypeConfig, dataService: DataService)(implicit ec: ExecutionContext): DBIO[DataTypeConfigData] = {
     for {
-      fields <- dataService.dataTypeFields.allFor(config)
-      withFieldType <- Future.sequence(fields.map { ea =>
-        BehaviorParameterTypeData.from(ea.fieldType, dataService).map { fieldTypeData =>
+      fields <- dataService.dataTypeFields.allForAction(config)
+      withFieldType <- DBIO.sequence(fields.map { ea =>
+        BehaviorParameterTypeData.fromAction(ea.fieldType, dataService).map { fieldTypeData =>
           (ea, fieldTypeData)
         }
       })
@@ -55,6 +56,10 @@ object DataTypeConfigData {
       }
       DataTypeConfigData(fieldData, config.maybeUsesCode)
     }
+  }
+
+  def forConfig(config: DataTypeConfig, dataService: DataService)(implicit ec: ExecutionContext): Future[DataTypeConfigData] = {
+    dataService.run(forConfigAction(config, dataService))
   }
 
   def withDefaultSettings: DataTypeConfigData = {

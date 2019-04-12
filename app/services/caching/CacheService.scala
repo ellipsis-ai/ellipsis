@@ -14,6 +14,7 @@ import sangria.schema.Schema
 import services.ms_teams.ChannelWithTeam
 import services.ms_teams.apiModels.{Application, MSAADUser}
 import services.slack.apiModels.SlackUser
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -66,7 +67,7 @@ trait CacheService {
 
   def getMSTeamsChannelFor(profile: MSTeamsBotProfile, channelId: String): Future[Option[ChannelWithTeam]]
 
-  def getMSAADUser(key: String, dataFn: String => Future[Option[MSAADUser]]): Future[Option[MSAADUser]]
+  def getMSAADUserAction(key: String, fetch: DBIO[Option[MSAADUser]]): DBIO[Option[MSAADUser]]
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Future[Unit]
 

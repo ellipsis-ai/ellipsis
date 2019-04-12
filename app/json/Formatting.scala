@@ -226,6 +226,7 @@ object Formatting {
   lazy implicit val teamInfoFormat = Json.format[TeamInfo]
   lazy implicit val deprecatedMessageInfoFormat = Json.format[DeprecatedMessageInfo]
   lazy implicit val deprecatedUserInfoFormat = Json.format[DeprecatedUserInfo]
+  lazy implicit val actionInfoFormat = Json.format[ActionInfo]
 
   lazy implicit val ellipsisObjectFormat = Json.format[EllipsisObject]
 }

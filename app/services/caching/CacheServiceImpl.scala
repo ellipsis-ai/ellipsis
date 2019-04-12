@@ -22,10 +22,12 @@ import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import sangria.schema.Schema
+import services.DataService
 import services.ms_teams.apiModels.{Application, MSAADUser}
 import services.ms_teams.{ChannelWithTeam, MSTeamsApiService}
 import services.slack.SlackEventService
 import services.slack.apiModels.{SlackUser, SlackUserProfile}
+import slick.dbio.DBIO
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -57,6 +59,7 @@ class CacheServiceImpl @Inject() (
                                    cache: AsyncCacheApi,
                                    slackEventServiceProvider: Provider[SlackEventService],
                                    msTeamsApiServiceProvider: Provider[MSTeamsApiService],
+                                   dataServiceProvider: Provider[DataService],
                                    implicit val ec: ExecutionContext,
                                    implicit val actorSystem: ActorSystem
                                  ) extends CacheService {
@@ -65,6 +68,7 @@ class CacheServiceImpl @Inject() (
 
   def slackEventService = slackEventServiceProvider.get
   def msTeamsApiService = msTeamsApiServiceProvider.get
+  def dataService = dataServiceProvider.get
 
   def cacheSettingsWithTimeToLive(duration: Duration): CachingSettings = {
     val defaultCachingSettings = CachingSettings(actorSystem)
@@ -286,6 +290,10 @@ class CacheServiceImpl @Inject() (
   }
 
   private val msTeamsUserCache: Cache[String, Option[MSAADUser]] = LfuCache(cacheSettingsWithTimeToLive(msTeamsApiCallExpiry))
+
+  def getMSAADUserAction(key: String, fetch: DBIO[Option[MSAADUser]]): DBIO[Option[MSAADUser]] = {
+    DBIO.from(msTeamsUserCache.getOrLoad(key, _ => dataService.run(fetch)))
+  }
 
   def getMSAADUser(key: String, dataFn: String => Future[Option[MSAADUser]]): Future[Option[MSAADUser]] = {
     msTeamsUserCache.getOrLoad(key, dataFn)

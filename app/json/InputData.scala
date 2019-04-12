@@ -4,6 +4,7 @@ import export.BehaviorGroupExporter
 import models.IDs
 import models.behaviors.input.Input
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -70,8 +71,8 @@ case class InputData(
 
 object InputData {
 
-  def fromInput(input: Input, dataService: DataService)(implicit ec: ExecutionContext): Future[InputData] = {
-    BehaviorParameterTypeData.from(input.paramType, dataService).map { paramTypeData =>
+  def fromInputAction(input: Input, dataService: DataService)(implicit ec: ExecutionContext): DBIO[InputData] = {
+    BehaviorParameterTypeData.fromAction(input.paramType, dataService).map { paramTypeData =>
       InputData(
         Some(input.id),
         Some(input.inputId),
@@ -83,7 +84,10 @@ object InputData {
         input.isSavedForUser
       )
     }
+  }
 
+  def fromInput(input: Input, dataService: DataService)(implicit ec: ExecutionContext): Future[InputData] = {
+    dataService.run(fromInputAction(input, dataService))
   }
 
 }

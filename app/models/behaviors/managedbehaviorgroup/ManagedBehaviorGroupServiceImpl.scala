@@ -39,16 +39,20 @@ class ManagedBehaviorGroupServiceImpl @Inject() (
     dataService.run(maybeForAction(group))
   }
 
-  def infoFor(group: BehaviorGroup, team: Team): Future[ManagedBehaviorGroupInfo] = {
+  def infoForAction(group: BehaviorGroup, team: Team): DBIO[ManagedBehaviorGroupInfo] = {
     for {
-      maybeManaged <- maybeFor(group)
+      maybeManaged <- maybeForAction(group)
       maybeManagedContact <- maybeManaged.flatMap(_.maybeContactId).map { contactId =>
-        dataService.users.find(contactId)
-      }.getOrElse(Future.successful(None))
+        dataService.users.findAction(contactId)
+      }.getOrElse(DBIO.successful(None))
       maybeManagedContactData <- maybeManagedContact.map { contact =>
-        dataService.users.userDataFor(contact, team).map(Some(_))
-      }.getOrElse(Future.successful(None))
+        dataService.users.userDataForAction(contact, team).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
     } yield ManagedBehaviorGroupInfo(maybeManaged.isDefined, maybeManagedContactData)
+  }
+
+  def infoFor(group: BehaviorGroup, team: Team): Future[ManagedBehaviorGroupInfo] = {
+    dataService.run(infoForAction(group, team))
   }
 
   def allFor(team: Team): Future[Seq[ManagedBehaviorGroup]] = {

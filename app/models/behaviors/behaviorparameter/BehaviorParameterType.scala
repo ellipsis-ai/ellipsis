@@ -39,7 +39,10 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
   val name: String
   val typescriptType: String
 
-  def needsConfig(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean]
+  def needsConfigAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[Boolean]
+  def needsConfig(dataService: DataService)(implicit ec: ExecutionContext): Future[Boolean] = {
+    dataService.run(needsConfigAction(dataService))
+  }
   val isBuiltIn: Boolean
 
   val mayRequireTypedAnswer: Boolean = false
@@ -154,7 +157,7 @@ trait BuiltInType extends BehaviorParameterType {
   lazy val id = name
   lazy val exportId = name
   val isBuiltIn: Boolean = true
-  def needsConfig(dataService: DataService)(implicit ec: ExecutionContext) = Future.successful(false)
+  def needsConfigAction(dataService: DataService)(implicit ec: ExecutionContext) = DBIO.successful(false)
   def resolvedValueForAction(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[String]] = {
     DBIO.successful(Some(text))
   }
@@ -502,9 +505,9 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     s"[${context.parameter.paramType.name}]($link)"
   }
 
-  def needsConfig(dataService: DataService)(implicit ec: ExecutionContext) = {
+  def needsConfigAction(dataService: DataService)(implicit ec: ExecutionContext) = {
     for {
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allFor(behaviorVersion.groupVersion)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForAction(behaviorVersion.groupVersion)
     } yield !requiredOAuth2ApiConfigs.forall(_.isReady)
   }
 

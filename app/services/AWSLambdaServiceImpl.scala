@@ -14,6 +14,7 @@ import com.amazonaws.services.logs.model.{CreateLogGroupRequest, PutSubscription
 import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.Inject
+import json.BehaviorGroupData
 import json.Formatting._
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -144,11 +145,12 @@ class AWSLambdaServiceImpl @Inject() (
                                  userInfo: DeprecatedUserInfo,
                                  teamInfo: TeamInfo,
                                  eventInfo: EventInfo,
+                                 actionInfo: ActionInfo,
                                  parameterValues: Seq[ParameterWithValue],
                                  environmentVariables: Seq[EnvironmentVariable],
                                  token: InvocationToken
                                ): JsObject = {
-    val contextObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, environmentVariables, apiBaseUrl, token)
+    val contextObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, actionInfo, environmentVariables, apiBaseUrl, token)
     AWSLambdaInvocationJsonBuilder(behaviorVersion, contextObject, parameterValues).build
   }
 
@@ -246,12 +248,16 @@ class AWSLambdaServiceImpl @Inject() (
       maybeBotInfo <- DBIO.from(event.maybeBotInfo(defaultServices))
       teamInfo <- teamInfoFor(behaviorVersion, userInfo, maybeBotInfo)
       maybeMessage <- event.maybeMessageInfoAction(maybeConversation, defaultServices)
+      actionInfo <- BehaviorGroupData.buildForAction(behaviorVersion.groupVersion, user, maybeInitialVersion = None, defaultServices.dataService, defaultServices.cacheService).map { groupData =>
+        ActionInfo(behaviorVersion.behavior.id, groupData)
+      }
       result <- {
         val invocationJson = invocationJsonFor(
           behaviorVersion,
           userInfo,
           teamInfo,
           EventInfo.buildFor(event, eventUser, maybeMessage, configuration),
+          actionInfo,
           parametersWithValues,
           environmentVariables,
           token

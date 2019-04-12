@@ -374,6 +374,13 @@ declare namespace ellipsis {
     /** Information about the schedule that triggered this event, if applicable */ 
     schedule?: Schedule
   }
+  
+  const action: {
+    actionId: string
+    skill: {
+      actionInputs: object[]
+    }
+  }
 }
 `;
   }

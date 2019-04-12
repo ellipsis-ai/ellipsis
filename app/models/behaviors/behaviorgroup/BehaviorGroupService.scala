@@ -6,6 +6,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsValue
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -17,6 +18,7 @@ trait BehaviorGroupService {
 
   def allWithNoNameFor(team: Team): Future[Seq[BehaviorGroup]]
 
+  def findWithoutAccessCheckAction(id: String): DBIO[Option[BehaviorGroup]]
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorGroup]]
 
   def find(id: String, user: User): Future[Option[BehaviorGroup]]

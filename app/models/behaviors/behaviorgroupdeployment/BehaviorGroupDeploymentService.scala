@@ -31,6 +31,7 @@ trait BehaviorGroupDeploymentService {
 
   def findForBehaviorGroupVersionAction(version: BehaviorGroupVersion): DBIO[Option[BehaviorGroupDeployment]]
 
+  def findForBehaviorGroupVersionIdAction(groupVersionId: String): DBIO[Option[BehaviorGroupDeployment]]
   def findForBehaviorGroupVersionId(groupVersionId: String): Future[Option[BehaviorGroupDeployment]]
 
   def findForBehaviorGroupVersion(version: BehaviorGroupVersion): Future[Option[BehaviorGroupDeployment]]

@@ -4,6 +4,7 @@ import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.events.Event
 import services.slack.apiModels.SlackUser
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 import scala.util.Random
@@ -18,6 +19,7 @@ trait SlackEventService {
 
   def slackUserDataList(slackUserIds: Set[String], botProfile: SlackBotProfile): Future[Set[SlackUserData]]
 
+  def maybeSlackUserDataForAction(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): DBIO[Option[SlackUserData]]
   def maybeSlackUserDataFor(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]]
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]]
