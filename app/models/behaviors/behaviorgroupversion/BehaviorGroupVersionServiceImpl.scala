@@ -10,7 +10,7 @@ import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import play.api.Logger
-import services.{AWSLambdaService, ApiConfigInfo, DataService}
+import services.{AWSLambdaService, ApiConfigInfo, DataService, DefaultServices}
 import slick.dbio.DBIO
 
 import scala.concurrent.duration._
@@ -42,13 +42,15 @@ class BehaviorGroupVersionsTable(tag: Tag) extends Table[RawBehaviorGroupVersion
 }
 
 class BehaviorGroupVersionServiceImpl @Inject() (
-                                                   dataServiceProvider: Provider[DataService],
-                                                   lambdaServiceProvider: Provider[AWSLambdaService],
-                                                   implicit val ec: ExecutionContext
+                                                  defaultServicesProvider: Provider[DefaultServices],
+                                                  lambdaServiceProvider: Provider[AWSLambdaService],
+                                                  implicit val ec: ExecutionContext
                                                 ) extends BehaviorGroupVersionService {
 
-  def dataService = dataServiceProvider.get
-  def lambdaService = lambdaServiceProvider.get
+  def defaultServices: DefaultServices = defaultServicesProvider.get
+  def dataService = defaultServices.dataService
+  def lambdaService = defaultServices.lambdaService
+  def cacheService = defaultServices.cacheService
 
   import BehaviorGroupVersionQueries._
 

@@ -469,7 +469,7 @@ class APIController @Inject() (
       context <- ApiMethodContextBuilder.createFor(token, services, responder)
       maybeGroupData <- context.maybeUser.map { user =>
         maybeExistingGroupId.map { groupId =>
-          BehaviorGroupData.maybeFor(groupId, user, dataService, cacheService)
+          dataService.behaviorGroups.maybeDataFor(groupId, user)
         }.getOrElse {
           context.maybeTeam.map { team =>
             BehaviorGroupData.forNewGroupFor(user, team, dataService).map(Some(_))

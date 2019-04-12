@@ -42,7 +42,7 @@ class ManagedBehaviorGroupsController @Inject() (
             managedGroups <- dataService.managedBehaviorGroups.allFor(team)
             allGroups <- dataService.behaviorGroups.allFor(team)
             groupData <- FutureSequencer.sequence(allGroups, (ea: BehaviorGroup) =>
-              BehaviorGroupData.maybeFor(ea.id, user, dataService, cacheService)
+              dataService.behaviorGroups.maybeDataFor(ea.id, user)
             ).map(_.flatten)
           } yield {
             val withGroupData = managedGroups.flatMap { ea =>

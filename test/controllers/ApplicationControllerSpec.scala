@@ -3,7 +3,7 @@ package controllers
 import java.time.{OffsetDateTime, ZoneId}
 
 import com.mohiva.play.silhouette.test._
-import json.{BehaviorGroupData, TeamTimeZoneData}
+import json.{BehaviorConfig, BehaviorGroupData, BehaviorVersionData, TeamTimeZoneData}
 import models.IDs
 import models.accounts.user.UserTeamAccess
 import models.behaviors.behavior.Behavior
@@ -40,31 +40,73 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         val behaviorVersion = BehaviorVersion(IDs.next, behavior, behaviorGroupVersion, None, None, None, None, responseType = Normal, canBeMemoized = false, isTest = false, OffsetDateTime.now)
         val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
 
+        when(dataService.behaviorGroups.maybeDataFor(groupId, user)).thenReturn({
+          val behaviorVersionData = BehaviorVersionData(
+            Some(behaviorVersion.id),
+            team.id,
+            Some(behaviorId),
+            Some(groupId),
+            None,
+            None,
+            None,
+            "",
+            "",
+            Seq(),
+            Seq(),
+            BehaviorConfig(None, None, Normal.toString, None, false, None, None),
+            None,
+            Some(OffsetDateTime.now)
+          )
+          Future.successful(Some(
+            BehaviorGroupData(
+              Some(groupId),
+              team.id,
+              Some(groupName),
+              None,
+              None,
+              Seq(),
+              Seq(),
+              Seq(behaviorVersionData),
+              Seq(),
+              Seq(),
+              Seq(),
+              Seq(),
+              None,
+              None,
+              Some(OffsetDateTime.now),
+              None,
+              None,
+              None,
+              false,
+              None,
+              None
+            )))
+        })
         when(dataService.users.teamAccessFor(user, Some(team.id))).thenReturn(Future.successful(teamAccess))
         when(dataService.teams.find(team.id)).thenReturn(Future.successful(Some(team)))
-        when(dataService.behaviorGroups.allFor(team)).thenReturn(Future.successful(Seq(behaviorGroup)))
-        when(dataService.behaviorGroups.find(groupId, user)).thenReturn(Future.successful(Some(behaviorGroup)))
-        when(dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
-        when(dataService.managedBehaviorGroups.infoFor(behaviorGroup, team)).thenReturn(Future.successful(ManagedBehaviorGroupInfo(isManaged = false, None)))
-        when(dataService.behaviorGroupVersions.maybeFirstFor(behaviorGroup)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
-        when(dataService.behaviorGroupVersions.maybeCurrentFor(behaviorGroup)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
-        when(dataService.behaviors.allForGroup(behaviorGroup)).thenReturn(Future.successful(Seq(behavior)))
-        when(dataService.inputs.allForGroupVersion(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.libraries.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.nodeModuleVersions.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.behaviorGroups.findWithoutAccessCheck(groupId)).thenReturn(Future.successful(Some(behaviorGroup)))
-        when(dataService.behaviors.find(behaviorId, user)).thenReturn(Future.successful(Some(behavior)))
-        when(dataService.behaviorVersions.findFor(behavior, behaviorGroupVersion)).thenReturn(Future.successful(Some(behaviorVersion)))
-        when(dataService.behaviorParameters.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.triggers.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
-        when(dataService.requiredAWSConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
-        when(dataService.requiredOAuth1ApiConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
-        when(dataService.requiredOAuth2ApiConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
-        when(dataService.requiredSimpleTokenApis.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
-        when(dataService.teamEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())
-        when(dataService.dataTypeConfigs.maybeFor(behaviorVersion)).thenReturn(Future.successful(None))
-        when(dataService.behaviorGroupDeployments.findForBehaviorGroupVersionId(behaviorGroupVersion.id)).thenReturn(Future.successful(None))
-        when(dataService.linkedGithubRepos.maybeFor(behaviorGroup)).thenReturn(Future.successful(None))
+//        when(dataService.behaviorGroups.allFor(team)).thenReturn(Future.successful(Seq(behaviorGroup)))
+//        when(dataService.behaviorGroups.find(groupId, user)).thenReturn(Future.successful(Some(behaviorGroup)))
+//        when(dataService.behaviorGroupVersions.findWithoutAccessCheck(groupVersionId)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
+//        when(dataService.managedBehaviorGroups.infoFor(behaviorGroup, team)).thenReturn(Future.successful(ManagedBehaviorGroupInfo(isManaged = false, None)))
+//        when(dataService.behaviorGroupVersions.maybeFirstFor(behaviorGroup)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
+//        when(dataService.behaviorGroupVersions.maybeCurrentFor(behaviorGroup)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
+//        when(dataService.behaviors.allForGroup(behaviorGroup)).thenReturn(Future.successful(Seq(behavior)))
+//        when(dataService.inputs.allForGroupVersion(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
+//        when(dataService.libraries.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
+//        when(dataService.nodeModuleVersions.allFor(behaviorGroupVersion)).thenReturn(Future.successful(Seq()))
+//        when(dataService.behaviorGroups.findWithoutAccessCheck(groupId)).thenReturn(Future.successful(Some(behaviorGroup)))
+//        when(dataService.behaviors.find(behaviorId, user)).thenReturn(Future.successful(Some(behavior)))
+//        when(dataService.behaviorVersions.findFor(behavior, behaviorGroupVersion)).thenReturn(Future.successful(Some(behaviorVersion)))
+//        when(dataService.behaviorParameters.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
+//        when(dataService.triggers.allFor(behaviorVersion)).thenReturn(Future.successful(Seq()))
+//        when(dataService.requiredAWSConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
+//        when(dataService.requiredOAuth1ApiConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
+//        when(dataService.requiredOAuth2ApiConfigs.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
+//        when(dataService.requiredSimpleTokenApis.allForId(behaviorGroupVersion.id)).thenReturn(Future.successful(Seq()))
+//        when(dataService.teamEnvironmentVariables.lookForInCode(anyString)).thenReturn(Seq())
+//        when(dataService.dataTypeConfigs.maybeFor(behaviorVersion)).thenReturn(Future.successful(None))
+//        when(dataService.behaviorGroupDeployments.findForBehaviorGroupVersionId(behaviorGroupVersion.id)).thenReturn(Future.successful(None))
+//        when(dataService.linkedGithubRepos.maybeFor(behaviorGroup)).thenReturn(Future.successful(None))
         when(githubService.execute(anyString, any[JsValue])).thenReturn {
           Future.successful {
             Json.parse(

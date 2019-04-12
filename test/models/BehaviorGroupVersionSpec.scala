@@ -76,7 +76,7 @@ class BehaviorGroupVersionSpec extends DBSpec {
         groupVersionsBefore must have length 1
         val firstDataTypeBehaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersionsBefore.head)).filter(_.isDataType).head
 
-        val newGroupData = runNow(BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService))
+        val newGroupData = runNow(dataService.behaviorGroups.maybeDataFor(group.id, user))
 
         newSavedGroupVersionFor(group, user, newGroupData)
 

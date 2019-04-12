@@ -168,7 +168,7 @@ object ScheduledActionsConfig {
         scheduledActions <- ScheduledActionData.buildForUserTeamAccess(team, teamAccess, dataService, teamChannelsData, maybeSlackUserProfile.map(_.slackUserId), forceAdmin)
         behaviorGroups <- dataService.behaviorGroups.allFor(team)
         groupData <- Future.sequence(behaviorGroups.map { group =>
-          BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
+          dataService.behaviorGroups.maybeDataFor(group.id, user)
         }).map(_.flatten.sorted)
       } yield {
         val filterChannelId = maybeFilterChannelId.filter { channelIdWanted =>
