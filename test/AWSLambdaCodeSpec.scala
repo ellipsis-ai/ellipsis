@@ -1,6 +1,7 @@
 import java.io.{ByteArrayInputStream, File}
 import java.time.OffsetDateTime
 
+import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
@@ -14,7 +15,7 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.Json
 import services.{AWSLambdaInvocationJsonBuilder, AWSLambdaZipBuilder, ApiConfigInfo}
-import support.TestContext
+import support.{BehaviorGroupDataBuilder, TestContext}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -64,6 +65,8 @@ class AWSLambdaCodeSpec extends PlaySpec with MockitoSugar {
   def ellipsisObjectFor(user: User, team: Team) = {
     val teamInfo = teamInfoFor(team)
     val context = "test"
+    val behaviorGroupData = BehaviorGroupDataBuilder.buildFor(team.id)
+    val actionId = behaviorGroupData.actionBehaviorVersions.head.behaviorId.get
     EllipsisObject(
       "api",
       IDs.next,
@@ -99,6 +102,10 @@ class AWSLambdaCodeSpec extends PlaySpec with MockitoSugar {
         platformDescription = "Test",
         message = None,
         schedule = None
+      ),
+      ActionInfo(
+        actionId,
+        behaviorGroupData
       )
     )
   }

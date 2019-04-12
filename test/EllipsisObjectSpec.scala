@@ -7,13 +7,11 @@ import json.UserData
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
-import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.ellipsisobject._
 import models.behaviors.events.{EventType, TestEventContext}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.recurrence.Minutely
-import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.testing.TestMessageEvent
 import models.team.Team
@@ -23,7 +21,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import services.DefaultServices
 import slick.dbio.DBIO
-import support.{DBSpec, TestContext}
+import support.{BehaviorGroupDataBuilder, DBSpec, TestContext}
 import utils.SlackTimestamp
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -103,7 +101,10 @@ class EllipsisObjectSpec extends DBSpec {
         val maybeMessage = Some(MessageObject(messageText, maybeMessageId, maybeChannelObj, maybeThread, usersMentioned = Set(), permalink = maybePermalink, reactionAdded = None))
         val eventInfo = EventInfo.buildFor(event, eventUser, maybeMessage, configuration)
         val token = InvocationToken(IDs.next, user.id, IDs.next, None, None, OffsetDateTime.now)
-        val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, Seq(), "test.ellipsis", token))
+        val behaviorGroupData = BehaviorGroupDataBuilder.buildFor(team.id)
+        val actionId = behaviorGroupData.actionBehaviorVersions.head.behaviorId.get
+        val actionInfo = ActionInfo(actionId, behaviorGroupData)
+        val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, actionInfo, Seq(), "test.ellipsis", token))
         Logger.info(Json.prettyPrint(json))
 
         val resultObject = json.as[EllipsisObject]
@@ -135,6 +136,10 @@ class EllipsisObjectSpec extends DBSpec {
         val resultEventSchedule = resultEvent.schedule.get
         resultEventSchedule.editLink must endWith(scheduledEditUrl)
         resultEventSchedule.recurrence mustEqual recurrence.displayString
+
+        val resultActionInfo = resultObject.action
+        resultActionInfo.actionId mustBe actionId
+        resultActionInfo.skill mustBe behaviorGroupData
 
         // deprecated stuff:
         val resultUserInfo = resultObject.userInfo
