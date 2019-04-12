@@ -17,6 +17,7 @@ import services.caching._
 import services.ms_teams.ChannelWithTeam
 import services.ms_teams.apiModels.{Application, MSAADUser}
 import services.slack.apiModels.SlackUser
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -72,14 +73,16 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def getMSTeamsChannelFor(profile: MSTeamsBotProfile, channelId: String): Future[Option[ChannelWithTeam]] = Future.successful(None)
 
-  def getMSAADUser(key: String, dataFn: String => Future[Option[MSAADUser]]): Future[Option[MSAADUser]] = Future.successful(None)
+  def getMSAADUserAction(key: String, fetch: DBIO[Option[MSAADUser]]): DBIO[Option[MSAADUser]] = DBIO.successful(None)
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Future[Unit] = Future.successful({})
 
-  def getBehaviorGroupVersionData(groupVersionId: String): Future[Option[ImmutableBehaviorGroupVersionData]] = Future.successful(None)
+  def getBehaviorGroupVersionDataAction(groupVersionId: String): DBIO[Option[ImmutableBehaviorGroupVersionData]] = DBIO.successful(None)
 
+  def cacheBotNameAction(name: String, teamId: String): DBIO[Unit] = DBIO.successful({})
   def cacheBotName(name: String, teamId: String): Future[Unit] = Future.successful({})
 
+  def getBotNameAction(teamId: String): DBIO[Option[String]] = DBIO.successful(Some("MockBot"))
   def getBotName(teamId: String): Future[Option[String]] = Future.successful(Some("MockBot"))
 
   def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Future[Unit] = Future.successful({})
