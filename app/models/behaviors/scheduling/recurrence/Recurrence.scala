@@ -322,7 +322,8 @@ case class Daily(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesTo
   override val maybeTimeOfDay = Some(timeOfDay)
 
   def couldRunAt(when: OffsetDateTime): Boolean = {
-    when.getMinute == timeOfDay.getMinute && when.getHour == timeOfDay.getHour
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    inSameTimeZone.getMinute == timeOfDay.getMinute && inSameTimeZone.getHour == timeOfDay.getHour
   }
 }
 
@@ -453,7 +454,8 @@ case class Weekly(
   }
 
   def couldRunAt(when: OffsetDateTime): Boolean = {
-    when.getMinute == timeOfDay.getMinute && when.getHour == timeOfDay.getHour && daysOfWeek.contains(when.getDayOfWeek)
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    inSameTimeZone.getMinute == timeOfDay.getMinute && inSameTimeZone.getHour == timeOfDay.getHour && daysOfWeek.contains(inSameTimeZone.getDayOfWeek)
   }
 
   val typeName = Weekly.recurrenceType
@@ -554,7 +556,8 @@ case class MonthlyByDayOfMonth(id: String, frequency: Int, timesHasRun: Int, may
   }
 
   def couldRunAt(when: OffsetDateTime): Boolean = {
-    when.getMinute == timeOfDay.getMinute && when.getHour == timeOfDay.getHour && when.getDayOfMonth == dayOfMonth
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    inSameTimeZone.getMinute == timeOfDay.getMinute && inSameTimeZone.getHour == timeOfDay.getHour && inSameTimeZone.getDayOfMonth == dayOfMonth
   }
 
   val typeName = MonthlyByDayOfMonth.recurrenceType
@@ -635,8 +638,9 @@ case class MonthlyByNthDayOfWeek(id: String, frequency: Int, timesHasRun: Int, m
   }
 
   def couldRunAt(when: OffsetDateTime): Boolean = {
-    val target = targetInMonthMatching(when)
-    when.getMinute == timeOfDay.getMinute && when.getHour == timeOfDay.getHour && when.getDayOfMonth == target.getDayOfMonth
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    val target = targetInMonthMatching(inSameTimeZone)
+    inSameTimeZone.getMinute == timeOfDay.getMinute && inSameTimeZone.getHour == timeOfDay.getHour && inSameTimeZone.getDayOfMonth == target.getDayOfMonth
   }
 
   val typeName = MonthlyByNthDayOfWeek.recurrenceType
@@ -728,7 +732,8 @@ case class Yearly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesT
   }
 
   def couldRunAt(when: OffsetDateTime): Boolean = {
-    when.getMinute == timeOfDay.getMinute && when.getHour == timeOfDay.getHour && when.getDayOfMonth == dayOfMonth && when.getMonthValue == month
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    inSameTimeZone.getMinute == timeOfDay.getMinute && inSameTimeZone.getHour == timeOfDay.getHour && inSameTimeZone.getDayOfMonth == dayOfMonth && inSameTimeZone.getMonthValue == month
   }
 
   val typeName = Yearly.recurrenceType

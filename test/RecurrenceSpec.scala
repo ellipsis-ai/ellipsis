@@ -60,6 +60,7 @@ class RecurrenceSpec extends PlaySpec {
     "couldRunAt always returns true because any timestamp satisfies Minutely parameters" in {
       val recurrence = Minutely(IDs.next, 1, 0, None)
       recurrence.couldRunAt(OffsetDateTime.now) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 2, 1, 0, 0, ZoneId.of("America/St_Johns")))
       recurrence.couldRunAt(OffsetDateTime.now.plusMonths(1).plusMinutes(12).plusYears(5)) mustBe true
     }
 
@@ -262,11 +263,14 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "couldRunAt returns true for any timestamp with the correct time of day" in {
-      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
       val recurrence = Daily(IDs.next, 1, 0, None, timeOfDay = LocalTime.NOON, timeZone)
-      recurrence.couldRunAt(now.withHour(12).withMinute(0)) mustBe true
-      recurrence.couldRunAt(now.withHour(13).withMinute(0)) mustBe false
-      recurrence.couldRunAt(now.withHour(12).withMinute(0).plusYears(5)) mustBe true
+      val date = dateTimeOf(2019, 4, 12, 12, 0, timeZone)
+      recurrence.couldRunAt(date) mustBe true
+      recurrence.couldRunAt(date.withHour(13)) mustBe false
+      recurrence.couldRunAt(date.plusYears(5)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 12, 9, 0, ZoneId.of("America/Vancouver")))
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 12, 13, 30, ZoneId.of("America/St_Johns")))
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 12, 17, 0, ZoneId.of("Europe/London")))
     }
 
     "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
@@ -384,12 +388,13 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "couldRunAt returns true for any timestamp with the correct time of day and weekday" in {
-      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
-      val recurrence = Weekly(IDs.next, 1, 0, None, Seq(now.getDayOfWeek), timeOfDay = LocalTime.NOON, timeZone)
-      recurrence.couldRunAt(now.withHour(12).withMinute(0)) mustBe true
-      recurrence.couldRunAt(now.withHour(12).withMinute(0).plusDays(1)) mustBe false
-      recurrence.couldRunAt(now.withHour(13).withMinute(0)) mustBe false
-      recurrence.couldRunAt(now.withHour(12).withMinute(0).plusWeeks(5)) mustBe true
+      val date = dateTimeOf(2019, 4, 12, 12, 0, timeZone)
+      val recurrence = Weekly(IDs.next, 1, 0, None, Seq(DayOfWeek.FRIDAY), timeOfDay = LocalTime.NOON, timeZone)
+      recurrence.couldRunAt(date) mustBe true
+      recurrence.couldRunAt(date.plusDays(1)) mustBe false
+      recurrence.couldRunAt(date.withHour(13)) mustBe false
+      recurrence.couldRunAt(date.plusWeeks(5)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 12, 13, 30, ZoneId.of("America/St_Johns")))
     }
 
     "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
@@ -506,12 +511,13 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "couldRunAt returns true for any timestamp with the correct time of day and day of month" in {
-      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
+      val date = dateTimeOf(2019, 4, 1, 12, 0, timeZone)
       val recurrence = MonthlyByDayOfMonth(IDs.next, 1, 0, None, dayOfMonth = 1, timeOfDay = LocalTime.NOON, timeZone)
-      recurrence.couldRunAt(now.withDayOfMonth(1).plusMonths(1).withHour(12).withMinute(0)) mustBe true
-      recurrence.couldRunAt(now.withDayOfMonth(2).plusMonths(1).withHour(12).withMinute(0)) mustBe false
-      recurrence.couldRunAt(now.withDayOfMonth(1).plusMonths(1).withHour(13).withMinute(0)) mustBe false
-      recurrence.couldRunAt(now.withDayOfMonth(1).plusYears(5).plusMonths(5).withHour(12).withMinute(0)) mustBe true
+      recurrence.couldRunAt(date) mustBe true
+      recurrence.couldRunAt(date.withDayOfMonth(2)) mustBe false
+      recurrence.couldRunAt(date.withHour(13)) mustBe false
+      recurrence.couldRunAt(date.plusYears(5).plusMonths(5)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 1, 13, 30, ZoneId.of("America/St_Johns")))
     }
 
     "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
@@ -616,6 +622,7 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.couldRunAt(dateTimeOf(2019, 5, 1,12, 0, timeZone)) mustBe false
       recurrence.couldRunAt(dateTimeOf(2019, 5, 6,12, 0, timeZone)) mustBe true
       recurrence.couldRunAt(dateTimeOf(2020, 4, 1,12, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 1, 13, 30, ZoneId.of("America/St_Johns"))) mustBe true
     }
 
     "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
@@ -743,6 +750,7 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.couldRunAt(dateTimeOf(2019, 7, 27,12, 0, timeZone)) mustBe false
       recurrence.couldRunAt(dateTimeOf(2019, 8, 27,12, 0, timeZone)) mustBe false
       recurrence.couldRunAt(dateTimeOf(2019, 7, 31,13, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 7, 28,13, 30, ZoneId.of("America/St_Johns"))) mustBe true
     }
 
     "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
