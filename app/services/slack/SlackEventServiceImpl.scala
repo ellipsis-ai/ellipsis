@@ -96,18 +96,29 @@ class SlackEventServiceImpl @Inject()(
 
   def maybeSlackUserDataForAction(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): DBIO[Option[SlackUserData]] = {
     val slackTeamId = client.profile.slackTeamId
-    DBIO.from(cacheService.getSlackUserData(SlackUserDataCacheKey(slackUserId, slackTeamId), fetchSlackUserDataFn(slackUserId, slackTeamId, client, onUserNotFound)))
+    DBIO.from(
+      cacheService.getSlackUserData(SlackUserDataCacheKey(slackUserId, slackTeamId), fetchSlackUserDataFn(slackUserId, slackTeamId, client, onUserNotFound)).recover {
+        case e: InvalidResponseException => {
+          Logger.warn(s"Couldn’t retrieve bot user data from Slack API for ${client.profile.botDebugInfo} because of an invalid/error response; using fallback cache", e)
+          None
+        }
+      }
+    )
   }
 
   def maybeSlackUserDataFor(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
     dataService.run(maybeSlackUserDataForAction(slackUserId, client, onUserNotFound))
   }
 
-  def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
-    maybeSlackUserDataFor(botProfile.userId, clientFor(botProfile), (e) => {
+  def maybeSlackUserDataForAction(botProfile: SlackBotProfile): DBIO[Option[SlackUserData]] = {
+    maybeSlackUserDataForAction(botProfile.userId, clientFor(botProfile), (e) => {
       Logger.error(s"Slack said the Ellipsis bot Slack user could not be found for Ellipsis team ${botProfile.teamId} on Slack team ${botProfile.slackTeamId} with slack user ID ${botProfile.userId}", e)
       None
     })
+  }
+
+  def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {
+    dataService.run(maybeSlackUserDataForAction(botProfile))
   }
 
   def maybeSlackUserDataForEmail(email: String, client: SlackApiClient): Future[Option[SlackUserData]] = {

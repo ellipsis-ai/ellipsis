@@ -22,6 +22,7 @@ trait SlackEventService {
   def maybeSlackUserDataForAction(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): DBIO[Option[SlackUserData]]
   def maybeSlackUserDataFor(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]]
 
+  def maybeSlackUserDataForAction(botProfile: SlackBotProfile): DBIO[Option[SlackUserData]]
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]]
 
   def maybeSlackUserDataForEmail(email: String, client: SlackApiClient): Future[Option[SlackUserData]]
