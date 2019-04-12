@@ -286,7 +286,7 @@ class RecurrenceSpec extends PlaySpec {
 
       val initial = recurrence.initialAfter(now)
 
-      val plus7Days = now.plusHours(7).withHour(12).withMinute(0)
+      val plus7Days = now.plusDays(7).withHour(12).withMinute(0)
       recurrence.expectedNextRunFor(now, Some(plus7Days)) mustBe initial
 
       val minus3Days = now.minusDays(3).withHour(12).withMinute(0)
