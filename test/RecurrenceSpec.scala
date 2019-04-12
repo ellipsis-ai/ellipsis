@@ -522,6 +522,7 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.couldRunAt(date.withHour(13)) mustBe false
       recurrence.couldRunAt(date.plusYears(5).plusMonths(5)) mustBe true
       recurrence.couldRunAt(dateTimeOf(2019, 4, 1, 13, 30, ZoneId.of("America/St_Johns"))) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 2, 1, 0, ZoneId.of("Asia/Tokyo"))) mustBe true
     }
 
     "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
