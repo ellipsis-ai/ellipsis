@@ -106,8 +106,8 @@ object ScheduledActionsConfig {
 
   private def dmChannelsDataFor(teamChannelsData: Seq[TeamChannelsData]): Seq[ScheduleChannelData] = {
     teamChannelsData.flatMap { tcd =>
-      tcd.channelList.filter(_.isSelfDm).filter(_.isBotMember)
-    }.slice(0, 1)
+      tcd.channelList.filter(_.isDm).filter(_.isBotMember)
+    }.distinct
   }
 
   private def mpimChannelsDataFor(teamChannelsData: Seq[TeamChannelsData]): Seq[ScheduleChannelData] = {

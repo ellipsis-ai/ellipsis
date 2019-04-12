@@ -14,4 +14,6 @@ case class ScheduleChannelData(
                                 isExternallyShared: Boolean,
                                 isReadOnly: Boolean,
                                 isOrgShared: Boolean
-                              )
+                              ) {
+  def isDm: Boolean = isSelfDm || isOtherDm
+}
