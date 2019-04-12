@@ -306,7 +306,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
 
   }
 
-  "maybeUserIsPrivateMember" should {
+  "maybePrivateMemberInfo" should {
     val slackBotProfile = SlackBotProfile(slackBotUserId, "teamId", slackTeamId, IDs.next, OffsetDateTime.now, allowShortcutMention = true)
     val userSlackProfile = SlackProfile(SlackUserTeamIds(slackTeamId), LoginInfo("slack", slackUserId), None)
 
