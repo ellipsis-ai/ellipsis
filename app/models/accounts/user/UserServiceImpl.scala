@@ -136,7 +136,7 @@ class UserServiceImpl @Inject() (
   def teamAccessForAction(user: User, maybeTargetTeamId: Option[String]): DBIO[UserTeamAccess] = {
     for {
       loggedInTeam <- dataService.teams.findAction(user.teamId).map(_.get)
-      isAdmin <- DBIO.from(isAdmin(user))
+      isAdmin <- isAdminAction(user)
       maybeTeam <- maybeTargetTeamId.map { targetTeamId =>
         if (targetTeamId != user.teamId && !isAdmin) {
           DBIO.successful(None)
@@ -150,7 +150,7 @@ class UserServiceImpl @Inject() (
         dataService.slackBotProfiles.maybeFirstForAction(team, user)
       }.getOrElse(DBIO.successful(None))
       maybeBotName <- maybeBotProfile.map { botProfile =>
-        DBIO.from(dataService.slackBotProfiles.maybeNameFor(botProfile))
+        dataService.slackBotProfiles.maybeNameForAction(botProfile)
       }.getOrElse(DBIO.successful(None))
     } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeBotName, maybeTeam.exists(t => t.id != user.teamId))
   }
@@ -168,8 +168,7 @@ class UserServiceImpl @Inject() (
         client <- maybeClient
         linkedAccount <- maybeLinkedAccount
       } yield {
-        // TODO: make sure this is ok
-        DBIO.from(slackEventService.maybeSlackUserDataFor(linkedAccount.loginInfo.providerKey, client, (_) => None)).map { maybeSlackUserData =>
+        slackEventService.maybeSlackUserDataForAction(linkedAccount.loginInfo.providerKey, client, (_) => None).map { maybeSlackUserData =>
           maybeSlackUserData.exists(_.accountTeamIds.contains(LinkedAccount.ELLIPSIS_SLACK_TEAM_ID))
         }
       }).getOrElse(DBIO.successful(false))

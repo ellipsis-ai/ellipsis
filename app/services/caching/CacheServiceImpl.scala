@@ -307,8 +307,8 @@ class CacheServiceImpl @Inject() (
     set(groupVersionDataKey(data.id), Json.toJson(data))
   }
 
-  def getBehaviorGroupVersionData(groupVersionId: String): Future[Option[ImmutableBehaviorGroupVersionData]] = {
-    get[JsValue](groupVersionDataKey(groupVersionId)).map { maybeValue =>
+  def getBehaviorGroupVersionDataAction(groupVersionId: String): DBIO[Option[ImmutableBehaviorGroupVersionData]] = {
+    DBIO.from(get[JsValue](groupVersionDataKey(groupVersionId))).map { maybeValue =>
       maybeValue.flatMap { json =>
         json.validate[ImmutableBehaviorGroupVersionData] match {
           case JsSuccess(data, _) => Some(data)
@@ -322,12 +322,20 @@ class CacheServiceImpl @Inject() (
     s"team-$teamId-bot-name-v1"
   }
 
+  def cacheBotNameAction(name: String, teamId: String): DBIO[Unit] = {
+    DBIO.from(set(botNameKey(teamId), name, Duration.Inf))
+  }
+
   def cacheBotName(name: String, teamId: String): Future[Unit] = {
-    set(botNameKey(teamId), name, Duration.Inf)
+    dataService.run(cacheBotNameAction(name, teamId))
+  }
+
+  def getBotNameAction(teamId: String): DBIO[Option[String]] = {
+    DBIO.from(get[String](botNameKey(teamId)))
   }
 
   def getBotName(teamId: String): Future[Option[String]] = {
-    get[String](botNameKey(teamId))
+    dataService.run(getBotNameAction(teamId))
   }
 
   private def lastConversationIdKey(teamId: String, channelId: String): String = {

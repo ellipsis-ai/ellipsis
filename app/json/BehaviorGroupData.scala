@@ -268,7 +268,7 @@ object BehaviorGroupData {
                       cacheService: CacheService
                     )(implicit ec: ExecutionContext): DBIO[BehaviorGroupData] = {
     for {
-      maybeCachedData <- DBIO.from(cacheService.getBehaviorGroupVersionData(version.id))
+      maybeCachedData <- cacheService.getBehaviorGroupVersionDataAction(version.id)
       immutableData <- maybeCachedData.map(DBIO.successful).getOrElse {
         for {
           behaviors <- dataService.behaviors.allForGroupAction(version.group)

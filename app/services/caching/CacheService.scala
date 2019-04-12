@@ -71,10 +71,12 @@ trait CacheService {
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Future[Unit]
 
-  def getBehaviorGroupVersionData(groupVersionId: String): Future[Option[ImmutableBehaviorGroupVersionData]]
+  def getBehaviorGroupVersionDataAction(groupVersionId: String): DBIO[Option[ImmutableBehaviorGroupVersionData]]
 
+  def cacheBotNameAction(name: String, teamId: String): DBIO[Unit]
   def cacheBotName(name: String, teamId: String): Future[Unit]
 
+  def getBotNameAction(teamId: String): DBIO[Option[String]]
   def getBotName(teamId: String): Future[Option[String]]
 
   def cacheLastConversationId(teamId: String, channelId: String, conversationId: String): Future[Unit]
