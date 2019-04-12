@@ -9,6 +9,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
 import models.accounts.user.User
+import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
@@ -152,7 +153,7 @@ class ScheduledActionsController @Inject()(
             behavior = behavior,
             arguments = newArguments,
             recurrence = recurrence,
-            nextSentAt = recurrence.nextAfter(OffsetDateTime.now),
+            nextSentAt = recurrence.expectedNextRunFor(OffsetDateTime.now, Some(original.nextSentAt)),
             maybeChannel = maybeChannel,
             isForIndividualMembers = newData.useDM
           ))
@@ -180,7 +181,7 @@ class ScheduledActionsController @Inject()(
             dataService.scheduledMessages.save(original.copy(
               text = trigger,
               recurrence = recurrence,
-              nextSentAt = recurrence.nextAfter(OffsetDateTime.now),
+              nextSentAt = recurrence.expectedNextRunFor(OffsetDateTime.now, Some(original.nextSentAt)),
               maybeChannel = maybeChannel,
               isForIndividualMembers = newData.useDM
             ))
@@ -319,18 +320,18 @@ class ScheduledActionsController @Inject()(
   }
 
   def validateRecurrence = silhouette.SecuredAction(parse.json) { implicit request =>
-    request.body.validate[ScheduledActionRecurrenceData].fold(
+    request.body.validate[RecurrenceValidationData].fold(
       jsonError => {
         BadRequest(JsError.toJson(jsonError))
       },
-      recurrenceData => {
-        recurrenceData.maybeNewRecurrence.map { recurrence =>
+      validationData => {
+        validationData.recurrenceData.maybeNewRecurrence.map { recurrence =>
           val now = OffsetDateTime.now
           val maybeRemainingRuns = recurrence.maybeTotalTimesToRun.map { totalTimes =>
             math.max(0, totalTimes - recurrence.timesHasRun)
           }
           val maybeFirst = if (maybeRemainingRuns.isEmpty || maybeRemainingRuns.exists(_ > 0)) {
-            Some(recurrence.nextAfter(now))
+            Some(recurrence.expectedNextRunFor(OffsetDateTime.now, validationData.nextRun))
           } else {
             None
           }

@@ -140,6 +140,8 @@ object Formatting {
   lazy implicit val scheduleChannelDataReads = Json.reads[ScheduleChannelData]
   lazy implicit val scheduleChannelDataWrites = Json.writes[ScheduleChannelData]
 
+  lazy implicit val recurrenceValidationDataFormat = Json.format[RecurrenceValidationData]
+
   lazy implicit val teamChannelsDataFormat = Json.format[TeamChannelsData]
   lazy implicit val orgChannelsDataFormat = Json.format[OrgChannelsData]
 

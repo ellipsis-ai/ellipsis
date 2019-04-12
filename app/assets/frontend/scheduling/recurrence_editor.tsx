@@ -11,10 +11,16 @@ import autobind from "../lib/autobind";
 import Formatter, {Timestamp} from "../lib/formatter";
 import * as debounce from "javascript-debounce";
 import {DataRequest} from "../lib/data_request";
+import ScheduledAction from "../models/scheduled_action";
+
+interface BaseRecurrenceEditorProps {
+  scheduledAction: ScheduledAction
+  onChange: (recurrence: Recurrence) => void
+}
 
 export interface RecurrenceEditorProps {
-  recurrence: Recurrence,
-  onChange: (recurrence: Recurrence) => void,
+  recurrence: Recurrence
+  onChange: (recurrence: Recurrence) => void
 }
 
 export interface RecurrenceEditorTimeZoneProps {
@@ -27,7 +33,7 @@ interface ValidatedRecurrenceJson {
   nextRuns: Array<Timestamp>
 }
 
-type Props = RecurrenceEditorProps & RecurrenceEditorTimeZoneProps & {
+type Props = BaseRecurrenceEditorProps & RecurrenceEditorTimeZoneProps & {
   csrfToken: string
 }
 
@@ -38,7 +44,7 @@ interface State {
 }
 
 class RecurrenceEditor extends React.Component<Props, State> {
-    validateRecurrence: (recurrence: Recurrence) => void;
+    validateRecurrence: (recurrence: Recurrence, nextRun: Option<Date>) => void;
 
     constructor(props: Props) {
       super(props);
@@ -51,24 +57,32 @@ class RecurrenceEditor extends React.Component<Props, State> {
       this.validateRecurrence = debounce(this._validateRecurrence, 500);
     }
 
+    getRecurrence(): Recurrence {
+      return this.props.scheduledAction.recurrence;
+    }
+
     componentDidMount() {
-      this.validateRecurrence(this.props.recurrence);
+      this.validateRecurrence(this.getRecurrence(), this.props.scheduledAction.firstRecurrence);
     }
 
     componentWillReceiveProps(nextProps: Props) {
-      if (nextProps.recurrence !== this.props.recurrence) {
+      if (nextProps.scheduledAction.recurrence !== this.getRecurrence()) {
         this.setState({
           isValidating: true,
           error: null
         }, () => {
-          this.validateRecurrence(nextProps.recurrence);
+          this.validateRecurrence(nextProps.scheduledAction.recurrence, nextProps.scheduledAction.firstRecurrence);
         });
       }
     }
 
-    _validateRecurrence(recurrence: Recurrence): void {
+    _validateRecurrence(recurrence: Recurrence, nextRun: Option<Date>): void {
       const url = jsRoutes.controllers.ScheduledActionsController.validateRecurrence().url;
-      DataRequest.jsonPost(url, recurrence, this.props.csrfToken)
+      const body = {
+        recurrenceData: recurrence,
+        nextRun: nextRun
+      };
+      DataRequest.jsonPost(url, body, this.props.csrfToken)
         .then((data: ValidatedRecurrenceJson) => {
           this.setState({
             validated: data,
@@ -84,45 +98,45 @@ class RecurrenceEditor extends React.Component<Props, State> {
     }
 
     renderRecurrenceEditorForType() {
-      if (this.props.recurrence.typeName === "yearly") {
+      if (this.getRecurrence().typeName === "yearly") {
         return (
-          <YearlyRecurrenceEditor recurrence={this.props.recurrence}
+          <YearlyRecurrenceEditor recurrence={this.getRecurrence()}
             onChange={this.props.onChange}
             teamTimeZone={this.props.teamTimeZone}
             teamTimeZoneName={this.props.teamTimeZoneName}
           />
         );
-      } else if (this.props.recurrence.typeName.indexOf("monthly") === 0) {
+      } else if (this.getRecurrence().typeName.indexOf("monthly") === 0) {
         return (
-          <MonthlyRecurrenceEditor recurrence={this.props.recurrence}
+          <MonthlyRecurrenceEditor recurrence={this.getRecurrence()}
             onChange={this.props.onChange}
             teamTimeZone={this.props.teamTimeZone}
             teamTimeZoneName={this.props.teamTimeZoneName}
           />
         );
-      } else if (this.props.recurrence.typeName === "weekly") {
+      } else if (this.getRecurrence().typeName === "weekly") {
         return (
-          <WeeklyRecurrenceEditor recurrence={this.props.recurrence}
+          <WeeklyRecurrenceEditor recurrence={this.getRecurrence()}
             onChange={this.props.onChange}
             teamTimeZone={this.props.teamTimeZone}
             teamTimeZoneName={this.props.teamTimeZoneName}
           />
         );
-      } else if (this.props.recurrence.typeName === "daily") {
+      } else if (this.getRecurrence().typeName === "daily") {
         return (
-          <DailyRecurrenceEditor recurrence={this.props.recurrence}
+          <DailyRecurrenceEditor recurrence={this.getRecurrence()}
             onChange={this.props.onChange}
             teamTimeZone={this.props.teamTimeZone}
             teamTimeZoneName={this.props.teamTimeZoneName}
           />
         );
-      } else if (this.props.recurrence.typeName === "hourly") {
+      } else if (this.getRecurrence().typeName === "hourly") {
         return (
-          <HourlyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange}/>
+          <HourlyRecurrenceEditor recurrence={this.getRecurrence()} onChange={this.props.onChange}/>
         );
-      } else { /* this.props.recurrence.typeName === "minutely" or any future unknown type */
+      } else { /* this.getRecurrence().typeName === "minutely" or any future unknown type */
         return (
-          <MinutelyRecurrenceEditor recurrence={this.props.recurrence} onChange={this.props.onChange}/>
+          <MinutelyRecurrenceEditor recurrence={this.getRecurrence()} onChange={this.props.onChange}/>
         );
       }
     }
@@ -162,7 +176,7 @@ class RecurrenceEditor extends React.Component<Props, State> {
         <div>
           <div className="mvm">
             <RecurrenceIntervalEditor
-              recurrence={this.props.recurrence}
+              recurrence={this.getRecurrence()}
               onChange={this.props.onChange}
               teamTimeZone={this.props.teamTimeZone}
               teamTimeZoneName={this.props.teamTimeZoneName}
