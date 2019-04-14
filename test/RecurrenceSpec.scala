@@ -93,71 +93,79 @@ class RecurrenceSpec extends PlaySpec {
   "Hourly" should {
 
     "recur every 2h on the 42nd minute" in  {
-      val recurrence = Hourly(IDs.next, 2, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 2, 0, None, 42, timeZone)
       recurrence.nextAfter(dateTimeOf(2010, 6, 7, 9, 42, timeZone)) mustBe dateTimeOf(2010, 6, 7, 11, 42, timeZone)
     }
 
+    "support half-hour-offset time zones" in {
+      val stJohns = ZoneId.of("America/St_Johns")
+      val recurrence = Hourly(IDs.next, 1, 0, None, 42, stJohns)
+      recurrence.nextAfter(dateTimeOf(2019, 7, 31, 1, 30, timeZone)) mustBe dateTimeOf(2019, 7, 31, 3, 42, stJohns)
+    }
+
     "recur later the same hour" in {
-      val recurrence = Hourly(IDs.next, 1, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 1, 0, None, 42, timeZone)
       recurrence.nextAfter(dateTimeOf(2010, 6, 7, 9, 40, timeZone)) mustBe dateTimeOf(2010, 6, 7, 9, 42, timeZone)
     }
 
     "recur the next hour if past minute of hour" in {
-      val recurrence = Hourly(IDs.next, 1, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 1, 0, None, 42, timeZone)
       recurrence.nextAfter(dateTimeOf(2010, 6, 7, 9, 43, timeZone)) mustBe dateTimeOf(2010, 6, 7, 10, 42, timeZone)
     }
 
     "have the right initial time when earlier in hour" in {
-      val recurrence = Hourly(IDs.next, 2, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 2, 0, None, 42, timeZone)
       recurrence.initialAfter(dateTimeOf(2010, 6, 7, 9, 41, timeZone)) mustBe dateTimeOf(2010, 6, 7, 9, 42, timeZone)
     }
 
     "have the right initial time when later in hour" in {
-      val recurrence = Hourly(IDs.next, 2, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 2, 0, None, 42, timeZone)
       recurrence.initialAfter(dateTimeOf(2010, 6, 7, 9, 43, timeZone)) mustBe dateTimeOf(2010, 6, 7, 10, 42, timeZone)
     }
 
     "have the right initial time when on same minute" in {
-      val recurrence = Hourly(IDs.next, 2, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 2, 0, None, 42, timeZone)
       recurrence.initialAfter(dateTimeOf(2010, 6, 7, 9, 42, timeZone)) mustBe dateTimeOf(2010, 6, 7, 9, 42, timeZone)
     }
 
     "be created with implied frequency of 1" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("every hour", timeZone), Some(Hourly(IDs.next, 1, 0, None, OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("every hour", timeZone), Some(Hourly(IDs.next, 1, 0, None, OffsetDateTime.now.getMinute, timeZone)))
     }
 
     "be created with frequency" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("every 4 hours", timeZone), Some(Hourly(IDs.next, 4, 0, None, OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("every 4 hours", timeZone), Some(Hourly(IDs.next, 4, 0, None, OffsetDateTime.now.getMinute, timeZone)))
     }
 
     "be created with frequency and minutes" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("every 4 hours at 15 minutes", timeZone), Some(Hourly(IDs.next, 4, 0, None, 15)))
+      mustMatch(Recurrence.maybeUnsavedFromText("every 4 hours at 15 minutes", timeZone), Some(Hourly(IDs.next, 4, 0, None, 15, timeZone)))
     }
 
     "be created to run once when applicable" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), OffsetDateTime.now.getMinute)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), 12)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), OffsetDateTime.now.getMinute, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), 12, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1, timeZone)))
     }
 
     "be created to run N times when applicable" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), OffsetDateTime.now.getMinute)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), 12)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), OffsetDateTime.now.getMinute, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), 12, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1, timeZone)))
     }
 
     "couldRunAt returns true for any timestamp on the same minute of the hour" in {
-      val recurrence = Hourly(IDs.next, 1, 0, None, minuteOfHour = 0)
+      val recurrence = Hourly(IDs.next, 1, 0, None, minuteOfHour = 0, timeZone)
       recurrence.couldRunAt(OffsetDateTime.now.withMinute(0)) mustBe true
       recurrence.couldRunAt(OffsetDateTime.now.withMinute(1)) mustBe false
       recurrence.couldRunAt(OffsetDateTime.now.withMinute(0).plusMonths(1).plusHours(4).plusYears(5)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 1, 1, 1, 0, ZoneId.of("America/St_Johns"))) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 1, 1, 1, 30, ZoneId.of("America/St_Johns"))) mustBe true
     }
 
     "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
       val now = OffsetDateTime.now
-      val recurrence = Hourly(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, minuteOfHour = 0)
+      val recurrence = Hourly(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, minuteOfHour = 0, timeZone)
 
       val plus3Hours = now.plusHours(3).withMinute(0)
       recurrence.expectedNextRunFor(now, Some(plus3Hours)) mustBe plus3Hours
@@ -168,7 +176,7 @@ class RecurrenceSpec extends PlaySpec {
 
     "expectedNextRunFor returns the initial timestamp if it is invalid or later than the second possible run" in {
       val now = OffsetDateTime.now
-      val recurrence = Hourly(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, minuteOfHour = 0)
+      val recurrence = Hourly(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, minuteOfHour = 0, timeZone)
       val initial = recurrence.initialAfter(now)
 
       val plus7Hours = now.plusHours(7).withMinute(0)
