@@ -19,6 +19,7 @@ declare var jsRoutes: {
       findBehaviorGroupsMatching: (queryString: string, branch: Option<string>, teamId: string) => JsRoute,
       index: (teamId?: Option<string>) => JsRoute,
       possibleCitiesFor: (search: string) => JsRoute,
+      getTimeZoneInfo: (timeZoneId: string) => JsRoute,
       setTeamTimeZone: () => JsRoute,
       fetchPublishedBehaviorInfo: (teamId: string, branchName?: Option<string>) => JsRoute,
       mergeBehaviorGroups: () => JsRoute

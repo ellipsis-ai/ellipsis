@@ -249,7 +249,7 @@ class ApplicationController @Inject() (
         } yield {
           maybeTeam.map { team =>
             team.maybeTimeZone.map { tz =>
-              Ok(Json.toJson(TeamTimeZoneData(
+              Ok(Json.toJson(TimeZoneData(
                 tz.toString,
                 Some(tz.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
                 OffsetDateTime.now(tz).getOffset.getTotalSeconds
@@ -263,5 +263,17 @@ class ApplicationController @Inject() (
         }
       }
     )
+  }
+
+  def getTimeZoneInfo(timeZoneId: String) = silhouette.SecuredAction {
+    TimeZoneParser.maybeZoneFor(timeZoneId).map { tz =>
+      Ok(Json.toJson(TimeZoneData(
+        tz.toString,
+        Some(tz.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
+        OffsetDateTime.now(tz).getOffset.getTotalSeconds
+      )))
+    }.getOrElse {
+      BadRequest(Json.obj("message" -> "Invalid time zone").toString)
+    }
   }
 }

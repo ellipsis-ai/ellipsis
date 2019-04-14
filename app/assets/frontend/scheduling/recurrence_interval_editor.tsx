@@ -16,7 +16,9 @@ class RecurrenceIntervalEditor extends React.Component<Props> {
   }
 
   setTypeHourly(): void {
-    this.props.onChange(this.props.recurrence.becomeHourly());
+    this.props.onChange(this.props.recurrence.becomeHourly({
+      timeZone: this.props.teamTimeZone
+    }));
   }
 
   setTypeDaily(): void {

@@ -5,7 +5,7 @@ import DynamicLabelButton from '../form/dynamic_label_button';
 import TimeZoneSelector from './time_zone_selector';
 import autobind from "../lib/autobind";
 
-interface TeamTimeZoneData {
+export interface TimeZoneData {
   tzName: string,
   formattedName?: Option<string>,
   currentOffset: number
@@ -49,7 +49,7 @@ class TeamTimeZoneSetter extends React.Component<Props, State> {
       });
     }
 
-    isTeamTimeZoneData(json: any): json is TeamTimeZoneData {
+    isTeamTimeZoneData(json: any): json is TimeZoneData {
       return typeof json.tzName === "string";
     }
 
@@ -66,7 +66,7 @@ class TeamTimeZoneSetter extends React.Component<Props, State> {
             tzName: newTz,
             teamId: this.props.teamId
           }, this.props.csrfToken)
-          .then((json: TeamTimeZoneData | { message?: string }) => {
+          .then((json: TimeZoneData | { message?: string }) => {
             if (this.isTeamTimeZoneData(json)) {
               this.setState({
                 isSaving: false,
