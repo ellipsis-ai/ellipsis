@@ -84,6 +84,7 @@ object BehaviorGroupDataBuilder {
   def buildFor(
                 teamId: String,
                 maybeGroupId: Option[String] = None,
+                maybeName: Option[String] = None,
                 maybeActionInputs: Option[Seq[InputData]] = None,
                 maybeDataTypeInputs: Option[Seq[InputData]] = None,
                 maybeActions: Option[Seq[BehaviorVersionData]] = None,
@@ -102,7 +103,7 @@ object BehaviorGroupDataBuilder {
     BehaviorGroupData(
       id = Some(behaviorGroupId),
       teamId = IDs.next,
-      name = Some("My Skill"),
+      name = maybeName.orElse(Some("My Skill")),
       description = Some("has a description"),
       icon = Some("\uD83E\uDD5C"),
       actionInputs = actionInputs,
