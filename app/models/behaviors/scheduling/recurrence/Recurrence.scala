@@ -182,7 +182,7 @@ trait RecurrenceWithTimeZone extends Recurrence {
   override val maybeTimeZone = Some(timeZone)
 
   // TODO: Someday we may care about locales
-  def stringFor(timeZone: ZoneId): String = s"${timeZone.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)}"
+  def stringFor(timeZone: ZoneId): String = s"${timeZone.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}"
 }
 
 case class Hourly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesToRun: Option[Int], minuteOfHour: Int, timeZone: ZoneId) extends RecurrenceWithTimeZone {
@@ -194,10 +194,10 @@ case class Hourly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesT
   def displayString: String = {
     if (maybeTotalTimesToRun.contains(1)) {
       val frequencyString = if (frequency == 1) { "the next hour" } else { s"$frequency hours" }
-      s"in $frequencyString at $minuteOfHour ${stringFor(timeZone)}, once"
+      s"in $frequencyString at $minuteOfHour (${stringFor(timeZone)}), once"
     } else {
       val frequencyString = if (frequency == 1) {"hour"} else {s"$frequency hours"}
-      s"every $frequencyString at $minuteOfHour minutes past ${stringFor(timeZone)}$timesToRunString"
+      s"every $frequencyString at $minuteOfHour minutes past (${stringFor(timeZone)})$timesToRunString"
     }
   }
 

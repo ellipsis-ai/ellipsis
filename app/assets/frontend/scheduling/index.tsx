@@ -54,6 +54,7 @@ type State = {
   justSaved: boolean,
   justDeleted: boolean,
   isEditing: boolean,
+  userTimeZone: string | null,
   userTimeZoneName: string | null
 }
 
@@ -86,6 +87,7 @@ class Scheduling extends React.Component<Props, State> {
         justSaved: false,
         justDeleted: false,
         isEditing: Boolean(selectedItem),
+        userTimeZone: null,
         userTimeZoneName: null
       };
     }
@@ -146,6 +148,7 @@ class Scheduling extends React.Component<Props, State> {
         DataRequest.jsonGet(url).then((tzInfo: TimeZoneData) => {
           if (tzInfo.formattedName) {
             this.setState({
+              userTimeZone: tzInfo.tzName,
               userTimeZoneName: tzInfo.formattedName
             });
           }
@@ -483,6 +486,8 @@ class Scheduling extends React.Component<Props, State> {
                     scheduledAction={action}
                     behaviorGroups={this.props.behaviorGroups}
                     onClick={this.toggleEditor}
+                    userTimeZone={this.state.userTimeZone}
+                    userTimeZoneName={this.state.userTimeZoneName}
                   />
                 )) : (
                   <div className="mhl mvs pal mobile-pam border border-light bg-white">
