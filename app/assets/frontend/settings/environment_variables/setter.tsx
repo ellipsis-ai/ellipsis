@@ -216,15 +216,19 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
     }
   }
 
-  onChangeVarValueByName(name: string, newValue: string) {
+  setVarByName(name: string, newProps: Partial<EnvironmentVariableData>, callback?: () => void): void {
     const vars = this.getVars();
     const namedVarIndex = vars.findIndex((ea) => ea.name === name);
     if (namedVarIndex !== -1) {
-      const newVar = Object.assign({}, vars[namedVarIndex], { value: newValue });
+      const newVar = Object.assign({}, vars[namedVarIndex], newProps);
       this.setState({
         vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, namedVarIndex)
       });
     }
+  }
+
+  onChangeVarValueByName(name: string, newValue: string) {
+    this.setVarByName(name, { value: newValue });
   }
 
   onSave(): void {
@@ -262,22 +266,15 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
   }
 
   resetVarByName(name: string): void {
-    const vars = this.getVars();
-    const namedVarIndex = vars.findIndex((ea) => ea.name === name);
-    if (namedVarIndex !== -1) {
-      const newVar = Object.assign({}, vars[namedVarIndex], {
-        isAlreadySavedWithValue: false,
-        value: ''
-      });
-      this.setState({
-        vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, namedVarIndex)
-      }, () => {
-        const input = this.existingEnvVarsByName[name];
-        if (input) {
-          input.focus();
-        }
-      });
-    }
+    this.setVarByName(name, {
+      isAlreadySavedWithValue: false,
+      value: ''
+    }, () => {
+      const input = this.existingEnvVarsByName[name];
+      if (input) {
+        input.focus();
+      }
+    });
   }
 
   adminLoadValueFor(v: EnvironmentVariableData): void {
