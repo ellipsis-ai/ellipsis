@@ -1,6 +1,6 @@
 package json
 
-case class TeamTimeZoneData(
+case class TimeZoneData(
                              tzName: String,
                              formattedName: Option[String],
                              currentOffset: Int

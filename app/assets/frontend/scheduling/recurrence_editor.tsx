@@ -35,6 +35,7 @@ interface ValidatedRecurrenceJson {
 
 type Props = BaseRecurrenceEditorProps & RecurrenceEditorTimeZoneProps & {
   csrfToken: string
+  userTimeZoneName: Option<string>
 }
 
 interface State {
@@ -132,7 +133,12 @@ class RecurrenceEditor extends React.Component<Props, State> {
         );
       } else if (this.getRecurrence().typeName === "hourly") {
         return (
-          <HourlyRecurrenceEditor recurrence={this.getRecurrence()} onChange={this.props.onChange}/>
+          <HourlyRecurrenceEditor
+            recurrence={this.getRecurrence()}
+            onChange={this.props.onChange}
+            teamTimeZone={this.props.teamTimeZone}
+            teamTimeZoneName={this.props.teamTimeZoneName}
+          />
         );
       } else { /* this.getRecurrence().typeName === "minutely" or any future unknown type */
         return (
@@ -188,7 +194,7 @@ class RecurrenceEditor extends React.Component<Props, State> {
           </div>
 
           <div className="mvm border border-blue bg-blue-lighter pam">
-            <div className="type-label type-weak mbxs">When this will run next:</div>
+            <div className="type-label type-weak mbxs">When this will run next ({this.props.userTimeZoneName || "in your time zone"}):</div>
             <div className="type-s">
               {this.renderNextRuns()}
             </div>

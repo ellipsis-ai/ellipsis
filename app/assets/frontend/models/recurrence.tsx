@@ -126,7 +126,7 @@ class Recurrence implements RecurrenceInterface {
     }
 
     isValidHourly(): boolean {
-      return this.typeName === "hourly" && this.hasValidFrequency() && Minute.isValid(this.minuteOfHour);
+      return this.typeName === "hourly" && this.hasValidFrequency() && Minute.isValid(this.minuteOfHour) && this.hasValidTimeZone();
     }
 
     isValidDaily(): boolean {
@@ -182,8 +182,8 @@ class Recurrence implements RecurrenceInterface {
         totalTimesToRun: (defaultProps && defaultProps.totalTimesToRun) || this.totalTimesToRun || null,
         minuteOfHour: minuteOfHour,
         timeOfDay: null,
-        timeZone: null,
-        timeZoneName: null,
+        timeZone: this.timeZone || (defaultProps ? defaultProps.timeZone : null),
+        timeZoneName: this.timeZoneName || (defaultProps ? defaultProps.timeZoneName : null),
         dayOfWeek: null,
         dayOfMonth: null,
         nthDayOfWeek: null,

@@ -148,8 +148,8 @@ object Formatting {
   lazy implicit val scheduledActionsConfigReads = Json.reads[ScheduledActionsConfig]
   lazy implicit val scheduledActionsConfigWrites = Json.writes[ScheduledActionsConfig]
 
-  lazy implicit val teamTimeZoneDataReads = Json.reads[TeamTimeZoneData]
-  lazy implicit val teamTimeZoneDataWrites = Json.writes[TeamTimeZoneData]
+  lazy implicit val teamTimeZoneDataReads = Json.reads[TimeZoneData]
+  lazy implicit val teamTimeZoneDataWrites = Json.writes[TimeZoneData]
 
   lazy implicit val cityInfoDataWrites = Json.writes[CityInfo]
 

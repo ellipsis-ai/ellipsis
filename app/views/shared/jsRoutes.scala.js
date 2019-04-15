@@ -14,6 +14,7 @@
   routes.javascript.ApplicationController.index,
   routes.javascript.ApplicationController.mergeBehaviorGroups,
   routes.javascript.ApplicationController.possibleCitiesFor,
+  routes.javascript.ApplicationController.getTimeZoneInfo,
   routes.javascript.ApplicationController.setTeamTimeZone,
   routes.javascript.BehaviorEditorController.deleteDefaultStorageItems,
   routes.javascript.BehaviorEditorController.edit,

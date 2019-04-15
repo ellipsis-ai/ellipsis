@@ -3,7 +3,7 @@ package controllers
 import java.time.{OffsetDateTime, ZoneId}
 
 import com.mohiva.play.silhouette.test._
-import json.{BehaviorGroupData, TeamTimeZoneData}
+import json.{BehaviorGroupData, TimeZoneData}
 import models.IDs
 import models.accounts.user.UserTeamAccess
 import models.behaviors.behavior.Behavior
@@ -119,7 +119,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         val result = route(app, request).get
         status(result) mustBe OK
         import json.Formatting._
-        contentAsJson(result).validate[TeamTimeZoneData] match {
+        contentAsJson(result).validate[TimeZoneData] match {
           case JsSuccess(data, jsPath) => {
             data.tzName mustBe "America/Toronto"
           }
