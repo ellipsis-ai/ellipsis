@@ -1,13 +1,13 @@
 import java.io.File
 import java.time.OffsetDateTime
 
+import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
-import models.behaviors.managedbehaviorgroup.ManagedBehaviorGroupInfo
 import models.team.Team
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.filefilter.{NotFileFilter, TrueFileFilter}
@@ -20,7 +20,7 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.{DataService, DefaultServices}
-import support.TestContext
+import support.{BehaviorGroupDataBuilder, TestContext}
 import utils.github.{GithubCommitterInfo, GithubPusher}
 
 import scala.collection.JavaConverters._
@@ -70,25 +70,10 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
     ).run)
   }
 
-  def setupGroup(user: User, team: Team, dataService: DataService): BehaviorGroup = {
-    val group = BehaviorGroup(behaviorGroupId, maybeBehaviorGroupExportId, team, behaviorGroupTimestamp)
-    when(dataService.behaviorGroups.findWithoutAccessCheck(group.id)).thenReturn(Future.successful(Some(group)))
-    when(dataService.behaviorGroups.find(group.id, user)).thenReturn(Future.successful(Some(group)))
-
-    when(dataService.requiredAWSConfigs.allForId(any[String])).thenReturn(Future.successful(Seq()))
-    when(dataService.requiredOAuth1ApiConfigs.allForId(any[String])).thenReturn(Future.successful(Seq()))
-    when(dataService.requiredOAuth2ApiConfigs.allForId(any[String])).thenReturn(Future.successful(Seq()))
-    when(dataService.requiredSimpleTokenApis.allForId(any[String])).thenReturn(Future.successful(Seq()))
-    when(dataService.teams.find(team.id)).thenReturn(Future.successful(Some(team)))
-
-    when(dataService.behaviorGroupDeployments.findForBehaviorGroupVersionId(any[String])).thenReturn(Future.successful(None))
-    when(dataService.behaviorGroups.findWithoutAccessCheck(group.id)).thenReturn(Future.successful(Some(group)))
-    when(dataService.managedBehaviorGroups.infoFor(group, team)).thenReturn(Future.successful(ManagedBehaviorGroupInfo(isManaged = false, None)))
-    when(dataService.linkedGithubRepos.maybeFor(group)).thenReturn(Future.successful(None))
-
-    when(dataService.behaviorGroupVersionSHAs.maybeCreateFor(any[BehaviorGroup], any[String])).thenReturn(Future.successful(None))
-
-    group
+  def setupGroupData(user: User, team: Team, dataService: DataService)(implicit ec: ExecutionContext): BehaviorGroupData = {
+    val groupData = BehaviorGroupDataBuilder.buildFor(team.id)
+    when(dataService.behaviorGroups.maybeDataFor(behaviorGroupId, user)).thenReturn(Future.successful(Some(groupData)))
+    groupData
   }
 
   def setupGroupVersionFor(group: BehaviorGroup, dataService: DataService): BehaviorGroupVersion = {
@@ -141,7 +126,7 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
   "GithubPusher.run" should {
     "commit and push a skill to an empty repo, then push again with a renamed action" in new TestContext {
       running(app) {
-        val originalGroup = setupGroup(user, team, dataService)
+        val originalGroup = setupGroupData(user, team, dataService)
         val originalGroupVersion = setupGroupVersionFor(originalGroup, dataService)
         val originalBehavior = setupBehaviorFor(originalGroup, user, dataService)
         val originalActionName = "happyAction"

@@ -7,18 +7,8 @@ import models.IDs
 
 object BehaviorGroupDataBuilder {
 
-  def buildFor(teamId: String): BehaviorGroupData = {
-    val testUser = UserData(
-      ellipsisUserId = "test",
-      context = Some("test"),
-      userName = Some("tester"),
-      userIdForContext = None,
-      fullName = None,
-      email = None,
-      timeZone = None,
-      formattedLink = None
-    )
-    val actionInput = InputData(
+  val defaultActionInputs = Seq(
+    InputData(
       Some(IDs.next),
       Some(IDs.next),
       Some(IDs.next),
@@ -28,8 +18,9 @@ object BehaviorGroupDataBuilder {
       isSavedForTeam = false,
       isSavedForUser = false
     )
-
-    val dataTypeInput = InputData(
+  )
+  val defaultDataTypeInputs = Seq(
+    InputData(
       Some(IDs.next),
       Some(IDs.next),
       Some(IDs.next),
@@ -39,9 +30,10 @@ object BehaviorGroupDataBuilder {
       isSavedForTeam = false,
       isSavedForUser = false
     )
+  )
 
-    val behaviorGroupId = IDs.next
-    val action1 = BehaviorVersionData(
+  def defaultActionsFor(teamId: String, behaviorGroupId: String, inputIds: Seq[String]) = Seq(
+    BehaviorVersionData(
       id = Some(IDs.next),
       teamId = teamId,
       behaviorId = Some(IDs.next),
@@ -51,14 +43,16 @@ object BehaviorGroupDataBuilder {
       description = None,
       functionBody = "module.exports = function(ellipsis) {}",
       responseTemplate = "{successResult}",
-      inputIds = Seq(actionInput.inputId.get),
+      inputIds = inputIds,
       triggers = Seq(),
       config = BehaviorConfig(Some(IDs.next), name = None, responseTypeId = "Normal", canBeMemoized = Some(false), isDataType = false, isTest = Some(false), dataTypeConfig = None),
       exportId = Some(IDs.next),
       createdAt = Some(OffsetDateTime.now)
     )
+  )
 
-    val dataType1 = BehaviorVersionData(
+  def defaultDataTypesFor(teamId: String, behaviorGroupId: String, inputIds: Seq[String]) = Seq(
+    BehaviorVersionData(
       id = Some(IDs.next),
       teamId = teamId,
       behaviorId = Some(IDs.next),
@@ -68,12 +62,42 @@ object BehaviorGroupDataBuilder {
       description = None,
       functionBody = "module.exports = function(ellipsis) {}",
       responseTemplate = "",
-      inputIds = Seq(dataTypeInput.inputId.get),
+      inputIds = inputIds,
       triggers = Seq(),
       config = BehaviorConfig(Some(IDs.next), name = None, responseTypeId = "Normal", canBeMemoized = Some(false), isDataType = true, isTest = Some(false), dataTypeConfig = Some(DataTypeConfigData(fields = Seq(), usesCode = Some(true)))),
       exportId = Some(IDs.next),
       createdAt = Some(OffsetDateTime.now)
     )
+  )
+
+  val defaultAuthor = UserData(
+    ellipsisUserId = "test",
+    context = Some("test"),
+    userName = Some("tester"),
+    userIdForContext = None,
+    fullName = None,
+    email = None,
+    timeZone = None,
+    formattedLink = None
+  )
+
+  def buildFor(
+                teamId: String,
+                maybeGroupId: Option[String] = None,
+                maybeActionInputs: Option[Seq[InputData]] = None,
+                maybeDataTypeInputs: Option[Seq[InputData]] = None,
+                maybeActions: Option[Seq[BehaviorVersionData]] = None,
+                maybeDataTypes: Option[Seq[BehaviorVersionData]] = None,
+                maybeAuthor: Option[UserData] = None
+              ): BehaviorGroupData = {
+
+    val author = maybeAuthor.getOrElse(defaultAuthor)
+
+    val actionInputs = maybeActionInputs.getOrElse(defaultActionInputs)
+    val dataTypeInputs = maybeDataTypeInputs.getOrElse(defaultDataTypeInputs)
+    val behaviorGroupId = maybeGroupId.getOrElse(IDs.next)
+    val actions = maybeActions.getOrElse(defaultActionsFor(teamId, behaviorGroupId, actionInputs.flatMap(_.inputId)))
+    val dataTypes = maybeDataTypes.getOrElse(defaultDataTypesFor(teamId, behaviorGroupId, dataTypeInputs.flatMap(_.inputId)))
 
     BehaviorGroupData(
       id = Some(behaviorGroupId),
@@ -81,9 +105,9 @@ object BehaviorGroupDataBuilder {
       name = Some("My Skill"),
       description = Some("has a description"),
       icon = Some("\uD83E\uDD5C"),
-      actionInputs = Seq(actionInput),
-      dataTypeInputs = Seq(dataTypeInput),
-      behaviorVersions = Seq(action1, dataType1),
+      actionInputs = actionInputs,
+      dataTypeInputs = dataTypeInputs,
+      behaviorVersions = actions ++ dataTypes,
       libraryVersions = Seq.empty,
       requiredAWSConfigs = Seq.empty,
       requiredOAuthApiConfigs = Seq.empty,
@@ -91,7 +115,7 @@ object BehaviorGroupDataBuilder {
       gitSHA = None,
       exportId = Some(IDs.next),
       createdAt = Some(OffsetDateTime.now),
-      author = Some(testUser),
+      author = Some(author),
       deployment = None,
       metaData = None,
       isManaged = false,
