@@ -57,7 +57,8 @@ interface Props {
   envVariableNames: Array<string>,
   functionExecutesImmediately?: Option<boolean>,
 
-  paramTypeIds: Array<string>
+  paramTypeIds: Array<string>,
+  isDataType: boolean
 }
 
 interface State {
@@ -151,7 +152,8 @@ class CodeConfiguration extends React.Component<Props, State> {
         requiredAWSConfigs: this.props.requiredAWSConfigs,
         oauthApiApplications: this.props.oauthApiApplications,
         envVariableNames: this.props.envVariableNames,
-        paramTypeIds: this.props.paramTypeIds
+        paramTypeIds: this.props.paramTypeIds,
+        isDataType: this.props.isDataType
       }) : "";
       return `
 ${ellipsisObjectDefinitions}

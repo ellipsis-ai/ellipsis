@@ -145,12 +145,12 @@ class AWSLambdaServiceImpl @Inject() (
                                  userInfo: DeprecatedUserInfo,
                                  teamInfo: TeamInfo,
                                  eventInfo: EventInfo,
-                                 actionInfo: CurrentActionInfo,
+                                 metaInfo: Option[MetaInfo],
                                  parameterValues: Seq[ParameterWithValue],
                                  environmentVariables: Seq[EnvironmentVariable],
                                  token: InvocationToken
                                ): JsObject = {
-    val contextObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, actionInfo, environmentVariables, apiBaseUrl, token)
+    val contextObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, metaInfo, environmentVariables, apiBaseUrl, token)
     AWSLambdaInvocationJsonBuilder(behaviorVersion, contextObject, parameterValues).build
   }
 
@@ -248,8 +248,8 @@ class AWSLambdaServiceImpl @Inject() (
       maybeBotInfo <- DBIO.from(event.maybeBotInfo(defaultServices))
       teamInfo <- teamInfoFor(behaviorVersion, userInfo, maybeBotInfo)
       maybeMessage <- event.maybeMessageInfoAction(maybeConversation, defaultServices)
-      actionInfo <- BehaviorGroupData.buildForAction(behaviorVersion.groupVersion, user, maybeInitialVersion = None, defaultServices.dataService, defaultServices.cacheService).map { groupData =>
-        CurrentActionInfo(behaviorVersion.behavior.id, SkillInfo.fromBehaviorGroupData(groupData))
+      maybeMetaInfo <- BehaviorGroupData.buildForAction(behaviorVersion.groupVersion, user, maybeInitialVersion = None, defaultServices.dataService, defaultServices.cacheService).map { groupData =>
+        MetaInfo.maybeFor(behaviorVersion.behavior.id, groupData)
       }
       result <- {
         val invocationJson = invocationJsonFor(
@@ -257,7 +257,7 @@ class AWSLambdaServiceImpl @Inject() (
           userInfo,
           teamInfo,
           EventInfo.buildFor(event, eventUser, maybeMessage, configuration),
-          actionInfo,
+          maybeMetaInfo,
           parametersWithValues,
           environmentVariables,
           token

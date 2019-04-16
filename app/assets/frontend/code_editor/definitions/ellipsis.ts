@@ -5,7 +5,8 @@ interface Props {
   requiredAWSConfigs: Array<RequiredAWSConfig>,
   oauthApiApplications: Array<RequiredOAuthApplication>,
   envVariableNames: Array<string>,
-  paramTypeIds: Array<string>
+  paramTypeIds: Array<string>,
+  isDataType: boolean
 }
 
 const EllipsisObjectDefinitions = {
@@ -217,6 +218,16 @@ declare namespace ellipsis {
 
     /** The author of the skill, if known */
     author?: UserData
+  }
+  
+  export interface MetaInfo {
+
+    /** The current action or data type being invoked */
+    current: ${props.isDataType ? 'DataTypeInfo' : 'ActionInfo'} 
+  
+    /** The skill containing the action or data type being invoked */
+    skill: SkillInfo
+    
   }
 
   export interface DeprecatedMessageInfo {
@@ -461,8 +472,8 @@ declare namespace ellipsis {
     schedule?: Schedule
   }
   
-  const action: {
-    actionId: string,
+  const meta: MetaInfo {
+    current: ${props.isDataType ? 'DataTypeInfo' : 'ActionInfo'},
     skill: SkillInfo
   }
 }

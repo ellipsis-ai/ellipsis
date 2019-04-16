@@ -8,11 +8,16 @@ case class SkillInfo(
                       name: Option[String],
                       description: Option[String],
                       icon: Option[String],
-                      actions: Seq[ActionInfo],
-                      dataTypes: Seq[DataTypeInfo],
+                      actions: Seq[BehaviorInfo],
+                      dataTypes: Seq[BehaviorInfo],
                       createdAt: Option[OffsetDateTime],
                       author: Option[UserData]
-                    )
+                    ) {
+
+  def findActionOrDataTypeWithId(id: String): Option[BehaviorInfo] = {
+    actions.find(_.id == id).orElse(dataTypes.find(_.id == id))
+  }
+}
 
 object SkillInfo {
 

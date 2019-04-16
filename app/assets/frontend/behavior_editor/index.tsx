@@ -1958,6 +1958,7 @@ class BehaviorEditor extends React.Component<Props, State> {
         functionExecutesImmediately={codeConfigProps.functionExecutesImmediately || false}
 
         paramTypeIds={this.getParamTypeIds()}
+        isDataType={this.isDataTypeBehavior()}
       />
     );
   }

@@ -1,12 +1,11 @@
 package json
 
-import web.settings.IntegrationListConfig
+import json.web.settings.IntegrationListConfig
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors._
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.behaviortestresult.BehaviorTestResult
-import models.behaviors.ellipsisobject._
 import models.behaviors.events.slack.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
@@ -216,22 +215,5 @@ object Formatting {
 
   lazy implicit val adminTeamDataWrites = Json.writes[AdminTeamData]
 
-  lazy implicit val identityInfoFormat = Json.format[IdentityInfo]
-  lazy implicit val eventUserFormat = Json.format[EventUser]
-  lazy implicit val channelInfoFormat = Json.format[Channel]
-  lazy implicit val messageInfoFormat = Json.format[MessageObject]
-  lazy implicit val scheduleInfoFormat = Json.format[ScheduleInfo]
-  lazy implicit val eventInfoFormat = Json.format[EventInfo]
-  lazy implicit val AWSConfigInfoFormat = Json.format[AWSConfigInfo]
-  lazy implicit val teamInfoFormat = Json.format[TeamInfo]
-  lazy implicit val deprecatedMessageInfoFormat = Json.format[DeprecatedMessageInfo]
-  lazy implicit val deprecatedUserInfoFormat = Json.format[DeprecatedUserInfo]
-  lazy implicit val inputInfoFormat = Json.format[InputInfo]
-  lazy implicit val defaultStorageFieldInfoFormat = Json.format[DefaultStorageFieldInfo]
-  lazy implicit val dataTypeInfoFormat = Json.format[DataTypeInfo]
-  lazy implicit val actionInfoFormat = Json.format[ActionInfo]
-  lazy implicit val skillInfoFormat = Json.format[SkillInfo]
-  lazy implicit val currentActionInfoFormat = Json.format[CurrentActionInfo]
-  lazy implicit val ellipsisObjectFormat = Json.format[EllipsisObject]
 }
 

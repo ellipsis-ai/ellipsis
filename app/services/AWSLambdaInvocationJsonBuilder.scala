@@ -1,9 +1,9 @@
 package services
 
-import json.Formatting._
 import models.behaviors.ParameterWithValue
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.ellipsisobject.EllipsisObject
+import models.behaviors.ellipsisobject.Formatting._
 import play.api.libs.json.{JsObject, JsString, Json}
 import services.AWSLambdaConstants._
 

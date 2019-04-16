@@ -2,13 +2,13 @@ import java.time._
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
-import json.Formatting._
 import json.UserData
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.ellipsisobject._
+import models.behaviors.ellipsisobject.Formatting._
 import models.behaviors.events.{EventType, TestEventContext}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.recurrence.Minutely
@@ -104,9 +104,12 @@ class EllipsisObjectSpec extends DBSpec {
         val token = InvocationToken(IDs.next, user.id, IDs.next, None, None, OffsetDateTime.now)
         val behaviorGroupData = BehaviorGroupDataBuilder.buildFor(team.id)
         val skillInfo = SkillInfo.fromBehaviorGroupData(behaviorGroupData)
-        val actionId = behaviorGroupData.actionBehaviorVersions.head.behaviorId.get
-        val actionInfo = CurrentActionInfo(actionId, skillInfo)
-        val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, actionInfo, Seq(), "test.ellipsis", token))
+        val maybeMetaInfo = for {
+          behaviorVersionData <- behaviorGroupData.actionBehaviorVersions.headOption
+          behaviorId <- behaviorVersionData.behaviorId
+          info <- MetaInfo.maybeFor(behaviorId, behaviorGroupData)
+        } yield info
+        val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, maybeMetaInfo, Seq(), "test.ellipsis", token))
         Logger.info(Json.prettyPrint(json))
 
         val resultObject = json.as[EllipsisObject]
@@ -139,8 +142,8 @@ class EllipsisObjectSpec extends DBSpec {
         resultEventSchedule.editLink must endWith(scheduledEditUrl)
         resultEventSchedule.recurrence mustEqual recurrence.displayString
 
-        val resultActionInfo = resultObject.action
-        resultActionInfo.actionId mustBe actionId
+        val resultActionInfo = resultObject.meta.get
+        resultActionInfo.current.id mustBe behaviorGroupData.behaviorVersions.head.id.get
         resultActionInfo.skill mustBe skillInfo
 
         // deprecated stuff:
