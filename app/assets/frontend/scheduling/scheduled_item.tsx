@@ -10,6 +10,8 @@ interface Props {
   behaviorGroups: Array<BehaviorGroup>,
   onClick: (scheduledAction: ScheduledAction) => void,
   className?: Option<string>
+  userTimeZone: Option<string>
+  userTimeZoneName: Option<string>
 }
 
 class ScheduledItem extends React.Component<Props> {
@@ -22,8 +24,15 @@ class ScheduledItem extends React.Component<Props> {
       return this.props.scheduledAction.recurrence.displayString || "";
     }
 
-    toggle() {
+    toggle(): void {
       this.props.onClick(this.props.scheduledAction);
+    }
+
+    shouldShowUserTimeZone(): boolean {
+      const hasUserZoneName = Boolean(this.props.userTimeZoneName);
+      const isUserZone = this.props.scheduledAction.recurrence.timeZone === this.props.userTimeZone;
+      const isUserZoneName = this.props.scheduledAction.recurrence.timeZoneName === this.props.userTimeZoneName;
+      return hasUserZoneName && (!isUserZone && !isUserZoneName);
     }
 
     render() {
@@ -46,7 +55,9 @@ class ScheduledItem extends React.Component<Props> {
             {firstRecurrence ? (
               <div className={"mtl"}>
                 <div className={"type-label type-weak mbxs"}>
-                  {secondRecurrence ? "Next two times:" : "Next time:"}
+                  <span>{secondRecurrence ? "Next two times" : "Next time"}</span>
+                  <span>{this.shouldShowUserTimeZone() ? ` (${this.props.userTimeZoneName})` : ""}</span>
+                  <span>:</span>
                 </div>
                 <div className={"type-xs"}>
                   <span className={"mrs"}>{Formatter.formatTimestampLong(firstRecurrence)}</span>

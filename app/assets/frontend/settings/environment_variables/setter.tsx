@@ -46,7 +46,7 @@ interface State {
 }
 
 class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
-  envVarValueInputs: {
+  existingEnvVarsByName: {
     [varName: string]: Option<FocusableTextInputInterface>
   };
   newVarNameInputs: Array<Option<FocusableTextInputInterface>>;
@@ -56,7 +56,7 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
     super(props);
     autobind(this);
     this.state = this.defaultState();
-    this.envVarValueInputs = {};
+    this.existingEnvVarsByName = {};
     this.newVarNameInputs = [];
     this.newVarValueInputs = [];
   }
@@ -148,12 +148,11 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
   }
 
   hasChangesComparedTo(oldVars: Array<EnvironmentVariableData>): boolean {
-    return !this.getVars().every((currentVar, index) => {
-      var oldVar = oldVars[index];
-      return oldVar &&
-        currentVar.name === oldVar.name &&
+    return !this.getVars().every((currentVar) => {
+      const oldVar = oldVars.find((ea) => ea.name === currentVar.name);
+      return Boolean(oldVar &&
         currentVar.value === oldVar.value &&
-        currentVar.isAlreadySavedWithValue === oldVar.isAlreadySavedWithValue;
+        currentVar.isAlreadySavedWithValue === oldVar.isAlreadySavedWithValue);
     });
   }
 
@@ -197,7 +196,7 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
     this.setState({
       filter: name
     }, () => {
-      const existingVarValueInput = this.envVarValueInputs[name];
+      const existingVarValueInput = this.existingEnvVarsByName[name];
       if (existingVarValueInput) {
         existingVarValueInput.focus();
       } else {
@@ -217,19 +216,26 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
     }
   }
 
-  onChangeVarValue(index: number, newValue: string) {
-    var vars = this.getVars();
-    var newVar = Object.assign({}, vars[index], {value: newValue});
-    this.setState({
-      vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, index)
-    });
+  setVarByName(name: string, newProps: Partial<EnvironmentVariableData>, callback?: () => void): void {
+    const vars = this.getVars();
+    const namedVarIndex = vars.findIndex((ea) => ea.name === name);
+    if (namedVarIndex !== -1) {
+      const newVar = Object.assign({}, vars[namedVarIndex], newProps);
+      this.setState({
+        vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, namedVarIndex)
+      });
+    }
+  }
+
+  onChangeVarValueByName(name: string, newValue: string) {
+    this.setVarByName(name, { value: newValue });
   }
 
   onSave(): void {
-    var namedNewVars = this.getNewVars().filter((ea) => !!ea.name);
+    const namedNewVars = this.getNewVars().filter((ea) => Boolean(ea.name));
     this.setState({
       vars: this.getVars().concat(namedNewVars),
-      newVars: [this.createNewVar()],
+      newVars: [],
       requestError: null,
       justSaved: false,
       isSaving: true
@@ -259,16 +265,12 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
     })
   }
 
-  resetVar(index: number): void {
-    var vars = this.getVars();
-    var newVar = Object.assign({}, vars[index], {
+  resetVarByName(name: string): void {
+    this.setVarByName(name, {
       isAlreadySavedWithValue: false,
       value: ''
-    });
-    this.setState({
-      vars: ImmutableObjectUtils.arrayWithNewElementAtIndex(vars, newVar, index)
     }, () => {
-      const input = this.envVarValueInputs[index];
+      const input = this.existingEnvVarsByName[name];
       if (input) {
         input.focus();
       }
@@ -339,7 +341,7 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
     });
   }
 
-  getValueInputForVar(envVar: EnvironmentVariableData, index: number) {
+  getValueInputForVar(envVar: EnvironmentVariableData) {
     const isLoadingAdminValue = this.isLoadingAdminValueFor(envVar);
     if (envVar.isAlreadySavedWithValue) {
       const value = this.props.isAdmin && envVar.value || "••••••••";
@@ -368,11 +370,11 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
     } else {
       return (
         <Textarea
-          ref={(el) => this.envVarValueInputs[envVar.name] = el}
+          ref={(el) => this.existingEnvVarsByName[envVar.name] = el}
           className="type-monospace form-input-borderless form-input-height-auto"
           placeholder="Set value"
           value={envVar.value || ""}
-          onChange={this.onChangeVarValue.bind(this, index)}
+          onChange={this.onChangeVarValueByName.bind(this, envVar.name)}
           rows={this.getRowCountForTextareaValue(envVar.value)}
           title={envVar.value ? "" : "No value set"}
         />
@@ -393,6 +395,7 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
 
   onSaveComplete(): void {
     this.setState(Object.assign({}, this.defaultState(), {
+      filter: this.state.filter,
       justSaved: true
     }));
   }
@@ -515,9 +518,9 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
           </div>
 
           <div>
-            {this.getExistingFilteredVars().map((ea, index) => {
+            {this.getExistingFilteredVars().map((ea) => {
               return (
-                <div className="border bg-white phs mbm columns" key={`envVar${index}`}>
+                <div className="border bg-white phs mbm columns" key={`envVar-${ea.name}`}>
                   <div className="column column-one-quarter mobile-column-one-half">
                     <div className="align-button type-monospace type-s type-wrap-words" title={ea.name}>
                       <SubstringHighlighter text={ea.name} substring={this.getFilter()} />
@@ -526,11 +529,11 @@ class Setter extends React.Component<EnvironmentVariableSetterProps, State> {
                   <div className="column column-three-quarters mobile-column-full">
                     <div className="columns columns-elastic">
                       <div className="column column-expand">
-                        {this.getValueInputForVar(ea, index)}
+                        {this.getValueInputForVar(ea)}
                       </div>
                       <div className="column column-shrink display-nowrap">
                         {ea.isAlreadySavedWithValue ? (
-                          <Button className="button-s button-shrink mrs mvs" onClick={this.resetVar.bind(this, index)}>Reset</Button>
+                          <Button className="button-s button-shrink mrs mvs" onClick={this.resetVarByName.bind(this, ea.name)}>Reset</Button>
                         ) : null}
                         {this.props.onRenderFooter ? (
                           <Button

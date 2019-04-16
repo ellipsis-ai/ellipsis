@@ -97,8 +97,9 @@ case class ScheduledActionRecurrenceData(
     for {
       _ <- Option(typeName).filter(_ == Hourly.recurrenceType)
       validMinuteOfHour <- maybeValidMinuteOfHour
+      zoneId <- maybeZoneId
     } yield {
-      Hourly(getId, frequency, timesHasRun, totalTimesToRun, validMinuteOfHour)
+      Hourly(getId, frequency, timesHasRun, totalTimesToRun, validMinuteOfHour, zoneId)
     }
   }
 
@@ -106,9 +107,9 @@ case class ScheduledActionRecurrenceData(
     for {
       _ <- Option(typeName).filter(_ == Daily.recurrenceType)
       localTime <- maybeLocalTime
-      timeZone <- maybeZoneId
+      zoneId <- maybeZoneId
     } yield {
-      Daily(getId, frequency, timesHasRun, totalTimesToRun, localTime, timeZone)
+      Daily(getId, frequency, timesHasRun, totalTimesToRun, localTime, zoneId)
     }
   }
 

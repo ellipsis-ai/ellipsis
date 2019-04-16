@@ -66,6 +66,16 @@ sealed trait Recurrence {
   }
   def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = when.withSecond(0).withNano(0)
   def displayString: String
+  def couldRunAt(when: OffsetDateTime): Boolean
+  def expectedNextRunFor(start: OffsetDateTime, maybeProposedNextRun: Option[OffsetDateTime]): OffsetDateTime = {
+    val expectedFirstRun = initialAfter(start)
+    val expectedSecondRun = nextAfter(expectedFirstRun)
+    // Keep the proposed next run as long as it would happen before the second possible run after now
+    maybeProposedNextRun.filter { proposedNextRun =>
+      couldRunAt(proposedNextRun) && proposedNextRun.isAfter(start) && proposedNextRun.isBefore(expectedSecondRun)
+    }.getOrElse(expectedFirstRun)
+  }
+
 
   def timesToRunString: String = {
     maybeTotalTimesToRun.map { timesToRun =>
@@ -134,6 +144,8 @@ case class Minutely(id: String, frequency: Int, timesHasRun: Int, maybeTotalTime
   protected def initialAfterAssumingZone(start: OffsetDateTime): OffsetDateTime = {
     withStandardAdjustments(start)
   }
+
+  def couldRunAt(when: OffsetDateTime): Boolean = true
 }
 
 object Minutely {
@@ -165,7 +177,15 @@ object Minutely {
   }
 }
 
-case class Hourly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesToRun: Option[Int], minuteOfHour: Int) extends Recurrence {
+trait RecurrenceWithTimeZone extends Recurrence {
+  val timeZone: ZoneId
+  override val maybeTimeZone = Some(timeZone)
+
+  // TODO: Someday we may care about locales
+  def stringFor(timeZone: ZoneId): String = s"${timeZone.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}"
+}
+
+case class Hourly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesToRun: Option[Int], minuteOfHour: Int, timeZone: ZoneId) extends RecurrenceWithTimeZone {
 
   def copyWithEmptyId: Hourly = copy(id = "")
 
@@ -174,17 +194,24 @@ case class Hourly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesT
   def displayString: String = {
     if (maybeTotalTimesToRun.contains(1)) {
       val frequencyString = if (frequency == 1) { "the next hour" } else { s"$frequency hours" }
-      s"in $frequencyString at $minuteOfHour, once"
+      s"in $frequencyString at $minuteOfHour (${stringFor(timeZone)}), once"
     } else {
       val frequencyString = if (frequency == 1) {"hour"} else {s"$frequency hours"}
-      s"every $frequencyString at $minuteOfHour minutes past$timesToRunString"
+      s"every $frequencyString at $minuteOfHour minutes past (${stringFor(timeZone)})$timesToRunString"
     }
   }
 
-  def isEarlierInHour(when: OffsetDateTime): Boolean = when.getMinute < minuteOfHour
-  def isLaterInHour(when: OffsetDateTime): Boolean = when.getMinute > minuteOfHour
+  def isEarlierInHour(when: OffsetDateTime): Boolean = {
+    withZone(when).getMinute < minuteOfHour
+  }
 
-  def withAdjustments(when: OffsetDateTime): OffsetDateTime = withStandardAdjustments(when.withMinute(minuteOfHour))
+  def isLaterInHour(when: OffsetDateTime): Boolean = {
+    withZone(when).getMinute > minuteOfHour
+  }
+
+  def withAdjustments(when: OffsetDateTime): OffsetDateTime = {
+    withStandardAdjustments(withZone(when).withMinute(minuteOfHour))
+  }
 
   protected def nextAfterAssumingZone(previous: OffsetDateTime): OffsetDateTime = {
     val hoursToAdd = if (isEarlierInHour(previous)) {
@@ -203,6 +230,11 @@ case class Hourly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesT
     }
   }
 
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    inSameTimeZone.getMinute == minuteOfHour
+  }
+
   val typeName = Hourly.recurrenceType
   override val maybeMinuteOfHour = Some(minuteOfHour)
 }
@@ -210,7 +242,7 @@ case class Hourly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesT
 object Hourly {
   val recurrenceType = "hourly"
 
-  def maybeUnsavedFromText(text: String): Option[Hourly] = {
+  def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[Hourly] = {
     val singleRegex = """(?i).*every hour.*""".r
     val nRegex = """(?i).*every\s+(\d+)\s+hours?.*""".r
     val maybeNTimesRegex = """(?i).*in\s+(\d+)\s*hours?.*""".r
@@ -236,24 +268,19 @@ object Hourly {
           None
         }
       }
-      Hourly(IDs.next, frequency, 0, maybeTimesToRun, maybeMinuteOfHour.getOrElse(OffsetDateTime.now.getMinute))
+      Hourly(IDs.next, frequency, 0, maybeTimesToRun, maybeMinuteOfHour.getOrElse(OffsetDateTime.now.getMinute), defaultTimeZone)
     }
   }
 }
 
-trait RecurrenceWithTimeOfDay extends Recurrence {
+trait RecurrenceWithTimeOfDay extends RecurrenceWithTimeZone {
   val timeOfDay: LocalTime
-  val timeZone: ZoneId
-  override val maybeTimeZone = Some(timeZone)
   val hourOfDay = timeOfDay.getHour
   val minuteOfHour = timeOfDay.getMinute
   val secondOfMinute = timeOfDay.getSecond
   val nanosOfSecond = timeOfDay.getNano
 
   def timeOfDayFormatted = s"${timeOfDay.format(Recurrence.timeFormatter)} ${stringFor(timeZone)}"
-
-  // TODO: Someday we may care about locales
-  def stringFor(timeZone: ZoneId): String = s"${timeZone.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)}"
 
   override def withStandardAdjustments(when: OffsetDateTime): OffsetDateTime = {
     super.withStandardAdjustments(withTime(when))
@@ -305,6 +332,10 @@ case class Daily(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesTo
   val typeName = Daily.recurrenceType
   override val maybeTimeOfDay = Some(timeOfDay)
 
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    inSameTimeZone.getMinute == timeOfDay.getMinute && inSameTimeZone.getHour == timeOfDay.getHour
+  }
 }
 
 object Daily {
@@ -433,6 +464,11 @@ case class Weekly(
     }
   }
 
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    inSameTimeZone.getMinute == timeOfDay.getMinute && inSameTimeZone.getHour == timeOfDay.getHour && daysOfWeek.contains(inSameTimeZone.getDayOfWeek)
+  }
+
   val typeName = Weekly.recurrenceType
   override val maybeTimeOfDay = Some(timeOfDay)
 
@@ -530,6 +566,11 @@ case class MonthlyByDayOfMonth(id: String, frequency: Int, timesHasRun: Int, may
     }
   }
 
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    inSameTimeZone.getMinute == timeOfDay.getMinute && inSameTimeZone.getHour == timeOfDay.getHour && inSameTimeZone.getDayOfMonth == dayOfMonth
+  }
+
   val typeName = MonthlyByDayOfMonth.recurrenceType
   override val maybeDayOfMonth = Some(dayOfMonth)
   override val maybeTimeOfDay = Some(timeOfDay)
@@ -605,6 +646,12 @@ case class MonthlyByNthDayOfWeek(id: String, frequency: Int, timesHasRun: Int, m
     } else {
       targetInMonthMatching(start)
     }
+  }
+
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    val target = targetInMonthMatching(inSameTimeZone)
+    inSameTimeZone.getMinute == timeOfDay.getMinute && inSameTimeZone.getHour == timeOfDay.getHour && inSameTimeZone.getDayOfMonth == target.getDayOfMonth
   }
 
   val typeName = MonthlyByNthDayOfWeek.recurrenceType
@@ -693,6 +740,11 @@ case class Yearly(id: String, frequency: Int, timesHasRun: Int, maybeTotalTimesT
     } else {
       withAdjustments(start)
     }
+  }
+
+  def couldRunAt(when: OffsetDateTime): Boolean = {
+    val inSameTimeZone = when.atZoneSameInstant(timeZone).toOffsetDateTime
+    inSameTimeZone.getMinute == timeOfDay.getMinute && inSameTimeZone.getHour == timeOfDay.getHour && inSameTimeZone.getDayOfMonth == dayOfMonth && inSameTimeZone.getMonthValue == month
   }
 
   val typeName = Yearly.recurrenceType
@@ -999,7 +1051,7 @@ object Recurrence {
                        ): Recurrence = {
     recurrenceType match {
       case(Minutely.recurrenceType) => Minutely(id, frequency, timesHasRun, maybeTimesToRun)
-      case(Hourly.recurrenceType) => Hourly(id, frequency, timesHasRun, maybeTimesToRun, maybeMinuteOfHour.get)
+      case(Hourly.recurrenceType) => Hourly(id, frequency, timesHasRun, maybeTimesToRun, maybeMinuteOfHour.get, timeZone)
       case(Daily.recurrenceType) => Daily(id, frequency, timesHasRun, maybeTimesToRun, maybeTimeOfDay.get, timeZone)
       case(Weekly.recurrenceType) => Weekly(id, frequency, timesHasRun, maybeTimesToRun, daysOfWeek, maybeTimeOfDay.get, timeZone)
       case(MonthlyByDayOfMonth.recurrenceType) => MonthlyByDayOfMonth(id, frequency, timesHasRun, maybeTimesToRun, maybeDayOfMonth.get, maybeTimeOfDay.get, timeZone)
@@ -1028,7 +1080,7 @@ object Recurrence {
 
   def maybeUnsavedFromText(text: String, defaultTimeZone: ZoneId): Option[Recurrence] = {
     Minutely.maybeUnsavedFromText(text).orElse {
-      Hourly.maybeUnsavedFromText(text).orElse {
+      Hourly.maybeUnsavedFromText(text, defaultTimeZone).orElse {
         Daily.maybeUnsavedFromText(text, defaultTimeZone).orElse {
           Weekly.maybeUnsavedFromText(text, defaultTimeZone).orElse {
             MonthlyByDayOfMonth.maybeUnsavedFromText(text, defaultTimeZone).orElse {

@@ -18,6 +18,8 @@ import {UserMap} from "./loader";
 import User from '../models/user';
 import SVGWarning from "../svg/warning";
 import OrgChannels from "../models/org_channels";
+import {DataRequest} from "../lib/data_request";
+import {TimeZoneData} from "../time_zone/team_time_zone_setter";
 
 export interface SchedulingProps {
   scheduledActions: Array<ScheduledAction>,
@@ -51,7 +53,9 @@ type State = {
   selectedItem: Option<ScheduledAction>,
   justSaved: boolean,
   justDeleted: boolean,
-  isEditing: boolean
+  isEditing: boolean,
+  userTimeZone: string | null,
+  userTimeZoneName: string | null
 }
 
 type ScheduleGroup = {
@@ -82,7 +86,9 @@ class Scheduling extends React.Component<Props, State> {
         selectedItem: selectedItem,
         justSaved: false,
         justDeleted: false,
-        isEditing: Boolean(selectedItem)
+        isEditing: Boolean(selectedItem),
+        userTimeZone: null,
+        userTimeZoneName: null
       };
     }
 
@@ -115,6 +121,7 @@ class Scheduling extends React.Component<Props, State> {
 
     componentDidMount(): void {
       this.updateURL();
+      this.getUserTimeZoneName();
       this.renderNavItems();
       this.renderNavActions();
     }
@@ -132,6 +139,21 @@ class Scheduling extends React.Component<Props, State> {
       const explicitTeamId = BrowserUtils.hasQueryParam("teamId") ? this.props.teamId : null;
       const forceAdmin = BrowserUtils.hasQueryParamWithValue("forceAdmin", true) || null;
       BrowserUtils.replaceURL(this.getCorrectedURL(explicitTeamId, forceAdmin));
+    }
+
+    getUserTimeZoneName(): void {
+      const timeZoneId = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (timeZoneId) {
+        const url = jsRoutes.controllers.ApplicationController.getTimeZoneInfo(timeZoneId).url;
+        DataRequest.jsonGet(url).then((tzInfo: TimeZoneData) => {
+          if (tzInfo.formattedName) {
+            this.setState({
+              userTimeZone: tzInfo.tzName,
+              userTimeZoneName: tzInfo.formattedName
+            });
+          }
+        }).catch(() => {});
+      }
     }
 
     renderNavItems() {
@@ -464,6 +486,8 @@ class Scheduling extends React.Component<Props, State> {
                     scheduledAction={action}
                     behaviorGroups={this.props.behaviorGroups}
                     onClick={this.toggleEditor}
+                    userTimeZone={this.state.userTimeZone}
+                    userTimeZoneName={this.state.userTimeZoneName}
                   />
                 )) : (
                   <div className="mhl mvs pal mobile-pam border border-light bg-white">
@@ -545,6 +569,7 @@ class Scheduling extends React.Component<Props, State> {
               slackBotUserId={this.props.slackBotUserId || ""}
               isAdmin={this.props.isAdmin}
               scheduleUser={selectedItem && selectedItem.userId ? this.lookupUser(selectedItem.userId) : null}
+              userTimeZoneName={this.state.userTimeZoneName}
               csrfToken={this.props.csrfToken}
             />
           </Collapsible>

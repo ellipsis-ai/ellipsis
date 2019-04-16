@@ -50,19 +50,22 @@ describe('Recurrence', () => {
       const validHourly1 = newRecurrence({
         frequency: 1,
         typeName: "hourly",
-        minuteOfHour: 0
+        minuteOfHour: 0,
+        timeZone: "America/Toronto"
       });
 
       const validHourly2 = newRecurrence({
         frequency: 1,
         typeName: "hourly",
-        minuteOfHour: 35
+        minuteOfHour: 35,
+        timeZone: "America/Toronto"
       });
 
       const validHourly3 = newRecurrence({
         frequency: 1,
         typeName: "hourly",
-        minuteOfHour: 59
+        minuteOfHour: 59,
+        timeZone: "America/Toronto"
       });
 
       expect(validHourly1.isValid()).toBe(true);
@@ -83,8 +86,15 @@ describe('Recurrence', () => {
         minuteOfHour: 59
       });
 
+      const missingTimeZone = newRecurrence({
+        frequency: 1,
+        typeName: "hourly",
+        minuteOfHour: 0
+      });
+
       expect(invalidMinuteOfHour.isValid()).toBe(false);
       expect(invalidHourlyFrequency.isValid()).toBe(false);
+      expect(missingTimeZone.isValid()).toBe(false);
     });
   });
 

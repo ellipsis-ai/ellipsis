@@ -28,8 +28,7 @@ class RecurrenceSpec extends PlaySpec {
   val justWednesday = Seq(DayOfWeek.WEDNESDAY)
   val mwf = Seq(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY)
 
-  "Minutely" should {
-
+  "Minutely" when {
     "recur every minute" in {
       val recurrence = Minutely(IDs.next, 1, 0, None)
       recurrence.nextAfter(dateTimeOf(2010, 6, 7, 9, 0, timeZone)) mustBe dateTimeOf(2010, 6, 7, 9, 1, timeZone)
@@ -57,64 +56,139 @@ class RecurrenceSpec extends PlaySpec {
       mustMatch(Recurrence.maybeUnsavedFromText("in 5 minutes, 5 times", timeZone), Some(Minutely(IDs.next, 5, 0, Some(5))))
       mustMatch(Recurrence.maybeUnsavedFromText("in 1 minute, 1 time", timeZone), Some(Minutely(IDs.next, 1, 0, Some(1))))
     }
+
+    "couldRunAt always returns true because any timestamp satisfies Minutely parameters" in {
+      val recurrence = Minutely(IDs.next, 1, 0, None)
+      recurrence.couldRunAt(OffsetDateTime.now) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 2, 1, 0, 0, ZoneId.of("America/St_Johns"))) mustBe true
+      recurrence.couldRunAt(OffsetDateTime.now.plusMonths(1).plusMinutes(12).plusYears(5)) mustBe true
+    }
+
+    "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
+      val now = OffsetDateTime.now
+      val recurrence = Minutely(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None)
+
+      val plus3Minutes = now.plusMinutes(3)
+      recurrence.expectedNextRunFor(now, Some(plus3Minutes)) mustBe plus3Minutes
+
+      val plus4Minutes = now.plusMinutes(4)
+      recurrence.expectedNextRunFor(now, Some(plus4Minutes)) mustBe plus4Minutes
+    }
+
+    "expectedNextRunFor returns the initial timestamp if it is invalid or later than the second possible run" in {
+      val now = OffsetDateTime.now
+      val recurrence = Minutely(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None)
+      val initial = recurrence.initialAfter(now)
+
+      val plus7Minutes = now.plusMinutes(7)
+      recurrence.expectedNextRunFor(now, Some(plus7Minutes)) mustBe initial
+
+      val minus3Minutes = now.minusMinutes(3)
+      recurrence.expectedNextRunFor(now, Some(minus3Minutes)) mustBe initial
+
+      recurrence.expectedNextRunFor(now, None) mustBe initial
+    }
   }
 
   "Hourly" should {
 
     "recur every 2h on the 42nd minute" in  {
-      val recurrence = Hourly(IDs.next, 2, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 2, 0, None, 42, timeZone)
       recurrence.nextAfter(dateTimeOf(2010, 6, 7, 9, 42, timeZone)) mustBe dateTimeOf(2010, 6, 7, 11, 42, timeZone)
     }
 
+    "support half-hour-offset time zones" in {
+      val stJohns = ZoneId.of("America/St_Johns")
+      val recurrence = Hourly(IDs.next, 1, 0, None, 42, stJohns)
+      recurrence.nextAfter(dateTimeOf(2019, 7, 31, 1, 30, timeZone)) mustBe dateTimeOf(2019, 7, 31, 3, 42, stJohns)
+    }
+
     "recur later the same hour" in {
-      val recurrence = Hourly(IDs.next, 1, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 1, 0, None, 42, timeZone)
       recurrence.nextAfter(dateTimeOf(2010, 6, 7, 9, 40, timeZone)) mustBe dateTimeOf(2010, 6, 7, 9, 42, timeZone)
     }
 
     "recur the next hour if past minute of hour" in {
-      val recurrence = Hourly(IDs.next, 1, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 1, 0, None, 42, timeZone)
       recurrence.nextAfter(dateTimeOf(2010, 6, 7, 9, 43, timeZone)) mustBe dateTimeOf(2010, 6, 7, 10, 42, timeZone)
     }
 
     "have the right initial time when earlier in hour" in {
-      val recurrence = Hourly(IDs.next, 2, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 2, 0, None, 42, timeZone)
       recurrence.initialAfter(dateTimeOf(2010, 6, 7, 9, 41, timeZone)) mustBe dateTimeOf(2010, 6, 7, 9, 42, timeZone)
     }
 
     "have the right initial time when later in hour" in {
-      val recurrence = Hourly(IDs.next, 2, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 2, 0, None, 42, timeZone)
       recurrence.initialAfter(dateTimeOf(2010, 6, 7, 9, 43, timeZone)) mustBe dateTimeOf(2010, 6, 7, 10, 42, timeZone)
     }
 
     "have the right initial time when on same minute" in {
-      val recurrence = Hourly(IDs.next, 2, 0, None, 42)
+      val recurrence = Hourly(IDs.next, 2, 0, None, 42, timeZone)
       recurrence.initialAfter(dateTimeOf(2010, 6, 7, 9, 42, timeZone)) mustBe dateTimeOf(2010, 6, 7, 9, 42, timeZone)
     }
 
     "be created with implied frequency of 1" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("every hour", timeZone), Some(Hourly(IDs.next, 1, 0, None, OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("every hour", timeZone), Some(Hourly(IDs.next, 1, 0, None, OffsetDateTime.now.getMinute, timeZone)))
     }
 
     "be created with frequency" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("every 4 hours", timeZone), Some(Hourly(IDs.next, 4, 0, None, OffsetDateTime.now.getMinute)))
+      mustMatch(Recurrence.maybeUnsavedFromText("every 4 hours", timeZone), Some(Hourly(IDs.next, 4, 0, None, OffsetDateTime.now.getMinute, timeZone)))
     }
 
     "be created with frequency and minutes" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("every 4 hours at 15 minutes", timeZone), Some(Hourly(IDs.next, 4, 0, None, 15)))
+      mustMatch(Recurrence.maybeUnsavedFromText("every 4 hours at 15 minutes", timeZone), Some(Hourly(IDs.next, 4, 0, None, 15, timeZone)))
     }
 
     "be created to run once when applicable" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), OffsetDateTime.now.getMinute)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), 12)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), OffsetDateTime.now.getMinute, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes", timeZone), Some(Hourly(IDs.next, 5, 0, Some(1), 12, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1, timeZone)))
     }
 
     "be created to run N times when applicable" in {
-      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), OffsetDateTime.now.getMinute)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), 12)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute)))
-      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), OffsetDateTime.now.getMinute, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 5 hours at 12 minutes, 5 times", timeZone), Some(Hourly(IDs.next, 5, 0, Some(5), 12, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), OffsetDateTime.now.getMinute, timeZone)))
+      mustMatch(Recurrence.maybeUnsavedFromText("in 1 hour at 1 minute, 1 time", timeZone), Some(Hourly(IDs.next, 1, 0, Some(1), 1, timeZone)))
+    }
+
+    "couldRunAt returns true for any timestamp on the same minute of the hour" in {
+      val recurrence = Hourly(IDs.next, 1, 0, None, minuteOfHour = 0, timeZone)
+      recurrence.couldRunAt(OffsetDateTime.now.withMinute(0)) mustBe true
+      recurrence.couldRunAt(OffsetDateTime.now.withMinute(1)) mustBe false
+      recurrence.couldRunAt(OffsetDateTime.now.withMinute(0).plusMonths(1).plusHours(4).plusYears(5)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 1, 1, 1, 0, ZoneId.of("America/St_Johns"))) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 1, 1, 1, 30, ZoneId.of("America/St_Johns"))) mustBe true
+    }
+
+    "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
+      val now = OffsetDateTime.now
+      val recurrence = Hourly(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, minuteOfHour = 0, timeZone)
+
+      val plus3Hours = now.plusHours(3).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(plus3Hours)) mustBe plus3Hours
+
+      val plus4Hours = now.plusHours(4).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(plus4Hours)) mustBe plus4Hours
+    }
+
+    "expectedNextRunFor returns the initial timestamp if it is invalid or later than the second possible run" in {
+      val now = OffsetDateTime.now
+      val recurrence = Hourly(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, minuteOfHour = 0, timeZone)
+      val initial = recurrence.initialAfter(now)
+
+      val plus7Hours = now.plusHours(7).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(plus7Hours)) mustBe initial
+
+      val minus3Hours = now.minusHours(3).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(minus3Hours)) mustBe initial
+
+      val wrongMinute = now.plusHours(1).withMinute(1)
+      recurrence.expectedNextRunFor(now, Some(wrongMinute)) mustBe initial
+
+      recurrence.expectedNextRunFor(now, None) mustBe initial
     }
   }
 
@@ -194,6 +268,50 @@ class RecurrenceSpec extends PlaySpec {
       "be 2 if a time after now for tomorrow is requested" in {
         Daily.maybeNextInstanceForTodayOrTomorrow("tomorrow", LocalTime.of(7, 0), LocalTime.of(5, 0)) mustBe Some(2)
       }
+    }
+
+    "couldRunAt returns true for any timestamp with the correct time of day" in {
+      val recurrence = Daily(IDs.next, 1, 0, None, timeOfDay = LocalTime.NOON, timeZone)
+      val date = dateTimeOf(2019, 4, 12, 12, 0, timeZone)
+      recurrence.couldRunAt(date) mustBe true
+      recurrence.couldRunAt(date.withHour(13)) mustBe false
+      recurrence.couldRunAt(date.plusYears(5)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 12, 9, 0, ZoneId.of("America/Vancouver"))) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 12, 13, 30, ZoneId.of("America/St_Johns"))) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 12, 12, 0, ZoneId.of("Europe/London"))) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 12, 17, 0, ZoneId.of("Europe/London"))) mustBe true
+    }
+
+    "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
+      val date = dateTimeOf(2019, 4, 1, 9, 0, timeZone)
+      val recurrence = Daily(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, timeOfDay = LocalTime.NOON, timeZone)
+
+      val plus3Days = date.plusDays(3).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(date, Some(plus3Days)) mustBe plus3Days
+
+      val plus4Days = date.plusDays(4).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(date, Some(plus4Days)) mustBe plus4Days
+
+      val nextDayUtc = dateTimeOf(2019, 4, 2, 16, 0, ZoneId.of("UTC"))
+      recurrence.expectedNextRunFor(date, Some(nextDayUtc)) mustBe nextDayUtc
+    }
+
+    "expectedNextRunFor returns the initial timestamp if it is invalid or later than the second possible run" in {
+      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
+      val recurrence = Daily(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, timeOfDay = LocalTime.NOON, timeZone)
+
+      val initial = recurrence.initialAfter(now)
+
+      val plus7Days = now.plusDays(7).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(plus7Days)) mustBe initial
+
+      val minus3Days = now.minusDays(3).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(minus3Days)) mustBe initial
+
+      val wrongTime = now.plusDays(1).withHour(23).withMinute(59)
+      recurrence.expectedNextRunFor(now, Some(wrongTime)) mustBe initial
+
+      recurrence.expectedNextRunFor(now, None) mustBe initial
     }
 
   }
@@ -281,6 +399,47 @@ class RecurrenceSpec extends PlaySpec {
         Some(Weekly(IDs.next, 1, 0, Some(3), mwf, LocalTime.parse("09:30"), timeZone)))
     }
 
+    "couldRunAt returns true for any timestamp with the correct time of day and weekday" in {
+      val date = dateTimeOf(2019, 4, 12, 12, 0, timeZone)
+      val recurrence = Weekly(IDs.next, 1, 0, None, Seq(DayOfWeek.FRIDAY), timeOfDay = LocalTime.NOON, timeZone)
+      recurrence.couldRunAt(date) mustBe true
+      recurrence.couldRunAt(date.plusDays(1)) mustBe false
+      recurrence.couldRunAt(date.withHour(13)) mustBe false
+      recurrence.couldRunAt(date.plusWeeks(5)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 12, 13, 30, ZoneId.of("America/St_Johns"))) mustBe true
+    }
+
+    "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
+      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
+      val recurrence = Weekly(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, Seq(now.getDayOfWeek), timeOfDay = LocalTime.NOON, timeZone)
+
+      val plus3Weeks = now.withHour(12).withMinute(0).plusWeeks(3)
+      recurrence.expectedNextRunFor(now, Some(plus3Weeks)) mustBe plus3Weeks
+
+      val plus4Weeks = now.withHour(12).withMinute(0).plusWeeks(4)
+      recurrence.expectedNextRunFor(now, Some(plus4Weeks)) mustBe plus4Weeks
+    }
+
+    "expectedNextRunFor returns the initial timestamp if it is invalid or later than the second possible run" in {
+      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
+      val recurrence = Weekly(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, Seq(now.getDayOfWeek), timeOfDay = LocalTime.NOON, timeZone)
+
+      val initial = recurrence.initialAfter(now)
+
+      val plus7Weeks = now.plusWeeks(7).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(plus7Weeks)) mustBe initial
+
+      val minus3Weeks = now.minusWeeks(3).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(minus3Weeks)) mustBe initial
+
+      val wrongTime = now.withHour(23).withMinute(59)
+      recurrence.expectedNextRunFor(now, Some(wrongTime)) mustBe initial
+
+      val wrongDay = now.plusDays(1).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(wrongDay)) mustBe initial
+
+      recurrence.expectedNextRunFor(now, None) mustBe initial
+    }
   }
 
   "MonthlyByDayOfMonth" should {
@@ -363,6 +522,48 @@ class RecurrenceSpec extends PlaySpec {
       mustMatch(Recurrence.maybeUnsavedFromText("the 15th of every 3rd month at 5pm", timeZone), Some(MonthlyByDayOfMonth(IDs.next, 3, 0, None, 15, fivePM, timeZone)))
     }
 
+    "couldRunAt returns true for any timestamp with the correct time of day and day of month" in {
+      val date = dateTimeOf(2019, 4, 1, 12, 0, timeZone)
+      val recurrence = MonthlyByDayOfMonth(IDs.next, 1, 0, None, dayOfMonth = 1, timeOfDay = LocalTime.NOON, timeZone)
+      recurrence.couldRunAt(date) mustBe true
+      recurrence.couldRunAt(date.withDayOfMonth(2)) mustBe false
+      recurrence.couldRunAt(date.withHour(13)) mustBe false
+      recurrence.couldRunAt(date.plusYears(5).plusMonths(5)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 1, 13, 30, ZoneId.of("America/St_Johns"))) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 2, 1, 0, ZoneId.of("Asia/Tokyo"))) mustBe true
+    }
+
+    "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
+      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
+      val recurrence = MonthlyByDayOfMonth(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, dayOfMonth = 1, timeOfDay = LocalTime.NOON, timeZone)
+
+      val plus3Months = now.withDayOfMonth(1).plusMonths(3).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(plus3Months)) mustBe plus3Months
+
+      val plus4Months = now.withDayOfMonth(1).plusMonths(4).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(plus4Months)) mustBe plus4Months
+    }
+
+    "expectedNextRunFor returns the initial timestamp if it is invalid or later than the second possible run" in {
+      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
+      val recurrence = MonthlyByDayOfMonth(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, dayOfMonth = 1, timeOfDay = LocalTime.NOON, timeZone)
+
+      val initial = recurrence.initialAfter(now)
+
+      val plus7Months = now.withDayOfMonth(1).plusMonths(7).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(plus7Months)) mustBe initial
+
+      val minus3Months = now.withDayOfMonth(1).minusMonths(3).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(minus3Months)) mustBe initial
+
+      val wrongTime = now.withDayOfMonth(1).plusMonths(1).withHour(23).withMinute(59)
+      recurrence.expectedNextRunFor(now, Some(wrongTime)) mustBe initial
+
+      val wrongDay = now.withDayOfMonth(2).plusMonths(1).withHour(12).withMinute(0)
+      recurrence.expectedNextRunFor(now, Some(wrongDay)) mustBe initial
+
+      recurrence.expectedNextRunFor(now, None) mustBe initial
+    }
   }
 
   "MonthlyByNthDayOfWeek" should {
@@ -422,6 +623,52 @@ class RecurrenceSpec extends PlaySpec {
         Some(MonthlyByNthDayOfWeek(IDs.next, 3, 0, None, DayOfWeek.WEDNESDAY, 2, fivePM, timeZone)))
     }
 
+    "couldRunAt returns true for any timestamp with the correct time of day, day of week, and occurrence in the month" in {
+      val recurrence = MonthlyByNthDayOfWeek(IDs.next, 1, 0, None, dayOfWeek = DayOfWeek.MONDAY, nth = 1, timeOfDay = LocalTime.NOON, timeZone)
+
+      recurrence.couldRunAt(dateTimeOf(2018, 4, 1,12, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2018, 4, 2,12, 0, timeZone)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 1,12, 0, timeZone)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 2,12, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 1,13, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 8,12, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 5, 1,12, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 5, 6,12, 0, timeZone)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2020, 4, 1,12, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 4, 1, 13, 30, ZoneId.of("America/St_Johns"))) mustBe true
+    }
+
+    "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
+      val start = dateTimeOf(2019, 4, 1, 0, 0, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, dayOfWeek = DayOfWeek.MONDAY, nth = 1, timeOfDay = LocalTime.NOON, timeZone)
+
+      val nextMonth = dateTimeOf(2019, 5, 6,12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(nextMonth)) mustBe nextMonth
+
+      val plus4Months = dateTimeOf(2019, 8, 5, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(plus4Months)) mustBe plus4Months
+    }
+
+    "expectedNextRunFor returns the initial timestamp if it is invalid or later than the second possible run" in {
+      val start = dateTimeOf(2019, 4, 1, 0, 0, timeZone)
+      val recurrence = MonthlyByNthDayOfWeek(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, dayOfWeek = DayOfWeek.MONDAY, nth = 1, timeOfDay = LocalTime.NOON, timeZone)
+
+      val initial = recurrence.initialAfter(start)
+
+      val plus6Months = dateTimeOf(2019, 10, 7, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(plus6Months)) mustBe initial
+
+      val minus3Months = dateTimeOf(2019, 1, 7, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(minus3Months)) mustBe initial
+
+      val wrongTime = dateTimeOf(2019, 4, 1, 11, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(wrongTime)) mustBe initial
+
+      val wrongDay = dateTimeOf(2019, 4, 8, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(wrongDay)) mustBe initial
+
+      recurrence.expectedNextRunFor(start, None) mustBe initial
+    }
   }
 
   "Yearly" should {
@@ -507,6 +754,52 @@ class RecurrenceSpec extends PlaySpec {
         None)
     }
 
+    "couldRunAt returns true for any timestamp with the correct time of day, day of week, and occurrence in the month" in {
+      val recurrence = Yearly(IDs.next, 1, 0, None, MonthDay.of(7, 28), timeOfDay = LocalTime.NOON, timeZone)
+
+      recurrence.couldRunAt(dateTimeOf(2018, 7, 28,12, 0, timeZone)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 7, 28,12, 0, timeZone)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2020, 7, 28,12, 0, timeZone)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2019, 7, 27,12, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 8, 27,12, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 7, 31,13, 0, timeZone)) mustBe false
+      recurrence.couldRunAt(dateTimeOf(2019, 7, 28,13, 30, ZoneId.of("America/St_Johns"))) mustBe true
+    }
+
+    "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
+      val start = dateTimeOf(2019, 4, 1, 0, 0, timeZone)
+      val recurrence = Yearly(IDs.next, 5, 0, None, MonthDay.of(7, 28), timeOfDay = LocalTime.NOON, timeZone)
+
+      val nextYear = dateTimeOf(2020, 7, 28,12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(nextYear)) mustBe nextYear
+
+      val plus4Years = dateTimeOf(2023, 7, 28, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(plus4Years)) mustBe plus4Years
+    }
+
+    "expectedNextRunFor returns the initial timestamp if it is invalid or later than the second possible run" in {
+      val start = dateTimeOf(2019, 4, 1, 0, 0, timeZone)
+      val recurrence = Yearly(IDs.next, 5, 0, None, MonthDay.of(7, 28), timeOfDay = LocalTime.NOON, timeZone)
+
+      val initial = recurrence.initialAfter(start)
+
+      val plus6Years = dateTimeOf(2025, 7, 28, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(plus6Years)) mustBe initial
+
+      val minus3Years = dateTimeOf(2016, 7, 28, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(minus3Years)) mustBe initial
+
+      val wrongTime = dateTimeOf(2019, 7, 28, 11, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(wrongTime)) mustBe initial
+
+      val wrongDay = dateTimeOf(2019, 7, 29, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(wrongDay)) mustBe initial
+
+      val wrongMonth = dateTimeOf(2019, 8, 28, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(start, Some(wrongMonth)) mustBe initial
+
+      recurrence.expectedNextRunFor(start, None) mustBe initial
+    }
   }
 
   "Recurrence.daysOfWeekFrom" should {

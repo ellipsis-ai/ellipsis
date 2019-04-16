@@ -15,6 +15,7 @@ jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequ
 jest.mock('../../../../app/assets/frontend/lib/browser_utils');
 
 jsRoutes.controllers.ScheduledActionsController.index = () => ({ url: "/test", method: "get", absoluteURL: () => "https://nope/" });
+jsRoutes.controllers.ApplicationController.getTimeZoneInfo = () => ({ url: "/nope", method: "get", absoluteURL: () => "https://nopenope/" });
 
 Object.defineProperty(window, "scrollTo", {
   value: jest.fn()

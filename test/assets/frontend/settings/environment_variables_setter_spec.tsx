@@ -105,11 +105,7 @@ describe('EnvironmentVariableSetter', () => {
         value: "",
         isAlreadySavedWithValue: false
       }]);
-      expect(newState.newVars).toEqual([{
-        name: "",
-        value: "",
-        isAlreadySavedWithValue: false
-      }]);
+      expect(newState.newVars).toEqual([]);
     });
   });
 
