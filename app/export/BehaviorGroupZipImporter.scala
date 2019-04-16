@@ -131,7 +131,7 @@ case class BehaviorGroupZipImporter(
     for {
       alreadyInstalled <- dataService.behaviorGroups.allFor(team)
       alreadyInstalledData <- Future.sequence(alreadyInstalled.map { group =>
-        BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
+        dataService.behaviorGroups.maybeDataFor(group.id, user)
       }).map(_.flatten)
       maybeExistingGroupData <- Future.successful(alreadyInstalledData.find(_.exportId == maybeExportId))
       userData <- dataService.users.userDataFor(user, team)

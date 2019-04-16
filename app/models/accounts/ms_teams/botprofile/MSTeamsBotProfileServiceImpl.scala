@@ -73,9 +73,12 @@ class MSTeamsBotProfileServiceImpl @Inject() (
   }
   val allForTeamIdQuery = Compiled(uncompiledAllForTeamIdQuery _)
 
+  def allForAction(teamId: String): DBIO[Seq[MSTeamsBotProfile]] ={
+    allForTeamIdQuery(teamId).result
+  }
+
   def allFor(teamId: String): Future[Seq[MSTeamsBotProfile]] ={
-    val action = allForTeamIdQuery(teamId).result
-    dataService.run(action)
+    dataService.run(allForAction(teamId))
   }
 
   def ensure(tenantId: String, teamName: String): Future[MSTeamsBotProfile] = {

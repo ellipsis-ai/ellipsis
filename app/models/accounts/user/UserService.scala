@@ -15,6 +15,7 @@ import slick.dbio.DBIO
 import scala.concurrent.{ExecutionContext, Future}
 
 trait UserService extends IdentityService[User] {
+  def findAction(id: String): DBIO[Option[User]]
   def find(id: String): Future[Option[User]]
   def findFromEvent(event: Event, team: Team): Future[Option[User]]
   def createFor(teamId: String): Future[User]
@@ -35,6 +36,7 @@ trait UserService extends IdentityService[User] {
   }
   def isAdmin(user: User): Future[Boolean]
 
+  def userDataForAction(user: User, team: Team): DBIO[UserData]
   def userDataFor(user: User, team: Team): Future[UserData]
 
   def maybeUserDataForEmail(email: String, team: Team): Future[Option[UserData]]

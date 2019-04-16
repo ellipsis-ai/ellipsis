@@ -12,6 +12,7 @@ trait RequiredOAuth1ApiConfigService {
 
   def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[RequiredOAuth1ApiConfig]]
 
+  def allForIdAction(groupVersionId: String): DBIO[Seq[RequiredOAuth1ApiConfig]]
   def allForId(groupVersionId: String): Future[Seq[RequiredOAuth1ApiConfig]]
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredOAuth1ApiConfig]]

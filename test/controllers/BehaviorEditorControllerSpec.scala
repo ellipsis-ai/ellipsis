@@ -30,7 +30,7 @@ class BehaviorEditorControllerSpec extends PlaySpec with MockitoSugar {
 
       val unknownSkillId = IDs.next
 
-      when(dataService.behaviorGroups.find(unknownSkillId, user)).thenReturn(Future.successful(None))
+      when(dataService.behaviorGroups.maybeDataFor(unknownSkillId, user)).thenReturn(Future.successful(None))
 
       def buildCall: Call = controllers.routes.BehaviorEditorController.edit(unknownSkillId)
 

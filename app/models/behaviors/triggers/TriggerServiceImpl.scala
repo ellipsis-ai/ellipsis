@@ -70,11 +70,14 @@ class TriggerServiceImpl @Inject()(
     dataService.run(action)
   }
 
-  def allFor(behaviorVersion: BehaviorVersion): Future[Seq[Trigger]] = {
-    val action = allForBehaviorVersionQuery(behaviorVersion.id).
+  def allForAction(behaviorVersion: BehaviorVersion): DBIO[Seq[Trigger]] = {
+    allForBehaviorVersionQuery(behaviorVersion.id).
       result.
       map(_.map(tuple2Trigger))
-    dataService.run(action)
+  }
+
+  def allFor(behaviorVersion: BehaviorVersion): Future[Seq[Trigger]] = {
+    dataService.run(allForAction(behaviorVersion))
   }
 
   def allActiveFor(behaviorGroup: BehaviorGroup): Future[Seq[Trigger]] = {

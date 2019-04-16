@@ -1,10 +1,15 @@
 import {RequiredOAuthApplication} from "../../models/oauth";
 import {RequiredAWSConfig} from "../../models/aws";
 
+const ACTION_INFO_TYPE = 'ActionInfo';
+const DATA_TYPE_INFO_TYPE = 'DataTypeInfo';
+
 interface Props {
   requiredAWSConfigs: Array<RequiredAWSConfig>,
   oauthApiApplications: Array<RequiredOAuthApplication>,
-  envVariableNames: Array<string>
+  envVariableNames: Array<string>,
+  paramTypeIds: Array<string>,
+  isDataType: boolean
 }
 
 const EllipsisObjectDefinitions = {
@@ -131,6 +136,101 @@ declare namespace ellipsis {
     
     /** A link for the user, formatted for the specific context */
     formattedLink? string
+  }
+  
+  /**
+   * Run-time type IDs for params, including buitins and ID
+   */ 
+  type ParamType = ${props.paramTypeIds.map(ea => `'${ea}'`).join(" | ")};
+  
+  export interface InputInfo {
+  
+    /** The name of the inputs, passed to the action code as a parameter */
+    name: string
+    
+    /** The type of the input. Can be builtins like Text, Number, etc or the ID for a custom data type on this skill */
+    paramType: ParamType
+    
+    /** The question asked of the user in chat */
+    question: string
+  }
+  
+  export interface ${ACTION_INFO_TYPE} {
+
+    /** The name of the action, if any */
+    name?: string
+
+    /** The description of the action, if any */
+    description?: string
+    
+    /** The inputs that need to be filled in to run the action */
+    inputs: InputInfo[]
+
+  }
+  
+  export interface DefaultStorageFieldInfo {
+  
+    /** The name of the field */
+    name: string
+    
+    /** The type of the field */
+    fieldType: ParamType
+    
+    /** Whether or not the field acts as the label for the type */
+    isLabel: boolean
+    
+  }
+  
+  export interface ${DATA_TYPE_INFO_TYPE} {
+  
+    /** The id of the data type */
+    id: string
+    
+    /** The name of the data type, if any */
+    name?: string
+    
+    /** The inputs that need to be filled in to use the data type */
+    inputs: InputInfo[]
+    
+    /** Whether or not the data type uses code to produce options */
+    usesCode: boolean
+    
+    /** If backed by default storage, rather than code, these are the default storage fields */
+    defaultStorageFields: DefaultStorageFieldInfo[]
+  }
+  
+  export interface SkillInfo {
+
+    /** The name of the skill, if any */
+    name?: string
+
+    /** The description of the skill, if any */
+    description?: string
+
+    /** The icon for the skill, if any */
+    icon?: string
+
+    /** The skill's actions */
+    actions: ${ACTION_INFO_TYPE}[]
+    
+    /** The skill's data types */
+    dataTypes: ${DATA_TYPE_INFO_TYPE}[]
+
+    /** The creation timestamp for this version of the skill */
+    createdAt: Date
+
+    /** The author of the skill, if known */
+    author?: UserData
+  }
+  
+  export interface MetaInfo {
+
+    /** The current action or data type being invoked */
+    current: ${props.isDataType ? DATA_TYPE_INFO_TYPE : ACTION_INFO_TYPE } 
+  
+    /** The skill containing the action or data type being invoked */
+    skill: SkillInfo
+    
   }
 
   export interface DeprecatedMessageInfo {
@@ -373,6 +473,11 @@ declare namespace ellipsis {
 
     /** Information about the schedule that triggered this event, if applicable */ 
     schedule?: Schedule
+  }
+  
+  const meta: MetaInfo {
+    current: ${props.isDataType ? DATA_TYPE_INFO_TYPE : ACTION_INFO_TYPE},
+    skill: SkillInfo
   }
 }
 `;

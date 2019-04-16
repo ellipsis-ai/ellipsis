@@ -15,9 +15,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import services.{AWSLambdaService, GithubService}
 import services.caching.CacheService
 import services.slack.{SlackApiClient, SlackEventService}
+import slick.dbio.DBIO
 import support.DBSpec
-
-import scala.concurrent.Future
 
 class UserServiceSpec extends DBSpec with MockitoSugar {
 
@@ -51,7 +50,7 @@ class UserServiceSpec extends DBSpec with MockitoSugar {
         val client = mock[SlackApiClient]
         when(slackEventService.clientFor(botProfile)).thenReturn(client)
         val slackUserData = SlackUserData(accountId = linkedAccount.loginInfo.providerKey, accountEnterpriseId = None, accountTeamIds = SlackUserTeamIds(adminSlackTeamId), accountName = "", isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, tz = None, deleted = false, profile = None)
-        when(slackEventService.maybeSlackUserDataFor(Matchers.eq(linkedAccount.loginInfo.providerKey), Matchers.eq(client), any())).thenReturn(Future.successful(Some(slackUserData)))
+        when(slackEventService.maybeSlackUserDataForAction(Matchers.eq(linkedAccount.loginInfo.providerKey), Matchers.eq(client), any())).thenReturn(DBIO.successful(Some(slackUserData)))
 
         runNow(dataService.users.isAdmin(linkedAccount.user)) mustBe true
       })

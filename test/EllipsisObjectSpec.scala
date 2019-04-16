@@ -2,18 +2,16 @@ import java.time._
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
-import json.Formatting._
 import json.UserData
 import models.IDs
 import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
-import models.behaviors.behavior.Behavior
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.ellipsisobject._
+import models.behaviors.ellipsisobject.Formatting._
 import models.behaviors.events.{EventType, TestEventContext}
 import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.recurrence.Minutely
-import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.testing.TestMessageEvent
 import models.team.Team
@@ -21,9 +19,10 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import play.api.Logger
 import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables._
 import services.DefaultServices
 import slick.dbio.DBIO
-import support.{DBSpec, TestContext}
+import support.{BehaviorGroupDataBuilder, DBSpec, TestContext}
 import utils.SlackTimestamp
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -103,7 +102,15 @@ class EllipsisObjectSpec extends DBSpec {
         val maybeMessage = Some(MessageObject(messageText, maybeMessageId, maybeChannelObj, maybeThread, usersMentioned = Set(), permalink = maybePermalink, reactionAdded = None))
         val eventInfo = EventInfo.buildFor(event, eventUser, maybeMessage, configuration)
         val token = InvocationToken(IDs.next, user.id, IDs.next, None, None, OffsetDateTime.now)
-        val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, Seq(), "test.ellipsis", token))
+        val behaviorGroupData = BehaviorGroupDataBuilder.buildFor(team.id)
+        val skillInfo = SkillInfo.fromBehaviorGroupData(behaviorGroupData)
+        val maybeMetaInfo = for {
+          behaviorVersionData <- behaviorGroupData.actionBehaviorVersions.headOption
+          behaviorId <- behaviorVersionData.behaviorId
+          info <- MetaInfo.maybeFor(behaviorId, behaviorGroupData)
+        } yield info
+        val ellipsisObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, maybeMetaInfo, Seq(), "test.ellipsis", token)
+        val json = Json.toJson(ellipsisObject)
         Logger.info(Json.prettyPrint(json))
 
         val resultObject = json.as[EllipsisObject]
@@ -135,6 +142,10 @@ class EllipsisObjectSpec extends DBSpec {
         val resultEventSchedule = resultEvent.schedule.get
         resultEventSchedule.editLink must endWith(scheduledEditUrl)
         resultEventSchedule.recurrence mustEqual recurrence.displayString
+
+        val resultMetaInfo = resultObject.meta.get
+        resultMetaInfo.current.id mustBe behaviorGroupData.behaviorVersions.head.behaviorId.get
+        resultMetaInfo.skill mustBe skillInfo
 
         // deprecated stuff:
         val resultUserInfo = resultObject.userInfo

@@ -44,6 +44,7 @@ trait SlackBotProfileService {
 
   def maybeNameFor(slackTeamId: String): Future[Option[String]]
 
+  def maybeNameForAction(botProfile: SlackBotProfile): DBIO[Option[String]]
   def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]]
 
   def toggleMentionShortcut(botProfile: SlackBotProfile, enableShortcut: Boolean): Future[Option[Boolean]]

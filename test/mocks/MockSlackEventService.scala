@@ -11,6 +11,7 @@ import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import services.slack.apiModels.{Attachment, SlackUser}
 import services.slack.{SlackApiClient, SlackApiError, SlackEventService}
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 
@@ -49,8 +50,16 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
     Future.successful(Set())
   }
 
+  def maybeSlackUserDataForAction(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): DBIO[Option[SlackUserData]] = {
+    DBIO.successful(None)
+  }
+
   def maybeSlackUserDataFor(slackUserId: String, client: SlackApiClient, onUserNotFound: SlackApiError => Option[SlackUser]): Future[Option[SlackUserData]] = {
     Future.successful(None)
+  }
+
+  def maybeSlackUserDataForAction(botProfile: SlackBotProfile): DBIO[Option[SlackUserData]] = {
+    DBIO.successful(Some(SlackUserData(botProfile.userId, None, SlackUserTeamIds(botProfile.slackTeamId), "MockBot", isPrimaryOwner = false, isOwner = false, isRestricted = false, isUltraRestricted = false, isBot = false, None, deleted = false, Some(SlackUserProfileData(Some("MockBot"), None, None, None, None, None)))))
   }
 
   def maybeSlackUserDataFor(botProfile: SlackBotProfile): Future[Option[SlackUserData]] = {

@@ -1,13 +1,14 @@
 package models.behaviors.behaviorgroup
 
-import json.BehaviorGroupDeploymentData
+import json.{BehaviorGroupData, BehaviorGroupDeploymentData}
 import models.accounts.user.User
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.JsValue
+import slick.dbio.DBIO
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait BehaviorGroupService {
 
@@ -17,6 +18,7 @@ trait BehaviorGroupService {
 
   def allWithNoNameFor(team: Team): Future[Seq[BehaviorGroup]]
 
+  def findWithoutAccessCheckAction(id: String): DBIO[Option[BehaviorGroup]]
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorGroup]]
 
   def find(id: String, user: User): Future[Option[BehaviorGroup]]
@@ -38,5 +40,10 @@ trait BehaviorGroupService {
   def saveVersionFor(user: User, jsonString: String, isReinstall: Option[Boolean], forceNode6: Option[Boolean]): Future[Option[JsValue]]
 
   def deploy(behaviorGroupId: String, user: User): Future[Option[BehaviorGroupDeploymentData]]
+
+  def maybeDataFor(
+                    groupId: String,
+                    user: User
+                  )(implicit ec: ExecutionContext): Future[Option[BehaviorGroupData]]
 
 }

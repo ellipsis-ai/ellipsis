@@ -12,6 +12,7 @@ trait RequiredSimpleTokenApiService {
 
   def allForAction(groupVersion: BehaviorGroupVersion): DBIO[Seq[RequiredSimpleTokenApi]]
 
+  def allForIdAction(groupVersionId: String): DBIO[Seq[RequiredSimpleTokenApi]]
   def allForId(groupVersionId: String): Future[Seq[RequiredSimpleTokenApi]]
 
   def allFor(groupVersion: BehaviorGroupVersion): Future[Seq[RequiredSimpleTokenApi]]

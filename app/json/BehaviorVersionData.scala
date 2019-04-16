@@ -213,40 +213,40 @@ object BehaviorVersionData {
     )
   }
 
-  def maybeFor(
-                behaviorId: String,
-                user: User,
-                dataService: DataService,
-                maybeGroupVersion: Option[BehaviorGroupVersion],
-                maybeExportId: Option[String]
-              )(implicit ec: ExecutionContext): Future[Option[BehaviorVersionData]] = {
+  def maybeForAction(
+                      behaviorId: String,
+                      user: User,
+                      dataService: DataService,
+                      maybeGroupVersion: Option[BehaviorGroupVersion],
+                      maybeExportId: Option[String]
+                    )(implicit ec: ExecutionContext): DBIO[Option[BehaviorVersionData]] = {
     for {
-      maybeBehavior <- dataService.behaviors.find(behaviorId, user)
+      maybeBehavior <- dataService.behaviors.findAction(behaviorId, user)
       maybeBehaviorVersion <- maybeBehavior.map { behavior =>
         maybeGroupVersion.map { groupVersion =>
-          dataService.behaviorVersions.findFor(behavior, groupVersion)
-        }.getOrElse(dataService.behaviors.maybeCurrentVersionFor(behavior))
-      }.getOrElse(Future.successful(None))
+          dataService.behaviorVersions.findForAction(behavior, groupVersion)
+        }.getOrElse(dataService.behaviors.maybeCurrentVersionForAction(behavior))
+      }.getOrElse(DBIO.successful(None))
       maybeParameters <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.behaviorParameters.allFor(behaviorVersion).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      paramTypes <- Future.successful(maybeParameters.map { params =>
+        dataService.behaviorParameters.allForAction(behaviorVersion).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+      paramTypes <- DBIO.successful(maybeParameters.map { params =>
         params.map(_.paramType).distinct
       }.getOrElse(Seq()))
-      paramTypeDataByParamTypes <- Future.sequence(paramTypes.map { paramType =>
-        BehaviorParameterTypeData.from(paramType, dataService).map { data =>
+      paramTypeDataByParamTypes <- DBIO.sequence(paramTypes.map { paramType =>
+        BehaviorParameterTypeData.fromAction(paramType, dataService).map { data =>
           (paramType, data)
         }
       }).map(_.toMap)
       maybeTriggers <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.triggers.allFor(behaviorVersion).map(Some(_))
-      }.getOrElse(Future.successful(None))
+        dataService.triggers.allForAction(behaviorVersion).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
       maybeDataTypeConfig <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.dataTypeConfigs.maybeFor(behaviorVersion)
-      }.getOrElse(Future.successful(None))
+        dataService.dataTypeConfigs.maybeForAction(behaviorVersion)
+      }.getOrElse(DBIO.successful(None))
       maybeDataTypeConfigData <- maybeDataTypeConfig.map { config =>
-        DataTypeConfigData.forConfig(config, dataService).map(Some(_))
-      }.getOrElse(Future.successful(None))
+        DataTypeConfigData.forConfigAction(config, dataService).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
     } yield {
       for {
         behavior <- maybeBehavior
@@ -290,5 +290,15 @@ object BehaviorVersionData {
         )
       }
     }
+  }
+
+  def maybeFor(
+                behaviorId: String,
+                user: User,
+                dataService: DataService,
+                maybeGroupVersion: Option[BehaviorGroupVersion],
+                maybeExportId: Option[String]
+              )(implicit ec: ExecutionContext): Future[Option[BehaviorVersionData]] = {
+    dataService.run(maybeForAction(behaviorId, user, dataService, maybeGroupVersion, maybeExportId))
   }
 }

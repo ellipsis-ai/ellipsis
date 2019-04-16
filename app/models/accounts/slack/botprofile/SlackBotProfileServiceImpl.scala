@@ -203,25 +203,23 @@ class SlackBotProfileServiceImpl @Inject() (
     } yield maybeName
   }
 
-  def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]] = {
+  def maybeNameForAction(botProfile: SlackBotProfile): DBIO[Option[String]] = {
     val teamId = botProfile.teamId
-    val botDebugInfo = s"Slack user ID ${botProfile.userId} on Slack team ID ${botProfile.slackTeamId} for Ellipsis team ID ${botProfile.teamId}"
-    slackEventService.maybeSlackUserDataFor(botProfile).flatMap { maybeSlackUserData =>
+    slackEventService.maybeSlackUserDataForAction(botProfile).flatMap { maybeSlackUserData =>
       maybeSlackUserData.map { slackUserData =>
         val name = slackUserData.getDisplayName
-        cacheService.cacheBotName(name, teamId).map { _ =>
+        cacheService.cacheBotNameAction(name, teamId).map { _ =>
           Some(name)
         }
       }.getOrElse {
-        Logger.error(s"No bot user data returned from Slack API for ${botDebugInfo}; using fallback cache")
-        cacheService.getBotName(teamId)
-      }
-    }.recoverWith {
-      case e: InvalidResponseException => {
-        Logger.warn(s"Couldn’t retrieve bot user data from Slack API for ${botDebugInfo} because of an invalid/error response; using fallback cache", e)
-        cacheService.getBotName(teamId)
+        Logger.error(s"No bot user data returned from Slack API for ${botProfile.botDebugInfo}; using fallback cache")
+        cacheService.getBotNameAction(teamId)
       }
     }
+  }
+
+  def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]] = {
+    dataService.run(maybeNameForAction(botProfile))
   }
 
   // TODO: this might need to be at the team level for enterprise grid cases

@@ -8,6 +8,7 @@ import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
+import play.api.libs.ws.JsonBodyWritables._
 import play.mvc.Http
 import play.utils.UriEncoding
 import services.DefaultServices

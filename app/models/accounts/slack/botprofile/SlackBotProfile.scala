@@ -26,6 +26,9 @@ case class SlackBotProfile(
   val botDMDeepLink: String = s"slack://user?team=${slackTeamId}&id=${userId}"
 
   val supportsSharedChannels: Boolean = true
+
+  val botDebugInfo = s"Slack user ID ${userId} on Slack team ID ${slackTeamId} for Ellipsis team ID ${teamId}"
+
 }
 
 object SlackBotProfile {
