@@ -11,7 +11,7 @@ case class EllipsisObject(
                                teamInfo: TeamInfo, // deprecated key
                                team: TeamInfo,
                                event: EventInfo,
-                               action: ActionInfo
+                               action: CurrentActionInfo
                              )
 
 object EllipsisObject {
@@ -20,7 +20,7 @@ object EllipsisObject {
                 userInfo: DeprecatedUserInfo,
                 teamInfo: TeamInfo,
                 eventInfo: EventInfo,
-                actionInfo: ActionInfo,
+                actionInfo: CurrentActionInfo,
                 environmentVariables: Seq[EnvironmentVariable],
                 apiBaseUrl: String,
                 token: InvocationToken

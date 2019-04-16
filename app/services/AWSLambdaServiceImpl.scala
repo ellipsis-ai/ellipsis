@@ -145,7 +145,7 @@ class AWSLambdaServiceImpl @Inject() (
                                  userInfo: DeprecatedUserInfo,
                                  teamInfo: TeamInfo,
                                  eventInfo: EventInfo,
-                                 actionInfo: ActionInfo,
+                                 actionInfo: CurrentActionInfo,
                                  parameterValues: Seq[ParameterWithValue],
                                  environmentVariables: Seq[EnvironmentVariable],
                                  token: InvocationToken
@@ -249,7 +249,7 @@ class AWSLambdaServiceImpl @Inject() (
       teamInfo <- teamInfoFor(behaviorVersion, userInfo, maybeBotInfo)
       maybeMessage <- event.maybeMessageInfoAction(maybeConversation, defaultServices)
       actionInfo <- BehaviorGroupData.buildForAction(behaviorVersion.groupVersion, user, maybeInitialVersion = None, defaultServices.dataService, defaultServices.cacheService).map { groupData =>
-        ActionInfo(behaviorVersion.behavior.id, groupData)
+        CurrentActionInfo(behaviorVersion.behavior.id, SkillInfo.fromBehaviorGroupData(groupData))
       }
       result <- {
         val invocationJson = invocationJsonFor(

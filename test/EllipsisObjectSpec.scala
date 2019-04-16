@@ -103,7 +103,7 @@ class EllipsisObjectSpec extends DBSpec {
         val token = InvocationToken(IDs.next, user.id, IDs.next, None, None, OffsetDateTime.now)
         val behaviorGroupData = BehaviorGroupDataBuilder.buildFor(team.id)
         val actionId = behaviorGroupData.actionBehaviorVersions.head.behaviorId.get
-        val actionInfo = ActionInfo(actionId, behaviorGroupData)
+        val actionInfo = CurrentActionInfo(actionId, SkillInfo.fromBehaviorGroupData(behaviorGroupData))
         val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, actionInfo, Seq(), "test.ellipsis", token))
         Logger.info(Json.prettyPrint(json))
 
