@@ -138,7 +138,7 @@ declare namespace ellipsis {
     /** The name of the inputs, passed to the action code as a parameter */
     name: string
     
-    /** The type of the input */
+    /** The type of the input. Can be builtins like Text, Number, etc or the ID for a custom data type on this skill */
     paramType: string
     
     /** The question asked of the user in chat */
