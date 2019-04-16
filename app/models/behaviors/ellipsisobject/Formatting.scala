@@ -21,7 +21,8 @@ object Formatting {
 
   lazy implicit val dataTypeInfoFormat = Jsonx.formatCaseClass[DataTypeInfo]
   lazy implicit val actionInfoFormat = Jsonx.formatCaseClass[ActionInfo]
-  lazy implicit val behaviorInfoFormat: Format[BehaviorInfo] = Jsonx.formatSealed[BehaviorInfo]
+  // we want to try ActionInfo last, otherwise a data type could be interpreted as an Action
+  lazy implicit val behaviorInfoFormat: Format[BehaviorInfo] = Jsonx.formatSealedWithFallback[BehaviorInfo, ActionInfo]
 
   lazy implicit val skillInfoFormat = Jsonx.formatCaseClass[SkillInfo]
   lazy implicit val currentActionInfoFormat = Jsonx.formatCaseClass[MetaInfo]

@@ -109,7 +109,8 @@ class EllipsisObjectSpec extends DBSpec {
           behaviorId <- behaviorVersionData.behaviorId
           info <- MetaInfo.maybeFor(behaviorId, behaviorGroupData)
         } yield info
-        val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, maybeMetaInfo, Seq(), "test.ellipsis", token))
+        val ellipsisObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, maybeMetaInfo, Seq(), "test.ellipsis", token)
+        val json = Json.toJson(ellipsisObject)
         Logger.info(Json.prettyPrint(json))
 
         val resultObject = json.as[EllipsisObject]
@@ -142,9 +143,9 @@ class EllipsisObjectSpec extends DBSpec {
         resultEventSchedule.editLink must endWith(scheduledEditUrl)
         resultEventSchedule.recurrence mustEqual recurrence.displayString
 
-        val resultActionInfo = resultObject.meta.get
-        resultActionInfo.current.id mustBe behaviorGroupData.behaviorVersions.head.id.get
-        resultActionInfo.skill mustBe skillInfo
+        val resultMetaInfo = resultObject.meta.get
+        resultMetaInfo.current.id mustBe behaviorGroupData.behaviorVersions.head.behaviorId.get
+        resultMetaInfo.skill mustBe skillInfo
 
         // deprecated stuff:
         val resultUserInfo = resultObject.userInfo
