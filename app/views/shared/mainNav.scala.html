@@ -26,8 +26,14 @@
               <ul class="type-s popup popup-dropdown-menu fade-in display-none" id="main-nav-menu">
                 <li>
                   <a class="button button-dropdown-item plm"
-                  href='@routes.ApplicationController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
+                  href='@routes.ApplicationController.index(config.maybeAdminAccessTeamId)'
                   >Skills</a>
+                </li>
+
+                <li>
+                  <a class="button button-dropdown-item plm"
+                  href='@routes.DashboardController.index(config.maybeAdminAccessTeamId)'
+                  >Dashboard</a>
                 </li>
 
                 <li>
@@ -36,7 +42,7 @@
                     selectedId = None,
                     newSchedule = None,
                     channelId = None,
-                    teamId = config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId),
+                    teamId = config.maybeAdminAccessTeamId,
                     forceAdmin = None
                   )'
                   >Scheduling</a>
@@ -44,7 +50,7 @@
 
                 <li>
                   <a class="button button-dropdown-item plm"
-                  href='@controllers.web.settings.routes.RegionalSettingsController.index(config.maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId))'
+                  href='@controllers.web.settings.routes.RegionalSettingsController.index(config.maybeAdminAccessTeamId)'
                   >Settings</a>
                 </li>
 
