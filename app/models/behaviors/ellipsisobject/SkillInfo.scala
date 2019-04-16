@@ -21,8 +21,8 @@ object SkillInfo {
       data.name,
       data.description,
       data.icon,
-      ActionInfo.allFrom(data.behaviorVersions, data.actionInputs),
-      DataTypeInfo.allFrom(data.behaviorVersions, data.dataTypeInputs),
+      ActionInfo.allFrom(data.actionBehaviorVersions, data.actionInputs),
+      DataTypeInfo.allFrom(data.dataTypeBehaviorVersions, data.dataTypeInputs),
       data.createdAt,
       data.author
     )
