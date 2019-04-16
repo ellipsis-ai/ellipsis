@@ -135,7 +135,7 @@ declare namespace ellipsis {
   
   export interface InputInfo {
   
-    /** The question asked of the user in chat */
+    /** The name of the inputs, passed to the action code as a parameter */
     name: string
     
     /** The type of the input */
@@ -162,6 +162,37 @@ declare namespace ellipsis {
     /** The inputs that need to be filled in to run the action */
     inputs: InputInfo[]
 
+  }
+  
+  export interface DefaultStorageFieldInfo {
+  
+    /** The name of the field */
+    name: string
+    
+    /** The type of the field */
+    fieldType: string
+    
+    /** Whether or not the field acts as the label for the type */
+    isLabel: boolean
+    
+  }
+  
+  export interface DataTypeInfo {
+  
+    /** The id of the data type */
+    id: string
+    
+    /** The name of the data type, if any */
+    name?: string
+    
+    /** The inputs that need to be filled in to use the data type */
+    inputs: InputInfo[]
+    
+    /** Whether or not the data type uses code to produce options */
+    usesCode: boolean
+    
+    /** If backed by default storage, rather than code, these are the default storage fields */
+    defaultStorageFields: DefaultStorageFieldInfo[]
   }
   
   export interface SkillInfo {

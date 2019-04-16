@@ -19,12 +19,7 @@ object ActionInfo {
         ea.description,
         ea.functionBody,
         ea.responseTemplate,
-        ea.inputIds.flatMap(eaInputId => {
-          val maybeData = inputs.find(_.inputId.contains(eaInputId))
-          maybeData.map { input =>
-            InputInfo(input.name, input.paramType.map(_.name), input.question)
-          }
-        })
+        InputInfo.allFrom(ea.inputIds, inputs)
       )
     }
   }
