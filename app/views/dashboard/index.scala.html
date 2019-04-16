@@ -8,9 +8,7 @@
     <div id="dashboardContainer" class="flex-row-cascade"></div>
 
     <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
-    <script src="@routes.DashboardController.index(
-      teamId = maybeTeamId
-    )"></script>
+    <script src='@routes.DashboardController.index(maybeTeamId)'></script>
     <script src='@config.assets.getWebpackBundle("dashboard.js")'></script>
   </div>
 }

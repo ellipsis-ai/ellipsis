@@ -4,11 +4,14 @@ import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
+import json.DashboardConfig
+import json.Formatting._
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent}
 import services.DefaultServices
+import views.html.helper.CSRF
 
 import scala.concurrent.ExecutionContext
 
@@ -36,7 +39,7 @@ class DashboardController @Inject()(
             viewConfig(Some(teamAccess)),
             "DashboardConfig",
             "dashboard",
-            Json.toJson("")
+            Json.toJson(DashboardConfig("dashboardContainer", CSRF.getToken(request).value))
           ))
         }
       }
@@ -44,8 +47,9 @@ class DashboardController @Inject()(
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
+          val myViewConfig = viewConfig(Some(teamAccess))
           Ok(views.html.dashboard.index(
-            viewConfig(Some(teamAccess)),
+            myViewConfig,
             maybeTeamId
           ))
         }
