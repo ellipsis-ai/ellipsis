@@ -103,10 +103,7 @@ class AWSLambdaCodeSpec extends PlaySpec with MockitoSugar {
         message = None,
         schedule = None
       ),
-      CurrentActionInfo(
-        actionId,
-        SkillInfo.fromBehaviorGroupData(behaviorGroupData)
-      )
+      MetaInfo.maybeFor(actionId, behaviorGroupData)
     )
   }
 
