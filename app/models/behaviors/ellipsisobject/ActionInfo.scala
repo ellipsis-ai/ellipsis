@@ -1,7 +1,5 @@
 package models.behaviors.ellipsisobject
 
-import java.time.OffsetDateTime
-
 import json.{BehaviorVersionData, InputData}
 
 case class ActionInfo(
@@ -9,8 +7,7 @@ case class ActionInfo(
                        description: Option[String],
                        functionBody: String,
                        responseTemplate: String,
-                       inputs: Seq[InputInfo],
-                       createdAt: Option[OffsetDateTime]
+                       inputs: Seq[InputInfo]
                      )
 
 object ActionInfo {
@@ -27,8 +24,7 @@ object ActionInfo {
           maybeData.map { input =>
             InputInfo(input.name, input.paramType.map(_.name), input.question)
           }
-        }),
-        ea.createdAt
+        })
       )
     }
   }

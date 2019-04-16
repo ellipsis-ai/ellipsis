@@ -132,6 +132,58 @@ declare namespace ellipsis {
     /** A link for the user, formatted for the specific context */
     formattedLink? string
   }
+  
+  export interface InputInfo {
+  
+    /** The question asked of the user in chat */
+    name: string
+    
+    /** The type of the input */
+    paramType: string
+    
+    /** The question asked of the user in chat */
+    question: string
+  }
+  
+  export interface ActionInfo {
+
+    /** The name of the action, if any */
+    name?: string
+
+    /** The description of the action, if any */
+    description?: string
+
+    /** The function code that runs when the action is invoked */
+    functionBody: string
+
+    /** The template used to form a response for the action */
+    responseTemplate: string
+    
+    /** The inputs that need to be filled in to run the action */
+    inputs: InputInfo[]
+
+  }
+  
+  export interface SkillInfo {
+
+    /** The name of the skill, if any */
+    name?: string
+
+    /** The description of the skill, if any */
+    description?: string
+
+    /** The icon for the skill, if any */
+    icon?: string
+
+    /** The skill's actions */
+    actions: ActionInfo[]
+
+    /** The creation timestamp for this version of the skill */
+    createdAt: Date
+
+    /** The author of the skill, if known */
+    author?: UserData
+  }
 
   export interface DeprecatedMessageInfo {
     /** The text of the message that preceded this action */
@@ -376,10 +428,8 @@ declare namespace ellipsis {
   }
   
   const action: {
-    actionId: string
-    skill: {
-      actionInputs: object[]
-    }
+    actionId: string,
+    skill: SkillInfo
   }
 }
 `;
