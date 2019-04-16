@@ -5,8 +5,6 @@ import json.{BehaviorVersionData, InputData}
 case class ActionInfo(
                        name: Option[String],
                        description: Option[String],
-                       functionBody: String,
-                       responseTemplate: String,
                        inputs: Seq[InputInfo]
                      )
 
@@ -17,8 +15,6 @@ object ActionInfo {
       ActionInfo(
         ea.name,
         ea.description,
-        ea.functionBody,
-        ea.responseTemplate,
         InputInfo.allFrom(ea.inputIds, inputs)
       )
     }

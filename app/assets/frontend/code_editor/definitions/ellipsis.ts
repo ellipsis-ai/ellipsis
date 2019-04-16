@@ -152,12 +152,6 @@ declare namespace ellipsis {
 
     /** The description of the action, if any */
     description?: string
-
-    /** The function code that runs when the action is invoked */
-    functionBody: string
-
-    /** The template used to form a response for the action */
-    responseTemplate: string
     
     /** The inputs that need to be filled in to run the action */
     inputs: InputInfo[]
