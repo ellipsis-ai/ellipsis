@@ -19,6 +19,7 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import play.api.Logger
 import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables._
 import services.DefaultServices
 import slick.dbio.DBIO
 import support.{BehaviorGroupDataBuilder, DBSpec, TestContext}
@@ -102,8 +103,9 @@ class EllipsisObjectSpec extends DBSpec {
         val eventInfo = EventInfo.buildFor(event, eventUser, maybeMessage, configuration)
         val token = InvocationToken(IDs.next, user.id, IDs.next, None, None, OffsetDateTime.now)
         val behaviorGroupData = BehaviorGroupDataBuilder.buildFor(team.id)
+        val skillInfo = SkillInfo.fromBehaviorGroupData(behaviorGroupData)
         val actionId = behaviorGroupData.actionBehaviorVersions.head.behaviorId.get
-        val actionInfo = CurrentActionInfo(actionId, SkillInfo.fromBehaviorGroupData(behaviorGroupData))
+        val actionInfo = CurrentActionInfo(actionId, skillInfo)
         val json = Json.toJson(EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, actionInfo, Seq(), "test.ellipsis", token))
         Logger.info(Json.prettyPrint(json))
 
@@ -139,7 +141,7 @@ class EllipsisObjectSpec extends DBSpec {
 
         val resultActionInfo = resultObject.action
         resultActionInfo.actionId mustBe actionId
-        resultActionInfo.skill mustBe behaviorGroupData
+        resultActionInfo.skill mustBe skillInfo
 
         // deprecated stuff:
         val resultUserInfo = resultObject.userInfo
