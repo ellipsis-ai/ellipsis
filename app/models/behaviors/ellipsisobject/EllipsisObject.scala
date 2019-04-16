@@ -1,5 +1,6 @@
 package models.behaviors.ellipsisobject
 
+import models.behaviors.ParameterWithValue
 import models.behaviors.invocationtoken.InvocationToken
 import models.environmentvariable.EnvironmentVariable
 
@@ -11,7 +12,8 @@ case class EllipsisObject(
                            teamInfo: TeamInfo, // deprecated key
                            team: TeamInfo,
                            event: EventInfo,
-                           meta: Option[MetaInfo]
+                           meta: Option[MetaInfo],
+                           args: Seq[ArgInfo]
                              )
 
 object EllipsisObject {
@@ -21,6 +23,7 @@ object EllipsisObject {
                 teamInfo: TeamInfo,
                 eventInfo: EventInfo,
                 metaInfo: Option[MetaInfo],
+                parameterValues: Seq[ParameterWithValue],
                 environmentVariables: Seq[EnvironmentVariable],
                 apiBaseUrl: String,
                 token: InvocationToken
@@ -35,7 +38,8 @@ object EllipsisObject {
       teamInfo,
       teamInfo,
       eventInfo,
-      metaInfo
+      metaInfo,
+      ArgInfo.allFor(parameterValues, metaInfo.map(_.current.inputs).getOrElse(Seq()))
     )
   }
 
