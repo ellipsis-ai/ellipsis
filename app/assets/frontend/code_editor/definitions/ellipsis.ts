@@ -1,6 +1,9 @@
 import {RequiredOAuthApplication} from "../../models/oauth";
 import {RequiredAWSConfig} from "../../models/aws";
 
+const ACTION_INFO_TYPE = 'ActionInfo';
+const DATA_TYPE_INFO_TYPE = 'DataTypeInfo';
+
 interface Props {
   requiredAWSConfigs: Array<RequiredAWSConfig>,
   oauthApiApplications: Array<RequiredOAuthApplication>,
@@ -152,7 +155,7 @@ declare namespace ellipsis {
     question: string
   }
   
-  export interface ActionInfo {
+  export interface ${ACTION_INFO_TYPE} {
 
     /** The name of the action, if any */
     name?: string
@@ -178,7 +181,7 @@ declare namespace ellipsis {
     
   }
   
-  export interface DataTypeInfo {
+  export interface ${DATA_TYPE_INFO_TYPE} {
   
     /** The id of the data type */
     id: string
@@ -208,10 +211,10 @@ declare namespace ellipsis {
     icon?: string
 
     /** The skill's actions */
-    actions: ActionInfo[]
+    actions: ${ACTION_INFO_TYPE}[]
     
     /** The skill's data types */
-    dataTypes: DataTypeInfo[]
+    dataTypes: ${DATA_TYPE_INFO_TYPE}[]
 
     /** The creation timestamp for this version of the skill */
     createdAt: Date
@@ -223,7 +226,7 @@ declare namespace ellipsis {
   export interface MetaInfo {
 
     /** The current action or data type being invoked */
-    current: ${props.isDataType ? 'DataTypeInfo' : 'ActionInfo'} 
+    current: ${props.isDataType ? DATA_TYPE_INFO_TYPE : ACTION_INFO_TYPE } 
   
     /** The skill containing the action or data type being invoked */
     skill: SkillInfo
@@ -473,7 +476,7 @@ declare namespace ellipsis {
   }
   
   const meta: MetaInfo {
-    current: ${props.isDataType ? 'DataTypeInfo' : 'ActionInfo'},
+    current: ${props.isDataType ? DATA_TYPE_INFO_TYPE : ACTION_INFO_TYPE},
     skill: SkillInfo
   }
 }
