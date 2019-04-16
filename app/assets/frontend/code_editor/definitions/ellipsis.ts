@@ -4,7 +4,8 @@ import {RequiredAWSConfig} from "../../models/aws";
 interface Props {
   requiredAWSConfigs: Array<RequiredAWSConfig>,
   oauthApiApplications: Array<RequiredOAuthApplication>,
-  envVariableNames: Array<string>
+  envVariableNames: Array<string>,
+  paramTypeIds: Array<string>
 }
 
 const EllipsisObjectDefinitions = {
@@ -133,13 +134,18 @@ declare namespace ellipsis {
     formattedLink? string
   }
   
+  /**
+   * Run-time type IDs for params, including buitins and ID
+   */ 
+  type ParamType = ${props.paramTypeIds.map(ea => `'${ea}'`).join(" | ")};
+  
   export interface InputInfo {
   
     /** The name of the inputs, passed to the action code as a parameter */
     name: string
     
     /** The type of the input. Can be builtins like Text, Number, etc or the ID for a custom data type on this skill */
-    paramType: string
+    paramType: ParamType
     
     /** The question asked of the user in chat */
     question: string
@@ -164,7 +170,7 @@ declare namespace ellipsis {
     name: string
     
     /** The type of the field */
-    fieldType: string
+    fieldType: ParamType
     
     /** Whether or not the field acts as the label for the type */
     isLabel: boolean
@@ -202,6 +208,9 @@ declare namespace ellipsis {
 
     /** The skill's actions */
     actions: ActionInfo[]
+    
+    /** The skill's data types */
+    dataTypes: DataTypeInfo[]
 
     /** The creation timestamp for this version of the skill */
     createdAt: Date

@@ -55,7 +55,9 @@ interface Props {
   isMemoizationEnabled: boolean,
 
   envVariableNames: Array<string>,
-  functionExecutesImmediately?: Option<boolean>
+  functionExecutesImmediately?: Option<boolean>,
+
+  paramTypeIds: Array<string>
 }
 
 interface State {
@@ -148,7 +150,8 @@ class CodeConfiguration extends React.Component<Props, State> {
         EllipsisObjectDefinitions.buildFor({
         requiredAWSConfigs: this.props.requiredAWSConfigs,
         oauthApiApplications: this.props.oauthApiApplications,
-        envVariableNames: this.props.envVariableNames
+        envVariableNames: this.props.envVariableNames,
+        paramTypeIds: this.props.paramTypeIds
       }) : "";
       return `
 ${ellipsisObjectDefinitions}

@@ -748,6 +748,11 @@ class BehaviorEditor extends React.Component<Props, State> {
     return this.props.builtinParamTypes.concat(customTypes);
   }
 
+  getParamTypeIds(): Array<string> {
+    const isString = (str: Option<string>): str is string => !!str
+    return this.getParamTypes().map(ea => ea.id).filter(isString);
+  }
+
   getParamTypesForInput(): Array<ParamType> {
     const selectedBehaviorVersion = this.getSelected();
     const selectedBehaviorVersionId = selectedBehaviorVersion ? selectedBehaviorVersion.id : null;
@@ -1951,6 +1956,8 @@ class BehaviorEditor extends React.Component<Props, State> {
 
         envVariableNames={this.getEnvVariableNames()}
         functionExecutesImmediately={codeConfigProps.functionExecutesImmediately || false}
+
+        paramTypeIds={this.getParamTypeIds()}
       />
     );
   }
