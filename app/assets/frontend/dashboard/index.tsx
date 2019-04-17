@@ -3,15 +3,20 @@ import autobind from '../lib/autobind';
 import {PageRequiredProps} from "../shared_ui/page";
 import {Bar, defaults} from 'react-chartjs-2';
 import * as moment from "moment";
-import {ChartPoint} from "chart.js";
+import {ChartFontOptions, ChartOptions, ChartPoint} from "chart.js";
 import HelpButton from "../help/help_button";
 import FixedFooter from "../shared_ui/fixed_footer";
 import Collapsible from "../shared_ui/collapsible";
 import HelpPanel from "../help/panel";
 
-defaults.global.defaultFontFamily = "'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif";
-defaults.global.defaultFontColor = "hsl(235, 14%, 15%)";
-defaults.global.animation.duration = 250;
+const myDefaults = defaults as {
+  global: ChartOptions & ChartFontOptions
+};
+myDefaults.global.defaultFontFamily = "'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif";
+myDefaults.global.defaultFontColor = "hsl(235, 14%, 15%)";
+myDefaults.global.animation = Object.assign(myDefaults.global.animation, {}, {
+  duration: 250
+});
 
 interface DashboardProps {
   csrfToken: string
