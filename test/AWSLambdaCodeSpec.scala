@@ -1,7 +1,6 @@
 import java.io.{ByteArrayInputStream, File}
 import java.time.OffsetDateTime
 
-import json.BehaviorGroupData
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
@@ -103,7 +102,8 @@ class AWSLambdaCodeSpec extends PlaySpec with MockitoSugar {
         message = None,
         schedule = None
       ),
-      MetaInfo.maybeFor(actionId, behaviorGroupData)
+      MetaInfo.maybeFor(actionId, behaviorGroupData),
+      Seq()
     )
   }
 
