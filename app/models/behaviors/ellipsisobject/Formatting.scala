@@ -26,6 +26,7 @@ object Formatting {
 
   lazy implicit val skillInfoFormat = Jsonx.formatCaseClass[SkillInfo]
   lazy implicit val currentActionInfoFormat = Jsonx.formatCaseClass[MetaInfo]
+  lazy implicit val argInfoFormat = Jsonx.formatCaseClass[ArgInfo]
   lazy implicit val ellipsisObjectFormat = Jsonx.formatCaseClass[EllipsisObject]
 }
 

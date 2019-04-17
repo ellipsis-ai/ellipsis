@@ -150,7 +150,7 @@ class AWSLambdaServiceImpl @Inject() (
                                  environmentVariables: Seq[EnvironmentVariable],
                                  token: InvocationToken
                                ): JsObject = {
-    val contextObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, metaInfo, environmentVariables, apiBaseUrl, token)
+    val contextObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, metaInfo, parameterValues, environmentVariables, apiBaseUrl, token)
     AWSLambdaInvocationJsonBuilder(behaviorVersion, contextObject, parameterValues).build
   }
 

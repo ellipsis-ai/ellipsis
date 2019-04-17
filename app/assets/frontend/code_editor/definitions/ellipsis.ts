@@ -232,6 +232,19 @@ declare namespace ellipsis {
     skill: SkillInfo
     
   }
+  
+  export interface ArgInfo {
+    
+    /** The name of the associated parameter */
+    name: string
+    
+    /** The value passed */
+    value: any
+
+    /** The associated input, if any */
+    input: InputInfo
+    
+  }
 
   export interface DeprecatedMessageInfo {
     /** The text of the message that preceded this action */
@@ -479,6 +492,8 @@ declare namespace ellipsis {
     current: ${props.isDataType ? DATA_TYPE_INFO_TYPE : ACTION_INFO_TYPE},
     skill: SkillInfo
   }
+  
+  const args: ArgInfo[]
 }
 `;
   }

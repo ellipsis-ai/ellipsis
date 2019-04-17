@@ -109,7 +109,7 @@ class EllipsisObjectSpec extends DBSpec {
           behaviorId <- behaviorVersionData.behaviorId
           info <- MetaInfo.maybeFor(behaviorId, behaviorGroupData)
         } yield info
-        val ellipsisObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, maybeMetaInfo, Seq(), "test.ellipsis", token)
+        val ellipsisObject = EllipsisObject.buildFor(userInfo, teamInfo, eventInfo, maybeMetaInfo, Seq(), Seq(), "test.ellipsis", token)
         val json = Json.toJson(ellipsisObject)
         Logger.info(Json.prettyPrint(json))
 
