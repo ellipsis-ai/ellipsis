@@ -14,6 +14,7 @@ const myDefaults = defaults as {
 };
 myDefaults.global.defaultFontFamily = "'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif";
 myDefaults.global.defaultFontColor = "hsl(235, 14%, 15%)";
+myDefaults.global.defaultFontSize = 15;
 myDefaults.global.animation = Object.assign(myDefaults.global.animation, {}, {
   duration: 250
 });
