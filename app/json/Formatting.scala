@@ -231,6 +231,8 @@ object Formatting {
 
   lazy implicit val ellipsisObjectFormat = Json.format[EllipsisObject]
 
+  lazy implicit val dashboardDataPointFormat = Json.format[DashboardDataPoint]
+  lazy implicit val dashboardDataFormat = Json.format[DashboardData]
   lazy implicit val dashboardConfigFormat = Json.format[DashboardConfig]
 }
 

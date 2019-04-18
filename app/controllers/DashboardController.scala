@@ -39,7 +39,10 @@ class DashboardController @Inject()(
             viewConfig(Some(teamAccess)),
             "DashboardConfig",
             "dashboard",
-            Json.toJson(DashboardConfig("dashboardContainer", CSRF.getToken(request).value))
+            Json.toJson(DashboardConfig.buildForDemoData(
+              "dashboardContainer",
+              CSRF.getToken(request).value
+            ))
           ))
         }
       }

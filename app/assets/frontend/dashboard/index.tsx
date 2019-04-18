@@ -8,6 +8,9 @@ import HelpButton from "../help/help_button";
 import FixedFooter from "../shared_ui/fixed_footer";
 import Collapsible from "../shared_ui/collapsible";
 import HelpPanel from "../help/panel";
+import {DashboardData, DashboardDataPoint} from "./loader";
+import ToggleGroup, {ToggleGroupItem} from "../form/toggle_group";
+import {Timestamp} from "../lib/formatter";
 
 const myDefaults = defaults as {
   global: ChartOptions & ChartFontOptions
@@ -21,14 +24,29 @@ myDefaults.global.animation = Object.assign(myDefaults.global.animation, {}, {
 
 interface DashboardProps {
   csrfToken: string
+  data: DashboardData
 }
 
 type Props = DashboardProps & PageRequiredProps
 
-class Dashboard extends React.Component<Props> {
+enum TimePeriod {
+  Period2018 = "2018",
+  Period2019 = "2019",
+  PeriodYear = "Last 12 months",
+  PeriodAll = "All time"
+}
+
+interface State {
+  period: TimePeriod
+}
+
+class Dashboard extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     autobind(this);
+    this.state = {
+      period: TimePeriod.PeriodYear
+    };
   }
 
   toggleHelpForWorkflowActions(): void {
@@ -43,12 +61,98 @@ class Dashboard extends React.Component<Props> {
     this.props.onToggleActivePanel("helpForUsers");
   }
 
-  dataToTimeSeries(data: Array<number | null>): Array<ChartPoint> {
-    return data.fill(null, data.length, 12).map((item: number | null, index: number) => {
-      return {
-        t: typeof(item) === "number" ? moment(`2019-${index + 1}-1`, 'YYYY-M-D').toDate() : undefined,
-        y: typeof(item) === "number" ? item : undefined
-      };
+  getChartOptions(): ChartOptions {
+    return {
+      aspectRatio: 2.25,
+      maintainAspectRatio: true,
+      scales: {
+        xAxes: [{
+          bounds: 'data',
+          type: 'time',
+          distribution: 'series',
+          time: {
+            unit: 'month',
+            min: this.getChartMin(),
+            max: this.getChartMax(),
+            tooltipFormat: 'MMMM YYYY'
+          },
+          ticks: {
+            source: 'data'
+          }
+        }],
+        yAxes: [{
+          ticks: {
+            beginAtZero: true
+          }
+        }]
+      }
+    };
+  }
+
+  getChartMin(): string {
+    if (this.state.period === TimePeriod.Period2018) {
+      return "2017-12-01T00:00:00Z";
+    } else if (this.state.period === TimePeriod.Period2019) {
+      return "2018-12-01T00:00:00Z";
+    } else if (this.state.period === TimePeriod.PeriodYear) {
+      return "2018-03-01T00:00:00Z";
+    } else {
+      return "2017-12-01T00:00:00Z";
+    }
+  }
+
+  getChartMax(): string {
+    if (this.state.period === TimePeriod.Period2018) {
+      return "2019-01-01T00:00:00Z";
+    } else if (this.state.period === TimePeriod.Period2019) {
+      return "2020-01-01T00:00:00Z";
+    } else if (this.state.period === TimePeriod.PeriodYear) {
+      return "2019-05-01T00:00:00Z";
+    } else {
+      return "2019-05-01T00:00:00Z";
+    }
+  }
+
+  getData(key: keyof DashboardData): Array<DashboardDataPoint> {
+    const data = this.props.data[key];
+    if (this.state.period === TimePeriod.Period2018) {
+      return data.slice(0, 12);
+    } else if (this.state.period === TimePeriod.Period2019) {
+      return data.slice(12);
+    } else if (this.state.period === TimePeriod.PeriodYear) {
+      return data.slice(data.length - 12);
+    } else {
+      return data;
+    }
+  }
+
+  getMainColumnStyle(): React.CSSProperties {
+    return {
+      paddingBottom: this.props.footerHeight
+    };
+  }
+
+  setPeriod2018(): void {
+    this.setState({
+      period: TimePeriod.Period2018
+    });
+  }
+
+  setPeriod2019(): void {
+    this.setState({
+      period: TimePeriod.Period2019
+    });
+  }
+
+  setPeriodYear(): void {
+    this.setState({
+      period: TimePeriod.PeriodYear
+    });
+  }
+
+  setPeriodAll(): void {
+    this.setState({
+      period: TimePeriod.PeriodAll
     });
   }
 
@@ -66,9 +170,36 @@ class Dashboard extends React.Component<Props> {
                     </ul>
                   </nav>
                 </div>
-                <div className="column column-page-main column-page-main-wide flex-column flex-column-main position-relative bg-white">
+                <div
+                  className="column column-page-main column-page-main-wide flex-column flex-column-main position-relative bg-white"
+                  style={this.getMainColumnStyle()}
+                >
                   <div className="paxxl">
-                    <div className="pbl">
+
+                    <ToggleGroup>
+                      <ToggleGroupItem
+                        activeWhen={this.state.period === TimePeriod.Period2018}
+                        label={"2018"}
+                        onClick={this.setPeriod2018}
+                      />
+                      <ToggleGroupItem
+                        activeWhen={this.state.period === TimePeriod.Period2019}
+                        label={"2019"}
+                        onClick={this.setPeriod2019}
+                      />
+                      <ToggleGroupItem
+                        activeWhen={this.state.period === TimePeriod.PeriodYear}
+                        label={"Last 12 months"}
+                        onClick={this.setPeriodYear}
+                      />
+                      <ToggleGroupItem
+                        activeWhen={this.state.period === TimePeriod.PeriodAll}
+                        label={"All time"}
+                        onClick={this.setPeriodAll}
+                      />
+                    </ToggleGroup>
+
+                    <div className="pvl">
                       <h4 className="align-c">
                         <span className="mrm">Workflow actions</span>
                         <HelpButton onClick={this.toggleHelpForWorkflowActions} toggled={this.props.activePanelName === "helpForWorkflowActions"} />
@@ -81,33 +212,21 @@ class Dashboard extends React.Component<Props> {
                             stack: 'installed',
                             label: "Installed",
                             type: 'bar',
-                            data: this.dataToTimeSeries([162, 173, 177, 177]),
+                            data: this.getData('installedWorkflows'),
                             fill: false,
-                            borderColor: "hsl(341, 93%, 65%)",
-                            backgroundColor: "hsla(341, 93%, 65%, 0.1)",
+                            borderColor: "hsl(231, 97%, 64%)",
+                            backgroundColor: "hsla(231, 97%, 64%, 0.1)",
                             borderWidth: 1
                           }, {
                             stack: 'active',
                             label: "Active",
                             type: 'bar',
-                            data: this.dataToTimeSeries([62, 62, 46, 57, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: "hsl(341, 93%, 65%)",
-                            backgroundColor: "hsl(341, 93%, 65%)"
-                          }],
-                          labels: ["Jan 2019", "Feb 2019", "March 2019", "April 2019", "May 2019", "June 2019",
-                          "July 2019", "Aug 2019", "Sept 2019", "Oct 2019", "Nov 2019", "Dec 2019"]
+                            data: this.getData('activeWorkflows'),
+                            borderColor: "hsl(231, 97%, 64%)",
+                            backgroundColor: "hsl(231, 97%, 64%)"
+                          }]
                         }}
-                        options={{
-                          aspectRatio: 2.5,
-                          maintainAspectRatio: true,
-                          scales: {
-                            yAxes: [{
-                              ticks: {
-                                beginAtZero: true
-                              }
-                            }]
-                          }
-                        }}
+                        options={this.getChartOptions()}
                       />
                     </div>
 
@@ -124,7 +243,7 @@ class Dashboard extends React.Component<Props> {
                             stack: "installed",
                             label: "Installed",
                             type: 'bar',
-                            data: this.dataToTimeSeries([28, 31, 32, 32]),
+                            data: this.getData('installedSkills'),
                             fill: false,
                             borderColor: "hsl(231, 97%, 64%)",
                             backgroundColor: "hsla(231, 97%, 64%, 0.1)",
@@ -133,38 +252,26 @@ class Dashboard extends React.Component<Props> {
                             stack: "active",
                             label: "Active",
                             type: 'bar',
-                            data: this.dataToTimeSeries([13, 15, 14, 13, 0, 0, 0, 0, 0, 0, 0, 0]),
+                            data: this.getData('activeSkills'),
                             borderColor: "hsl(231, 97%, 64%)",
                             backgroundColor: "hsl(231, 97%, 64%)"
                           }, {
                             stack: "development",
                             label: "Created",
                             type: 'bar',
-                            data: this.dataToTimeSeries([1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                            data: this.getData('createdSkills'),
                             borderColor: "hsl(341, 93%, 60%)",
                             backgroundColor: "hsl(341, 93%, 60%)"
                           }, {
                             stack: "development",
                             label: "Modified",
                             type: 'bar',
-                            data: this.dataToTimeSeries([4, 3, 6, 1, 0, 0, 0, 0, 0, 0, 0, 0]),
+                            data: this.getData('modifiedSkills'),
                             borderColor: "hsl(341, 93%, 75%)",
                             backgroundColor: "hsl(341, 93%, 75%)"
-                          }],
-                          labels: ["Jan 2019", "Feb 2019", "March 2019", "April 2019", "May 2019", "June 2019",
-                            "July 2019", "Aug 2019", "Sept 2019", "Oct 2019", "Nov 2019", "Dec 2019"]
+                          }]
                         }}
-                        options={{
-                          aspectRatio: 2.5,
-                          maintainAspectRatio: true,
-                          scales: {
-                            yAxes: [{
-                              ticks: {
-                                beginAtZero: true
-                              }
-                            }]
-                          }
-                        }}
+                        options={this.getChartOptions()}
                       />
                     </div>
 
@@ -181,7 +288,7 @@ class Dashboard extends React.Component<Props> {
                             stack: "slack",
                             label: "Total in Slack",
                             type: 'bar',
-                            data: this.dataToTimeSeries([215, 218, 225, 225]),
+                            data: this.getData('totalUsers'),
                             fill: false,
                             borderColor: "hsl(231, 97%, 64%)",
                             backgroundColor: "hsla(231, 97%, 64%, 0.1)",
@@ -190,38 +297,26 @@ class Dashboard extends React.Component<Props> {
                             stack: "active",
                             label: "Active",
                             type: 'bar',
-                            data: this.dataToTimeSeries([null, null, 198, 199, 0, 0, 0, 0, 0, 0, 0, 0]),
+                            data: this.getData('activeUsers'),
                             borderColor: "hsl(231, 97%, 64%)",
                             backgroundColor: "hsl(231, 97%, 64%)"
                           }, {
                             stack: "contributors",
                             label: "Contributors",
                             type: 'bar',
-                            data: this.dataToTimeSeries([65, 67, 84, 66, 0, 0, 0, 0, 0, 0, 0, 0]),
+                            data: this.getData('contributingUsers'),
                             borderColor: "hsl(341, 93%, 60%)",
                             backgroundColor: "hsl(341, 93%, 60%)"
                           }, {
                             stack: "editors",
                             label: "Editors",
                             type: 'bar',
-                            data: this.dataToTimeSeries([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+                            data: this.getData('editingUsers'),
                             borderColor: "hsl(341, 93%, 75%)",
                             backgroundColor: "hsl(341, 93%, 75%)"
-                          }],
-                          labels: ["Jan 2019", "Feb 2019", "March 2019", "April 2019", "May 2019", "June 2019",
-                            "July 2019", "Aug 2019", "Sept 2019", "Oct 2019", "Nov 2019", "Dec 2019"]
+                          }]
                         }}
-                        options={{
-                          aspectRatio: 2.5,
-                          maintainAspectRatio: true,
-                          scales: {
-                            yAxes: [{
-                              ticks: {
-                                beginAtZero: true
-                              }
-                            }]
-                          }
-                        }}
+                        options={this.getChartOptions()}
                       />
 
                       <p className="type-s type-italic">Active user total available only from March 2019 onwards</p>
@@ -233,7 +328,7 @@ class Dashboard extends React.Component<Props> {
           </div>
         </div>
         {this.props.onRenderFooter((
-          <FixedFooter>
+          <div>
             <Collapsible revealWhen={this.props.activePanelName === "helpForWorkflowActions"}>
               <HelpPanel heading={"Workflow actions"} onCollapseClick={this.props.onClearActivePanel}>
                 <p>
@@ -327,7 +422,7 @@ class Dashboard extends React.Component<Props> {
                 </div>
               </HelpPanel>
             </Collapsible>
-          </FixedFooter>
+          </div>
         ))}
       </div>
     );
