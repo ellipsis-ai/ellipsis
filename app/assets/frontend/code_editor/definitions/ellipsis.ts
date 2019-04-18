@@ -199,6 +199,16 @@ declare namespace ellipsis {
     defaultStorageFields: DefaultStorageFieldInfo[]
   }
   
+  export interface LibraryInfo {
+  
+    /** The name of the library */
+    name: string
+    
+    /** The code in the function body of the library */
+    functionBody: string
+  
+  }
+  
   export interface SkillInfo {
 
     /** The name of the skill, if any */
@@ -215,6 +225,9 @@ declare namespace ellipsis {
     
     /** The skill's data types */
     dataTypes: ${DATA_TYPE_INFO_TYPE}[]
+    
+    /** The skill's libraries */
+    libraries: LibraryInfo[]
 
     /** The creation timestamp for this version of the skill */
     createdAt: Date
