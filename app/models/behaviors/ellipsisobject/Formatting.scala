@@ -19,6 +19,7 @@ object Formatting {
   lazy implicit val inputInfoFormat = Jsonx.formatCaseClass[InputInfo]
   lazy implicit val defaultStorageFieldInfoFormat = Jsonx.formatCaseClass[DefaultStorageFieldInfo]
 
+  lazy implicit val libraryInfoFormat = Jsonx.formatCaseClass[LibraryInfo]
   lazy implicit val dataTypeInfoFormat = Jsonx.formatCaseClass[DataTypeInfo]
   lazy implicit val actionInfoFormat = Jsonx.formatCaseClass[ActionInfo]
   // we want to try ActionInfo last, otherwise a data type could be interpreted as an Action

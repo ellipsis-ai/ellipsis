@@ -10,6 +10,7 @@ case class SkillInfo(
                       icon: Option[String],
                       actions: Seq[BehaviorInfo],
                       dataTypes: Seq[BehaviorInfo],
+                      libraries: Seq[LibraryInfo],
                       createdAt: Option[OffsetDateTime],
                       author: Option[UserData]
                     ) {
@@ -28,6 +29,7 @@ object SkillInfo {
       data.icon,
       ActionInfo.allFrom(data.actionBehaviorVersions, data.actionInputs),
       DataTypeInfo.allFrom(data.dataTypeBehaviorVersions, data.dataTypeInputs),
+      LibraryInfo.allFor(data.libraryVersions),
       data.createdAt,
       data.author
     )
