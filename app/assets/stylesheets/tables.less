@@ -1,4 +1,5 @@
 @import (reference) "measurements";
+@import (reference) "borders";
 
 table {
   border-collapse: collapse;
@@ -16,4 +17,25 @@ td {
 
 th {
   vertical-align: bottom;
+}
+
+table.border {
+  border: 0;
+  td, th {
+    border-bottom: @border-width @border-color solid;
+    padding-top: @xs;
+    padding-bottom: @xs;
+  }
+  tr:last-child td {
+    border-bottom-width: 0;
+  }
+}
+
+table.column-space {
+  td, th {
+    padding-right: @s;
+  }
+  td:last-child, th:last-child {
+    padding-right: 0;
+  }
 }
