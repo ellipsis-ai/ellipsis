@@ -1,0 +1,17 @@
+@(
+  config: ViewConfig,
+  maybeTeamId: Option[String]
+)(implicit messages: Messages, r: RequestHeader)
+
+@page.main("Dashboard", config, Seq(
+  NavItem.dashboard,
+  NavItem.dashboardUsage(link = false, maybeTeamId)
+)) {
+  <div id="content" class="flex-row-cascade">
+    <div id="usageReportContainer" class="flex-row-cascade"></div>
+
+    <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
+    <script src='@routes.DashboardController.usage(maybeTeamId)'></script>
+    <script src='@config.assets.getWebpackBundle("dashboardUsage.js")'></script>
+  </div>
+}

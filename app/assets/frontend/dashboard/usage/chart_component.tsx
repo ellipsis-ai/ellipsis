@@ -1,8 +1,8 @@
 import * as React from 'react';
 import * as ChartJs from 'chart.js';
-import DeepEqual from "../lib/deep_equal";
+import DeepEqual from "../../lib/deep_equal";
 import {Chart, ChartPoint} from "chart.js";
-import autobind from "../lib/autobind";
+import autobind from "../../lib/autobind";
 
 const IS_DEVELOPMENT = false;
 

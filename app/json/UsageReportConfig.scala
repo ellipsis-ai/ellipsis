@@ -2,14 +2,14 @@ package json
 
 import java.time.{OffsetDateTime, ZoneOffset}
 
-case class DashboardConfig(
-                            containerId: String,
-                            csrfToken: String,
-                            data: DashboardData
-                          )
+case class UsageReportConfig(
+                              containerId: String,
+                              csrfToken: String,
+                              data: UsageReportData
+                            )
 
-object DashboardConfig {
-  def buildForDemoData(containerId: String, csrfToken: String): DashboardConfig = {
+object UsageReportConfig {
+  def buildForDemoData(containerId: String, csrfToken: String): UsageReportConfig = {
     val installedWorkflows: Seq[BigDecimal] = Seq(
       48, 48, 48, 56, 84, 94, 106, 116, 126, 144, 149, 150,
       162, 173, 177, 177
@@ -50,8 +50,8 @@ object DashboardConfig {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 1, 0
     )
-    DashboardConfig(containerId, csrfToken,
-      DashboardData(
+    UsageReportConfig(containerId, csrfToken,
+      UsageReportData(
         installedWorkflows = toDemoData(installedWorkflows),
         activeWorkflows = toDemoData(activeWorkflows),
         installedSkills = toDemoData(installedSkills),
@@ -66,11 +66,11 @@ object DashboardConfig {
     )
   }
 
-  private def toDemoData(data: Seq[BigDecimal]): Seq[DashboardDataPoint] = {
+  private def toDemoData(data: Seq[BigDecimal]): Seq[ChartDataPoint] = {
     data.zipWithIndex.map {
       case (ea, index) => {
         val date = OffsetDateTime.of(2018, 1, 14, 0, 0, 0, 0, ZoneOffset.UTC)
-        DashboardDataPoint(
+        ChartDataPoint(
           t = date.plusMonths(index),
           y = ea
         )

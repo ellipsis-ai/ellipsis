@@ -1,14 +1,14 @@
 import * as React from 'react';
-import autobind from '../lib/autobind';
-import {PageRequiredProps} from "../shared_ui/page";
+import autobind from '../../lib/autobind';
+import {PageRequiredProps} from "../../shared_ui/page";
 import {Bar, defaults} from './chart_component';
 import {ChartOptions} from "chart.js";
-import HelpButton from "../help/help_button";
-import Collapsible from "../shared_ui/collapsible";
-import HelpPanel from "../help/panel";
-import {DashboardData, DashboardDataPoint} from "./loader";
-import ToggleGroup, {ToggleGroupItem} from "../form/toggle_group";
-import FixedHeader from "../shared_ui/fixed_header";
+import HelpButton from "../../help/help_button";
+import Collapsible from "../../shared_ui/collapsible";
+import HelpPanel from "../../help/panel";
+import {DashboardData, ChartDataPoint} from "./loader";
+import ToggleGroup, {ToggleGroupItem} from "../../form/toggle_group";
+import FixedHeader from "../../shared_ui/fixed_header";
 
 defaults.global.defaultFontFamily = "'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif";
 defaults.global.defaultFontColor = "hsl(235, 14%, 15%)";
@@ -42,7 +42,7 @@ interface State {
   period: TimePeriod
 }
 
-class Dashboard extends React.Component<Props, State> {
+class UsageReport extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     autobind(this);
@@ -123,7 +123,7 @@ class Dashboard extends React.Component<Props, State> {
     }
   }
 
-  getData(key: keyof DashboardData): Array<DashboardDataPoint> {
+  getData(key: keyof DashboardData): Array<ChartDataPoint> {
     const data = this.props.data[key];
     if (this.state.period === TimePeriod.Period2018) {
       return data.slice(0, 12);
@@ -148,7 +148,7 @@ class Dashboard extends React.Component<Props, State> {
     }
   }
 
-  fill2019(): Array<DashboardDataPoint> {
+  fill2019(): Array<ChartDataPoint> {
     return ["05", "06", "07", "08", "09", "10", "11", "12"].map((ea) => {
       return {
         t: new Date(`2019-${ea}-14T00:00:00Z`),
@@ -467,4 +467,4 @@ class Dashboard extends React.Component<Props, State> {
   }
 }
 
-export default Dashboard;
+export default UsageReport;

@@ -14,9 +14,13 @@ object NavItem {
     })
   }
 
-  def dashboard(link: Boolean, maybeTeamId: Option[String]): NavItem = {
-    NavItem("Dashboard", if (link) {
-      Some(controllers.routes.DashboardController.index(maybeTeamId))
+  def dashboard: NavItem = {
+    NavItem("Dashboard", None)
+  }
+
+  def dashboardUsage(link: Boolean, maybeTeamId: Option[String]): NavItem = {
+    NavItem("Usage report", if (link) {
+      Some(controllers.routes.DashboardController.usage(maybeTeamId))
     } else {
       None
     })

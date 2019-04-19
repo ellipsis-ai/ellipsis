@@ -5,7 +5,7 @@ import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.admin.AdminAuth
 import javax.inject.Inject
-import json.DashboardConfig
+import json.UsageReportConfig
 import json.Formatting._
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
@@ -26,7 +26,7 @@ class DashboardController @Inject()(
                                    ) extends ReAuthable with AdminAuth {
   val dataService = services.dataService
 
-  def index(
+  def usage(
              maybeTeamId: Option[String]
            ): Action[AnyContent] = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
@@ -38,10 +38,10 @@ class DashboardController @Inject()(
           } yield {
             Ok(views.js.shared.webpackLoader(
               viewConfig(Some(teamAccess)),
-              "DashboardConfig",
-              "dashboard",
-              Json.toJson(DashboardConfig.buildForDemoData(
-                "dashboardContainer",
+              "UsageReportConfig",
+              "dashboardUsage",
+              Json.toJson(UsageReportConfig.buildForDemoData(
+                "usageReportContainer",
                 CSRF.getToken(request).value
               ))
             ))
@@ -52,7 +52,7 @@ class DashboardController @Inject()(
             teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
           } yield {
             val myViewConfig = viewConfig(Some(teamAccess))
-            Ok(views.html.dashboard.index(
+            Ok(views.html.dashboard.usage(
               myViewConfig,
               maybeTeamId
             ))
