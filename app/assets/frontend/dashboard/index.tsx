@@ -1,8 +1,8 @@
 import * as React from 'react';
 import autobind from '../lib/autobind';
 import {PageRequiredProps} from "../shared_ui/page";
-import {Bar, defaults} from 'react-chartjs-2';
-import {ChartFontOptions, ChartOptions} from "chart.js";
+import {Bar, defaults} from './chart_component';
+import {ChartOptions} from "chart.js";
 import HelpButton from "../help/help_button";
 import Collapsible from "../shared_ui/collapsible";
 import HelpPanel from "../help/panel";
@@ -10,13 +10,10 @@ import {DashboardData, DashboardDataPoint} from "./loader";
 import ToggleGroup, {ToggleGroupItem} from "../form/toggle_group";
 import FixedHeader from "../shared_ui/fixed_header";
 
-const myDefaults = defaults as {
-  global: ChartOptions & ChartFontOptions
-};
-myDefaults.global.defaultFontFamily = "'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif";
-myDefaults.global.defaultFontColor = "hsl(235, 14%, 15%)";
-myDefaults.global.defaultFontSize = 15;
-myDefaults.global.animation = Object.assign(myDefaults.global.animation || {}, {
+defaults.global.defaultFontFamily = "'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif";
+defaults.global.defaultFontColor = "hsl(235, 14%, 15%)";
+defaults.global.defaultFontSize = 15;
+defaults.global.animation = Object.assign(defaults.global.animation || {}, {
   duration: 250
 });
 
@@ -196,7 +193,7 @@ class Dashboard extends React.Component<Props, State> {
         <div className="flex-columns flex-row-expand">
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows container container-wide phn">
-              <FixedHeader marginTop={this.props.headerHeight}>
+              <FixedHeader marginTop={this.props.headerHeight} zIndexClassName="position-z-above">
                 <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
                   <div className="column column-page-sidebar flex-column flex-column-left visibility-hidden prn">
                   </div>
@@ -253,7 +250,6 @@ class Dashboard extends React.Component<Props, State> {
                             label: "Installed",
                             type: 'bar',
                             data: this.getData('installedWorkflows'),
-                            fill: false,
                             borderColor: Color.BlueMedium,
                             backgroundColor: Color.BlueLight,
                             borderWidth: 1
@@ -284,7 +280,6 @@ class Dashboard extends React.Component<Props, State> {
                             label: "Installed",
                             type: 'bar',
                             data: this.getData('installedSkills'),
-                            fill: false,
                             borderColor: Color.BlueMedium,
                             backgroundColor: Color.BlueLight,
                             borderWidth: 1
@@ -329,7 +324,6 @@ class Dashboard extends React.Component<Props, State> {
                             label: "Total in Slack",
                             type: 'bar',
                             data: this.getData('totalUsers'),
-                            fill: false,
                             borderColor: Color.BlueMedium,
                             backgroundColor: Color.BlueLight,
                             borderWidth: 1
@@ -367,105 +361,109 @@ class Dashboard extends React.Component<Props, State> {
             </div>
           </div>
         </div>
-        {this.props.onRenderFooter((
-          <div>
-            <Collapsible revealWhen={this.props.activePanelName === "helpForWorkflowActions"}>
-              <HelpPanel heading={"Workflow actions"} onCollapseClick={this.props.onClearActivePanel}>
-                <p>
-                  A workflow may be comprised of one or more “actions”. Each action represents a function that receives input and provides output, and may be triggered through a variety of ways: by a person typing in chat, on schedule, or in response to some other event.
-                </p>
-
-                <div>
-                  <h5>
-                    <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={Color.BlueMedium} /></svg>
-                    </span>
-                    Installed
-                  </h5>
-                  <p>The total number of different workflow actions available to be triggered during a time period.</p>
-
-                  <h5>
-                    <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={Color.BlueMedium} /></svg>
-                    </span>
-                    Active
-                  </h5>
-                  <p>The number of different workflow actions that were triggered during a time period.</p>
-                </div>
-              </HelpPanel>
-            </Collapsible>
-
-            <Collapsible revealWhen={this.props.activePanelName === "helpForSkills"}>
-              <HelpPanel heading={"Skills"} onCollapseClick={this.props.onClearActivePanel}>
-                <p>
-                  A skill is a package of one or more related workflows, installed, developed and modified as a group.
-                </p>
-
-                <div>
-                  <h5>
-                    <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={Color.BlueMedium} /></svg>
-                    </span>
-                    <span>Installed</span>
-                  </h5>
-                  <p>The total number of different skills installed within a time period.</p>
-
-                  <h5>
-                    <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={Color.BlueMedium} /></svg>
-                    </span>
-                    <span>Active</span>
-                  </h5>
-                  <p>The number of different skills where at least one workflow was triggered during a time period.</p>
-                </div>
-              </HelpPanel>
-            </Collapsible>
-
-            <Collapsible revealWhen={this.props.activePanelName === "helpForUsers"}>
-              <HelpPanel heading={"Users"} onCollapseClick={this.props.onClearActivePanel}>
-                <p>
-                  Users are people who have access to use Ellipsis through a medium like chat.
-                </p>
-
-                <div>
-                  <h5>
-                    <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={Color.BlueMedium} /></svg>
-                    </span>
-                    <span>Total in Slack</span>
-                  </h5>
-                  <p>The total number of unique users counted in Slack during a time period.</p>
-
-                  <h5>
-                    <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={Color.BlueMedium} /></svg>
-                    </span>
-                    <span>Active</span>
-                  </h5>
-                  <p>The number of users who belonged to a channel where Ellipsis was triggered during a time period.</p>
-
-                  <h5>
-                    <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={Color.PinkMedium} /></svg>
-                    </span>
-                    <span>Contributors</span>
-                  </h5>
-                  <p>The number of users who interacted with Ellipsis during a time period by triggering an action, reacting with emoji, or answering a question.</p>
-
-                  <h5>
-                    <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={Color.PinkLight} /></svg>
-                    </span>
-                    <span>Editors</span>
-                  </h5>
-                  <p>The number of users who created or modified any skill, schedule, or other Ellipsis setting during a time period.</p>
-                </div>
-              </HelpPanel>
-            </Collapsible>
-          </div>
-        ))}
+        {this.props.onRenderFooter(this.renderFooter())}
       </div>
     );
+  }
+
+  renderFooter() {
+    return (
+      <div>
+        <Collapsible revealWhen={this.props.activePanelName === "helpForWorkflowActions"}>
+          <HelpPanel heading={"Workflow actions"} onCollapseClick={this.props.onClearActivePanel}>
+            <p>
+              A workflow may be comprised of one or more “actions”. Each action represents a function that receives input and provides output, and may be triggered through a variety of ways: by a person typing in chat, on schedule, or in response to some other event.
+            </p>
+
+            <div>
+              <h5>
+                <span className="display-inline-block mrm align-m">
+                  <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={Color.BlueMedium} /></svg>
+                </span>
+                <span>Installed</span>
+              </h5>
+              <p>The total number of different workflow actions available to be triggered during a time period.</p>
+
+              <h5>
+                <span className="display-inline-block mrm align-m">
+                  <svg width={16} height={16}><rect width={16} height={16} fill={Color.BlueMedium} /></svg>
+                </span>
+                <span>Active</span>
+              </h5>
+              <p>The number of different workflow actions that were triggered during a time period.</p>
+            </div>
+          </HelpPanel>
+        </Collapsible>
+
+        <Collapsible revealWhen={this.props.activePanelName === "helpForSkills"}>
+          <HelpPanel heading={"Skills"} onCollapseClick={this.props.onClearActivePanel}>
+            <p>
+              A skill is a package of one or more related workflows, installed, developed and modified as a group.
+            </p>
+
+            <div>
+              <h5>
+                <span className="display-inline-block mrm align-m">
+                  <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={Color.BlueMedium} /></svg>
+                </span>
+                <span>Installed</span>
+              </h5>
+              <p>The total number of different skills installed within a time period.</p>
+
+              <h5>
+                <span className="display-inline-block mrm align-m">
+                  <svg width={16} height={16}><rect width={16} height={16} fill={Color.BlueMedium} /></svg>
+                </span>
+                <span>Active</span>
+              </h5>
+              <p>The number of different skills where at least one workflow was triggered during a time period.</p>
+            </div>
+          </HelpPanel>
+        </Collapsible>
+
+        <Collapsible revealWhen={this.props.activePanelName === "helpForUsers"}>
+          <HelpPanel heading={"Users"} onCollapseClick={this.props.onClearActivePanel}>
+            <p>
+              Users are people who have access to use Ellipsis through a medium like chat.
+            </p>
+
+            <div>
+              <h5>
+                <span className="display-inline-block mrm align-m">
+                  <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={Color.BlueMedium} /></svg>
+                </span>
+                <span>Total in Slack</span>
+              </h5>
+              <p>The total number of unique users counted in Slack during a time period.</p>
+
+              <h5>
+                <span className="display-inline-block mrm align-m">
+                  <svg width={16} height={16}><rect width={16} height={16} fill={Color.BlueMedium} /></svg>
+                </span>
+                <span>Active</span>
+              </h5>
+              <p>The number of users who belonged to a channel where Ellipsis was triggered during a time period.</p>
+
+              <h5>
+                <span className="display-inline-block mrm align-m">
+                  <svg width={16} height={16}><rect width={16} height={16} fill={Color.PinkMedium} /></svg>
+                </span>
+                <span>Contributors</span>
+              </h5>
+              <p>The number of users who interacted with Ellipsis during a time period by triggering an action, reacting with emoji, or answering a question.</p>
+
+              <h5>
+                <span className="display-inline-block mrm align-m">
+                  <svg width={16} height={16}><rect width={16} height={16} fill={Color.PinkLight} /></svg>
+                </span>
+                <span>Editors</span>
+              </h5>
+              <p>The number of users who created or modified any skill, schedule, or other Ellipsis setting during a time period.</p>
+            </div>
+          </HelpPanel>
+        </Collapsible>
+      </div>
+    )
   }
 }
 
