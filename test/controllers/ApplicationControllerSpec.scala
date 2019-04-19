@@ -37,7 +37,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
         val behavior = Behavior(behaviorId, team, Some(behaviorGroup), None, false, OffsetDateTime.now)
         val behaviorGroupVersion = BehaviorGroupVersion(groupVersionId, behaviorGroup, groupName, None, None, None, OffsetDateTime.now)
         val behaviorVersion = BehaviorVersion(IDs.next, behavior, behaviorGroupVersion, None, None, None, None, responseType = Normal, canBeMemoized = false, isTest = false, OffsetDateTime.now)
-        val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
+        val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false, isAdminUser = false)
 
         when(dataService.behaviorGroups.maybeDataFor(groupId, user)).thenReturn({
           val behaviorVersionData = BehaviorVersionData(
@@ -124,7 +124,7 @@ class ApplicationControllerSpec extends PlaySpec with MockitoSugar {
   "setTeamTimeZone" should {
     "set the team time zone when passed a valid time zone name" in new ControllerTestContextWithLoggedInUser {
       running(app) {
-        val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
+        val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false, isAdminUser = false)
         val tz = ZoneId.of("America/Toronto")
         when(dataService.users.teamAccessFor(user, Some(team.id))).thenReturn(Future.successful(teamAccess))
         when(dataService.teams.setTimeZoneFor(anyObject(), any[ZoneId])).thenReturn(Future(team.copy(maybeTimeZone = Some(tz))))

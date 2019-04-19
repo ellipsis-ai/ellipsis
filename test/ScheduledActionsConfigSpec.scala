@@ -118,7 +118,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
     "return no config for a user with no access" in new TestContext {
       running(app) {
         setup(user, team, services)(actorSystem, ec)
-        val teamAccess = UserTeamAccess(user, otherTeam, None, None, isAdminAccess = false)
+        val teamAccess = UserTeamAccess(user, otherTeam, None, None, isAdminAccess = false, isAdminUser = false)
         val maybeConfig = await(ScheduledActionsConfig.buildConfigFor(
           user = user,
           teamAccess = teamAccess,
