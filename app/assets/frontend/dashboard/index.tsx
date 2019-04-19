@@ -2,15 +2,13 @@ import * as React from 'react';
 import autobind from '../lib/autobind';
 import {PageRequiredProps} from "../shared_ui/page";
 import {Bar, defaults} from 'react-chartjs-2';
-import * as moment from "moment";
-import {ChartFontOptions, ChartOptions, ChartPoint} from "chart.js";
+import {ChartFontOptions, ChartOptions} from "chart.js";
 import HelpButton from "../help/help_button";
-import FixedFooter from "../shared_ui/fixed_footer";
 import Collapsible from "../shared_ui/collapsible";
 import HelpPanel from "../help/panel";
 import {DashboardData, DashboardDataPoint} from "./loader";
 import ToggleGroup, {ToggleGroupItem} from "../form/toggle_group";
-import {Timestamp} from "../lib/formatter";
+import FixedHeader from "../shared_ui/fixed_header";
 
 const myDefaults = defaults as {
   global: ChartOptions & ChartFontOptions
@@ -18,7 +16,7 @@ const myDefaults = defaults as {
 myDefaults.global.defaultFontFamily = "'Source Sans Pro', 'Avenir Next', 'Helvetica Neue', Arial, sans-serif";
 myDefaults.global.defaultFontColor = "hsl(235, 14%, 15%)";
 myDefaults.global.defaultFontSize = 15;
-myDefaults.global.animation = Object.assign(myDefaults.global.animation, {}, {
+myDefaults.global.animation = Object.assign(myDefaults.global.animation || {}, {
   duration: 250
 });
 
@@ -34,6 +32,13 @@ enum TimePeriod {
   Period2019 = "2019",
   PeriodYear = "Last 12 months",
   PeriodAll = "All time"
+}
+
+enum Color {
+  BlueLight = "hsl(231, 100%, 96%)",
+  BlueMedium = "hsl(231, 97%, 64%)",
+  PinkMedium = "hsl(341, 93%, 60%)",
+  PinkLight = "hsl(341, 93%, 75%)"
 }
 
 interface State {
@@ -67,13 +72,21 @@ class Dashboard extends React.Component<Props, State> {
       maintainAspectRatio: true,
       scales: {
         xAxes: [{
+          scaleLabel: {
+            display: true,
+            labelString: this.getXAxisScaleLabel()
+          },
           bounds: 'data',
           type: 'time',
           distribution: 'series',
           time: {
             unit: 'month',
+            displayFormats: {
+              month: 'MMM'
+            },
             min: this.getChartMin(),
             max: this.getChartMax(),
+            round: "month",
             tooltipFormat: 'MMMM YYYY'
           },
           ticks: {
@@ -91,25 +104,25 @@ class Dashboard extends React.Component<Props, State> {
 
   getChartMin(): string {
     if (this.state.period === TimePeriod.Period2018) {
-      return "2017-12-01T00:00:00Z";
+      return "2017-12-15T00:00:00Z";
     } else if (this.state.period === TimePeriod.Period2019) {
-      return "2018-12-01T00:00:00Z";
+      return "2018-12-15T00:00:00Z";
     } else if (this.state.period === TimePeriod.PeriodYear) {
-      return "2018-03-01T00:00:00Z";
+      return "2018-03-15T00:00:00Z";
     } else {
-      return "2017-12-01T00:00:00Z";
+      return "2017-12-15T00:00:00Z";
     }
   }
 
   getChartMax(): string {
     if (this.state.period === TimePeriod.Period2018) {
-      return "2019-01-01T00:00:00Z";
+      return "2019-01-15T00:00:00Z";
     } else if (this.state.period === TimePeriod.Period2019) {
-      return "2020-01-01T00:00:00Z";
+      return "2020-01-15T00:00:00Z";
     } else if (this.state.period === TimePeriod.PeriodYear) {
-      return "2019-05-01T00:00:00Z";
+      return "2019-05-15T00:00:00Z";
     } else {
-      return "2019-05-01T00:00:00Z";
+      return "2019-05-15T00:00:00Z";
     }
   }
 
@@ -118,12 +131,33 @@ class Dashboard extends React.Component<Props, State> {
     if (this.state.period === TimePeriod.Period2018) {
       return data.slice(0, 12);
     } else if (this.state.period === TimePeriod.Period2019) {
-      return data.slice(12);
+      return data.slice(12).concat(this.fill2019());
     } else if (this.state.period === TimePeriod.PeriodYear) {
       return data.slice(data.length - 12);
     } else {
       return data;
     }
+  }
+
+  getXAxisScaleLabel(): string {
+    if (this.state.period === TimePeriod.Period2018) {
+      return "2018";
+    } else if (this.state.period === TimePeriod.Period2019) {
+      return "2019";
+    } else if (this.state.period === TimePeriod.PeriodYear) {
+      return "May 2018 – April 2019";
+    } else {
+      return "January 2018 — April 2019";
+    }
+  }
+
+  fill2019(): Array<DashboardDataPoint> {
+    return ["05", "06", "07", "08", "09", "10", "11", "12"].map((ea) => {
+      return {
+        t: new Date(`2019-${ea}-14T00:00:00Z`),
+        y: 0
+      };
+    });
   }
 
   getMainColumnStyle(): React.CSSProperties {
@@ -162,6 +196,36 @@ class Dashboard extends React.Component<Props, State> {
         <div className="flex-columns flex-row-expand">
           <div className="flex-columns flex-row-expand">
             <div className="flex-column flex-column-left flex-rows container container-wide phn">
+              <FixedHeader marginTop={this.props.headerHeight}>
+                <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
+                  <div className="column column-page-sidebar flex-column flex-column-left visibility-hidden prn">
+                  </div>
+                  <div className="column column-page-main column-page-main-wide flex-column flex-column-main position-relative bg-white-translucent align-c pvl">
+                    <ToggleGroup>
+                      <ToggleGroupItem
+                        activeWhen={this.state.period === TimePeriod.PeriodYear}
+                        label={"Last 12 months"}
+                        onClick={this.setPeriodYear}
+                      />
+                      <ToggleGroupItem
+                        activeWhen={this.state.period === TimePeriod.Period2018}
+                        label={"2018"}
+                        onClick={this.setPeriod2018}
+                      />
+                      <ToggleGroupItem
+                        activeWhen={this.state.period === TimePeriod.Period2019}
+                        label={"2019"}
+                        onClick={this.setPeriod2019}
+                      />
+                      <ToggleGroupItem
+                        activeWhen={this.state.period === TimePeriod.PeriodAll}
+                        label={"All time"}
+                        onClick={this.setPeriodAll}
+                      />
+                    </ToggleGroup>
+                  </div>
+                </div>
+              </FixedHeader>
               <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
                 <div className="column column-page-sidebar flex-column flex-column-left bg-lightest mobile-border-bottom prn">
                   <nav className="mvxxl plxl">
@@ -174,31 +238,7 @@ class Dashboard extends React.Component<Props, State> {
                   className="column column-page-main column-page-main-wide flex-column flex-column-main position-relative bg-white"
                   style={this.getMainColumnStyle()}
                 >
-                  <div className="paxxl">
-
-                    <ToggleGroup>
-                      <ToggleGroupItem
-                        activeWhen={this.state.period === TimePeriod.Period2018}
-                        label={"2018"}
-                        onClick={this.setPeriod2018}
-                      />
-                      <ToggleGroupItem
-                        activeWhen={this.state.period === TimePeriod.Period2019}
-                        label={"2019"}
-                        onClick={this.setPeriod2019}
-                      />
-                      <ToggleGroupItem
-                        activeWhen={this.state.period === TimePeriod.PeriodYear}
-                        label={"Last 12 months"}
-                        onClick={this.setPeriodYear}
-                      />
-                      <ToggleGroupItem
-                        activeWhen={this.state.period === TimePeriod.PeriodAll}
-                        label={"All time"}
-                        onClick={this.setPeriodAll}
-                      />
-                    </ToggleGroup>
-
+                  <div className="ptxxxxl pbxxl phxxl">
                     <div className="pvl">
                       <h4 className="align-c">
                         <span className="mrm">Workflow actions</span>
@@ -214,15 +254,15 @@ class Dashboard extends React.Component<Props, State> {
                             type: 'bar',
                             data: this.getData('installedWorkflows'),
                             fill: false,
-                            borderColor: "hsl(231, 97%, 64%)",
-                            backgroundColor: "hsla(231, 97%, 64%, 0.1)",
+                            borderColor: Color.BlueMedium,
+                            backgroundColor: Color.BlueLight,
                             borderWidth: 1
                           }, {
                             stack: 'active',
                             label: "Active",
                             type: 'bar',
                             data: this.getData('activeWorkflows'),
-                            borderColor: "hsl(231, 97%, 64%)",
+                            borderColor: Color.BlueMedium,
                             backgroundColor: "hsl(231, 97%, 64%)"
                           }]
                         }}
@@ -245,30 +285,30 @@ class Dashboard extends React.Component<Props, State> {
                             type: 'bar',
                             data: this.getData('installedSkills'),
                             fill: false,
-                            borderColor: "hsl(231, 97%, 64%)",
-                            backgroundColor: "hsla(231, 97%, 64%, 0.1)",
+                            borderColor: Color.BlueMedium,
+                            backgroundColor: Color.BlueLight,
                             borderWidth: 1
                           }, {
                             stack: "active",
                             label: "Active",
                             type: 'bar',
                             data: this.getData('activeSkills'),
-                            borderColor: "hsl(231, 97%, 64%)",
-                            backgroundColor: "hsl(231, 97%, 64%)"
+                            borderColor: Color.BlueMedium,
+                            backgroundColor: Color.BlueMedium
                           }, {
                             stack: "development",
                             label: "Created",
                             type: 'bar',
                             data: this.getData('createdSkills'),
-                            borderColor: "hsl(341, 93%, 60%)",
-                            backgroundColor: "hsl(341, 93%, 60%)"
+                            borderColor: Color.PinkMedium,
+                            backgroundColor: Color.PinkMedium
                           }, {
                             stack: "development",
                             label: "Modified",
                             type: 'bar',
                             data: this.getData('modifiedSkills'),
-                            borderColor: "hsl(341, 93%, 75%)",
-                            backgroundColor: "hsl(341, 93%, 75%)"
+                            borderColor: Color.PinkLight,
+                            backgroundColor: Color.PinkLight
                           }]
                         }}
                         options={this.getChartOptions()}
@@ -290,30 +330,30 @@ class Dashboard extends React.Component<Props, State> {
                             type: 'bar',
                             data: this.getData('totalUsers'),
                             fill: false,
-                            borderColor: "hsl(231, 97%, 64%)",
-                            backgroundColor: "hsla(231, 97%, 64%, 0.1)",
+                            borderColor: Color.BlueMedium,
+                            backgroundColor: Color.BlueLight,
                             borderWidth: 1
                           }, {
                             stack: "active",
                             label: "Active",
                             type: 'bar',
                             data: this.getData('activeUsers'),
-                            borderColor: "hsl(231, 97%, 64%)",
-                            backgroundColor: "hsl(231, 97%, 64%)"
+                            borderColor: Color.BlueMedium,
+                            backgroundColor: Color.BlueMedium
                           }, {
                             stack: "contributors",
                             label: "Contributors",
                             type: 'bar',
                             data: this.getData('contributingUsers'),
-                            borderColor: "hsl(341, 93%, 60%)",
-                            backgroundColor: "hsl(341, 93%, 60%)"
+                            borderColor: Color.PinkMedium,
+                            backgroundColor: Color.PinkMedium
                           }, {
                             stack: "editors",
                             label: "Editors",
                             type: 'bar',
                             data: this.getData('editingUsers'),
-                            borderColor: "hsl(341, 93%, 75%)",
-                            backgroundColor: "hsl(341, 93%, 75%)"
+                            borderColor: Color.PinkLight,
+                            backgroundColor: Color.PinkLight
                           }]
                         }}
                         options={this.getChartOptions()}
@@ -338,7 +378,7 @@ class Dashboard extends React.Component<Props, State> {
                 <div>
                   <h5>
                     <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={"hsl(231, 97%, 64%)"} /></svg>
+                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={Color.BlueMedium} /></svg>
                     </span>
                     Installed
                   </h5>
@@ -346,7 +386,7 @@ class Dashboard extends React.Component<Props, State> {
 
                   <h5>
                     <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsl(231, 97%, 64%)"} /></svg>
+                      <svg width={16} height={16}><rect width={16} height={16} fill={Color.BlueMedium} /></svg>
                     </span>
                     Active
                   </h5>
@@ -364,7 +404,7 @@ class Dashboard extends React.Component<Props, State> {
                 <div>
                   <h5>
                     <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={"hsl(231, 97%, 64%)"} /></svg>
+                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={Color.BlueMedium} /></svg>
                     </span>
                     <span>Installed</span>
                   </h5>
@@ -372,7 +412,7 @@ class Dashboard extends React.Component<Props, State> {
 
                   <h5>
                     <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsl(231, 97%, 64%)"} /></svg>
+                      <svg width={16} height={16}><rect width={16} height={16} fill={Color.BlueMedium} /></svg>
                     </span>
                     <span>Active</span>
                   </h5>
@@ -390,7 +430,7 @@ class Dashboard extends React.Component<Props, State> {
                 <div>
                   <h5>
                     <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={"hsl(231, 97%, 64%)"} /></svg>
+                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsla(231, 97%, 64%, 0.1)"} strokeWidth={1} stroke={Color.BlueMedium} /></svg>
                     </span>
                     <span>Total in Slack</span>
                   </h5>
@@ -398,7 +438,7 @@ class Dashboard extends React.Component<Props, State> {
 
                   <h5>
                     <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsl(231, 97%, 64%)"} /></svg>
+                      <svg width={16} height={16}><rect width={16} height={16} fill={Color.BlueMedium} /></svg>
                     </span>
                     <span>Active</span>
                   </h5>
@@ -406,7 +446,7 @@ class Dashboard extends React.Component<Props, State> {
 
                   <h5>
                     <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsl(341, 93%, 60%)"} /></svg>
+                      <svg width={16} height={16}><rect width={16} height={16} fill={Color.PinkMedium} /></svg>
                     </span>
                     <span>Contributors</span>
                   </h5>
@@ -414,7 +454,7 @@ class Dashboard extends React.Component<Props, State> {
 
                   <h5>
                     <span className="display-inline-block mrm align-m">
-                      <svg width={16} height={16}><rect width={16} height={16} fill={"hsl(341, 93%, 75%)"} /></svg>
+                      <svg width={16} height={16}><rect width={16} height={16} fill={Color.PinkLight} /></svg>
                     </span>
                     <span>Editors</span>
                   </h5>
