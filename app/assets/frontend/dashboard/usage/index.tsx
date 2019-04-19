@@ -17,12 +17,14 @@ defaults.global.animation = Object.assign(defaults.global.animation || {}, {
   duration: 250
 });
 
-interface DashboardProps {
+interface UsageProps {
   csrfToken: string
   data: DashboardData
+  isAdmin: boolean
+  teamId: string
 }
 
-type Props = DashboardProps & PageRequiredProps
+type Props = UsageProps & PageRequiredProps
 
 enum TimePeriod {
   Period2018 = "2018",
@@ -195,8 +197,7 @@ class UsageReport extends React.Component<Props, State> {
             <div className="flex-column flex-column-left flex-rows container container-wide phn">
               <FixedHeader marginTop={this.props.headerHeight} zIndexClassName="position-z-above">
                 <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
-                  <div className="column column-page-sidebar flex-column flex-column-left visibility-hidden prn">
-                  </div>
+                  <div className="column column-page-sidebar flex-column flex-column-left visibility-hidden prn" />
                   <div className="column column-page-main column-page-main-wide flex-column flex-column-main position-relative bg-white-translucent align-c pvl">
                     <ToggleGroup>
                       <ToggleGroupItem
@@ -228,6 +229,7 @@ class UsageReport extends React.Component<Props, State> {
                   <nav className="mvxxl plxl">
                     <ul className="list-nav">
                       <li className="list-nav-active-item">Usage report</li>
+                      <li><a href={jsRoutes.controllers.DashboardController.skillManifest(this.props.isAdmin ? this.props.teamId : null).url}>Skill manifest</a></li>
                     </ul>
                   </nav>
                 </div>

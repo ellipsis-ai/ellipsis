@@ -45,6 +45,8 @@ interface Props {
   containerId: string
   csrfToken: string
   data: DashboardDataJson
+  isAdmin: boolean
+  teamId: string
 }
 
 declare var UsageReportConfig: Props;
@@ -73,7 +75,13 @@ class UsageReportLoader extends React.Component<Props> {
   render() {
     return (
       <Page csrfToken={this.props.csrfToken} onRender={(pageProps) => (
-        <UsageReport csrfToken={this.props.csrfToken} data={this.getData()} {...pageProps} />
+        <UsageReport
+          csrfToken={this.props.csrfToken}
+          data={this.getData()}
+          isAdmin={this.props.isAdmin}
+          teamId={this.props.teamId}
+          {...pageProps}
+        />
       )} />
     );
   }

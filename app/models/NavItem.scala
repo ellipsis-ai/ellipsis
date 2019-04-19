@@ -26,6 +26,14 @@ object NavItem {
     })
   }
 
+  def dashboardSkillManifest(link: Boolean, maybeTeamId: Option[String]): NavItem = {
+    NavItem("Skill manifest", if (link) {
+      Some(controllers.routes.DashboardController.skillManifest(maybeTeamId))
+    } else {
+      None
+    })
+  }
+
   def scheduling(link: Boolean, maybeTeamId: Option[String]): NavItem = {
     NavItem("Scheduling", if (link) {
       Some(controllers.routes.ScheduledActionsController.index(

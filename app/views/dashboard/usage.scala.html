@@ -3,7 +3,7 @@
   maybeTeamId: Option[String]
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("Dashboard", config, Seq(
+@page.main("Dashboard · Usage Report", config, Seq(
   NavItem.dashboard,
   NavItem.dashboardUsage(link = false, maybeTeamId)
 )) {

@@ -5,11 +5,13 @@ import java.time.{OffsetDateTime, ZoneOffset}
 case class UsageReportConfig(
                               containerId: String,
                               csrfToken: String,
-                              data: UsageReportData
+                              data: UsageReportData,
+                              isAdmin: Boolean,
+                              teamId: String
                             )
 
 object UsageReportConfig {
-  def buildForDemoData(containerId: String, csrfToken: String): UsageReportConfig = {
+  def buildForDemoData(containerId: String, csrfToken: String, isAdmin: Boolean, teamId: String): UsageReportConfig = {
     val installedWorkflows: Seq[BigDecimal] = Seq(
       48, 48, 48, 56, 84, 94, 106, 116, 126, 144, 149, 150,
       162, 173, 177, 177
@@ -50,20 +52,19 @@ object UsageReportConfig {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 1, 0
     )
-    UsageReportConfig(containerId, csrfToken,
-      UsageReportData(
-        installedWorkflows = toDemoData(installedWorkflows),
-        activeWorkflows = toDemoData(activeWorkflows),
-        installedSkills = toDemoData(installedSkills),
-        activeSkills = toDemoData(activeSkills),
-        createdSkills = toDemoData(createdSkills),
-        modifiedSkills = toDemoData(modifiedSkills),
-        totalUsers = toDemoData(totalUsers),
-        activeUsers = toDemoData(activeUsers),
-        contributingUsers = toDemoData(contributors),
-        editingUsers = toDemoData(editors)
-      )
+    val data = UsageReportData(
+      installedWorkflows = toDemoData(installedWorkflows),
+      activeWorkflows = toDemoData(activeWorkflows),
+      installedSkills = toDemoData(installedSkills),
+      activeSkills = toDemoData(activeSkills),
+      createdSkills = toDemoData(createdSkills),
+      modifiedSkills = toDemoData(modifiedSkills),
+      totalUsers = toDemoData(totalUsers),
+      activeUsers = toDemoData(activeUsers),
+      contributingUsers = toDemoData(contributors),
+      editingUsers = toDemoData(editors)
     )
+    UsageReportConfig(containerId, csrfToken, data, isAdmin, teamId)
   }
 
   private def toDemoData(data: Seq[BigDecimal]): Seq[ChartDataPoint] = {

@@ -39,6 +39,8 @@
   routes.javascript.BehaviorEditorController.deploy,
   routes.javascript.BehaviorImportExportController.doImport,
   routes.javascript.BehaviorImportExportController.export,
+  routes.javascript.DashboardController.skillManifest,
+  routes.javascript.DashboardController.usage,
   routes.javascript.FeedbackController.send,
   routes.javascript.SavedAnswerController.resetForTeam,
   routes.javascript.SavedAnswerController.resetForUser,

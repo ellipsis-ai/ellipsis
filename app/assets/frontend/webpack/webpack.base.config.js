@@ -22,6 +22,7 @@ const webpackConfig = {
     behaviorEditor: './app/assets/frontend/behavior_editor/loader',
     behaviorList: './app/assets/frontend/behavior_list/loader',
     dashboardUsage: './app/assets/frontend/dashboard/usage/loader',
+    dashboardSkillManifest: './app/assets/frontend/dashboard/skill_manifest/loader',
     environmentVariables: './app/assets/frontend/settings/environment_variables/loader',
     githubConfig: './app/assets/frontend/github_config/loader',
     integrationEditor: './app/assets/frontend/settings/oauth_editor/loader',
