@@ -22,7 +22,9 @@ case class ViewConfig(
 
   val maybeAdminAccessTeamId: Option[String] = maybeTeamAccess.flatMap(_.maybeAdminAccessToTeamId)
 
-  val isAdmin: Boolean = maybeTeamAccess.exists(_.isAdminAccess)
+  val isAdminAccess: Boolean = maybeTeamAccess.exists(_.isAdminAccess)
+
+  val isAdminUser: Boolean = maybeTeamAccess.exists(_.isAdminUser)
 
   val botName: String = maybeTeamAccess.flatMap(_.maybeBotName).getOrElse(Team.defaultBotName)
 

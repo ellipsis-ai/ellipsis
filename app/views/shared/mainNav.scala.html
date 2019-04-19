@@ -30,11 +30,13 @@
                   >Skills</a>
                 </li>
 
-                <li>
-                  <a class="button button-dropdown-item plm"
-                  href='@routes.DashboardController.index(config.maybeAdminAccessTeamId)'
-                  >Dashboard</a>
-                </li>
+                @if(config.isAdminUser) {
+                  <li>
+                    <a class="button button-dropdown-item plm"
+                    href='@routes.DashboardController.index(config.maybeAdminAccessTeamId)'
+                    >Dashboard</a>
+                  </li>
+                }
 
                 <li>
                   <a class="button button-dropdown-item plm"
