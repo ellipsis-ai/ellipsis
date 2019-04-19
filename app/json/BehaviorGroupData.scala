@@ -179,48 +179,48 @@ case class BehaviorGroupData(
 
 object BehaviorGroupData {
 
-  def buildForImmutableData(
-                             immutableData: ImmutableBehaviorGroupVersionData,
-                             maybeInitialVersion: Option[BehaviorGroupVersion],
-                             user: User,
-                             dataService: DataService
-                           )(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
+  def buildForImmutableDataAction(
+                                   immutableData: ImmutableBehaviorGroupVersionData,
+                                   maybeInitialVersion: Option[BehaviorGroupVersion],
+                                   user: User,
+                                   dataService: DataService
+                                 )(implicit ec: ExecutionContext): DBIO[BehaviorGroupData] = {
     val versionId = immutableData.id
     for {
-      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForId(versionId)
-      requiredOAuth1ApiConfigs <- dataService.requiredOAuth1ApiConfigs.allForId(versionId)
-      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForId(versionId)
-      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForId(versionId)
+      requiredAWSConfigs <- dataService.requiredAWSConfigs.allForIdAction(versionId)
+      requiredOAuth1ApiConfigs <- dataService.requiredOAuth1ApiConfigs.allForIdAction(versionId)
+      requiredOAuth2ApiConfigs <- dataService.requiredOAuth2ApiConfigs.allForIdAction(versionId)
+      requiredSimpleTokenApis <- dataService.requiredSimpleTokenApis.allForIdAction(versionId)
       maybeAuthor <- immutableData.authorId.map { authorId =>
-        dataService.users.find(authorId)
-      }.getOrElse(Future.successful(None))
-      maybeTeam <- dataService.teams.find(immutableData.teamId)
+        dataService.users.findAction(authorId)
+      }.getOrElse(DBIO.successful(None))
+      maybeTeam <- dataService.teams.findAction(immutableData.teamId)
       maybeUserData <- (for {
         author <- maybeAuthor
         team <- maybeTeam
       } yield {
-        dataService.users.userDataFor(author, team).map(Some(_))
-      }).getOrElse(Future.successful(None))
+        dataService.users.userDataForAction(author, team).map(Some(_))
+      }).getOrElse(DBIO.successful(None))
       maybeInitialUserData <- (for {
         initialAuthor <- maybeInitialVersion.flatMap(_.maybeAuthor)
         team <- maybeTeam
       } yield {
-        dataService.users.userDataFor(initialAuthor, team).map(Some(_))
-      }).getOrElse(Future.successful(None))
-      maybeDeployment <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionId(versionId)
+        dataService.users.userDataForAction(initialAuthor, team).map(Some(_))
+      }).getOrElse(DBIO.successful(None))
+      maybeDeployment <- dataService.behaviorGroupDeployments.findForBehaviorGroupVersionIdAction(versionId)
       maybeDeploymentData <- maybeDeployment.map { deployment =>
-        BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(immutableData.groupId)
+        BehaviorGroupDeploymentData.fromDeploymentAction(deployment, dataService).map(Some(_))
+      }.getOrElse(DBIO.successful(None))
+      maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheckAction(immutableData.groupId)
       maybeManagedInfo <- (for {
         team <- maybeTeam
         group <- maybeBehaviorGroup
       } yield {
-        dataService.managedBehaviorGroups.infoFor(group, team).map(Some(_))
-      }).getOrElse(Future.successful(None))
+        dataService.managedBehaviorGroups.infoForAction(group, team).map(Some(_))
+      }).getOrElse(DBIO.successful(None))
       maybeLinkedGithubRepo <- maybeBehaviorGroup.map { group =>
-        dataService.linkedGithubRepos.maybeFor(group)
-      }.getOrElse(Future.successful(None))
+        dataService.linkedGithubRepos.maybeForAction(group)
+      }.getOrElse(DBIO.successful(None))
     } yield {
       val maybeMetaData = maybeInitialVersion.map { initialVersion =>
         BehaviorGroupMetaData(initialVersion.group.id, initialVersion.createdAt, maybeInitialUserData)
@@ -251,27 +251,36 @@ object BehaviorGroupData {
     }
   }
 
-  def buildFor(
-                version: BehaviorGroupVersion,
-                user: User,
-                maybeInitialVersion: Option[BehaviorGroupVersion],
-                dataService: DataService,
-                cacheService: CacheService
-              )(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
+  def buildForImmutableData(
+                             immutableData: ImmutableBehaviorGroupVersionData,
+                             maybeInitialVersion: Option[BehaviorGroupVersion],
+                             user: User,
+                             dataService: DataService
+                           )(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
+    dataService.run(buildForImmutableDataAction(immutableData, maybeInitialVersion, user, dataService))
+  }
+
+  def buildForAction(
+                      version: BehaviorGroupVersion,
+                      user: User,
+                      maybeInitialVersion: Option[BehaviorGroupVersion],
+                      dataService: DataService,
+                      cacheService: CacheService
+                    )(implicit ec: ExecutionContext): DBIO[BehaviorGroupData] = {
     for {
-      maybeCachedData <- cacheService.getBehaviorGroupVersionData(version.id)
-      immutableData <- maybeCachedData.map(Future.successful).getOrElse {
+      maybeCachedData <- cacheService.getBehaviorGroupVersionDataAction(version.id)
+      immutableData <- maybeCachedData.map(DBIO.successful).getOrElse {
         for {
-          behaviors <- dataService.behaviors.allForGroup(version.group)
-          versionsData <- Future.sequence(behaviors.map { ea =>
-            BehaviorVersionData.maybeFor(ea.id, user, dataService, Some(version), ea.maybeExportId)
+          behaviors <- dataService.behaviors.allForGroupAction(version.group)
+          versionsData <- DBIO.sequence(behaviors.map { ea =>
+            BehaviorVersionData.maybeForAction(ea.id, user, dataService, Some(version), ea.maybeExportId)
           }).map(_.flatten.sortBy { ea =>
             (ea.isDataType, ea.maybeFirstTrigger)
           })
-          inputs <- dataService.inputs.allForGroupVersion(version)
-          inputsData <- Future.sequence(inputs.map(ea => InputData.fromInput(ea, dataService)))
-          libraryVersions <- dataService.libraries.allFor(version)
-          libraryVersionsData <- Future.successful(libraryVersions.map(ea => LibraryVersionData.fromVersion(ea)))
+          inputs <- dataService.inputs.allForGroupVersionAction(version)
+          inputsData <- DBIO.sequence(inputs.map(ea => InputData.fromInputAction(ea, dataService)))
+          libraryVersions <- dataService.libraries.allForAction(version)
+          libraryVersionsData <- DBIO.successful(libraryVersions.map(ea => LibraryVersionData.fromVersion(ea)))
         } yield {
           val (dataTypeInputsData, actionInputsData) = inputsData.partition { ea =>
             versionsData.find(v => ea.inputId.exists(v.inputIds.contains)).exists(_.isDataType)
@@ -295,8 +304,18 @@ object BehaviorGroupData {
           immutable
         }
       }
-      data <- buildForImmutableData(immutableData, maybeInitialVersion, user, dataService)
+      data <- buildForImmutableDataAction(immutableData, maybeInitialVersion, user, dataService)
     } yield data
+  }
+
+  def buildFor(
+                version: BehaviorGroupVersion,
+                user: User,
+                maybeInitialVersion: Option[BehaviorGroupVersion],
+                dataService: DataService,
+                cacheService: CacheService
+              )(implicit ec: ExecutionContext): Future[BehaviorGroupData] = {
+    dataService.run(buildForAction(version, user, maybeInitialVersion, dataService, cacheService))
   }
 
   def maybeFor(id: String, user: User, dataService: DataService, cacheService: CacheService)

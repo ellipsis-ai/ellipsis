@@ -67,7 +67,7 @@ class BehaviorEditorController @Inject() (
       }
       case Accepts.Html() => {
         for {
-          maybeGroupData <- BehaviorGroupData.maybeFor(groupId, user, dataService, cacheService)
+          maybeGroupData <- dataService.behaviorGroups.maybeDataFor(groupId, user)
           maybeTeam <- maybeGroupData.map { data =>
             dataService.teams.find(data.teamId, user)
           }.getOrElse(Future.successful(None))
@@ -201,7 +201,7 @@ self.MonacoEnvironment = {
       info => {
         for {
           maybeGroup <- dataService.behaviorGroups.find(info.behaviorGroupId, user)
-          maybeGroupData <- BehaviorGroupData.maybeFor(info.behaviorGroupId, user, dataService, cacheService)
+          maybeGroupData <- dataService.behaviorGroups.maybeDataFor(info.behaviorGroupId, user)
           maybeSavedGroupVersion <- (for {
             group <- maybeGroup
             groupData <- maybeGroupData

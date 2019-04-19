@@ -13,6 +13,7 @@ trait ManagedBehaviorGroupService {
 
   def maybeFor(group: BehaviorGroup): Future[Option[ManagedBehaviorGroup]]
 
+  def infoForAction(group: BehaviorGroup, team: Team): DBIO[ManagedBehaviorGroupInfo]
   def infoFor(group: BehaviorGroup, team: Team): Future[ManagedBehaviorGroupInfo]
 
   def allFor(team: Team): Future[Seq[ManagedBehaviorGroup]]

@@ -222,7 +222,7 @@ class BehaviorGroupServiceImpl @Inject() (
             dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, dataToUse, forceNode6.getOrElse(false)).map(Some(_))
           }.getOrElse(Future.successful(None))
           maybeGroupData <- maybeGroup.map { group =>
-            BehaviorGroupData.maybeFor(group.id, user, dataService, cacheService)
+            maybeDataFor(group.id, user)
           }.getOrElse(Future.successful(None))
         } yield {
           maybeGroupData.map { groupData =>
@@ -249,6 +249,18 @@ class BehaviorGroupServiceImpl @Inject() (
         BehaviorGroupDeploymentData.fromDeployment(deployment, dataService).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield maybeDeploymentData
+  }
+
+  def maybeDataFor(
+                    groupId: String,
+                    user: User
+                  )(implicit ec: ExecutionContext): Future[Option[BehaviorGroupData]] = {
+    BehaviorGroupData.maybeFor(
+      groupId,
+      user,
+      dataService,
+      cacheService
+    )
   }
 
 }

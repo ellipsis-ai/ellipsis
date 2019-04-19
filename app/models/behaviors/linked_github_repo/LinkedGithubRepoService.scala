@@ -7,6 +7,7 @@ import scala.concurrent.Future
 
 trait LinkedGithubRepoService {
 
+  def maybeForAction(group: BehaviorGroup): DBIO[Option[LinkedGithubRepo]]
   def maybeFor(group: BehaviorGroup): Future[Option[LinkedGithubRepo]]
 
   def ensureLinkAction(group: BehaviorGroup, owner: String, repo: String, maybeCurrentBranch: Option[String]): DBIO[LinkedGithubRepo]

@@ -4,6 +4,7 @@ import java.time.OffsetDateTime
 
 import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeployment
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -18,18 +19,18 @@ case class BehaviorGroupDeploymentData(
 
 object BehaviorGroupDeploymentData {
 
-  def fromDeployment(deployment: BehaviorGroupDeployment, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorGroupDeploymentData] = {
+  def fromDeploymentAction(deployment: BehaviorGroupDeployment, dataService: DataService)(implicit ec: ExecutionContext): DBIO[BehaviorGroupDeploymentData] = {
     for {
-      maybeUser <- dataService.users.find(deployment.userId)
+      maybeUser <- dataService.users.findAction(deployment.userId)
       maybeTeam <- maybeUser.map { user =>
-        dataService.teams.find(user.teamId)
-      }.getOrElse(Future.successful(None))
+        dataService.teams.findAction(user.teamId)
+      }.getOrElse(DBIO.successful(None))
       maybeDeployer <- (for {
         user <- maybeUser
         team <- maybeTeam
       } yield {
-        dataService.users.userDataFor(user, team).map(Some(_))
-      }).getOrElse(Future.successful(None))
+        dataService.users.userDataForAction(user, team).map(Some(_))
+      }).getOrElse(DBIO.successful(None))
     } yield {
       BehaviorGroupDeploymentData(
         deployment.id,
@@ -40,5 +41,9 @@ object BehaviorGroupDeploymentData {
         deployment.createdAt
       )
     }
+  }
+
+  def fromDeployment(deployment: BehaviorGroupDeployment, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorGroupDeploymentData] = {
+    dataService.run(fromDeploymentAction(deployment, dataService))
   }
 }

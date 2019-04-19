@@ -106,11 +106,14 @@ class LinkedAccountServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def maybeForMSAzureActiveDirectoryFor(user: User): Future[Option[LinkedAccount]] = {
-    val action = forProviderForQuery(user.id, MSAzureActiveDirectoryContext.toString).result.map { r =>
+  def maybeForMSAzureActiveDirectoryForAction(user: User): DBIO[Option[LinkedAccount]] = {
+    forProviderForQuery(user.id, MSAzureActiveDirectoryContext.toString).result.map { r =>
       r.headOption.map(tuple2LinkedAccount)
     }
-    dataService.run(action)
+  }
+
+  def maybeForMSAzureActiveDirectoryFor(user: User): Future[Option[LinkedAccount]] = {
+    dataService.run(maybeForMSAzureActiveDirectoryForAction(user))
   }
 
   def maybeForGithubFor(user: User): Future[Option[LinkedAccount]] = {

@@ -1,6 +1,7 @@
 import java.io.File
 import java.time.OffsetDateTime
 
+import json.{BehaviorConfig, BehaviorGroupData, BehaviorVersionData}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
@@ -20,7 +21,7 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import services.{DataService, DefaultServices}
-import support.TestContext
+import support.{BehaviorGroupDataBuilder, TestContext}
 import utils.github.{GithubCommitterInfo, GithubPusher}
 
 import scala.collection.JavaConverters._
@@ -70,7 +71,7 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
     ).run)
   }
 
-  def setupGroup(user: User, team: Team, dataService: DataService): BehaviorGroup = {
+  def setupGroup(user: User, team: Team, dataService: DataService)(implicit ec: ExecutionContext): BehaviorGroup = {
     val group = BehaviorGroup(behaviorGroupId, maybeBehaviorGroupExportId, team, behaviorGroupTimestamp)
     when(dataService.behaviorGroups.findWithoutAccessCheck(group.id)).thenReturn(Future.successful(Some(group)))
     when(dataService.behaviorGroups.find(group.id, user)).thenReturn(Future.successful(Some(group)))
@@ -138,6 +139,47 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
     behaviorVersion
   }
 
+  def setupGroupDataFor(
+                         team: Team,
+                         user: User,
+                         behaviorVersion: BehaviorVersion,
+                         dataService: DataService
+                       )(implicit ec: ExecutionContext): BehaviorGroupData = {
+    val groupData = BehaviorGroupDataBuilder.buildFor(
+      team.id,
+      maybeGroupId = Some(behaviorGroupId),
+      maybeActions = Some(Seq(
+        BehaviorVersionData(
+          Some(behaviorVersion.id),
+          team.id,
+          Some(behaviorVersion.behavior.id),
+          Some(behaviorVersion.group.id),
+          isNew = None,
+          name = behaviorVersion.maybeName,
+          description = behaviorVersion.maybeDescription,
+          functionBody = behaviorVersion.functionBody,
+          responseTemplate = behaviorVersion.maybeResponseTemplate.getOrElse(""),
+          inputIds = Seq(),
+          triggers = Seq(),
+          config = BehaviorConfig(
+            behaviorVersion.maybeExportId,
+            behaviorVersion.maybeName,
+            behaviorVersion.responseType.id,
+            canBeMemoized = None,
+            isDataType = false,
+            isTest = None,
+            dataTypeConfig = None
+          ),
+          behaviorVersion.maybeExportId,
+          Some(behaviorVersion.createdAt)
+        )
+      )),
+      maybeDataTypes = Some(Seq())
+    )
+    when(dataService.behaviorGroups.maybeDataFor(behaviorGroupId, user)).thenReturn(Future.successful(Some(groupData)))
+    groupData
+  }
+
   "GithubPusher.run" should {
     "commit and push a skill to an empty repo, then push again with a renamed action" in new TestContext {
       running(app) {
@@ -146,6 +188,7 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
         val originalBehavior = setupBehaviorFor(originalGroup, user, dataService)
         val originalActionName = "happyAction"
         val originalBehaviorVersion = setupBehaviorVersionFor(originalActionName, originalBehavior, originalGroupVersion, dataService)
+        val groupData = setupGroupDataFor(team, user, originalBehaviorVersion, dataService)
 
         runPusherFor(originalGroup, "master", "First version of skill", user, services, ec)
 
@@ -161,6 +204,7 @@ class GithubPusherSpec extends PlaySpec with MockitoSugar with BeforeAndAfterAll
         val modifiedBehavior = setupBehaviorFor(modifiedGroup, user, dataService)
         val modifiedActionName = "happierAction"
         val modifiedBehaviorVersion = setupBehaviorVersionFor(modifiedActionName, modifiedBehavior, modifiedGroupVersion, dataService)
+        val modifiedGroupData = setupGroupDataFor(team, user, modifiedBehaviorVersion, dataService)
 
         val modifiedBranch = "renamed"
 

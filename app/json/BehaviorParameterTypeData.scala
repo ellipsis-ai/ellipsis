@@ -5,6 +5,7 @@ import models.behaviors.behaviorparameter.BehaviorParameterType
 import models.behaviors.datatypefield.FieldTypeForSchema
 import models.behaviors.defaultstorageitem.GraphQLHelpers
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,10 +48,14 @@ case class BehaviorParameterTypeData(
 
 object BehaviorParameterTypeData {
 
-  def from(paramType: BehaviorParameterType, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorParameterTypeData] = {
-    paramType.needsConfig(dataService).map { needsConfig =>
+  def fromAction(paramType: BehaviorParameterType, dataService: DataService)(implicit ec: ExecutionContext): DBIO[BehaviorParameterTypeData] = {
+    paramType.needsConfigAction(dataService).map { needsConfig =>
       BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(needsConfig), Some(paramType.typescriptType))
     }
+  }
+
+  def from(paramType: BehaviorParameterType, dataService: DataService)(implicit ec: ExecutionContext): Future[BehaviorParameterTypeData] = {
+    dataService.run(fromAction(paramType, dataService))
   }
 
 }
