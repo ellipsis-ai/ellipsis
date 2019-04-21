@@ -21,6 +21,78 @@ class SkillManifest extends React.Component<Props> {
     };
   }
 
+  renderActive() {
+    return (
+      <div className="align-c">
+        <div className="type-label border-top border-side border-blue bg-blue-lighter type-blue-faded phxs">Active</div>
+      </div>
+    );
+  }
+
+  renderInactive() {
+    return (
+      <div className="align-c">
+        <div className="type-label border-top border-side border-gray bg-lightest type-weak phxs">Inactive</div>
+      </div>
+    );
+  }
+
+  renderProduction() {
+    return (
+      <div className="align-c">
+        <div className="type-label border border-green bg-green-light type-green phxs">Production</div>
+      </div>
+    );
+  }
+  
+  renderDevelopment() {
+    return (
+      <div className="align-c">
+        <div className="type-label border border-pink bg-pink-light type-pink phxs">Development</div>
+      </div>
+    );
+  }
+
+  renderRequested() {
+    return (
+      <div className="align-c">
+        <div className="type-label border border-black bg-almost-black type-white phxs">Requested</div>
+      </div>
+    );
+  }
+
+  renderManaged() {
+    return (
+      <td className="align-c">
+        <span className="type-green display-inline-block height-l">
+          <SVGCheckmark label="Managed" />
+        </span>
+      </td>
+    );
+  }
+
+  renderUnmanaged() {
+    return (
+      <td className="align-c">
+        <span>—</span>
+      </td>
+    );
+  }
+  
+  renderEditLinkFor(skillName: string, groupId: string) {
+    return (
+      <td>
+        <a className="type-bold" href={jsRoutes.controllers.BehaviorEditorController.edit(groupId).url}>{skillName}</a>
+      </td>
+    );
+  }
+
+  renderLastUsed(date: string) {
+    return (
+      <td className="align-r">{date}</td>
+    )
+  }
+
   render() {
     return (
       <div className="flex-row-cascade">
@@ -29,257 +101,301 @@ class SkillManifest extends React.Component<Props> {
             <div className="flex-column flex-column-left flex-rows container container-wide phn">
               <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
                 <div className="column column-page-sidebar flex-column flex-column-left bg-lightest mobile-border-bottom prn">
-                  <nav className="mvxxl plxl">
+                  <nav className="mvxxl phxl">
                     <ul className="list-nav">
                       <li><a href={jsRoutes.controllers.DashboardController.usage(this.props.isAdmin ? this.props.teamId : null).url}>Usage report</a></li>
                       <li className="list-nav-active-item">Skill manifest</li>
                     </ul>
+
+                    <div className="type-s">
+                      <div>13 active</div>
+                      <div>22 managed</div>
+                      <div>11 charged (active/managed)</div>
+                    </div>
+
                   </nav>
                 </div>
                 <div
                   className="column column-page-main column-page-main-wide flex-column flex-column-main position-relative bg-white"
                   style={this.getMainColumnStyle()}
                 >
-                  <div className="paxl">
+                  <div className="phxl pvl">
+
                     <table className="border column-space type-s">
                       <thead>
                         <tr>
                           <th className="width-10">Skill name</th>
                           <th className="width-10">Contact</th>
                           <th>Description</th>
-                          <th>Activity</th>
-                          <th>Release Status</th>
-                          <th>Managed</th>
-                          <th>Last&nbsp;Used</th>
+                          <th className="align-c">Status</th>
+                          <th className="align-c">Managed</th>
+                          <th className="width-5 align-r">Last&nbsp;Used</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td><a href={jsRoutes.controllers.BehaviorEditorController.edit("E5--ZnuhRrqjgEapQIhimg").url}>Food Safety</a></td>
+                          {this.renderEditLinkFor("Food Safety", "E5--ZnuhRrqjgEapQIhimg")}
+                          <td>Isabel Chamberlain</td>
+                          <td>Report and track food safety incidents</td>
                           <td>
-                            <div className="">Isabel Chamberlain</div>
+                            {this.renderInactive()}
+                            {this.renderProduction()}
                           </td>
-                          <td>
-                            <div className="">Report and track food safety incidents</div></td>
-                          <td>
-                            <span className="type-label bg-yellow type-black phxs">Inactive</span>
-                          </td>
-                          <td>
-                            <span className="type-label bg-green type-white phxs">Production</span>
-                          </td>
-                          <td>
-                            <span className="type-green display-inline-block height-l mtxs">
-                              <SVGCheckmark label="Managed" />
-                            </span>
-                          </td>
-                          <td className="">Oct&nbsp;2018 -&nbsp;Dec&nbsp;2018</td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Oct 2018 – Dec 2018")}
                         </tr>
                         <tr>
-                          <td>Production Reports</td>
+                          {this.renderEditLinkFor("Production Reports", "z4N1ITXRRImhInqti2pwUQ")}
                           <td>Emy Kelty</td>
                           <td>Collect and post production reports on schedule</td>
-                          <td>Inactive</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>May 2018 - Feb 2019</td>
+                          <td>
+                            {this.renderInactive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("May 2018 – Feb 2019")}
                         </tr>
                         <tr>
-                          <td>Seedling Germination Checklist & Reminder</td>
+                          {this.renderEditLinkFor("Seedling Germination Checklist & Reminder", "IxofxQGJTZ6Z8tNu6EefWw")}
                           <td>Jessica Kowalski</td>
                           <td>Checklist for process in germination, results stored in Google Sheets and a reminder set to unload germination chambers.</td>
-                          <td>Inactive</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Sept 2018 - Dec 2018</td>
+                          <td>
+                            {this.renderInactive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Sept 2018 – Dec 2018")}
                         </tr>
                         <tr>
-                          <td>Sensory QC Pre-check</td>
+                          {this.renderEditLinkFor("Sensory QC Pre-check", "a2GyCpj9QCSqQy94IOlgtQ")}
                           <td>Molly Kreykes</td>
                           <td>Collect results of sensory testing for in-progress crops.</td>
-                          <td>Inactive</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>May 2018 - Sept 2018</td>
+                          <td>
+                            {this.renderInactive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("May 2018 – Sept 2018")}
                         </tr>
                         <tr>
-                          <td>SSF Root Cause Report</td>
-                          <td>Gabriella Carne</td>
-                          <td>Create a failure root cause report</td>
-                          <td>Inactive</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
-                        </tr>
-                        <tr>
-                          <td>SSF Seedling Systems Checklist</td>
-                          <td>Jessica Kowalski</td>
-                          <td>Check list for the seedling system</td>
-                          <td>Inactive</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
-                        </tr>
-                        <tr>
-                          <td>SSF Systems Tracking </td>
-                          <td>Teryl Chapel</td>
-                          <td>Daily tracking of downtime across all Plenty systems in SSF</td>
-                          <td>Inactive</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
-                        </tr>
-                        <tr>
-                          <td>Accidents</td>
-                          <td>Yashira Frederick</td>
-                          <td>In case of an accident, tell an employee where is the closes urgent care facility</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
-                        </tr>
-                        <tr>
-                          <td>CEO Briefing</td>
-                          <td>Jennie Chen</td>
-                          <td>Collect and track items for the CEO briefing agenda.</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
-                        </tr>
-                        <tr>
-                          <td>Change Management </td>
-                          <td>Gabriella Carne</td>
-                          <td>Track farm ops change requests and approval</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
-                        </tr>
-                        <tr>
-                          <td>Standup</td>
+                          {this.renderEditLinkFor("Standup", "6cf3NCiKQcGUAYx7ogvdsA")}
                           <td>Perry Skorcz</td>
                           <td>Run standup</td>
-                          <td>Inactive</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Oct 2017 - Dec 2018</td>
+                          <td>
+                            {this.renderInactive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Oct 2017 – Dec 2018")}
                         </tr>
                         <tr>
-                          <td>Farm Standup</td>
+                          {this.renderEditLinkFor("SSF Root Cause Report", "NCrWrrSIT4m4RXvYxBx4gA")}
+                          <td>Gabriella Carne</td>
+                          <td>Create a failure root cause report</td>
+                          <td>
+                            {this.renderInactive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
+                        </tr>
+                        <tr>
+                          {this.renderEditLinkFor("SSF Seedling Systems Checklist", "SsbH1p6DR9WuHi5SPJewbg")}
+                          <td>Jessica Kowalski</td>
+                          <td>Check list for the seedling system</td>
+                          <td>
+                            {this.renderInactive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
+                        </tr>
+                        <tr>
+                          {this.renderEditLinkFor("SSF Systems Tracking", "diUzAcYbQI2qJrbbhnnWjw")}
+                          <td>Teryl Chapel</td>
+                          <td>Daily tracking of downtime across all Plenty systems in SSF</td>
+                          <td>
+                            {this.renderInactive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
+                        </tr>
+                        <tr>
+                          {this.renderEditLinkFor("Accidents", "eEbZigZ3QBe75pgalHF2sQ")}
+                          <td>Yashira Frederick</td>
+                          <td>In case of an accident, tell an employee where is the closes urgent care facility</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
+                        </tr>
+                        <tr>
+                          {this.renderEditLinkFor("CEO Briefing", "EkWR_K3_TnuQHVHIIpuxbg")}
+                          <td>Jennie Chen</td>
+                          <td>Collect and track items for the CEO briefing agenda.</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
+                        </tr>
+                        <tr>
+                          {this.renderEditLinkFor("Change Management", "PiapjCvVQFKc-Z71QBgl3w")}
+                          <td>Gabriella Carne</td>
+                          <td>Track farm ops change requests and approval</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
+                        </tr>
+                        <tr>
+                          {this.renderEditLinkFor("Farm Standup", "d8TFaKU7RHaOzC665hPpzA")}
                           <td>Jessica Kowalski</td>
                           <td>Run customized standup for the Farm team</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>Give Kudos</td>
+                          {this.renderEditLinkFor("Give Kudos", "KRAcw-NNSqi9_l09KUVrTw")}
                           <td>Chris Michael</td>
                           <td>Recognize and celebrate co-workers</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>Growers Journal </td>
+                          {this.renderEditLinkFor("Growers Journal", "OY-nLppwQ1-xyBrnCEJxTQ")}
                           <td>Gabriella Carne</td>
                           <td>Daily journal of farm issues observed by growers</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>My Calendar</td>
+                          {this.renderEditLinkFor("My Calendar", "LIO4h-8DQRaj8EDNTPc5hQ")}
                           <td>Jessica Kowalski</td>
                           <td>Report to the Farm team all upcoming facilities on-call schedules, weekend shifts, and PTO events </td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>Sensory Results Checklist</td>
+                          {this.renderEditLinkFor("Sensory Results Checklist", "Rd2aHMmdQum-OoL9hvgbwg")}
                           <td>Molly Kreykes</td>
                           <td>Collect results of sensory testing before product release.</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>Systems Checklists</td>
+                          {this.renderEditLinkFor("Systems Checklists", "jew0cCeGQGu3O3BcF1MYwA")}
                           <td>Jessica Kowalski</td>
                           <td>Ensure that the correct process is followed in production and research grow rooms and other facilities.</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>Work Requests</td>
+                          {this.renderEditLinkFor("Work Requests", "xWwqXeF6RSeiY_2xPHEoyQ")}
                           <td>Gantt Charping</td>
                           <td>Support for creating work requests. These are saved as fiix.com tasks</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>Handbook</td>
+                          {this.renderEditLinkFor("Handbook", "UIdytfgFR2WK9CKbAu2aew")}
                           <td>Emy Kelty</td>
                           <td>Simple Q&A</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>No</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderUnmanaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>Empathic Bot</td>
+                          {this.renderEditLinkFor("Empathic Bot", "cmt3ii2lS2qwt1Nc_wekLg")}
                           <td>Ellipsis</td>
                           <td>Greet users</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>No</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderUnmanaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>Farm Training</td>
+                          {this.renderEditLinkFor("Farm Training", "3xD5y4YnRPuvYJ9VEz5K2w")}
                           <td>Jessica Kowalski</td>
                           <td>Track expired training sessions from a Google sheet and send notifications in Slack reminding people to redo training sessions.</td>
-                          <td>Active</td>
-                          <td>Production</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>SF OM Requests</td>
+                          {this.renderEditLinkFor("SF OM Requests", "82hUKRbET6CdRSViSeqeeQ")}
                           <td>Amanda Cabrera</td>
                           <td>Quickly add office management requests made in Slack and store them in a Google Sheet. Allow marking them as complete via Slack to make tracking easier.</td>
-                          <td>Inactive</td>
-                          <td>Development</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderInactive()}
+                            {this.renderDevelopment()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>Work Request Scheduling</td>
+                          {this.renderEditLinkFor("Work Request Scheduling", "IxofxQGJTZ6Z8tNu6EefWw")}
                           <td>Jessica Kowalski</td>
                           <td>Collect work request information for scheduling and planning</td>
-                          <td>Inactive</td>
-                          <td>Development</td>
-                          <td>Yes</td>
-                          <td>Apr-19</td>
+                          <td>
+                            {this.renderInactive()}
+                            {this.renderDevelopment()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
-                          <td>Donation Tracker</td>
+                          <td><b>Donation Tracker</b></td>
                           <td>Jessica Kowalski</td>
                           <td>Report how much produce has been donated each week </td>
-                          <td>Inactive</td>
-                          <td>Requested</td>
-                          <td>Yes</td>
-                          <td></td>
+                          <td>
+                            {this.renderInactive()}
+                            {this.renderRequested()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("—")}
                         </tr>
                       </tbody>
                     </table>
