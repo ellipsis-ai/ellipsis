@@ -14,6 +14,26 @@ object NavItem {
     })
   }
 
+  def dashboard: NavItem = {
+    NavItem("Dashboard", None)
+  }
+
+  def dashboardUsage(link: Boolean, maybeTeamId: Option[String]): NavItem = {
+    NavItem("Usage report", if (link) {
+      Some(controllers.routes.DashboardController.usage(maybeTeamId))
+    } else {
+      None
+    })
+  }
+
+  def dashboardSkillManifest(link: Boolean, maybeTeamId: Option[String]): NavItem = {
+    NavItem("Skill manifest", if (link) {
+      Some(controllers.routes.DashboardController.skillManifest(maybeTeamId))
+    } else {
+      None
+    })
+  }
+
   def scheduling(link: Boolean, maybeTeamId: Option[String]): NavItem = {
     NavItem("Scheduling", if (link) {
       Some(controllers.routes.ScheduledActionsController.index(

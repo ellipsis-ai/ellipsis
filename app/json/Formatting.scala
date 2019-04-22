@@ -217,5 +217,10 @@ object Formatting {
 
   lazy implicit val adminTeamDataWrites = Json.writes[AdminTeamData]
 
+  lazy implicit val chartDataPointFormat = Json.format[ChartDataPoint]
+  lazy implicit val usageReportDataFormat = Json.format[UsageReportData]
+  lazy implicit val usageReportConfigFormat = Json.format[UsageReportConfig]
+  lazy implicit val skillManifestItemDataFormat = Json.format[SkillManifestItemData]
+  lazy implicit val skillManifestConfigFormat = Json.format[SkillManifestConfig]
 }
 

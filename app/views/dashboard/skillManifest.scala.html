@@ -1,0 +1,17 @@
+@(
+  config: ViewConfig,
+  maybeTeamId: Option[String]
+)(implicit messages: Messages, r: RequestHeader)
+
+@page.main("Dashboard · Skill Manifest", config, Seq(
+  NavItem.dashboard,
+  NavItem.dashboardSkillManifest(link = false, maybeTeamId)
+)) {
+  <div id="content" class="flex-row-cascade">
+    <div id="skillManifestContainer" class="flex-row-cascade"></div>
+
+    <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
+    <script src='@routes.DashboardController.skillManifest(maybeTeamId)'></script>
+    <script src='@config.assets.getWebpackBundle("dashboardSkillManifest.js")'></script>
+  </div>
+}

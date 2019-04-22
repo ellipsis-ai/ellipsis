@@ -11,11 +11,11 @@
   }
 }
 @logoColor = @{
-  if (config.isDevelopment && config.isAdmin) {
+  if (config.isDevelopment && config.isAdminAccess) {
     "color-bluish-pink"
   } else if (config.isDevelopment) {
     "color-blue-medium"
-  } else if (config.isAdmin) {
+  } else if (config.isAdminAccess) {
     "color-pink-medium"
   } else {
     ""

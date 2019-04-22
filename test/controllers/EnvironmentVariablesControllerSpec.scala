@@ -23,7 +23,7 @@ class EnvironmentVariablesControllerSpec extends PlaySpec with MockitoSugar {
 
   def setup(dataService: DataService, user: User, team: Team): Unit = {
     when(dataService.users.teamAccessFor(any[User], any[Option[String]])).thenReturn(Future.successful(
-      UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false)
+      UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false, isAdminUser = false)
     ))
   }
 

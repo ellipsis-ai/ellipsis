@@ -136,9 +136,9 @@ class UserServiceImpl @Inject() (
   def teamAccessForAction(user: User, maybeTargetTeamId: Option[String]): DBIO[UserTeamAccess] = {
     for {
       loggedInTeam <- dataService.teams.findAction(user.teamId).map(_.get)
-      isAdmin <- isAdminAction(user)
+      isAdminUser <- isAdminAction(user)
       maybeTeam <- maybeTargetTeamId.map { targetTeamId =>
-        if (targetTeamId != user.teamId && !isAdmin) {
+        if (targetTeamId != user.teamId && !isAdminUser) {
           DBIO.successful(None)
         } else {
           dataService.teams.findAction(targetTeamId)
@@ -152,7 +152,7 @@ class UserServiceImpl @Inject() (
       maybeBotName <- maybeBotProfile.map { botProfile =>
         dataService.slackBotProfiles.maybeNameForAction(botProfile)
       }.getOrElse(DBIO.successful(None))
-    } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeBotName, maybeTeam.exists(t => t.id != user.teamId))
+    } yield UserTeamAccess(user, loggedInTeam, maybeTeam, maybeBotName, maybeTeam.exists(t => t.id != user.teamId), isAdminUser)
   }
 
   def teamAccessFor(user: User, maybeTargetTeamId: Option[String]): Future[UserTeamAccess] = {

@@ -51,6 +51,10 @@ declare var jsRoutes: {
       doImport: () => JsRoute,
       "export": (id: string) => JsRoute
     },
+    DashboardController: {
+      skillManifest: (teamId?: Option<string>) => JsRoute,
+      usage: (teamId?: Option<string>) => JsRoute
+    },
     FeedbackController: {
       send: () => JsRoute
     },
