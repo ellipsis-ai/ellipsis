@@ -87,7 +87,7 @@ class DashboardController @Inject()(
               viewConfig(Some(teamAccess)),
               "SkillManifestConfig",
               "dashboardSkillManifest",
-              Json.toJson(SkillManifestConfig(
+              Json.toJson(SkillManifestConfig.buildForDemoData(
                 "skillManifestContainer",
                 CSRF.getToken(request).value,
                 teamAccess.isAdminAccess,

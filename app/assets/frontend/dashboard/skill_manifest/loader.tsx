@@ -9,9 +9,23 @@ interface Props {
   csrfToken: string
   isAdmin: boolean
   teamId: string
+  items: Array<SkillManifestItem>
 }
 
 declare var SkillManifestConfig: Props;
+
+export type SkillManifestDevelopmentStatus = "Production" | "Development" | "Requested"
+
+export interface SkillManifestItem {
+  name: string
+  id: Option<string>
+  editor: string
+  description: string
+  active: boolean
+  developmentStatus: SkillManifestDevelopmentStatus
+  managed: boolean
+  lastUsed: string
+}
 
 class SkillManifestLoader extends React.Component<Props> {
   constructor(props: Props) {
@@ -26,6 +40,7 @@ class SkillManifestLoader extends React.Component<Props> {
           csrfToken={this.props.csrfToken}
           isAdmin={this.props.isAdmin}
           teamId={this.props.teamId}
+          items={this.props.items}
           {...pageProps}
         />
       )} />
