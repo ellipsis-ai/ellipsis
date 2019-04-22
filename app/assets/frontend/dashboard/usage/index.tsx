@@ -443,6 +443,22 @@ class UsageReport extends React.Component<Props, State> {
                 <span>Active</span>
               </h5>
               <p>The number of different skills where at least one workflow was triggered during a time period.</p>
+
+              <h5>
+                <span className="display-inline-block mrm align-m">
+                  <svg width={16} height={16}><rect width={16} height={16} fill={Color.PinkMedium} /></svg>
+                </span>
+                <span>Created</span>
+              </h5>
+              <p>The number of new skills that were created during a time period.</p>
+
+              <h5>
+                <span className="display-inline-block mrm align-m">
+                  <svg width={16} height={16}><rect width={16} height={16} fill={Color.PinkLight} /></svg>
+                </span>
+                <span>Modified</span>
+              </h5>
+              <p>The number of existing skills that were edited or updated during a time period.</p>
             </div>
           </HelpPanel>
         </Collapsible>

@@ -4,8 +4,6 @@ import DeepEqual from "../../lib/deep_equal";
 import {Chart, ChartPoint} from "chart.js";
 import autobind from "../../lib/autobind";
 
-const IS_DEVELOPMENT = false;
-
 interface Props {
   data: ChartJs.ChartData;
   type?: ChartJs.ChartType;
@@ -153,25 +151,6 @@ class ChartComponent extends React.Component<Props> implements WithChartInstance
     return data;
   }
 
-  checkDatasets(datasets: Array<ChartJs.ChartDataSets>) {
-    const isDev = IS_DEVELOPMENT;
-    const usingCustomKeyProvider = this.getDatasetKeyProvider() !== ChartComponent.getLabelAsKey;
-    const multipleDatasets = datasets.length > 1;
-
-    if (isDev && multipleDatasets && !usingCustomKeyProvider) {
-      let shouldWarn = false;
-      datasets.forEach((dataset) => {
-        if (!dataset.label) {
-          shouldWarn = true;
-        }
-      });
-
-      if (shouldWarn) {
-        console.error('[react-chartjs-2] Warning: Each dataset needs a unique key. By default, the "label" property on each dataset is used. Alternatively, you may provide a "datasetKeyProvider" as a prop that returns a unique key.');
-      }
-    }
-  }
-
   getCurrentDatasets() {
     return (this.chartInstance && this.chartInstance.config.data && this.chartInstance.config.data.datasets) || [];
   }
@@ -204,9 +183,8 @@ class ChartComponent extends React.Component<Props> implements WithChartInstance
 
     // Pipe datasets to chart instance datasets enabling
     // seamless transitions
-    let currentDatasets = this.getCurrentDatasets();
+    const currentDatasets = this.getCurrentDatasets();
     const nextDatasets = data && data.datasets || [];
-    this.checkDatasets(currentDatasets);
 
     const currentDatasetsIndexed: {
       [k: string]: ChartJs.ChartDataSets
@@ -441,7 +419,6 @@ export class Bubble extends React.Component<Props> implements WithChartInstance 
 export class Scatter extends React.Component<Props> implements WithChartInstance {
   chartInstance: Option<ChartClass>;
   render() {
-    const props = this.props;
     return (
       <ChartComponent
         {...this.props}

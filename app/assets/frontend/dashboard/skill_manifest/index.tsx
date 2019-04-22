@@ -2,6 +2,9 @@ import * as React from 'react';
 import autobind from '../../lib/autobind';
 import {PageRequiredProps} from "../../shared_ui/page";
 import SVGCheckmark from "../../svg/checkmark";
+import HelpButton from "../../help/help_button";
+import Collapsible from "../../shared_ui/collapsible";
+import HelpPanel from "../../help/panel";
 
 type Props = PageRequiredProps & {
   csrfToken: string
@@ -19,6 +22,10 @@ class SkillManifest extends React.Component<Props> {
     return {
       paddingBottom: this.props.footerHeight
     };
+  }
+
+  toggleStatusHelp(): void {
+    this.props.onToggleActivePanel("statusHelp");
   }
 
   renderActive() {
@@ -127,7 +134,10 @@ class SkillManifest extends React.Component<Props> {
                           <th className="width-10">Skill name</th>
                           <th className="width-10">Contact</th>
                           <th>Description</th>
-                          <th className="align-c">Status</th>
+                          <th className="align-c">
+                            <span className="mrm">Status</span>
+                            <HelpButton onClick={this.toggleStatusHelp} toggled={this.props.activePanelName === "statusHelp"} />
+                          </th>
                           <th className="align-c">Managed</th>
                           <th className="width-5 align-r">Last&nbsp;Used</th>
                         </tr>
@@ -405,7 +415,39 @@ class SkillManifest extends React.Component<Props> {
             </div>
           </div>
         </div>
-        {this.props.onRenderFooter()}
+        {this.props.onRenderFooter(
+          <Collapsible revealWhen={this.props.activePanelName === "statusHelp"}>
+            <HelpPanel heading={"Skill status glossary"} onCollapseClick={this.props.onClearActivePanel}>
+              <p className="type-m">Skills are packages of one or more related workflow actions.</p>
+
+              <div><div className="display-inline-block border-bottom border-blue">{this.renderActive()}</div></div>
+              <p>At least one workflow in the skill has been used in the past 30 days.</p>
+
+              <div><div className="display-inline-block border-bottom">{this.renderInactive()}</div></div>
+              <p>No workflows in the skill have been used in the past 30 days.</p>
+
+              <div><div className="display-inline-block">{this.renderProduction()}</div></div>
+              <p>The skill is deployed and available to users.</p>
+
+              <div><div className="display-inline-block">{this.renderDevelopment()}</div></div>
+              <p>The skill is in development, and only available to developers or test users.</p>
+
+              <div><div className="display-inline-block">{this.renderRequested()}</div></div>
+              <p>A new skill has been requested, but not yet approved for development.</p>
+
+              <div>
+                <div className="display-inline-block align-m mrs height-l">
+                  <span className="type-green display-inline-block height-l">
+                    <SVGCheckmark label="Managed" />
+                  </span>
+                </div>
+                <span className="display-inline-block type-bold">Managed</span>
+              </div>
+              <p>The skill is managed by the Ellipsis team. Updates, upgrades, and modifications are done by the Ellipsis team. Users can make requests for updates in the shared Ellipsis support channel in chat.</p>
+
+            </HelpPanel>
+          </Collapsible>
+        )}
       </div>
     );
   }
