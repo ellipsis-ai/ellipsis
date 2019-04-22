@@ -54,7 +54,7 @@ declare var jsRoutes: {
     DashboardController: {
       skillManifest: (teamId?: Option<string>) => JsRoute,
       usage: (teamId?: Option<string>) => JsRoute
-    }
+    },
     FeedbackController: {
       send: () => JsRoute
     },
