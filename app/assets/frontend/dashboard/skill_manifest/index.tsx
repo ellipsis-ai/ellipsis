@@ -32,7 +32,7 @@ class SkillManifest extends React.Component<Props> {
   renderInactive() {
     return (
       <div className="align-c">
-        <div className="type-label border-top border-side border-gray bg-lightest type-weak phxs">Inactive</div>
+        <div className="type-label border-top border-side bg-light type-weak phxs">Inactive</div>
       </div>
     );
   }
@@ -48,7 +48,7 @@ class SkillManifest extends React.Component<Props> {
   renderDevelopment() {
     return (
       <div className="align-c">
-        <div className="type-label border border-pink bg-pink-light type-pink phxs">Development</div>
+        <div className="type-label border border-pink-light bg-pink-light type-pink phxs">Development</div>
       </div>
     );
   }
@@ -266,6 +266,17 @@ class SkillManifest extends React.Component<Props> {
                           {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>
+                          {this.renderEditLinkFor("Farm Training", "3xD5y4YnRPuvYJ9VEz5K2w")}
+                          <td>Jessica Kowalski</td>
+                          <td>Track expired training sessions from a Google sheet and send notifications in Slack reminding people to redo training sessions.</td>
+                          <td>
+                            {this.renderActive()}
+                            {this.renderProduction()}
+                          </td>
+                          {this.renderManaged()}
+                          {this.renderLastUsed("Apr 2019")}
+                        </tr>
+                        <tr>
                           {this.renderEditLinkFor("Give Kudos", "KRAcw-NNSqi9_l09KUVrTw")}
                           <td>Chris Michael</td>
                           <td>Recognize and celebrate co-workers</td>
@@ -351,17 +362,6 @@ class SkillManifest extends React.Component<Props> {
                             {this.renderProduction()}
                           </td>
                           {this.renderUnmanaged()}
-                          {this.renderLastUsed("Apr 2019")}
-                        </tr>
-                        <tr>
-                          {this.renderEditLinkFor("Farm Training", "3xD5y4YnRPuvYJ9VEz5K2w")}
-                          <td>Jessica Kowalski</td>
-                          <td>Track expired training sessions from a Google sheet and send notifications in Slack reminding people to redo training sessions.</td>
-                          <td>
-                            {this.renderActive()}
-                            {this.renderProduction()}
-                          </td>
-                          {this.renderManaged()}
                           {this.renderLastUsed("Apr 2019")}
                         </tr>
                         <tr>

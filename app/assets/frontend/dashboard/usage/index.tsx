@@ -189,6 +189,138 @@ class UsageReport extends React.Component<Props, State> {
     });
   }
 
+  renderWorkflowActions() {
+    return (
+      <div>
+        <h4 className="align-c">
+          <span className="mrm">Workflow actions</span>
+          <HelpButton onClick={this.toggleHelpForWorkflowActions} toggled={this.props.activePanelName === "helpForWorkflowActions"} />
+        </h4>
+        <Bar
+          width={null}
+          height={null}
+          data={{
+            datasets: [{
+              stack: 'installed',
+              label: "Installed",
+              type: 'bar',
+              data: this.getData('installedWorkflows'),
+              borderColor: Color.BlueMedium,
+              backgroundColor: Color.BlueLight,
+              borderWidth: 1
+            }, {
+              stack: 'active',
+              label: "Active",
+              type: 'bar',
+              data: this.getData('activeWorkflows'),
+              borderColor: Color.BlueMedium,
+              backgroundColor: "hsl(231, 97%, 64%)"
+            }]
+          }}
+          options={this.getChartOptions()}
+        />
+      </div>
+    )
+  }
+
+  renderSkills() {
+    return (
+      <div>
+        <h4 className="align-c">
+          <span className="mrm">Skills</span>
+          <HelpButton onClick={this.toggleHelpForSkills} toggled={this.props.activePanelName === "helpForSkills"} />
+        </h4>
+        <Bar
+          width={null}
+          height={null}
+          data={{
+            datasets: [{
+              stack: "installed",
+              label: "Installed",
+              type: 'bar',
+              data: this.getData('installedSkills'),
+              borderColor: Color.BlueMedium,
+              backgroundColor: Color.BlueLight,
+              borderWidth: 1
+            }, {
+              stack: "active",
+              label: "Active",
+              type: 'bar',
+              data: this.getData('activeSkills'),
+              borderColor: Color.BlueMedium,
+              backgroundColor: Color.BlueMedium
+            }, {
+              stack: "development",
+              label: "Created",
+              type: 'bar',
+              data: this.getData('createdSkills'),
+              borderColor: Color.PinkMedium,
+              backgroundColor: Color.PinkMedium
+            }, {
+              stack: "development",
+              label: "Modified",
+              type: 'bar',
+              data: this.getData('modifiedSkills'),
+              borderColor: Color.PinkLight,
+              backgroundColor: Color.PinkLight
+            }]
+          }}
+          options={this.getChartOptions()}
+        />
+      </div>
+    )
+  }
+
+  renderUsers() {
+    return (
+      <div>
+        <h4 className="align-c">
+          <span className="mrm">Users</span>
+          <HelpButton onClick={this.toggleHelpForUsers} toggled={this.props.activePanelName === "helpForUsers"} />
+        </h4>
+        <Bar
+          width={null}
+          height={null}
+          data={{
+            datasets: [{
+              stack: "slack",
+              label: "Total in Slack",
+              type: 'bar',
+              data: this.getData('totalUsers'),
+              borderColor: Color.BlueMedium,
+              backgroundColor: Color.BlueLight,
+              borderWidth: 1
+            }, {
+              stack: "active",
+              label: "Active",
+              type: 'bar',
+              data: this.getData('activeUsers'),
+              borderColor: Color.BlueMedium,
+              backgroundColor: Color.BlueMedium
+            }, {
+              stack: "contributors",
+              label: "Contributors",
+              type: 'bar',
+              data: this.getData('contributingUsers'),
+              borderColor: Color.PinkMedium,
+              backgroundColor: Color.PinkMedium
+            }, {
+              stack: "editors",
+              label: "Editors",
+              type: 'bar',
+              data: this.getData('editingUsers'),
+              borderColor: Color.PinkLight,
+              backgroundColor: Color.PinkLight
+            }]
+          }}
+          options={this.getChartOptions()}
+        />
+
+        <p className="type-s type-italic">Active user total available only from March 2019 onwards</p>
+      </div>
+    );
+  }
+
   render() {
     return (
       <div className="flex-row-cascade">
@@ -239,123 +371,15 @@ class UsageReport extends React.Component<Props, State> {
                 >
                   <div className="ptxxxxl pbxxl phxxl">
                     <div className="pvl">
-                      <h4 className="align-c">
-                        <span className="mrm">Workflow actions</span>
-                        <HelpButton onClick={this.toggleHelpForWorkflowActions} toggled={this.props.activePanelName === "helpForWorkflowActions"} />
-                      </h4>
-                      <Bar
-                        width={null}
-                        height={null}
-                        data={{
-                          datasets: [{
-                            stack: 'installed',
-                            label: "Installed",
-                            type: 'bar',
-                            data: this.getData('installedWorkflows'),
-                            borderColor: Color.BlueMedium,
-                            backgroundColor: Color.BlueLight,
-                            borderWidth: 1
-                          }, {
-                            stack: 'active',
-                            label: "Active",
-                            type: 'bar',
-                            data: this.getData('activeWorkflows'),
-                            borderColor: Color.BlueMedium,
-                            backgroundColor: "hsl(231, 97%, 64%)"
-                          }]
-                        }}
-                        options={this.getChartOptions()}
-                      />
+                      {this.renderSkills()}
                     </div>
 
                     <div className="pvl">
-                      <h4 className="align-c">
-                        <span className="mrm">Skills</span>
-                        <HelpButton onClick={this.toggleHelpForSkills} toggled={this.props.activePanelName === "helpForSkills"} />
-                      </h4>
-                      <Bar
-                        width={null}
-                        height={null}
-                        data={{
-                          datasets: [{
-                            stack: "installed",
-                            label: "Installed",
-                            type: 'bar',
-                            data: this.getData('installedSkills'),
-                            borderColor: Color.BlueMedium,
-                            backgroundColor: Color.BlueLight,
-                            borderWidth: 1
-                          }, {
-                            stack: "active",
-                            label: "Active",
-                            type: 'bar',
-                            data: this.getData('activeSkills'),
-                            borderColor: Color.BlueMedium,
-                            backgroundColor: Color.BlueMedium
-                          }, {
-                            stack: "development",
-                            label: "Created",
-                            type: 'bar',
-                            data: this.getData('createdSkills'),
-                            borderColor: Color.PinkMedium,
-                            backgroundColor: Color.PinkMedium
-                          }, {
-                            stack: "development",
-                            label: "Modified",
-                            type: 'bar',
-                            data: this.getData('modifiedSkills'),
-                            borderColor: Color.PinkLight,
-                            backgroundColor: Color.PinkLight
-                          }]
-                        }}
-                        options={this.getChartOptions()}
-                      />
+                      {this.renderWorkflowActions()}
                     </div>
 
                     <div className="ptl">
-                      <h4 className="align-c">
-                        <span className="mrm">Users</span>
-                        <HelpButton onClick={this.toggleHelpForUsers} toggled={this.props.activePanelName === "helpForUsers"} />
-                      </h4>
-                      <Bar
-                        width={null}
-                        height={null}
-                        data={{
-                          datasets: [{
-                            stack: "slack",
-                            label: "Total in Slack",
-                            type: 'bar',
-                            data: this.getData('totalUsers'),
-                            borderColor: Color.BlueMedium,
-                            backgroundColor: Color.BlueLight,
-                            borderWidth: 1
-                          }, {
-                            stack: "active",
-                            label: "Active",
-                            type: 'bar',
-                            data: this.getData('activeUsers'),
-                            borderColor: Color.BlueMedium,
-                            backgroundColor: Color.BlueMedium
-                          }, {
-                            stack: "contributors",
-                            label: "Contributors",
-                            type: 'bar',
-                            data: this.getData('contributingUsers'),
-                            borderColor: Color.PinkMedium,
-                            backgroundColor: Color.PinkMedium
-                          }, {
-                            stack: "editors",
-                            label: "Editors",
-                            type: 'bar',
-                            data: this.getData('editingUsers'),
-                            borderColor: Color.PinkLight,
-                            backgroundColor: Color.PinkLight
-                          }]
-                        }}
-                        options={this.getChartOptions()}
-                      />
-
-                      <p className="type-s type-italic">Active user total available only from March 2019 onwards</p>
+                      {this.renderUsers()}
                     </div>
                   </div>
                 </div>
