@@ -30,7 +30,7 @@
                   >Skills</a>
                 </li>
 
-                @if(config.isAdminUser) {
+                @if(config.isAdminUser || config.maybeTargetTeamId.contains("SZ4Mq9D_ROSPLVoxoinrhQ")) {
                   <li>
                     <a class="button button-dropdown-item plm"
                     href='@routes.DashboardController.usage(config.maybeAdminAccessTeamId)'
