@@ -390,6 +390,32 @@ case class SlackApiClient(
     removeReaction(emojiName = emojiName, channelId = Some(channelId), timestamp = Some(timestamp))
   }
 
+  def allUsers(maybeCursor: Option[String] = None): Future[Seq[MembershipData]] = {
+    val params = Map[String, Any](
+    ) ++ maybeCursor.map(c => Seq(("cursor", c))).getOrElse(Seq())
+    postResponseFor("users.list", params).flatMap { r =>
+      val batch = extract[Seq[MembershipData]](r, "members")
+
+      // Slack returns an empty string next_cursor rather than leaving it out
+      val maybeNextCursor = (r.json \ "response_metadata" \ "next_cursor").asOpt[String].filter(_.trim.nonEmpty)
+      maybeNextCursor.map { nextCursor =>
+        allUsers(Some(nextCursor)).map(batch ++ _)
+      }.getOrElse(Future.successful(batch))
+    }
+  }
+
+  def accessLogs(before: Long): Future[JsValue] = {
+    val params = Map(
+      "before" -> before
+    )
+    ws.
+      url(urlFor("team.accessLogs")).
+      post(preparePostParams(params ++ defaultParams.toMap)).
+      map { r =>
+        extract[JsValue](r, "logins")
+      }
+  }
+
 }
 
 @Singleton

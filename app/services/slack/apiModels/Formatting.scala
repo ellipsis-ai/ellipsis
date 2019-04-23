@@ -15,5 +15,6 @@ object Formatting {
   lazy implicit val slackEnterpriseUserFormat: Format[SlackEnterpriseUser] = Json.format[SlackEnterpriseUser]
   lazy implicit val slackUserFormat: Format[SlackUser] = Json.format[SlackUser]
   lazy implicit val slackTeamFormat: Format[SlackTeam] = Json.format[SlackTeam]
+  lazy implicit val membershipDataFormat: Format[MembershipData] = Json.format[MembershipData]
 
 }

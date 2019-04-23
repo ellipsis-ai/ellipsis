@@ -1,0 +1,60 @@
+@import java.time.format.DateTimeFormatter
+@import java.time.LocalDateTime
+@import java.time.ZoneId
+@import java.time.format.TextStyle
+@import java.util.Locale
+@import json.AdminTeamData
+@import helper.CSRF
+
+@import java.time.OffsetDateTime
+@import services.slack.apiModels.MembershipData
+@(
+  config: ViewConfig,
+  activeUsers: Seq[MembershipData],
+  deletedUsers: Seq[MembershipData],
+  activeBotsAndApps: Seq[MembershipData],
+  deletedBotsAndApps: Seq[MembershipData]
+)(implicit messages: Messages, r: RequestHeader)
+
+@formatDate(date: OffsetDateTime) = @{
+  date.format(
+    DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z").
+      withLocale(java.util.Locale.ENGLISH).
+      withZone(ZoneId.of("UTC"))
+  )
+}
+
+@page.main("Slack users", config) {
+  <div class="container pbxxxxl">
+
+    <h4>Active users</h4>
+    <ul>
+      @activeUsers.map { ea =>
+        <li>@ea.displayString</li>
+      }
+    </ul>
+
+    <h4>Deleted users</h4>
+    <ul>
+    @deletedUsers.map { ea =>
+      <li>@ea.displayString</li>
+    }
+    </ul>
+
+    <h4>Active bots and apps</h4>
+    <ul>
+    @activeBotsAndApps.map { ea =>
+      <li>@ea.displayString</li>
+    }
+    </ul>
+
+    <h4>Deleted bots and apps</h4>
+    <ul>
+    @deletedBotsAndApps.map { ea =>
+      <li>@ea.displayString</li>
+    }
+    </ul>
+
+  </div>
+}
+
