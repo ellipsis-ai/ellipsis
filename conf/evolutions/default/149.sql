@@ -7,6 +7,7 @@ CREATE TABLE slack_member_statuses (
   slack_team_id TEXT NOT NULL,
   slack_user_id TEXT NOT NULL,
   is_deleted BOOLEAN NOT NULL,
+  is_bot_or_app BOOLEAN NOT NULL,
   first_observed_at TIMESTAMPTZ NOT NULL
 );
 

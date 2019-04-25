@@ -24,6 +24,7 @@ case class SlackMemberStatus(
                               slackTeamId: String,
                               slackUserId: String,
                               isDeleted: Boolean,
+                              isBotOrApp: Boolean,
                               firstObservedAt: OffsetDateTime
                             )
 
@@ -32,9 +33,10 @@ class SlackMemberStatusTable(tag: Tag) extends Table[SlackMemberStatus](tag, "sl
   def slackTeamId = column[String]("slack_team_id")
   def slackUserId = column[String]("slack_user_id")
   def isDeleted = column[Boolean]("is_deleted")
+  def isBotOrApp = column[Boolean]("is_bot_or_app")
   def firstObservedAt = column[OffsetDateTime]("first_observed_at")
 
-  def * = (id, slackTeamId, slackUserId, isDeleted, firstObservedAt) <> ((SlackMemberStatus.apply _).tupled, SlackMemberStatus.unapply _)
+  def * = (id, slackTeamId, slackUserId, isDeleted, isBotOrApp, firstObservedAt) <> ((SlackMemberStatus.apply _).tupled, SlackMemberStatus.unapply _)
 
 }
 
@@ -78,6 +80,7 @@ class SlackMemberStatusServiceImpl @Inject() (
     membershipData.team_id,
     membershipData.id,
     isDeleted = membershipData.deleted,
+    isBotOrApp = (membershipData.is_bot || membershipData.is_app_user || membershipData.id == "USLACKBOT"),
     firstObservedAt = membershipData.lastUpdated
   )
 
