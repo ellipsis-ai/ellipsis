@@ -9,6 +9,7 @@ import javax.inject.{Inject, Provider}
 import models.IDs
 import models.accounts.registration.RegistrationService
 import models.accounts.slack.SlackProvider
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
 import play.api.libs.ws.WSClient
 import services.DataService
@@ -80,7 +81,7 @@ class SlackMemberStatusServiceImpl @Inject() (
     firstObservedAt = membershipData.lastUpdated
   )
 
-  def updateFor(membershipData: MembershipData): Future[Unit] = {
+  private def updateFor(membershipData: MembershipData): Future[Unit] = {
     val action = for {
       maybeMostRecent <- mostRecentQuery(membershipData.team_id, membershipData.id).result.map(_.headOption)
       maybeNewStatusToAdd <- DBIO.successful(maybeMostRecent.flatMap { status =>
@@ -123,6 +124,25 @@ class SlackMemberStatusServiceImpl @Inject() (
       _ <- maybeWithEarlierTimestampToUse.map(s => all += s).getOrElse(DBIO.successful({}))
     } yield {}
     dataService.run(action)
+  }
+
+  private def updateFor(botProfile: SlackBotProfile): Future[Unit] = {
+    val client = slackApiService.clientFor(botProfile)
+    for {
+      members <- client.allUsers()
+      _ <- Future.sequence(members.map { ea =>
+        updateFor(ea)
+      })
+    } yield {}
+  }
+
+  def updateAll: Future[Unit] = {
+    for {
+      profiles <- dataService.slackBotProfiles.allProfiles
+      _ <- Future.sequence(profiles.map { ea =>
+        updateFor(ea)
+      })
+    } yield {}
   }
 
 }
