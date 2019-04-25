@@ -102,8 +102,7 @@ class SlackMemberStatusServiceImpl @Inject() (
           None
         }
       )
-      maybeStatusToAdd <- DBIO.successful(maybeUpdatedStatusToAdd.orElse(maybeFirstStatusToAdd))
-      maybeWithEarlierTimestampToUse <- maybeStatusToAdd.map { status =>
+      maybeFirstWithEarlierTimestampToUse <- maybeFirstStatusToAdd.map { status =>
         for {
           linkedAccounts <- dataService.linkedAccounts.allForLoginInfoAction(LoginInfo(SlackProvider.ID, status.slackUserId))
           withSlackTeamIds <- DBIO.sequence(linkedAccounts.map { ea =>
@@ -131,7 +130,8 @@ class SlackMemberStatusServiceImpl @Inject() (
           }
         }
       }.getOrElse(DBIO.successful(None))
-      _ <- maybeWithEarlierTimestampToUse.map(s => all += s).getOrElse(DBIO.successful({}))
+      maybeStatusToAdd <- DBIO.successful(maybeUpdatedStatusToAdd.orElse(maybeFirstWithEarlierTimestampToUse))
+      _ <- maybeStatusToAdd.map(s => all += s).getOrElse(DBIO.successful({}))
     } yield {}
     dataService.run(action)
   }
