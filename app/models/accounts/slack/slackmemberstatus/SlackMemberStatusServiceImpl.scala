@@ -11,6 +11,7 @@ import models.accounts.registration.RegistrationService
 import models.accounts.slack.SlackProvider
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
+import play.api.Logger
 import play.api.libs.ws.WSClient
 import services.DataService
 import services.caching.CacheService
@@ -87,16 +88,22 @@ class SlackMemberStatusServiceImpl @Inject() (
   private def updateFor(membershipData: MembershipData): Future[Unit] = {
     val action = for {
       maybeMostRecent <- mostRecentQuery(membershipData.team_id, membershipData.id).result.map(_.headOption)
-      maybeNewStatusToAdd <- DBIO.successful(maybeMostRecent.flatMap { status =>
+      maybeUpdatedStatusToAdd <- DBIO.successful(maybeMostRecent.flatMap { status =>
         if (status.isDeleted == membershipData.deleted) {
           None
         } else {
           Some(newStatusFor(membershipData))
         }
-      }.orElse {
-        Some(newStatusFor(membershipData))
       })
-      maybeWithEarlierTimestampToUse <- maybeNewStatusToAdd.map { status =>
+      maybeFirstStatusToAdd <- DBIO.successful(
+        if (maybeMostRecent.isEmpty) {
+          Some(newStatusFor(membershipData))
+        } else {
+          None
+        }
+      )
+      maybeStatusToAdd <- DBIO.successful(maybeUpdatedStatusToAdd.orElse(maybeFirstStatusToAdd))
+      maybeWithEarlierTimestampToUse <- maybeStatusToAdd.map { status =>
         for {
           linkedAccounts <- dataService.linkedAccounts.allForLoginInfoAction(LoginInfo(SlackProvider.ID, status.slackUserId))
           withSlackTeamIds <- DBIO.sequence(linkedAccounts.map { ea =>
@@ -139,13 +146,31 @@ class SlackMemberStatusServiceImpl @Inject() (
     } yield {}
   }
 
+  val lastRunKey: String = "SlackMembershipStatusUpdateLastRun"
+
+  private def hasRunAlreadyToday: Future[Boolean] = {
+    cacheService.get[OffsetDateTime](lastRunKey).map { maybeLastRun =>
+      maybeLastRun.exists(_.toLocalDate == OffsetDateTime.now.toLocalDate)
+    }
+  }
+
   def updateAll: Future[Unit] = {
-    for {
-      profiles <- dataService.slackBotProfiles.allProfiles
-      _ <- Future.sequence(profiles.map { ea =>
-        updateFor(ea)
-      })
-    } yield {}
+    hasRunAlreadyToday.flatMap { hasRun =>
+      if (hasRun) {
+        Logger.info("Slack membership update already ran today")
+        Future.successful({})
+      } else {
+        Logger.info("Slack membership update running…")
+        for {
+          _ <- cacheService.set(lastRunKey, OffsetDateTime.now)
+          profiles <- dataService.slackBotProfiles.allProfiles
+          _ <- Future.sequence(profiles.map { ea =>
+            updateFor(ea)
+          })
+        } yield {}
+      }
+    }
+
   }
 
 }
