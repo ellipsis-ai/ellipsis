@@ -76,6 +76,11 @@ class SlackMemberStatusServiceImpl @Inject() (
   }
   val mostRecentQuery = Compiled(uncompiledMostRecentQuery _)
 
+  def uncompiledAllForTeamQuery(slackTeamId: Rep[String]) = {
+    all.filter(_.slackTeamId === slackTeamId)
+  }
+  val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
+
   private def newStatusFor(membershipData: MembershipData) = SlackMemberStatus(
     IDs.next,
     membershipData.team_id,
@@ -121,13 +126,13 @@ class SlackMemberStatusServiceImpl @Inject() (
             map { case(linked, _) => linked.createdAt }.
             sorted.
             headOption
-          maybeEarliestTimestamp.map { earliestTimestamp =>
+          maybeEarliestTimestamp.flatMap { earliestTimestamp =>
             if (earliestTimestamp.isBefore(status.firstObservedAt)) {
-              status.copy(firstObservedAt = earliestTimestamp)
+              Some(status.copy(firstObservedAt = earliestTimestamp))
             } else {
-              status
+              None
             }
-          }
+          }.orElse(Some(status))
         }
       }.getOrElse(DBIO.successful(None))
       maybeStatusToAdd <- DBIO.successful(maybeUpdatedStatusToAdd.orElse(maybeFirstWithEarlierTimestampToUse))
@@ -146,9 +151,7 @@ class SlackMemberStatusServiceImpl @Inject() (
     } yield {}
   }
 
-  val lastRunKey: String = "SlackMembershipStatusUpdateLastRun"
-
-  private def hasRunAlreadyToday: Future[Boolean] = {
+  def hasRunAlreadyToday: Future[Boolean] = {
     cacheService.get[OffsetDateTime](lastRunKey).map { maybeLastRun =>
       maybeLastRun.exists(_.toLocalDate == OffsetDateTime.now.toLocalDate)
     }
@@ -171,6 +174,11 @@ class SlackMemberStatusServiceImpl @Inject() (
       }
     }
 
+  }
+
+  def allFor(slackTeamId: String): Future[Seq[SlackMemberStatus]] = {
+    val action = allForTeamQuery(slackTeamId).result
+    dataService.run(action)
   }
 
 }

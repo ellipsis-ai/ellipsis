@@ -11,6 +11,7 @@ import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.oauth2api.{AuthorizationCode, OAuth2Api}
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.slack.SlackProvider
+import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.BotResultService
 import models.behaviors.behavior.Behavior
@@ -83,10 +84,14 @@ trait DBSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar {
     }
   }
 
+  def newSavedSlackBotProfileFor(slackUserId: String, slackTeamId: String): SlackBotProfile = {
+    runNow(dataService.slackBotProfiles.ensure(slackUserId, slackTeamId, "TestTeam", IDs.next))
+  }
+
   def newSavedUserOn(team: Team): User = runNow(dataService.users.createFor(team.id))
 
-  def newSavedLinkedAccountFor(user: User, slackUserId: String): LinkedAccount = {
-    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, slackUserId), OffsetDateTime.now)
+  def newSavedLinkedAccountFor(user: User, slackUserId: String, maybeCreatedAt: Option[OffsetDateTime] = None): LinkedAccount = {
+    val account = LinkedAccount(user, LoginInfo(SlackProvider.ID, slackUserId), maybeCreatedAt.getOrElse(OffsetDateTime.now))
     runNow(dataService.linkedAccounts.save(account))
   }
 
