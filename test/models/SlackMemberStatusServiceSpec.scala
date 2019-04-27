@@ -101,6 +101,36 @@ class SlackMemberStatusServiceSpec extends DBSpec with MockitoSugar {
       })
     }
 
+    "not create duplicate statuses" in {
+      withEmptyDB(dataService, { () =>
+        val slackUserId = IDs.next
+        val slackTeamId = IDs.next
+        val botProfile = newSavedSlackBotProfileFor(slackUserId, slackTeamId)
+
+        val membershipData = Seq(
+          newMembershipDataFor(slackUserId, slackTeamId, OffsetDateTime.now.minusDays(50)),
+          newMembershipDataFor(IDs.next, slackTeamId, OffsetDateTime.now.minusDays(100))
+        )
+        val client = mock[SlackApiClient]
+        when(slackApiService.clientFor(botProfile)).thenReturn(client)
+        when(client.allUsers(any[Option[String]])).thenReturn(Future.successful(membershipData))
+        val key: String = dataService.slackMemberStatuses.lastRunKey
+        when(cacheService.set(anyString, any, any)(any)).thenReturn(Future.successful({}))
+        when(cacheService.get[OffsetDateTime](key)).thenReturn(Future.successful(None))
+        runNow(dataService.slackMemberStatuses.updateAll)
+        verify(client, times(1)).allUsers()
+        val statuses = runNow(dataService.slackMemberStatuses.allFor(slackTeamId))
+        membershipData.foreach { data =>
+          statuses.exists(ea => ea.slackUserId == data.id && ea.firstObservedAt.toEpochSecond == data.updated) mustBe(true)
+        }
+
+        runNow(dataService.slackMemberStatuses.updateAll)
+        verify(client, times(2)).allUsers()
+        val statusesAfterSecondUpdate = runNow(dataService.slackMemberStatuses.allFor(slackTeamId))
+        statusesAfterSecondUpdate.sortBy(_.id) must equal(statuses.sortBy(_.id))
+      })
+    }
+
   }
 
 }
