@@ -141,7 +141,7 @@ class SlackMemberStatusServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  private def updateFor(botProfile: SlackBotProfile): Future[Unit] = {
+  private def updateAllForProfile(botProfile: SlackBotProfile): Future[Unit] = {
     val client = slackApiService.clientFor(botProfile)
     for {
       members <- client.allUsers()
@@ -157,6 +157,14 @@ class SlackMemberStatusServiceImpl @Inject() (
     }
   }
 
+  def updateAllForProfiles(profiles: Seq[SlackBotProfile]): Future[Unit] = {
+    profiles.headOption.map { profile =>
+      updateAllForProfile(profile).flatMap(_ => updateAllForProfiles(profiles.tail))
+    }.getOrElse {
+      Future.successful({})
+    }
+  }
+
   def updateAll: Future[Unit] = {
     hasRunAlreadyToday.flatMap { hasRun =>
       if (hasRun) {
@@ -167,13 +175,10 @@ class SlackMemberStatusServiceImpl @Inject() (
         for {
           _ <- cacheService.set(lastRunKey, OffsetDateTime.now)
           profiles <- dataService.slackBotProfiles.allProfiles
-          _ <- Future.sequence(profiles.map { ea =>
-            updateFor(ea)
-          })
+          _ <- updateAllForProfiles(profiles)
         } yield {}
       }
     }
-
   }
 
   def allFor(slackTeamId: String): Future[Seq[SlackMemberStatus]] = {
