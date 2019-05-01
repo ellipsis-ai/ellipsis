@@ -157,6 +157,52 @@ class SlackMemberStatusServiceSpec extends DBSpec with MockitoSugar {
       })
     }
 
+    "add a new status record when there's a change in deleted status for a user" in {
+      withEmptyDB(dataService, { () =>
+        val slackUserId = IDs.next
+        val slackTeamId = IDs.next
+        val botProfile = newSavedSlackBotProfileFor(slackUserId, slackTeamId)
+        val now = OffsetDateTime.now
+
+        val membershipData = Seq(
+          newMembershipDataFor(slackUserId, slackTeamId, now.minusDays(50)),
+          newMembershipDataFor(IDs.next, slackTeamId, now.minusDays(100))
+        )
+        val client = mock[SlackApiClient]
+        when(slackApiService.clientFor(botProfile)).thenReturn(client)
+        when(client.allUsers(any[Option[String]])).thenReturn(Future.successful(membershipData))
+        val key: String = dataService.slackMemberStatuses.lastRunKey
+        when(cacheService.set(anyString, any, any)(any)).thenReturn(Future.successful({}))
+        when(cacheService.get[OffsetDateTime](key)).thenReturn(Future.successful(None))
+        runNow(dataService.slackMemberStatuses.updateAll)
+        verify(client, times(1)).allUsers()
+        val statuses = runNow(dataService.slackMemberStatuses.allFor(slackTeamId))
+        membershipData.foreach { data =>
+          statuses.exists(ea => ea.slackUserId == data.id && ea.firstObservedAt.toEpochSecond == data.updated) mustBe(true)
+        }
+
+        val updatedMembershipData = membershipData.zipWithIndex.map { case(ea, i) =>
+          if (i == 0) {
+            ea.copy(deleted = true, updated = now.minusDays(10).toEpochSecond)
+          } else {
+            ea
+          }
+        }
+        when(client.allUsers(any[Option[String]])).thenReturn(Future.successful(updatedMembershipData))
+
+        runNow(dataService.slackMemberStatuses.updateAll)
+        verify(client, times(2)).allUsers()
+        val statusesAfterSecondUpdate = runNow(dataService.slackMemberStatuses.allFor(slackTeamId))
+        statusesAfterSecondUpdate.size mustBe 3
+        statusesAfterSecondUpdate.map { ea =>
+          (ea.slackTeamId, ea.slackUserId, ea.firstObservedAt, ea.isDeleted)
+        } must contain allElementsOf Seq(
+          (slackTeamId, slackUserId, now.minusDays(10).withNano(0), true),
+          (slackTeamId, slackUserId, now.minusDays(50).withNano(0), false)
+        )
+      })
+    }
+
   }
 
 }
