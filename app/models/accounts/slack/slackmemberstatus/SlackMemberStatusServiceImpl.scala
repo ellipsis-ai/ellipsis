@@ -141,14 +141,27 @@ class SlackMemberStatusServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  private def logIgnorableSlackApiErrorMessageFor(errorCode: String, botProfile: SlackBotProfile): Unit = {
+    Logger.info(s"${errorCode} trying to update slack memberships for team ${botProfile.teamId}")
+  }
+
+  private def logErrorMessageFor(t: Throwable, botProfile: SlackBotProfile): Unit = {
+    Logger.error(s"Error trying to update slack memberships for team ${botProfile.teamId}:\n${t.getMessage}")
+  }
+
   private def updateAllForProfile(botProfile: SlackBotProfile): Future[Unit] = {
     val client = slackApiService.clientFor(botProfile)
-    for {
+    (for {
       members <- client.allUsers()
       _ <- Future.sequence(members.map { ea =>
         updateFor(ea)
       })
-    } yield {}
+    } yield {}).recover {
+      case SlackApiError(code) if code == "invalid_auth" => logIgnorableSlackApiErrorMessageFor(code, botProfile)
+      case SlackApiError(code) if code == "account_inactive" => logIgnorableSlackApiErrorMessageFor(code, botProfile)
+      case SlackApiError(code) if code == "token_revoked" => logIgnorableSlackApiErrorMessageFor(code, botProfile)
+      case t: Throwable => logErrorMessageFor(t, botProfile)
+    }
   }
 
   def hasRunAlreadyToday: Future[Boolean] = {
