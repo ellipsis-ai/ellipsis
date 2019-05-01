@@ -18,6 +18,7 @@ import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
 import models.accounts.registration.{RegistrationService, RegistrationServiceImpl}
 import models.accounts.simpletokenapi.{SimpleTokenApiService, SimpleTokenApiServiceImpl}
 import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfileServiceImpl}
+import models.accounts.slack.slackmemberstatus.{SlackMemberStatusService, SlackMemberStatusServiceImpl}
 import models.accounts.user.{UserService, UserServiceImpl}
 import models.apitoken.{APITokenService, APITokenServiceImpl}
 import models.behaviors.behavior.{BehaviorService, BehaviorServiceImpl}
@@ -135,6 +136,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[BehaviorGroupDeploymentService].to[BehaviorGroupDeploymentServiceImpl]
     bind[ManagedBehaviorGroupService].to[ManagedBehaviorGroupServiceImpl]
     bind[BehaviorGroupVersionSHAService].to[BehaviorGroupVersionSHAServiceImpl]
+    bind[SlackMemberStatusService].to[SlackMemberStatusServiceImpl]
     bind[BehaviorTestResultService].to[BehaviorTestResultServiceImpl]
 
 

@@ -15,6 +15,7 @@ import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
 import models.accounts.simpletokenapi.SimpleTokenApiService
 import models.accounts.slack.botprofile.SlackBotProfileService
+import models.accounts.slack.slackmemberstatus.SlackMemberStatusService
 import models.accounts.user.UserService
 import models.apitoken.APITokenService
 import models.behaviors.BehaviorResponseService
@@ -124,6 +125,7 @@ trait DataService {
   val behaviorGroupDeployments: BehaviorGroupDeploymentService
   val managedBehaviorGroups: ManagedBehaviorGroupService
   val behaviorGroupVersionSHAs: BehaviorGroupVersionSHAService
+  val slackMemberStatuses: SlackMemberStatusService
   val behaviorTestResults: BehaviorTestResultService
   def behaviorResponses: BehaviorResponseService
 
