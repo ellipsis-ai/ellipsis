@@ -6,12 +6,13 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorParameter, FileType}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.library.LibraryVersion
+import play.api.Logger
 import services.AWSLambdaConstants._
 import utils.RequiredModulesInCode
 
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.reflect.io.Path
-import scala.sys.process.Process
+import scala.sys.process.{Process, ProcessLogger}
 
 case class AWSLambdaZipBuilder(
                                 groupVersion: BehaviorGroupVersion,
@@ -65,19 +66,20 @@ case class AWSLambdaZipBuilder(
 
     val requiredModulesForBehaviorVersions = RequiredModulesInCode.requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
     val requiredModules = (requiredModulesForBehaviorVersions ++ requiredModulesForFileParams(behaviorVersionsWithParams)).distinct
+    val logger = ProcessLogger((out) => Logger.info(out), (err) => Logger.error(err))
     for {
       _ <- if (requiredModules.isEmpty) {
         Future.successful({})
       } else {
         Future {
           blocking(
-            Process(Seq("bash", "-c", s"cd $dirName && npm init -f && npm install ${requiredModules.mkString(" ")}"), None, "HOME" -> "/tmp").!
+            Process(Seq("bash", "-c", s"cd $dirName && npm init -f && npm install ${requiredModules.mkString(" ")}"), None, "HOME" -> "/tmp").!(logger)
           )
         }
       }
       _ <- Future {
         blocking(
-          Process(Seq("bash","-c",s"cd $dirName && zip -q -r $zipFileName *")).!
+          Process(Seq("bash","-c",s"cd $dirName && zip -q -r $zipFileName *")).!(logger)
         )
       }
     } yield {}
