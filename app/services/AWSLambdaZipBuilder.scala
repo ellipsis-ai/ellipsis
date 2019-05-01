@@ -73,7 +73,7 @@ case class AWSLambdaZipBuilder(
       } else {
         Future {
           blocking(
-            Process(Seq("bash", "-c", s"cd $dirName && npm init -f && npm install ${requiredModules.mkString(" ")}"), None, "HOME" -> "/tmp").!(logger)
+            Process(Seq("bash", "-c", s"cd $dirName && npm --loglevel=error init -f && npm --loglevel=error install --no-package-lock --target_platform=linux --target_libc=glibc ${requiredModules.mkString(" ")}"), None, "HOME" -> "/tmp").!(logger)
           )
         }
       }
