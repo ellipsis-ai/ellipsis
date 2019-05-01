@@ -1,6 +1,6 @@
 FROM anapsix/alpine-java
 
-RUN apk add --update nodejs-current-npm zip curl git python2
+RUN apk add --update nodejs-current-npm zip curl git python2 alpine-sdk
 RUN npm install -g npm
 RUN npm install -g n
 
