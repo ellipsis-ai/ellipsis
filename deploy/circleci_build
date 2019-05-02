@@ -70,7 +70,7 @@ announce_failure() {
 
 announce_completed() {
   curl -f https://bot.ellipsis.ai/api/run_action \
-      --data-urlencode "trigger=deploy announce ${VERSION_LABEL} for ${TARGET_ENV}" \
+      --data-urlencode "trigger=...deploy announce ${VERSION_LABEL} for ${TARGET_ENV}" \
       --data-urlencode "responseContext=slack" \
       --data-urlencode "channel=dev" \
       --data-urlencode "token=${ELLIPSIS_DEPLOY_TOKEN}"
