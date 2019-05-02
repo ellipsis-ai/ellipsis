@@ -73,7 +73,7 @@ case class AWSLambdaZipBuilder(
       } else {
         Future {
           blocking(
-            Process(Seq("bash", "-c", s"cd $dirName && npm --loglevel=error init -f && npm --loglevel=error install --no-package-lock --target_platform=linux --target_libc=glibc ${requiredModules.mkString(" ")}"), None, "HOME" -> "/tmp").!(logger)
+            Process(Seq("bash", "-c", s"cd $dirName && npm --loglevel=error init -f && npm --loglevel=error install --no-package-lock --target_platform=linux --target_libc=glibc ${requiredModules.mkString(" ")} && mkdir lib && cp /usr/lib64/{libpng12.so.0,libjpeg.so.62,libpixman-1.so.0,libfreetype.so.6,libcairo.so.2,libpango-1.0.so.0,libpangocairo-1.0.so.0,libpangoft2-1.0.so.0} lib/"), None, "HOME" -> "/tmp").!(logger)
           )
         }
       }
