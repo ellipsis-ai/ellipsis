@@ -322,32 +322,6 @@ case class SlackMessageSender(
       ).map(_ => {})
     } else if (spec.url.isDefined) {
       postChatMessage(spec.url.get).map(_ => {})
-//      implicit val mat: Materializer = services.mat
-//      for {
-//        downloadResult <- ws.url(spec.url.get).withHttpHeaders((HeaderNames.AUTHORIZATION, s"Bearer ${client.profile.token}")).get
-//        file <- {
-//          val file = File.makeTemp().jfile
-//          val outputStream = java.nio.file.Files.newOutputStream(file.toPath)
-//
-//          // The sink that writes to the output stream
-//          val sink = Sink.foreach[ByteString] { bytes =>
-//            outputStream.write(bytes.toArray)
-//          }
-//          downloadResult.bodyAsSource.runWith(sink).andThen {
-//            case result =>
-//              // Close the output stream whether there was an error or not
-//              outputStream.close()
-//              // Get the result or rethrow the error
-//              result.get
-//          }.map(_ => file)
-//        }
-//        _ <- client.uploadFile(
-//          Some(file),
-//          filename = Some(Path(spec.url.get).name),
-//          filetype = Some(downloadResult.contentType),
-//          channels = Some(Seq(channel))
-//        )
-//      } yield {}
     } else {
       Future.successful({})
     }

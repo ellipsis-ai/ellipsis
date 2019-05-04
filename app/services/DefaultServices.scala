@@ -28,8 +28,7 @@ class DefaultServices @Inject() (
                                   msTeamsApiServiceProvider: Provider[MSTeamsApiService],
                                   msTeamsEventServiceProvider: Provider[MSTeamsEventService],
                                   eventHandlerProvider: Provider[EventHandler],
-                                  val actorSystem: ActorSystem,
-                                  val mat: Materializer
+                                  val actorSystem: ActorSystem
                           ) {
 
   def cacheService: CacheService = cacheServiceProvider.get
