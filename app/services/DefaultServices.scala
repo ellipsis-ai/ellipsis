@@ -2,6 +2,7 @@ package services
 
 import javax.inject._
 import akka.actor.ActorSystem
+import akka.stream.Materializer
 import com.google.inject.Provider
 import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler
@@ -27,7 +28,8 @@ class DefaultServices @Inject() (
                                   msTeamsApiServiceProvider: Provider[MSTeamsApiService],
                                   msTeamsEventServiceProvider: Provider[MSTeamsEventService],
                                   eventHandlerProvider: Provider[EventHandler],
-                                  val actorSystem: ActorSystem
+                                  val actorSystem: ActorSystem,
+                                  val mat: Materializer
                           ) {
 
   def cacheService: CacheService = cacheServiceProvider.get

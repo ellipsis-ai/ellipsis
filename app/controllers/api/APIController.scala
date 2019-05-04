@@ -1,7 +1,5 @@
 package controllers.api
 
-import java.time.OffsetDateTime
-
 import _root_.json.Formatting._
 import _root_.json._
 import akka.actor.ActorSystem
@@ -359,6 +357,20 @@ class APIController @Inject() (
     }
   }
 
+  def uploadFile = Action.async(parse.multipartFormData) { implicit request =>
+    request.body.dataParts.get("token").flatMap(_.headOption).map { token =>
+      val eventualResult = for {
+        context <- ApiMethodContextBuilder.createFor(token, services, responder)
+        result <- context.uploadFileResult(request)
+      } yield result
+
+      eventualResult.recover {
+        case e: InvalidTokenException => responder.invalidTokenRequest(Map("token" -> token))
+      }
+    }.getOrElse {
+      Future.successful(responder.invalidTokenRequest(Map("token" -> "<none>")))
+    }
+  }
   case class FindUsersResult(users: Seq[UserData])
 
   implicit val findUsersResultWrites = Json.writes[FindUsersResult]

@@ -12,7 +12,7 @@ case class APIResponder(controller: APIController) {
 
   import controller.request2Messages
 
-  def logAndRespondFor(status: controller.Status, maybeErrorData: Option[APIErrorData], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+  def logAndRespondFor(status: controller.Status, maybeErrorData: Option[APIErrorData], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[_]): Result = {
     val formErrors = maybeFormErrors.map { errors =>
       errors.map { error =>
         APIErrorData(error.format, Some(error.key).filter(_.nonEmpty))
@@ -37,7 +37,7 @@ case class APIResponder(controller: APIController) {
     result
   }
 
-  def badRequest(maybeApiErrorData: Option[APIErrorData], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[AnyContent]): Result = {
+  def badRequest(maybeApiErrorData: Option[APIErrorData], maybeFormErrors: Option[Seq[FormError]], details: JsValue = JsObject.empty)(implicit r: Request[_]): Result = {
     logAndRespondFor(controller.BadRequest, maybeApiErrorData, maybeFormErrors, details)
   }
 
@@ -45,7 +45,7 @@ case class APIResponder(controller: APIController) {
     logAndRespondFor(controller.NotFound, Some(apiErrorData), None, details)
   }
 
-  def invalidTokenRequest[T](details: T = None)(implicit r: Request[AnyContent], tjs: Writes[T]): Result = {
+  def invalidTokenRequest[T](details: T = None)(implicit r: Request[_], tjs: Writes[T]): Result = {
     badRequest(Some(APIErrorData("Invalid token", Some("token"))), None, Json.toJson(details))
   }
 

@@ -1,7 +1,8 @@
 package utils
 
 case class UploadFileSpec(
-                          content: Option[String],
-                          filetype: Option[String],
-                          filename: Option[String]
+                           url: Option[String],
+                           content: Option[String],
+                           filetype: Option[String],
+                           filename: Option[String]
                         )

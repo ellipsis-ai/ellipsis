@@ -64,7 +64,8 @@ case class SlackFile (
                        url_download: Option[String],
                        url_private: Option[String],
                        url_private_download: Option[String],
-                       initial_comment: Option[SlackComment]
+                       initial_comment: Option[SlackComment],
+                       permalink: Option[String]
                        //thumb_64: Option[String],
                        //thumb_80: Option[String],
                        //thumb_360: Option[String],

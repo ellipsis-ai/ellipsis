@@ -181,6 +181,8 @@ GET         /api/v1/files                             @controllers.api.APIContro
 #NOCSRF
 HEAD        /api/v1/files                             @controllers.api.APIController.fetchFile(token: String, fileId: String)
 #NOCSRF
+POST        /api/v1/upload_file                       @controllers.api.APIController.uploadFile
+#NOCSRF
 POST        /api/v1/add_message_listener              @controllers.api.APIController.addMessageListener
 #NOCSRF
 POST        /api/v1/delete_saved_answers              @controllers.api.APIController.deleteSavedAnswers

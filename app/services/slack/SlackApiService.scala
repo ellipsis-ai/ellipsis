@@ -4,6 +4,7 @@ import java.io.File
 
 import _root_.models.accounts.slack.botprofile.SlackBotProfile
 import akka.actor.ActorSystem
+import akka.stream.scaladsl.{FileIO, Source}
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
@@ -11,8 +12,9 @@ import models.behaviors.events.slack.SlackMessage
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
-import play.api.libs.ws.WSResponse
 import play.api.libs.ws.JsonBodyWritables._
+import play.api.libs.ws.WSResponse
+import play.api.mvc.MultipartFormData.{DataPart, FilePart}
 import services.DefaultServices
 import services.slack.apiModels._
 import utils.SlackConversation
@@ -261,7 +263,7 @@ case class SlackApiClient(
   }
 
   def uploadFile(
-                  file: File,
+                  maybeFile: Option[File] = None,
                   content: Option[String] = None,
                   filetype: Option[String] = None,
                   filename: Option[String] = None,
@@ -279,7 +281,19 @@ case class SlackApiClient(
       "channels" -> channels.map(_.mkString(",")),
       "thread_ts" -> maybeThreadTs
     )
-    postResponseFor("files.upload", params).map { res =>
+    val endpoint = "files.upload"
+    maybeFile.map { file =>
+      val filePart = FilePart("file", filename.getOrElse("file"), filetype, FileIO.fromPath(file.toPath))
+      val postParams = preparePostParams(params ++ defaultParams.toMap)
+      val dataParts = postParams.map { case(k, v) => DataPart(k, v) }.toList
+      val parts = filePart :: dataParts
+      val url = urlFor(endpoint)
+      ws.
+        url(url).
+        post(Source(parts))
+    }.getOrElse {
+      postResponseFor(endpoint, params)
+    }.map { res =>
       extract[SlackFile](res, "file")
     }
   }
