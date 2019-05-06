@@ -38,4 +38,7 @@ object AWSLambdaConstants {
   val FETCH_FUNCTION_FOR_FILE_PARAM: String = {
     loadStaticJs(s"$FETCH_FUNCTION_FOR_FILE_PARAM_NAME.js").replace("$CONTEXT_PARAM", CONTEXT_PARAM)
   }
+
+  val ADD_UPLOAD_FUNCTIONS: String = loadStaticJs("add_upload_functions.js").replace("$CONTEXT_PARAM", CONTEXT_PARAM)
+
 }

@@ -65,7 +65,7 @@ case class AWSLambdaZipBuilder(
     }
 
     val requiredModulesForBehaviorVersions = RequiredModulesInCode.requiredModulesIn(behaviorVersionsWithParams.map(_._1), libraries, includeLibraryRequires = true)
-    val requiredModules = (requiredModulesForBehaviorVersions ++ requiredModulesForFileParams(behaviorVersionsWithParams)).distinct
+    val requiredModules = (requiredModulesForBehaviorVersions ++ Seq("request", "form-data")).distinct
     val logger = ProcessLogger((out) => Logger.info(out), (err) => Logger.error(err))
     for {
       _ <- if (requiredModules.isEmpty) {
