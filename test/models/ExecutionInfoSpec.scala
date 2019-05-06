@@ -8,8 +8,9 @@ import utils.UploadFileSpec
 class ExecutionInfoSpec extends PlaySpec {
   "withUserFilesFrom" should {
     "return files specified in valid JSON" in {
+      val picUrl = "https://vignette.wikia.nocookie.net/2001/images/a/a5/EE46A295-E2F9-4619-ABF4-E5BE0D31C0E3.jpeg/revision/latest/scale-to-width-down/620?cb=20190114052106"
       val info = ExecutionInfo.empty.withUserFilesFrom(Json.parse(
-        """{
+        s"""{
           |  "files": [{
           |    "content": "A file",
           |    "filetype": "text",
@@ -18,13 +19,18 @@ class ExecutionInfoSpec extends PlaySpec {
           |    "content": "{}",
           |    "filetype": "json",
           |    "filename": "file.json"
+          |  }, {
+          |    "url": "${picUrl}",
+          |    "filetype": "jpg",
+          |    "filename": "hal.jpg"
           |  }]
           |}
         """.stripMargin
       ))
       info.userFiles mustEqual Seq(
-        UploadFileSpec(Some("A file"), Some("text"), Some("file.txt")),
-        UploadFileSpec(Some("{}"), Some("json"), Some("file.json"))
+        UploadFileSpec(None, Some("A file"), Some("text"), Some("file.txt")),
+        UploadFileSpec(None, Some("{}"), Some("json"), Some("file.json")),
+        UploadFileSpec(Some(picUrl), None, Some("jpg"), Some("hal.jpg"))
       )
       info.errors mustBe empty
     }
