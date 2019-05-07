@@ -8,24 +8,24 @@ function addUploadFunctionsTo($CONTEXT_PARAM) {
 
   return;
 
-  function upload(uploadUrl, stream, textContent, filetype, filename) {
+  function upload(options) {
     return new Promise((resolve, reject) => {
       const form = new FormData();
       form.append('token', $CONTEXT_PARAM.token);
-      if (filetype) {
-        form.append('filetype', filetype);
+      if (options.filetype) {
+        form.append('filetype', options.filetype);
       }
-      if (filename) {
-        form.append('filename', filename);
+      if (options.filename) {
+        form.append('filename', options.filename);
       }
-      if (stream) {
-        form.append('file', stream);
-      } else if (textContent) {
-        form.append('text', textContent);
+      if (options.stream) {
+        form.append('file', options.stream);
+      } else if (options.text) {
+        form.append('text', options.text);
       } else {
         throw new $CONTEXT_PARAM.Error("Either stream or text content must be provided");
       }
-      form.submit(uploadUrl, function(err, res) {
+      form.submit(options.uploadUrl, function(err, res) {
         res.resume();
         res.on('data', (buffer) => {
           resolve(buffer.toString());
@@ -34,17 +34,24 @@ function addUploadFunctionsTo($CONTEXT_PARAM) {
     });
   }
 
-  function uploadFromText(text, filetype, filename) {
-    const uploadUrl = `${$CONTEXT_PARAM.apiBaseUrl}/api/v1/upload_file_content`;
-    return upload(uploadUrl, null, text, filetype, filename);
+  function uploadFromText(text, options) {
+    const mergedOptions = Object.assign({}, options, {
+      uploadUrl: `${$CONTEXT_PARAM.apiBaseUrl}/api/v1/upload_file_content`,
+      text: text
+    });
+    return upload(mergedOptions);
   }
 
-  function uploadFromStream(stream, filetype, filename) {
-    return upload(`${$CONTEXT_PARAM.apiBaseUrl}/api/v1/upload_file`, stream, null, filetype, filename);
+  function uploadFromStream(stream, options) {
+    const mergedOptions = Object.assign({}, options, {
+      uploadUrl: `${$CONTEXT_PARAM.apiBaseUrl}/api/v1/upload_file`,
+      stream: stream
+    });
+    return upload(mergedOptions);
   }
 
-  function uploadFromUrl(url, filetype, filename) {
-    return uploadFromStream(request(url), filetype, filename);
+  function uploadFromUrl(url, options) {
+    return uploadFromStream(request(url), options);
   }
 
 };

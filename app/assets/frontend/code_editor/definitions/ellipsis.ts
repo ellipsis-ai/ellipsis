@@ -418,20 +418,25 @@ declare namespace ellipsis {
    */
   const apiBaseUrl: string
   
+  interface UploadOptions {
+    filetype?: string;
+    filename?: string;
+  }
+  
    /**
    * Upload a file from a url. Returns a Promise of another URL for the uploaded file.
    */
-  function uploadFromUrl(url: string, filetype?: string, filename?: string): Promise<string>
+  function uploadFromUrl(url: string, options?: UploadOptions): Promise<string>
   
    /**
    * Upload a file from a stream. Returns a Promise of a URL for the uploaded file.
    */
-  function uploadFromStream(stream: stream.Readable, filetype?: string, filename?: string): Promise<string>
+  function uploadFromStream(stream: stream.Readable, options?: UploadOptions): Promise<string>
   
    /**
    * Upload a file with the given text content. Returns a Promise of a URL for the uploaded file.
    */
-  function uploadFromText(text: string, filetype?: string, filename?: string): Promise<string>
+  function uploadFromText(text: string, options?: UploadOptions): Promise<string>
 
   /**
    * Run-time token that can be used to call the Ellipsis API

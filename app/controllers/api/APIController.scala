@@ -384,7 +384,7 @@ class APIController @Inject() (
       "token" -> nonEmptyText,
       "text" -> nonEmptyText,
       "filetype" -> optional(nonEmptyText),
-      "filenamt" -> optional(nonEmptyText)
+      "filename" -> optional(nonEmptyText)
     )(UploadFileContentInfo.apply)(UploadFileContentInfo.unapply)
   )
 
