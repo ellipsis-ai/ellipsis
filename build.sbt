@@ -30,6 +30,7 @@ fork in run := true
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
+resolvers += "Atlassian" at "https://maven.atlassian.com/content/repositories/atlassian-public/"
 
 libraryDependencies ++= Seq(
   evolutions,
