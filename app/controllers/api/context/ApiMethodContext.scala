@@ -249,13 +249,17 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
 
   def uploadFile(file: File, filetype: Option[String], filename: Option[String]): Future[Option[String]]
 
+  def uploadContent(content: String, filetype: Option[String], filename: Option[String]): Future[Option[String]]
+
   def uploadFileResult(request: Request[MultipartFormData[Files.TemporaryFile]]): Future[Result] = {
     request.body.file("file").map { file =>
 
       val filename = Paths.get(file.filename).getFileName
       val contentType = file.contentType
 
-      uploadFile(file.ref, contentType, Some(filename.toString)).map(url => Ok(Json.toJson(Map("url" -> url))))
+      uploadFile(file.ref, contentType, Some(filename.toString)).map { maybeUrl =>
+        maybeUrl.map(Ok(_)).getOrElse(NotFound(""))
+      }
     }.getOrElse {
       Future.successful(BadRequest("Missing file"))
     }

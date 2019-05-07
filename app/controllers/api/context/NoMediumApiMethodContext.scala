@@ -37,6 +37,7 @@ case class NoMediumApiMethodContext(
   def getFileFetchToken: Future[String] = Future.successful("no medium, no token")
 
   def uploadFile(file: File, filetype: Option[String], filename: Option[String]): Future[Option[String]] = Future.successful(None)
+  def uploadContent(content: String, filetype: Option[String], filename: Option[String]): Future[Option[String]] = Future.successful(None)
 
   def maybeMessageEventFor(
                             message: String,

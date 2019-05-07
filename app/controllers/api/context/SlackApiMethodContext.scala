@@ -170,6 +170,13 @@ case class SlackApiMethodContext(
     }
   }
 
+  def uploadContent(content: String, filetype: Option[String], filename: Option[String]): Future[Option[String]] = {
+    val client = slackApiService.clientFor(botProfile)
+    client.uploadFile(None, content = Some(content), filetype, filename).map { file =>
+      file.permalink
+    }
+  }
+
   override def scheduleByName(
                                actionName: String,
                                info: ScheduleActionInfo

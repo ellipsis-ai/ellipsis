@@ -8,37 +8,43 @@ function addUploadFunctionsTo($CONTEXT_PARAM) {
 
   return;
 
-  function upload(stream, textContent) {
-    const uploadUrl = `${$CONTEXT_PARAM.apiBaseUrl}/api/v1/upload_file`;
+  function upload(uploadUrl, stream, textContent, filetype, filename) {
     return new Promise((resolve, reject) => {
       const form = new FormData();
       form.append('token', $CONTEXT_PARAM.token);
+      if (filetype) {
+        form.append('filetype', filetype);
+      }
+      if (filename) {
+        form.append('filename', filename);
+      }
       if (stream) {
         form.append('file', stream);
       } else if (textContent) {
-        form.append('text', stream);
+        form.append('text', textContent);
       } else {
         throw new $CONTEXT_PARAM.Error("Either stream or text content must be provided");
       }
       form.submit(uploadUrl, function(err, res) {
         res.resume();
         res.on('data', (buffer) => {
-          resolve(JSON.parse(buffer.toString()));
+          resolve(buffer.toString());
         });
       });
     });
   }
 
-  function uploadFromText(text) {
-    return upload(null, text);
+  function uploadFromText(text, filetype, filename) {
+    const uploadUrl = `${$CONTEXT_PARAM.apiBaseUrl}/api/v1/upload_file_content`;
+    return upload(uploadUrl, null, text, filetype, filename);
   }
 
-  function uploadFromStream(stream) {
-    return upload(stream, null);
+  function uploadFromStream(stream, filetype, filename) {
+    return upload(`${$CONTEXT_PARAM.apiBaseUrl}/api/v1/upload_file`, stream, null, filetype, filename);
   }
 
-  function uploadFromUrl(url) {
-    return uploadFromStream(request(url));
+  function uploadFromUrl(url, filetype, filename) {
+    return uploadFromStream(request(url), filetype, filename);
   }
 
 };

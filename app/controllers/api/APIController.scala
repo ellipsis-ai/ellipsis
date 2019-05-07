@@ -371,6 +371,41 @@ class APIController @Inject() (
       Future.successful(responder.invalidTokenRequest(Map("token" -> "<none>")))
     }
   }
+
+  case class UploadFileContentInfo(
+                                    token: String,
+                                    text: String,
+                                    filetype: Option[String],
+                                    filename: Option[String]
+                                  ) extends ApiMethodInfo
+
+  private val uploadFileContentForm = Form(
+    mapping(
+      "token" -> nonEmptyText,
+      "text" -> nonEmptyText,
+      "filetype" -> optional(nonEmptyText),
+      "filenamt" -> optional(nonEmptyText)
+    )(UploadFileContentInfo.apply)(UploadFileContentInfo.unapply)
+  )
+
+  def uploadFileContent = Action.async { implicit request =>
+    uploadFileContentForm.bindFromRequest.fold(
+      formWithErrors => Future.successful(responder.resultForFormErrors(formWithErrors)),
+      info => {
+        val eventualResult = for {
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
+          maybeUrl <- context.uploadContent(info.text, info.filetype, info.filename)
+        } yield {
+          maybeUrl.map(Ok(_)).getOrElse(NotFound(""))
+        }
+
+        eventualResult.recover {
+          case e: InvalidTokenException => responder.invalidTokenRequest(Map("token" -> info.token))
+        }
+      }
+    )
+  }
+
   case class FindUsersResult(users: Seq[UserData])
 
   implicit val findUsersResultWrites = Json.writes[FindUsersResult]

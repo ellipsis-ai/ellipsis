@@ -126,6 +126,7 @@ case class MSTeamsApiMethodContext(
   }
 
   def uploadFile(file: File, filetype: Option[String], filename: Option[String]): Future[Option[String]] = ???
+  def uploadContent(content: String, filetype: Option[String], filename: Option[String]): Future[Option[String]] = ???
 
   def printEventCreationError(): Unit = {
     Logger.error(
