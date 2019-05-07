@@ -1,5 +1,8 @@
 package controllers.api.context
 
+import java.io.File
+import java.nio.file.Paths
+
 import akka.actor.ActorSystem
 import controllers.api.APIResponder
 import controllers.api.json.Formatting._
@@ -15,6 +18,7 @@ import models.team.Team
 import play.api.Logger
 import play.api.http.{HttpEntity, MimeTypes}
 import play.api.i18n.I18nSupport
+import play.api.libs.Files
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc._
@@ -241,6 +245,24 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
       }.getOrElse(Future.successful(NotFound(s"Unable to find a file with ID $fileId")))
     }
 
+  }
+
+  def uploadFile(file: File, filetype: Option[String], filename: Option[String]): Future[Option[String]]
+
+  def uploadContent(content: String, filetype: Option[String], filename: Option[String]): Future[Option[String]]
+
+  def uploadFileResult(request: Request[MultipartFormData[Files.TemporaryFile]]): Future[Result] = {
+    request.body.file("file").map { file =>
+
+      val filename = request.body.dataParts.get("filename").flatMap(_.headOption).getOrElse(Paths.get(file.filename).getFileName.toString)
+      val maybeFileType = request.body.dataParts.get("filetype").flatMap(_.headOption).orElse(file.contentType)
+
+      uploadFile(file.ref, maybeFileType, Some(filename)).map { maybeUrl =>
+        maybeUrl.map(Ok(_)).getOrElse(NotFound(""))
+      }
+    }.getOrElse {
+      Future.successful(BadRequest("Missing file"))
+    }
   }
 
 }

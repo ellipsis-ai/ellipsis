@@ -1,5 +1,7 @@
 package controllers.api.context
 
+import java.io.File
+
 import akka.actor.ActorSystem
 import controllers.api.APIResponder
 import controllers.api.exceptions.InvalidTokenException
@@ -122,6 +124,9 @@ case class MSTeamsApiMethodContext(
     val client = services.msTeamsApiService.profileClientFor(botProfile)
     client.fetchBotFrameworkToken
   }
+
+  def uploadFile(file: File, filetype: Option[String], filename: Option[String]): Future[Option[String]] = ???
+  def uploadContent(content: String, filetype: Option[String], filename: Option[String]): Future[Option[String]] = ???
 
   def printEventCreationError(): Unit = {
     Logger.error(

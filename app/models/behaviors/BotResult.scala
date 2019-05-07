@@ -110,6 +110,7 @@ trait ExecutionInfoError {
 
   def devLog: UploadFileSpec = {
     UploadFileSpec(
+      None,
       Some(ExecutionInfo.errorFor(jsonLookup, jsError, paramName)),
       Some("text"),
       Some(s"Error log for $paramName")
@@ -319,7 +320,7 @@ trait BotResultWithLogResult extends BotResult {
 
   val maybeAuthorLogFile: Option[UploadFileSpec] = {
     maybeAuthorLog.map { log =>
-      UploadFileSpec(Some(log), Some("text"), Some("Developer log"))
+      UploadFileSpec(None, Some(log), Some("text"), Some("Developer log"))
     }
   }
 
@@ -538,7 +539,7 @@ case class ExecutionErrorResult(
   }
   override def maybeLogFile: Option[UploadFileSpec] = {
     maybeLog.map { log =>
-      UploadFileSpec(Some(log), Some("text"), Some("Developer log"))
+      UploadFileSpec(None, Some(log), Some("text"), Some("Developer log"))
     }
   }
 

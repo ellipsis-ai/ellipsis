@@ -1,5 +1,7 @@
 package controllers.api.context
 
+import java.io.File
+
 import akka.actor.ActorSystem
 import controllers.api.APIResponder
 import controllers.api.exceptions.InvalidTokenException
@@ -17,12 +19,10 @@ import models.behaviors.invocationtoken.InvocationToken
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
 import play.api.Logger
-import play.api.http.HttpEntity
 import play.api.libs.json.Json
-import play.api.libs.ws.WSResponse
 import play.api.mvc.{AnyContent, Request, Result}
 import services.DefaultServices
-import utils.{SlackMessageSenderChannelException, SlackTimestamp}
+import utils.SlackMessageSenderChannelException
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,6 +39,8 @@ case class SlackApiMethodContext(
                                   implicit val ec: ExecutionContext,
                                   implicit val actorSystem: ActorSystem
                                 ) extends ApiMethodContext {
+
+  val slackApiService = services.slackApiService
 
   val mediumText: String = "Slack"
 
@@ -160,6 +162,20 @@ case class SlackApiMethodContext(
   }
 
   def getFileFetchToken: Future[String] = Future.successful(botProfile.token)
+
+  def uploadFile(file: File, filetype: Option[String], filename: Option[String]): Future[Option[String]] = {
+    val client = slackApiService.clientFor(botProfile)
+    client.uploadFile(Some(file), content = None, filetype, filename).map { file =>
+      file.permalink
+    }
+  }
+
+  def uploadContent(content: String, filetype: Option[String], filename: Option[String]): Future[Option[String]] = {
+    val client = slackApiService.clientFor(botProfile)
+    client.uploadFile(None, content = Some(content), filetype, filename).map { file =>
+      file.permalink
+    }
+  }
 
   override def scheduleByName(
                                actionName: String,

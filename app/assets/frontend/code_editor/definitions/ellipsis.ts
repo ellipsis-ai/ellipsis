@@ -412,6 +412,31 @@ declare namespace ellipsis {
    * \`throw new ellipsis.Error("Couldn't reach server", { userMessage: "The server is not responding." })\`
    */
   const Error: EllipsisErrorConstructor
+  
+   /**
+   * Base URL for Ellipsis API calls.
+   */
+  const apiBaseUrl: string
+  
+  interface UploadOptions {
+    filetype?: string;
+    filename?: string;
+  }
+  
+   /**
+   * Upload a file from a url. Returns a Promise of another URL for the uploaded file.
+   */
+  function uploadFromUrl(url: string, options?: UploadOptions): Promise<string>
+  
+   /**
+   * Upload a file from a stream. Returns a Promise of a URL for the uploaded file.
+   */
+  function uploadFromStream(stream: stream.Readable, options?: UploadOptions): Promise<string>
+  
+   /**
+   * Upload a file with the given text content. Returns a Promise of a URL for the uploaded file.
+   */
+  function uploadFromText(text: string, options?: UploadOptions): Promise<string>
 
   /**
    * Run-time token that can be used to call the Ellipsis API

@@ -100,12 +100,14 @@ case class AWSLambdaIndexCodeBuilder(
        |  $ERROR_CLASS
        |  $ERROR_CALLBACK_FUNCTION
        |  $ELLIPSIS_REQUIRE_FUNCTION
+       |  $ADD_UPLOAD_FUNCTIONS
        |
        |  $CONTEXT_PARAM.$NO_RESPONSE_KEY = ellipsisNoResponseCallback;
        |  $CONTEXT_PARAM.success = ellipsisSuccessCallback;
        |  $CONTEXT_PARAM.Error = EllipsisError;
        |  $CONTEXT_PARAM.error = ellipsisErrorCallback;
        |  $CONTEXT_PARAM.require = ellipsisRequire;
+       |  addUploadFunctionsTo($CONTEXT_PARAM);
        |  process.removeAllListeners('unhandledRejection');
        |  process.on('unhandledRejection', $CONTEXT_PARAM.error);
        |  process.removeAllListeners('uncaughtException');

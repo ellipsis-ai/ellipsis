@@ -1,7 +1,5 @@
 package controllers.api
 
-import java.time.OffsetDateTime
-
 import _root_.json.Formatting._
 import _root_.json._
 import akka.actor.ActorSystem
@@ -357,6 +355,57 @@ class APIController @Inject() (
     eventualResult.recover {
       case e: InvalidTokenException => responder.invalidTokenRequest(Map("token" -> token, "fileId" -> fileId))
     }
+  }
+
+  def uploadFile = Action.async(parse.multipartFormData) { implicit request =>
+    request.body.dataParts.get("token").flatMap(_.headOption).map { token =>
+      val eventualResult = for {
+        context <- ApiMethodContextBuilder.createFor(token, services, responder)
+        result <- context.uploadFileResult(request)
+      } yield result
+
+      eventualResult.recover {
+        case e: InvalidTokenException => responder.invalidTokenRequest(Map("token" -> token))
+        case e: SlackApiError => BadGateway(s"We received an error from the Slack API: ${e.getMessage}")
+      }
+    }.getOrElse {
+      Future.successful(responder.invalidTokenRequest(Map("token" -> "<none>")))
+    }
+  }
+
+  case class UploadFileContentInfo(
+                                    token: String,
+                                    text: String,
+                                    filetype: Option[String],
+                                    filename: Option[String]
+                                  ) extends ApiMethodInfo
+
+  private val uploadFileContentForm = Form(
+    mapping(
+      "token" -> nonEmptyText,
+      "text" -> nonEmptyText,
+      "filetype" -> optional(nonEmptyText),
+      "filename" -> optional(nonEmptyText)
+    )(UploadFileContentInfo.apply)(UploadFileContentInfo.unapply)
+  )
+
+  def uploadFileContent = Action.async { implicit request =>
+    uploadFileContentForm.bindFromRequest.fold(
+      formWithErrors => Future.successful(responder.resultForFormErrors(formWithErrors)),
+      info => {
+        val eventualResult = for {
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
+          maybeUrl <- context.uploadContent(info.text, info.filetype, info.filename)
+        } yield {
+          maybeUrl.map(Ok(_)).getOrElse(NotFound(""))
+        }
+
+        eventualResult.recover {
+          case e: InvalidTokenException => responder.invalidTokenRequest(Map("token" -> info.token))
+          case e: SlackApiError => BadGateway(s"We received an error from the Slack API: ${e.getMessage}")
+        }
+      }
+    )
   }
 
   case class FindUsersResult(users: Seq[UserData])

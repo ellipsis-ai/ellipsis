@@ -2,6 +2,7 @@ package services
 
 import javax.inject._
 import akka.actor.ActorSystem
+import akka.stream.Materializer
 import com.google.inject.Provider
 import models.behaviors.BotResultService
 import models.behaviors.events.EventHandler

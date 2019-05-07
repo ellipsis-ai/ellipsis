@@ -1,5 +1,7 @@
 package controllers.api.context
 
+import java.io.File
+
 import akka.actor.ActorSystem
 import controllers.api.APIResponder
 import controllers.api.exceptions.InvalidTokenException
@@ -33,6 +35,9 @@ case class NoMediumApiMethodContext(
   val requiresChannel: Boolean = false
 
   def getFileFetchToken: Future[String] = Future.successful("no medium, no token")
+
+  def uploadFile(file: File, filetype: Option[String], filename: Option[String]): Future[Option[String]] = Future.successful(None)
+  def uploadContent(content: String, filetype: Option[String], filename: Option[String]): Future[Option[String]] = Future.successful(None)
 
   def maybeMessageEventFor(
                             message: String,

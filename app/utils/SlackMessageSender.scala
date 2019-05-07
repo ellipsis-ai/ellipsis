@@ -20,7 +20,6 @@ import services.slack.{SlackApiClient, SlackApiError}
 import services.slack.apiModels._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.io.File
 
 trait SlackMessageSenderChannelException extends Exception {
   val channel: String
@@ -98,6 +97,7 @@ case class SlackMessageSender(
                              ) {
 
   val slackEventService = services.slackEventService
+  val ws = services.ws
 
   def choicesAttachments(implicit ec: ExecutionContext): Future[Seq[SlackMessageAttachment]] = {
     if (choices.isEmpty) {
@@ -311,16 +311,20 @@ case class SlackMessageSender(
   }
 
   def sendFile(spec: UploadFileSpec)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
-    val file = File.makeTemp().jfile
     val channel = channelToUse()
-    client.uploadFile(
-      file,
-      content = spec.content,
-      filetype = spec.filetype,
-      filename = spec.filename,
-      channels = Some(Seq(channel)),
-      maybeThreadTs = maybeThreadTsToUse(channel)
-    ).map(_ => {})
+    if (spec.content.isDefined) {
+      client.uploadFile(
+        content = spec.content,
+        filetype = spec.filetype,
+        filename = spec.filename,
+        channels = Some(Seq(channel)),
+        maybeThreadTs = maybeThreadTsToUse(channel)
+      ).map(_ => {})
+    } else if (spec.url.isDefined) {
+      postChatMessage(spec.url.get).map(_ => {})
+    } else {
+      Future.successful({})
+    }
   }
 
   def sendFiles(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
