@@ -30,7 +30,6 @@ fork in run := true
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
-resolvers += "Atlassian" at "https://maven.atlassian.com/content/repositories/atlassian-public/"
 
 libraryDependencies ++= Seq(
   evolutions,
@@ -41,10 +40,10 @@ libraryDependencies ++= Seq(
   "com.github.tminglei" %% "slick-pg_play-json" % "0.15.3",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.1" % Test,
   "org.mockito" % "mockito-core" % "1.8.5" % Test,
-  "com.mohiva" %% "play-silhouette" % "5.0.0",
-  "com.mohiva" %% "play-silhouette-persistence" % "5.0.0",
-  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",
-  "com.mohiva" %% "play-silhouette-testkit" % "5.0.0" % Test,
+  "com.mohiva" %% "play-silhouette" % "5.0.3",
+  "com.mohiva" %% "play-silhouette-persistence" % "5.0.3",
+  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.3",
+  "com.mohiva" %% "play-silhouette-testkit" % "5.0.3" % Test,
   "com.typesafe.slick" %% "slick-hikaricp" % "3.2.1",
   "com.typesafe.play" %% "play-slick" % "3.0.1",
   "com.typesafe.play" %% "play-slick-evolutions" % "3.0.1",
