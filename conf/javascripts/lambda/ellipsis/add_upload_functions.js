@@ -26,10 +26,20 @@ function addUploadFunctionsTo($CONTEXT_PARAM) {
         throw new $CONTEXT_PARAM.Error("Either stream or text content must be provided");
       }
       form.submit(options.uploadUrl, function(err, res) {
-        res.resume();
-        res.on('data', (buffer) => {
-          resolve(buffer.toString());
-        });
+        if (res.statusCode !== 200) {
+          res.resume();
+          res.on('data', (buffer) => {
+            reject(`Unsuccessful response from the API: ${res.statusCode} ${res.statusMessage}: ${buffer.toString()}`);
+          });
+        } else {
+          res.resume();
+          res.on('data', (buffer) => {
+            resolve(buffer.toString());
+          });
+          res.on('error', (err) => {
+            reject(err);
+          });
+        }
       });
     });
   }

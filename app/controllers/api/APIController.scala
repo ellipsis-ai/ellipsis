@@ -366,6 +366,7 @@ class APIController @Inject() (
 
       eventualResult.recover {
         case e: InvalidTokenException => responder.invalidTokenRequest(Map("token" -> token))
+        case e: SlackApiError => BadGateway(s"We received an error from the Slack API: ${e.getMessage}")
       }
     }.getOrElse {
       Future.successful(responder.invalidTokenRequest(Map("token" -> "<none>")))
@@ -401,6 +402,7 @@ class APIController @Inject() (
 
         eventualResult.recover {
           case e: InvalidTokenException => responder.invalidTokenRequest(Map("token" -> info.token))
+          case e: SlackApiError => BadGateway(s"We received an error from the Slack API: ${e.getMessage}")
         }
       }
     )
