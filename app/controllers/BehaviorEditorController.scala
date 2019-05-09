@@ -153,15 +153,13 @@ self.MonacoEnvironment = {
 
   case class SaveBehaviorInfo(
                                dataJson: String,
-                               isReinstall: Option[Boolean],
-                               forceNode6: Option[Boolean]
+                               isReinstall: Option[Boolean]
                              )
 
   private val saveForm = Form(
     mapping(
       "dataJson" -> nonEmptyText,
-      "isReinstall" -> optional(boolean),
-      "forceNode6" -> optional(boolean)
+      "isReinstall" -> optional(boolean)
     )(SaveBehaviorInfo.apply)(SaveBehaviorInfo.unapply)
   )
 
@@ -172,7 +170,7 @@ self.MonacoEnvironment = {
         Future.successful(BadRequest(formWithErrors.errorsAsJson))
       },
       info => {
-        dataService.behaviorGroups.saveVersionFor(user, info.dataJson, info.isReinstall, info.forceNode6).map { maybeJson =>
+        dataService.behaviorGroups.saveVersionFor(user, info.dataJson, info.isReinstall).map { maybeJson =>
           maybeJson.map { json =>
             Ok(json)
           }.getOrElse(NotFound(""))
@@ -183,12 +181,11 @@ self.MonacoEnvironment = {
     )
   }
 
-  case class UpdateNodeModulesInfo(behaviorGroupId: String, forceNode6: Option[Boolean])
+  case class UpdateNodeModulesInfo(behaviorGroupId: String)
 
   private val updateNodeModulesForm = Form(
     mapping(
-      "behaviorGroupId" -> nonEmptyText,
-      "forceNode6" -> optional(boolean)
+      "behaviorGroupId" -> nonEmptyText
     )(UpdateNodeModulesInfo.apply)(UpdateNodeModulesInfo.unapply)
   )
 
@@ -206,7 +203,7 @@ self.MonacoEnvironment = {
             group <- maybeGroup
             groupData <- maybeGroupData
           } yield {
-            dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, groupData.copyForNewVersionOf(group), info.forceNode6.getOrElse(false)).map(Some(_))
+            dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, groupData.copyForNewVersionOf(group)).map(Some(_))
           }).getOrElse(Future.successful(None))
           maybeUpdatedGroupData <- maybeSavedGroupVersion.map { groupVersion =>
             BehaviorGroupData.buildFor(groupVersion, user, None, dataService, cacheService).map(Some(_))

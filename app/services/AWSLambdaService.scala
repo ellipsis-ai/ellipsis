@@ -57,8 +57,7 @@ trait AWSLambdaService extends AWSService {
                          groupVersion: BehaviorGroupVersion,
                          behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                          libraries: Seq[LibraryVersion],
-                         apiConfigInfo: ApiConfigInfo,
-                         forceNode6: Boolean
+                         apiConfigInfo: ApiConfigInfo
                        ): Future[Unit]
 
   def ensureNodeModuleVersionsFor(groupVersion: BehaviorGroupVersion): DBIO[Seq[NodeModuleVersion]]

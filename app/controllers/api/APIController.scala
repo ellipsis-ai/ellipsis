@@ -556,7 +556,7 @@ class APIController @Inject() (
         for {
           context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
           maybeResultJson <- context.maybeUser.map { user =>
-            dataService.behaviorGroups.saveVersionFor(user, info.dataJson, isReinstall = None, forceNode6 = None)
+            dataService.behaviorGroups.saveVersionFor(user, info.dataJson, isReinstall = None)
           }.getOrElse(Future.successful(None))
         } yield {
           maybeResultJson.map { resultJson =>

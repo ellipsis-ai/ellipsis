@@ -171,7 +171,7 @@ class BehaviorGroupServiceImpl @Inject() (
         dataService.behaviorGroups.delete(ea.group)
       })
       mergedGroup <- dataService.behaviorGroups.createFor(mergedData.exportId, team)
-      mergedGroupVersion <- dataService.behaviorGroupVersions.createForBehaviorGroupData(mergedGroup, user, mergedData.copyForNewVersionOf(mergedGroup), forceNode6 = false)
+      mergedGroupVersion <- dataService.behaviorGroupVersions.createForBehaviorGroupData(mergedGroup, user, mergedData.copyForNewVersionOf(mergedGroup))
     } yield mergedGroupVersion.group
   }
 
@@ -192,7 +192,7 @@ class BehaviorGroupServiceImpl @Inject() (
     dataService.behaviorGroupVersions.maybeCurrentFor(group)
   }
 
-  def saveVersionFor(user: User, jsonString: String, isReinstall: Option[Boolean], forceNode6: Option[Boolean]): Future[Option[JsValue]] = {
+  def saveVersionFor(user: User, jsonString: String, isReinstall: Option[Boolean]): Future[Option[JsValue]] = {
     val json = Json.parse(jsonString)
     json.validate[BehaviorGroupData] match {
       case JsSuccess(data, _) => {
@@ -219,7 +219,7 @@ class BehaviorGroupServiceImpl @Inject() (
             } else {
               dataForNewVersion
             }
-            dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, dataToUse, forceNode6.getOrElse(false)).map(Some(_))
+            dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, dataToUse).map(Some(_))
           }.getOrElse(Future.successful(None))
           maybeGroupData <- maybeGroup.map { group =>
             maybeDataFor(group.id, user)

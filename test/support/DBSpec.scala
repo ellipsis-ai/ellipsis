@@ -182,7 +182,7 @@ trait DBSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar {
 
   def newSavedGroupVersionFor(group: BehaviorGroup, user: User, maybeData: Option[BehaviorGroupData] = None): BehaviorGroupVersion = {
     val data = maybeData.getOrElse(defaultGroupVersionDataFor(group, user))
-    runNow(dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, data.copyForNewVersionOf(group), forceNode6 = false))
+    runNow(dataService.behaviorGroupVersions.createForBehaviorGroupData(group, user, data.copyForNewVersionOf(group)))
   }
 
   def newSavedDeploymentFor(groupVersion: BehaviorGroupVersion, user: User): BehaviorGroupDeployment = {
