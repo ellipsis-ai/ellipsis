@@ -436,19 +436,12 @@ class AWSLambdaServiceImpl @Inject() (
                          groupVersion: BehaviorGroupVersion,
                          behaviorVersionsWithParams: Seq[(BehaviorVersion, Seq[BehaviorParameter])],
                          libraries: Seq[LibraryVersion],
-                         apiConfigInfo: ApiConfigInfo,
-                         forceNode6: Boolean
+                         apiConfigInfo: ApiConfigInfo
                     ): Future[Unit] = {
 
     val isNoCode: Boolean = behaviorVersionsWithParams.forall { case(bv, _) => bv.functionBody.trim.isEmpty }
     val functionName = groupVersion.functionName
-    // TODO: the Node runtime switch code will be useless starting April 30, 2019 (Node 6 EOL on Lambda)
-    val NODE_6_CUTOFF = OffsetDateTime.of(2019, 4, 30, 0, 0, 0, 0, ZoneOffset.UTC)
-    val runtime = if (forceNode6 && OffsetDateTime.now.isBefore(NODE_6_CUTOFF)) {
-      com.amazonaws.services.lambda.model.Runtime.Nodejs610
-    } else {
-      com.amazonaws.services.lambda.model.Runtime.Nodejs810
-    }
+    val runtime = com.amazonaws.services.lambda.model.Runtime.Nodejs810
 
     deleteFunction(functionName).andThen {
       case Failure(t) => Future.successful({})

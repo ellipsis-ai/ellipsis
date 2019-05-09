@@ -130,8 +130,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
   def createForBehaviorGroupData(
                                   group: BehaviorGroup,
                                   user: User,
-                                  data: BehaviorGroupData,
-                                  forceNode6: Boolean
+                                  data: BehaviorGroupData
                                 ): Future[BehaviorGroupVersion] = {
     val action = (for {
       groupVersion <- createForAction(group, user, data.name, data.icon, data.description, data.gitSHA)
@@ -217,8 +216,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
         groupVersion,
         behaviorVersionsWithParams,
         libraries,
-        apiConfig,
-        forceNode6
+        apiConfig
       )
       groupVersion
     }) transactionally
@@ -243,8 +241,7 @@ class BehaviorGroupVersionServiceImpl @Inject() (
         groupVersion,
         behaviorVersionsWithParams,
         libraries,
-        apiConfig,
-        forceNode6 = false
+        apiConfig
       )
       _ <- dataService.run(lambdaService.ensureNodeModuleVersionsFor(groupVersion))
     } yield {}
