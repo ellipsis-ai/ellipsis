@@ -375,7 +375,7 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       const functionBody = (
 `// Write a Node.js (${NODE_JS_VERSION}) function that calls ellipsis.success() with a result.
 // You can require any NPM package.
-const name = ellipsis.userInfo.fullName || "friend";
+const name = ellipsis.event.user.fullName || "friend";
 ellipsis.success(\`Hello, \${name}.\`);
 `);
       const template = ResponseTemplate.fromString("{successResult}");
@@ -395,7 +395,7 @@ ellipsis.success(\`Hello, \${name}.\`);
       return (
 `// Write a Node.js (${NODE_JS_VERSION}) function that calls ellipsis.success() with an array of items.
 //
-// Each item should have a "label" and "id" property.
+// Each item requires a "label" and "id" property.
 //
 // Example:
 //
