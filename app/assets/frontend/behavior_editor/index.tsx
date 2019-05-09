@@ -2411,10 +2411,9 @@ class BehaviorEditor extends React.Component<Props, State> {
         return !originalGroup.behaviorVersions.some((oldBehaviorVersion) => oldBehaviorVersion.behaviorId === newBehaviorVersion.behaviorId)
       });
       const newBehaviorId = newBehavior ? newBehavior.behaviorId : null;
-      if (newBehavior && newBehaviorId) {
-        const updatedNewGroup = newBehavior.buildUpdatedGroupFor(newGroup, optionalDefaultProps || {});
-        this.updateGroupStateWith(updatedNewGroup, () => {
-          this.onSelect(updatedNewGroup.id, newBehaviorId);
+      if (newBehaviorId) {
+        this.updateGroupStateWith(newGroup, () => {
+          this.onSelect(newGroup.id, newBehaviorId);
         });
       } else {
         throw new Error("No new behavior data was found");
