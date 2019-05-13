@@ -278,7 +278,7 @@ self.MonacoEnvironment = {
   def versionInfoFor(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
-      maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(behaviorGroupId)
+      maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
       maybeLastDeployment <- maybeBehaviorGroup.map { group =>
         dataService.behaviorGroupDeployments.maybeMostRecentFor(group)
       }.getOrElse(Future.successful(None))
