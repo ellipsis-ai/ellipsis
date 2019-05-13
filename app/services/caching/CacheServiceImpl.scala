@@ -1,5 +1,6 @@
 package services.caching
 
+import java.io.InvalidClassException
 import java.nio.ByteBuffer
 
 import akka.Done
@@ -30,7 +31,7 @@ import services.slack.apiModels.{SlackUser, SlackUserProfile}
 import slick.dbio.DBIO
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionException, Future}
 import scala.reflect.ClassTag
 
 case class SlackMessageEventData(
@@ -85,6 +86,10 @@ class CacheServiceImpl @Inject() (
   val dataTypeBotResultsExpiry: Duration = 24.hours
 
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Future[Unit] = {
+    value match {
+      case JsValue => throw new Exception("Only JSON strings should be cached, not JsValue instances")
+      case _ => {}
+    }
     if (key.getBytes().length <= MAX_KEY_LENGTH) {
       // Even though the underlying cache set returns a scala future, the key validation exception
       // doesn't fail it; instead it throws an exception in the java library. Here we try to fix this.
@@ -103,12 +108,39 @@ class CacheServiceImpl @Inject() (
       // Even though the underlying cache get returns a scala future, the key validation exception
       // doesn't fail it; instead it throws an exception in the java library. Here we try to fix this.
       try {
-        cache.get[T](key)
+        cache.get[T](key).recover {
+          case i: InvalidClassException => {
+            Logger.warn(s"Invalid class in memcached for key ${key}: ${i}")
+            cache.remove(key)
+            None
+          }
+          case e: ExecutionException => {
+            Logger.error(s"Memcached execution exception for key ${key}: ${e}")
+            None
+          }
+        }
       } catch {
-        case e: Throwable => Future.failed(e)
+        case e: Throwable => {
+          Logger.warn(s"Memcache get failed for key ${key}: ${e}")
+          Future.failed(e)
+        }
       }
     } else {
       Future.successful(None)
+    }
+  }
+
+  def getJsonReadable[T](key: String)(implicit tjs: Reads[T]): Future[Option[T]] = {
+    get[String](key).map { maybeValue =>
+      maybeValue.flatMap { jsonString =>
+        fromJsonString[T](jsonString)
+      }
+    }.recover {
+      case c: ClassCastException => {
+        Logger.warn(s"Wanted a JSON string for cache key ${key} but got an exception in memcache: ${c}")
+        cache.remove(key)
+        None
+      }
     }
   }
 
@@ -137,37 +169,32 @@ class CacheServiceImpl @Inject() (
           ev.maybeResponseUrl,
           ev.beQuiet
         )
-        set(key, Json.toJson(eventData), expiration)
+        set(key, toJsonString(eventData), expiration)
       }
       case _ => Future.successful({})
     }
   }
 
   def getEvent(key: String): Future[Option[SlackMessageEvent]] = {
-    get[JsValue](key).map { maybeValue =>
-      maybeValue.flatMap { eventJson =>
-        eventJson.validate[SlackMessageEventData] match {
-          case JsSuccess(event, _) => {
-            Some(SlackMessageEvent(
-              SlackEventContext(
-                event.profile,
-                event.channel,
-                event.maybeThreadId,
-                event.user
-              ),
-              event.message,
-              event.maybeFile,
-              event.ts,
-              EventType.maybeFrom(event.maybeOriginalEventType),
-              maybeScheduled = None,
-              event.isUninterruptedConversation,
-              event.isEphemeral,
-              event.maybeResponseUrl,
-              event.beQuiet
-            ))
-          }
-          case JsError(_) => None
-        }
+    getJsonReadable[SlackMessageEventData](key).map { maybeEvent =>
+      maybeEvent.map { event =>
+        SlackMessageEvent(
+          SlackEventContext(
+            event.profile,
+            event.channel,
+            event.maybeThreadId,
+            event.user
+          ),
+          event.message,
+          event.maybeFile,
+          event.ts,
+          EventType.maybeFrom(event.maybeOriginalEventType),
+          maybeScheduled = None,
+          event.isUninterruptedConversation,
+          event.isEphemeral,
+          event.maybeResponseUrl,
+          event.beQuiet
+        )
       }
     }
   }
@@ -176,40 +203,26 @@ class CacheServiceImpl @Inject() (
 
   def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Future[Unit] = {
     val data = InvokeResultData(invokeResult.getStatusCode, invokeResult.getLogResult, invokeResult.getPayload.array())
-    set(key, Json.toJson(data), expiration)
+    set(key, toJsonString(data), expiration)
   }
 
   def getInvokeResult(key: String): Future[Option[InvokeResult]] = {
-    get[JsValue](key).map { maybeValue =>
-      maybeValue.flatMap { json =>
-        json.validate[InvokeResultData] match {
-          case JsSuccess(result, _) => {
-            Logger.info(s"Found cached InvokeResult for $key")
-            Some(
-              new InvokeResult().
-                withStatusCode(result.statusCode).
-                withLogResult(result.logResult).
-                withPayload(ByteBuffer.wrap(result.payload)))
-          }
-          case JsError(_) => None
-        }
+    getJsonReadable[InvokeResultData](key).map { maybeResult =>
+      maybeResult.map { result =>
+        new InvokeResult().
+          withStatusCode(result.statusCode).
+          withLogResult(result.logResult).
+          withPayload(ByteBuffer.wrap(result.payload))
       }
     }
   }
 
   def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Future[Unit] = {
-    set(key, Json.toJson(values), expiration)
+    set(key, toJsonString(values), expiration)
   }
 
   def getValidValues(key: String): Future[Option[Seq[ValidValue]]] = {
-    get[JsValue](key).map { maybeValue =>
-      maybeValue.flatMap { json =>
-        json.validate[Seq[ValidValue]] match {
-          case JsSuccess(values, jsPath) => Some(values)
-          case JsError(err) => None
-        }
-      }
-    }
+    getJsonReadable[Seq[ValidValue]](key)
   }
 
   def cacheSlackActionValue(value: String, expiration: Duration): Future[String] = {
@@ -257,21 +270,16 @@ class CacheServiceImpl @Inject() (
   }
 
   def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Future[Unit] = {
-    set(fallbackSlackUserCacheKey(slackUserId, slackTeamId), Json.toJson(slackUser))
+    set(fallbackSlackUserCacheKey(slackUserId, slackTeamId), toJsonString(slackUser))
   }
 
   def getFallbackSlackUser(slackUserId: String, slackTeamId: String): Future[Option[SlackUser]] = {
     val key = fallbackSlackUserCacheKey(slackUserId, slackTeamId)
-    get[JsValue](key).map { maybeValue =>
-      maybeValue.flatMap { json =>
-        json.validate[SlackUser] match {
-          case JsSuccess(slackUser, _) => Some(slackUser)
-          case JsError(_) => {
-            remove(key)
-            None
-          }
-        }
+    getJsonReadable[SlackUser](key).map { maybeSlackUser =>
+      if (maybeSlackUser.isEmpty) {
+        remove(key)
       }
+      maybeSlackUser
     }
   }
 
@@ -304,18 +312,11 @@ class CacheServiceImpl @Inject() (
   }
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Future[Unit] = {
-    set(groupVersionDataKey(data.id), Json.toJson(data))
+    set(groupVersionDataKey(data.id), toJsonString(data))
   }
 
   def getBehaviorGroupVersionDataAction(groupVersionId: String): DBIO[Option[ImmutableBehaviorGroupVersionData]] = {
-    DBIO.from(get[JsValue](groupVersionDataKey(groupVersionId))).map { maybeValue =>
-      maybeValue.flatMap { json =>
-        json.validate[ImmutableBehaviorGroupVersionData] match {
-          case JsSuccess(data, _) => Some(data)
-          case JsError(_) => None
-        }
-      }
-    }
+    DBIO.from(getJsonReadable[ImmutableBehaviorGroupVersionData](groupVersionDataKey(groupVersionId)))
   }
 
   private def botNameKey(teamId: String): String = {
@@ -360,19 +361,12 @@ class CacheServiceImpl @Inject() (
 
   def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Future[Unit] = {
     getMessageUserDataList(conversationId).flatMap { maybeExisting =>
-      set(cacheKeyForMessageUserDataList(conversationId), Json.toJson(maybeExisting.getOrElse(Seq()) ++ messageUserDataList), Duration.Inf)
+      set(cacheKeyForMessageUserDataList(conversationId), toJsonString(maybeExisting.getOrElse(Seq()) ++ messageUserDataList), Duration.Inf)
     }
   }
 
   def getMessageUserDataList(conversationId: String): Future[Option[Seq[UserData]]] = {
-    get[JsValue](cacheKeyForMessageUserDataList(conversationId)).map { maybeValue =>
-      maybeValue.flatMap { json =>
-        json.validate[Seq[UserData]] match {
-          case JsSuccess(data, _) => Some(data)
-          case JsError(_) => None
-        }
-      }
-    }
+    getJsonReadable[Seq[UserData]](cacheKeyForMessageUserDataList(conversationId))
   }
 
   private def cacheKeyForSlackUserIsOnBotTeam(slackUserId: String, profile: SlackBotProfile, maybeEnterpriseId: Option[String]): String = {
