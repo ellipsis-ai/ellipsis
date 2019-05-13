@@ -292,7 +292,7 @@ self.MonacoEnvironment = {
       }.getOrElse(Future.successful(None))
       versionsData <- {
         val versions = recentVersions ++ Seq(maybeOldDeployedVersion).flatten
-        // Todo: this can go back to being a regular Future.sequence (in parallel) if we
+        // TODO: We fetch version data in sequence rather than parallel to ensure we use the cache and don't hammer connections for the same data
         FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, None, dataService, cacheService))
       }
     } yield {
