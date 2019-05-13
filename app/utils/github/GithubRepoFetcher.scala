@@ -9,7 +9,7 @@ trait GithubRepoFetcher[T] extends GithubFetcher[T] {
   val team: Team
   val maybeBranch: Option[String]
 
-  val cacheKey: String = s"github_${owner}_${repoName}_${branch}"
+  val cacheKey: String = s"github_${owner}_${repoName}_${branch}-v2"
 
   val branch: String = maybeBranch.getOrElse("master")
 
