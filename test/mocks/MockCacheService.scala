@@ -12,6 +12,7 @@ import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.Event
 import models.behaviors.events.slack.SlackMessageEvent
 import org.scalatest.mockito.MockitoSugar
+import play.api.libs.json.Reads
 import sangria.schema.Schema
 import services.caching._
 import services.ms_teams.ChannelWithTeam
@@ -28,6 +29,8 @@ class MockCacheService extends CacheService with MockitoSugar {
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Future[Unit] = Future.successful({})
 
   def get[T : ClassTag](key: String): Future[Option[T]] = Future.successful(None)
+
+  def getJsonReadable[T](key: String)(implicit tjs: Reads[T]): Future[Option[T]] = Future.successful(None)
 
   def hasKey(key: String): Future[Boolean] = Future.successful(false)
 
