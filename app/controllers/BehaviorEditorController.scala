@@ -278,12 +278,23 @@ self.MonacoEnvironment = {
   def versionInfoFor(behaviorGroupId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
-      maybeBehaviorGroup <- dataService.behaviorGroups.findWithoutAccessCheck(behaviorGroupId)
-      versions <- maybeBehaviorGroup.map { group =>
+      maybeBehaviorGroup <- dataService.behaviorGroups.find(behaviorGroupId, user)
+      maybeLastDeployment <- maybeBehaviorGroup.map { group =>
+        dataService.behaviorGroupDeployments.maybeMostRecentFor(group)
+      }.getOrElse(Future.successful(None))
+      recentVersions <- maybeBehaviorGroup.map { group =>
        dataService.behaviorGroupVersions.batchFor(group)
       }.getOrElse(Future.successful(Seq()))
-      // Todo: this can go back to being a regular Future.sequence (in parallel) if we
-      versionsData <- FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, None, dataService, cacheService))
+      maybeOldDeployedVersion <- maybeLastDeployment.filterNot { lastDeployment =>
+        recentVersions.exists(version => version.id == lastDeployment.groupVersionId)
+      }.map { lastDeployment =>
+        dataService.behaviorGroupVersions.findWithoutAccessCheck(lastDeployment.groupVersionId)
+      }.getOrElse(Future.successful(None))
+      versionsData <- {
+        val versions = recentVersions ++ Seq(maybeOldDeployedVersion).flatten
+        // TODO: We fetch version data in sequence rather than parallel to ensure we use the cache and don't hammer connections for the same data
+        FutureSequencer.sequence(versions, (ea: BehaviorGroupVersion) => BehaviorGroupData.buildFor(ea, user, None, dataService, cacheService))
+      }
     } yield {
       Ok(Json.toJson(versionsData))
     }

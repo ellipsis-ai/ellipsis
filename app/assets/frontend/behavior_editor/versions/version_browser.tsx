@@ -258,13 +258,15 @@ class VersionBrowser extends React.Component<Props, State> {
         }]
       });
     }
+    const mostRecentDeployedVersion = versions.find((version) => Boolean(version.deployment));
     versions.forEach((version, versionIndex) => {
       const author = version.author;
       const day = version.createdAt && Formatter.formatTimestampDate(version.createdAt);
       const prevVersion = versions[versionIndex - 1];
       const prevAuthor = prevVersion && prevVersion.author;
       const prevDay = prevVersion && prevVersion.createdAt && Formatter.formatTimestampDate(prevVersion.createdAt);
-      const versionLabel = version.createdAt ? Formatter.formatTimestampShort(version.createdAt) : "Unknown save date";
+      const versionLabelTimestamp = version.createdAt ? Formatter.formatTimestampShort(version.createdAt) : "Unknown save date";
+      const versionLabel = version === mostRecentDeployedVersion ? `${versionLabelTimestamp} — DEPLOYED` : versionLabelTimestamp;
       const groupedVersion = {
         label: versionLabel,
         key: `version${versionIndex}`
