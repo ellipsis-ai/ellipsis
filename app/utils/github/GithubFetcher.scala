@@ -55,12 +55,12 @@ trait GithubFetcher[T] {
 
   def get: Future[JsValue] = {
     if (shouldTryCache) {
-      cacheService.get[JsValue](cacheKey).flatMap { maybeValue =>
+      cacheService.getJsonReadable[JsValue](cacheKey).flatMap { maybeValue =>
         maybeValue.map(v => Future.successful(v)).getOrElse {
           try {
             fetch.flatMap { fetched =>
               if (isCacheable(fetched)) {
-                cacheService.set(cacheKey, fetched, cacheTimeout).map(_ => fetched)
+                cacheService.set(cacheKey, cacheService.toJsonString(fetched), cacheTimeout).map(_ => fetched)
               } else {
                 Future.successful(fetched)
               }

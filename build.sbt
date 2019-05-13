@@ -60,7 +60,7 @@ libraryDependencies ++= Seq(
   "com.rockymadden.stringmetric" %% "stringmetric-core" % "0.27.4",
   "org.sangria-graphql" %% "sangria" % "1.2.1",
   "org.sangria-graphql" %% "sangria-play-json" % "1.0.3",
-  "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.0",
+  "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.2",
   "net.logstash.logback" % "logstash-logback-encoder" % "4.11",
   "io.sentry" % "sentry-logback" % "1.7.17",
   "com.chargebee" % "chargebee-java" % "2.3.8",

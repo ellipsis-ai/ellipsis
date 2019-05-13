@@ -10,6 +10,7 @@ import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.Event
 import models.behaviors.events.slack.SlackMessageEvent
+import play.api.libs.json.{JsError, JsSuccess, Json, Reads, Writes}
 import sangria.schema.Schema
 import services.ms_teams.ChannelWithTeam
 import services.ms_teams.apiModels.{Application, MSAADUser}
@@ -22,9 +23,22 @@ import scala.reflect.ClassTag
 
 trait CacheService {
 
+  def toJsonString[T](o: T)(implicit tjs: Writes[T]): String = {
+    Json.stringify(Json.toJson(o))
+  }
+
+  def fromJsonString[T](s: String)(implicit tjs: Reads[T]): Option[T] = {
+    Json.parse(s).validate[T] match {
+      case JsSuccess(value, _) => Some(value)
+      case JsError(_) => None
+    }
+  }
+
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Future[Unit]
 
   def get[T : ClassTag](key: String): Future[Option[T]]
+
+  def getJsonReadable[T](key: String)(implicit tjs: Reads[T]): Future[Option[T]]
 
   def hasKey(key: String): Future[Boolean]
 
