@@ -544,8 +544,6 @@ class SlackController @Inject() (
       value.map { v =>
         cacheService.getSlackActionValue(v).map { maybeV =>
           maybeV.orElse(value)
-        }.recover {
-          case e: IllegalArgumentException => value
         }
       }.getOrElse(Future.successful(value))
     }
