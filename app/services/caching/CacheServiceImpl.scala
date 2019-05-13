@@ -153,7 +153,11 @@ class CacheServiceImpl @Inject() (
     cache.remove(key)
   }
 
-  def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Future[Unit] = {
+  private def eventKeyFor(eventKey: String): String = {
+    s"${eventKey}-v2"
+  }
+
+  def cacheEvent(eventKey: String, event: Event, expiration: Duration = Duration.Inf): Future[Unit] = {
     event match {
       case ev: SlackMessageEvent => {
         val eventData = SlackMessageEventData(
@@ -170,14 +174,14 @@ class CacheServiceImpl @Inject() (
           ev.maybeResponseUrl,
           ev.beQuiet
         )
-        set(key, toJsonString(eventData), expiration)
+        set(eventKeyFor(eventKey), toJsonString(eventData), expiration)
       }
       case _ => Future.successful({})
     }
   }
 
-  def getEvent(key: String): Future[Option[SlackMessageEvent]] = {
-    getJsonReadable[SlackMessageEventData](key).map { maybeEvent =>
+  def getEvent(eventKey: String): Future[Option[SlackMessageEvent]] = {
+    getJsonReadable[SlackMessageEventData](eventKeyFor(eventKey)).map { maybeEvent =>
       maybeEvent.map { event =>
         SlackMessageEvent(
           SlackEventContext(
@@ -202,13 +206,17 @@ class CacheServiceImpl @Inject() (
 
   implicit val invokeResultDataFormat = Json.format[InvokeResultData]
 
-  def cacheInvokeResult(key: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Future[Unit] = {
-    val data = InvokeResultData(invokeResult.getStatusCode, invokeResult.getLogResult, invokeResult.getPayload.array())
-    set(key, toJsonString(data), expiration)
+  private def invokeResultKeyFor(resultKey: String): String = {
+    s"${resultKey}-v2"
   }
 
-  def getInvokeResult(key: String): Future[Option[InvokeResult]] = {
-    getJsonReadable[InvokeResultData](key).map { maybeResult =>
+  def cacheInvokeResult(resultKey: String, invokeResult: InvokeResult, expiration: Duration = Duration.Inf): Future[Unit] = {
+    val data = InvokeResultData(invokeResult.getStatusCode, invokeResult.getLogResult, invokeResult.getPayload.array())
+    set(invokeResultKeyFor(resultKey), toJsonString(data), expiration)
+  }
+
+  def getInvokeResult(resultKey: String): Future[Option[InvokeResult]] = {
+    getJsonReadable[InvokeResultData](invokeResultKeyFor(resultKey)).map { maybeResult =>
       maybeResult.map { result =>
         new InvokeResult().
           withStatusCode(result.statusCode).
@@ -218,12 +226,16 @@ class CacheServiceImpl @Inject() (
     }
   }
 
-  def cacheValidValues(key: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Future[Unit] = {
-    set(key, toJsonString(values), expiration)
+  private def validValuesKeyFor(validValuesKey: String): String = {
+    s"${validValuesKey}-v2"
   }
 
-  def getValidValues(key: String): Future[Option[Seq[ValidValue]]] = {
-    getJsonReadable[Seq[ValidValue]](key)
+  def cacheValidValues(validValuesKey: String, values: Seq[ValidValue], expiration: Duration = Duration.Inf): Future[Unit] = {
+    set(validValuesKeyFor(validValuesKey), toJsonString(values), expiration)
+  }
+
+  def getValidValues(validValuesKey: String): Future[Option[Seq[ValidValue]]] = {
+    getJsonReadable[Seq[ValidValue]](validValuesKeyFor(validValuesKey))
   }
 
   def cacheSlackActionValue(value: String, expiration: Duration): Future[String] = {
@@ -267,7 +279,7 @@ class CacheServiceImpl @Inject() (
   import services.slack.apiModels.Formatting._
 
   private def fallbackSlackUserCacheKey(slackUserId: String, slackTeamId: String): String = {
-    s"fallbackCacheForSlackUserId-${slackUserId}-slackTeamId-${slackTeamId}-v1"
+    s"fallbackCacheForSlackUserId-${slackUserId}-slackTeamId-${slackTeamId}-v2"
   }
 
   def cacheFallbackSlackUser(slackUserId: String, slackTeamId: String, slackUser: SlackUser): Future[Unit] = {
@@ -309,7 +321,7 @@ class CacheServiceImpl @Inject() (
   }
 
   private def groupVersionDataKey(versionId: String): String = {
-    s"ImmutableBehaviorGroupVersionData-v1-${versionId}"
+    s"ImmutableBehaviorGroupVersionData-v2-${versionId}"
   }
 
   def cacheBehaviorGroupVersionData(data: ImmutableBehaviorGroupVersionData): Future[Unit] = {
@@ -357,7 +369,7 @@ class CacheServiceImpl @Inject() (
   }
 
   private def cacheKeyForMessageUserDataList(conversationId: String): String = {
-    s"conversation-${conversationId}-messageUserDataList-v1"
+    s"conversation-${conversationId}-messageUserDataList-v2"
   }
 
   def cacheMessageUserDataList(messageUserDataList: Seq[UserData], conversationId: String): Future[Unit] = {
