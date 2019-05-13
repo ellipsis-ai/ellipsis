@@ -105,6 +105,7 @@ class CacheServiceImpl @Inject() (
 
   def get[T : ClassTag](key: String): Future[Option[T]] = {
     if (key.getBytes().length <= MAX_KEY_LENGTH) {
+      // TODO: Is this assertion still true, after upgrading MemcachedCacheApi to 0.9.2?
       // Even though the underlying cache get returns a scala future, the key validation exception
       // doesn't fail it; instead it throws an exception in the java library. Here we try to fix this.
       try {
