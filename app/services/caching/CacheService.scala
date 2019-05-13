@@ -21,6 +21,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
+case class InvalidCacheValueType(message: String) extends Exception(message)
+
 trait CacheService {
 
   def toJsonString[T](o: T)(implicit tjs: Writes[T]): String = {
@@ -32,6 +34,10 @@ trait CacheService {
       case JsSuccess(value, _) => Some(value)
       case JsError(_) => None
     }
+  }
+
+  def forceValidKey(key: String): String = {
+    key.replaceAll("""\s""", "_").slice(0, 249)
   }
 
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Future[Unit]

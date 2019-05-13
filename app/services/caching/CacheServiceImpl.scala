@@ -87,7 +87,7 @@ class CacheServiceImpl @Inject() (
 
   def set[T: ClassTag](key: String, value: T, expiration: Duration = Duration.Inf): Future[Unit] = {
     value match {
-      case JsValue => throw new Exception("Only JSON strings should be cached, not JsValue instances")
+      case JsValue => throw InvalidCacheValueType("Only JSON strings should be cached, not instances of JsValue")
       case _ => {}
     }
     if (key.getBytes().length <= MAX_KEY_LENGTH) {
@@ -105,7 +105,6 @@ class CacheServiceImpl @Inject() (
 
   def get[T : ClassTag](key: String): Future[Option[T]] = {
     if (key.getBytes().length <= MAX_KEY_LENGTH) {
-      // TODO: Is this assertion still true, after upgrading MemcachedCacheApi to 0.9.2?
       // Even though the underlying cache get returns a scala future, the key validation exception
       // doesn't fail it; instead it throws an exception in the java library. Here we try to fix this.
       try {
@@ -121,10 +120,7 @@ class CacheServiceImpl @Inject() (
           }
         }
       } catch {
-        case e: Throwable => {
-          Logger.warn(s"Memcache get failed for key ${key}: ${e}")
-          Future.failed(e)
-        }
+        case e: Throwable => Future.failed(e)
       }
     } else {
       Future.successful(None)
@@ -238,13 +234,22 @@ class CacheServiceImpl @Inject() (
     getJsonReadable[Seq[ValidValue]](validValuesKeyFor(validValuesKey))
   }
 
+  private val slackActionValueKeyPrefix = "slack-action-value-"
+
   def cacheSlackActionValue(value: String, expiration: Duration): Future[String] = {
-    val key = s"slack-action-value-${IDs.next}"
+    val key = s"${slackActionValueKeyPrefix}${IDs.next}"
     set(key, value, expiration).map(_ => key)
   }
 
   def getSlackActionValue(key: String): Future[Option[String]] = {
-    get[String](key)
+    val validWithPrefix = if (key.startsWith(slackActionValueKeyPrefix)) {
+      forceValidKey(key)
+    } else {
+      forceValidKey(s"${slackActionValueKeyPrefix}${key}")
+    }
+    get[String](validWithPrefix).recover {
+      case _: IllegalArgumentException => None
+    }
   }
 
   private val defaultStorageSchemaCache = LfuCache[DefaultStorageSchemaCacheKey, Schema[DefaultStorageItemService, Any]](cacheSettingsWithTimeToLive(defaultStorageSchemaExpiry))
