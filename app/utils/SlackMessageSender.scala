@@ -131,23 +131,9 @@ case class SlackMessageSender(
   def attachmentsToUse(implicit ec: ExecutionContext): Future[Seq[MessageAttachment]] = {
     choicesAttachments.map { choices =>
       val groups = attachments ++ choices
-      if (developerContext.isForUndeployedBehaviorVersion) {
-        val baseUrl = configuration.get[String]("application.apiBaseUrl")
-        val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
-        val link = s"[development]($baseUrl$path)"
-        groups ++ Seq(SlackMessageAttachment(Some(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7"), None, None))
-      } else if (developerContext.hasUndeployedBehaviorVersionForAuthor) {
-        val baseUrl = configuration.get[String]("application.apiBaseUrl")
-        val path = controllers.routes.HelpController.devMode(Some(slackTeamId), Some(botName)).url
-        val link = s"[dev mode]($baseUrl$path)"
-        groups ++ Seq(
-          SlackMessageAttachment(
-            Some(s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link."),
-            None,
-            None
-          )
-        )
-      } else {
+      developerContext.maybeDevModeText(configuration, slackTeamId, botName).map { text =>
+        groups ++ Seq(SlackMessageAttachment(maybeText = Some(text), maybeColor = Some(Color.YELLOW)))
+      }.getOrElse {
         groups
       }
     }
