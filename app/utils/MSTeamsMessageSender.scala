@@ -86,7 +86,7 @@ case class MSTeamsMessageSender(
 
   val attachmentsToUse: Seq[MessageAttachment] = {
     val toUse = attachments ++ choicesAttachments
-    developerContext.maybeDevModeText(configuration, teamIdForContext, botName).map { text =>
+    developerContext.maybeDevModeNoteText(configuration, teamIdForContext, botName).map { text =>
       toUse ++ Seq(MSTeamsMessageAttachment(Some(text), maybeColor = Some(Color.YELLOW)))
     }.getOrElse {
       toUse

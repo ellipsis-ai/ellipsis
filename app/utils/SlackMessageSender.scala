@@ -131,7 +131,7 @@ case class SlackMessageSender(
   def attachmentsToUse(implicit ec: ExecutionContext): Future[Seq[MessageAttachment]] = {
     choicesAttachments.map { choices =>
       val groups = attachments ++ choices
-      developerContext.maybeDevModeText(configuration, slackTeamId, botName).map { text =>
+      developerContext.maybeDevModeNoteText(configuration, slackTeamId, botName).map { text =>
         groups ++ Seq(SlackMessageAttachment(maybeText = Some(text), maybeColor = Some(Color.YELLOW)))
       }.getOrElse {
         groups

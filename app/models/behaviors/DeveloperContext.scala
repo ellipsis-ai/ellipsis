@@ -9,8 +9,6 @@ import slick.dbio.DBIO
 
 import scala.concurrent.ExecutionContext
 
-case class DevUrls(helpUrl: String, maybeEditUrl: Option[String])
-
 case class DeveloperContext(
                              maybeBehaviorVersion: Option[BehaviorVersion],
                              isForUndeployedBehaviorVersion: Boolean,
@@ -18,7 +16,7 @@ case class DeveloperContext(
                              isInDevMode: Boolean,
                              isInInvocationTester: Boolean
                            ) {
-  def maybeDevModeText(configuration: Configuration, teamIdForContext: String, botName: String): Option[String] = {
+  def maybeDevModeNoteText(configuration: Configuration, teamIdForContext: String, botName: String): Option[String] = {
     val baseUrl = configuration.get[String]("application.apiBaseUrl")
     val helpUrl = baseUrl + controllers.routes.HelpController.devMode(Some(teamIdForContext), Some(botName)).url
     val maybeEditUrl = maybeBehaviorVersion.map { behaviorVersion =>
