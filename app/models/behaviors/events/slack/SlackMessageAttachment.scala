@@ -4,20 +4,21 @@ import json.UserData
 import models.SlackMessageFormatter
 import models.behaviors.events.MessageAttachment
 import services.slack.apiModels.Attachment
+import utils.Color
 
 case class SlackMessageAttachment(
                                    maybeText: Option[String] = None,
                                    maybeUserDataList: Option[Set[UserData]] = None,
                                    maybeTitle: Option[String] = None,
                                    maybeTitleLink: Option[String] = None,
-                                   maybeColor: Option[String] = None,
+                                   maybeColor: Option[Color] = None,
                                    maybeCallbackId: Option[String] = None,
                                    actions: Seq[SlackMessageAction] = Seq()
                                  ) extends MessageAttachment {
   val underlying = Attachment(
     fallback = Some("This feature is unavailable on this platform."),
     callback_id = maybeCallbackId,
-    color = maybeColor,
+    color = maybeColor.map(_.hexCode),
     pretext = None,
     author_name = None,
     author_link = None,

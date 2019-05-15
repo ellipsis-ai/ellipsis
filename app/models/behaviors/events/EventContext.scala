@@ -136,7 +136,7 @@ sealed trait EventContext {
                             maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
-                            maybeColor: Option[String] = None,
+                            maybeColor: Option[Color] = None,
                             maybeCallbackId: Option[String] = None,
                             actions: Seq[MessageActionType] = Seq()
                           ): MessageAttachmentType
@@ -412,7 +412,7 @@ case class SlackEventContext(
                             maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
-                            maybeColor: Option[String] = None,
+                            maybeColor: Option[Color] = None,
                             maybeCallbackId: Option[String] = None,
                             actions: Seq[SlackMessageAction] = Seq()
                           ): SlackMessageAttachment = {
@@ -627,7 +627,7 @@ case class MSTeamsEventContext(
                             maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
-                            maybeColor: Option[String] = None,
+                            maybeColor: Option[Color] = None,
                             maybeCallbackId: Option[String] = None,
                             actions: Seq[MSTeamsMessageAction] = Seq()
                           ): MSTeamsMessageAttachment = {
@@ -768,7 +768,7 @@ case class TestEventContext(
                             maybeUserDataList: Option[Set[UserData]] = None,
                             maybeTitle: Option[String] = None,
                             maybeTitleLink: Option[String] = None,
-                            maybeColor: Option[String] = None,
+                            maybeColor: Option[Color] = None,
                             maybeCallbackId: Option[String] = None,
                             actions: Seq[SlackMessageAction] = Seq()
                           ): SlackMessageAttachment = {

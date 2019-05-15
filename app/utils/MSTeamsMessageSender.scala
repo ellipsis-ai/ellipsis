@@ -86,23 +86,9 @@ case class MSTeamsMessageSender(
 
   val attachmentsToUse: Seq[MessageAttachment] = {
     val toUse = attachments ++ choicesAttachments
-    if (developerContext.isForUndeployedBehaviorVersion) {
-      val baseUrl = configuration.get[String]("application.apiBaseUrl")
-      val path = controllers.routes.HelpController.devMode(Some(teamIdForContext), Some(botName)).url
-      val link = s"[development]($baseUrl$path)"
-      toUse ++ Seq(MSTeamsMessageAttachment(Some(s"\uD83D\uDEA7 Skill in $link \uD83D\uDEA7"), None, None))
-    } else if (developerContext.hasUndeployedBehaviorVersionForAuthor) {
-      val baseUrl = configuration.get[String]("application.apiBaseUrl")
-      val path = controllers.routes.HelpController.devMode(Some(teamIdForContext), Some(botName)).url
-      val link = s"[dev mode]($baseUrl$path)"
-      toUse ++ Seq(
-        MSTeamsMessageAttachment(
-          Some(s"\uD83D\uDEA7 You are running the deployed version of this skill even though you've made changes. You can always use the most recent version in $link."),
-          None,
-          None
-        )
-      )
-    } else {
+    developerContext.maybeDevModeNoteText(configuration, teamIdForContext, botName).map { text =>
+      toUse ++ Seq(MSTeamsMessageAttachment(Some(text), maybeColor = Some(Color.YELLOW)))
+    }.getOrElse {
       toUse
     }
   }

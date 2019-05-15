@@ -1,7 +1,10 @@
 package utils
 
+case class Color(hexCode: String)
+
 object Color {
-  val PINK = "#F65688"
-  val BLUE_LIGHT = "#94A4FF"
-  val BLUE_LIGHTER = "#C3CCFE"
+  val PINK = Color("#F65688")
+  val BLUE_LIGHT = Color("#94A4FF")
+  val BLUE_LIGHTER = Color("#C3CCFE")
+  val YELLOW = Color("#d0a525")
 }
