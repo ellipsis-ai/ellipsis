@@ -9,7 +9,6 @@ import 'monaco-editor/esm/vs/editor/contrib/folding/folding';
 import 'monaco-editor/esm/vs/editor/contrib/goToDefinition/goToDefinitionCommands';
 import 'monaco-editor/esm/vs/editor/contrib/goToDefinition/goToDefinitionMouse';
 import 'monaco-editor/esm/vs/editor/contrib/hover/hover';
-import 'monaco-editor/esm/vs/editor/contrib/linesOperations/linesOperations';
 import 'monaco-editor/esm/vs/editor/contrib/multicursor/multicursor';
 import 'monaco-editor/esm/vs/editor/contrib/parameterHints/parameterHints';
 import 'monaco-editor/esm/vs/editor/contrib/rename/rename';
@@ -18,7 +17,11 @@ import 'monaco-editor/esm/vs/editor/contrib/wordHighlighter/wordHighlighter';
 import 'monaco-editor/esm/vs/editor/contrib/wordOperations/wordOperations';
 import 'monaco-editor/esm/vs/editor/standalone/browser/quickOpen/quickCommand';
 
-// Disabled featured:
+// Disabled features:
+
+// linesOperations interferes with browser back/forward with default key bindings
+// import 'monaco-editor/esm/vs/editor/contrib/linesOperations/linesOperations';
+
 // import 'monaco-editor/esm/vs/editor/browser/widget/codeEditorWidget';
 // import 'monaco-editor/esm/vs/editor/browser/widget/diffEditorWidget';
 // import 'monaco-editor/esm/vs/editor/browser/widget/diffNavigator';
