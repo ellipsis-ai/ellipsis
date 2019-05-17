@@ -442,6 +442,7 @@ class AWSLambdaServiceImpl @Inject() (
     val isNoCode: Boolean = behaviorVersionsWithParams.forall { case(bv, _) => bv.functionBody.trim.isEmpty }
     val functionName = groupVersion.functionName
     val runtime = com.amazonaws.services.lambda.model.Runtime.Nodejs810
+    val executionEnvironmentOptIn = "arn:aws:lambda:::awslayer:AmazonLinux1803"
 
     deleteFunction(functionName).andThen {
       case Failure(t) => Future.successful({})
@@ -463,7 +464,8 @@ class AWSLambdaServiceImpl @Inject() (
               withRole(configuration.get[String]("aws.role")).
               withRuntime(runtime).
               withHandler("index.handler").
-              withTimeout(invocationTimeoutSeconds)
+              withTimeout(invocationTimeoutSeconds).
+              withLayers(executionEnvironmentOptIn)
           )
           result <- JavaFutureConverter.javaToScala(client.createFunctionAsync(createFunctionRequest))
           _ <- setUpLogSubscriptionFor(result.getFunctionName)
