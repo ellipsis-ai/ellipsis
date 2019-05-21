@@ -7,6 +7,7 @@ import Button from "../form/button";
 import SearchWithResults, {SearchOption} from "../form/search_with_results";
 import Sort from "../lib/sort";
 import Textarea from "../form/textarea";
+import SubstringHighlighter from "../shared_ui/substring_highlighter";
 
 interface Props {
   group: BehaviorGroup
@@ -89,8 +90,7 @@ class QuickSearchPanel extends React.Component<Props, State> {
   actionMatchesSearch(action: BehaviorVersion, searchText: string): boolean {
     return this.editableMatchesSearch(action, searchText) ||
       action.triggers.some((trigger) => this.anyTokenMatches(trigger.getText(), searchText, false)) ||
-      this.anyTokenMatches(action.functionBody, searchText, false) ||
-      this.anyTokenMatches(action.functionBody, searchText, true);
+      action.functionBody.toLowerCase().includes(searchText)
   }
 
   editableMatchesSearch(editable: Editable, searchText: string): boolean {
@@ -147,7 +147,7 @@ class QuickSearchPanel extends React.Component<Props, State> {
       this.props.group.libraryVersions.find((ea) => ea.getPersistentId() === id);
     if (editable) {
       const functionLines = editable.functionBody.split("\n");
-      const firstRelevantLine = functionLines.findIndex((line) => line.toLowerCase().includes(this.state.currentSearchValue));
+      const firstRelevantLine = functionLines.findIndex((line) => line.toLowerCase().includes(this.state.currentSearchValue.toLowerCase()));
       if (firstRelevantLine !== -1) {
         const firstLine = Math.max(firstRelevantLine - 1, 0);
         return {
@@ -166,6 +166,10 @@ class QuickSearchPanel extends React.Component<Props, State> {
         lines: []
       };
     }
+  }
+
+  preserveSpaces(text: string): string {
+    return text.replace(/\s/g, "\u00A0");
   }
 
   render() {
@@ -191,11 +195,11 @@ class QuickSearchPanel extends React.Component<Props, State> {
               />
             </div>
             <div className="column column-one-half">
-              <div className="display-nowrap display-overflow-hidden border pas type-monospace type-s">
+              <div className="display-nowrap display-overflow-hidden border type-monospace type-s">
                 {functionResult.lines.map((ea, index) => (
                   <div key={`line${index}`}>
-                    <span className="bg-light type-disabled mrs">{functionResult.start + index + 1}</span>
-                    <pre className="display-inline">{ea}</pre>
+                    <span className="bg-light type-disabled mrs display-inline-block width-2 align-r">{functionResult.start + index + 1}</span>
+                    <span><SubstringHighlighter substring={this.preserveSpaces(this.state.currentSearchValue)} text={this.preserveSpaces(ea)} /></span>
                   </div>
                 ))}
               </div>
