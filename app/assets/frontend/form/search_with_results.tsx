@@ -20,6 +20,7 @@ interface Props {
   onSelect: (newValue: string, newIndex: number) => void,
   onEnterKey?: (value: string) => void
   onEscKey?: () => void
+  fullWidth?: boolean
 }
 
 interface State {
@@ -141,7 +142,7 @@ class SearchWithResults extends React.Component<Props, State> {
       return (
         <div>
           <div className={this.props.isSearching ? "pulse" : ""}>
-            <div className="mvl width-30 mobile-width-full">
+            <div className={`mvl ${this.props.fullWidth ? "width-full" : "width-30 mobile-width-full"}`}>
               <SearchInput
                 ref={(input) => this.input = input}
                 placeholder={this.props.placeholder}

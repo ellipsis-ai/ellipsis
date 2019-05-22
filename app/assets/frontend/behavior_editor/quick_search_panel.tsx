@@ -6,7 +6,6 @@ import Editable from "../models/editable";
 import Button from "../form/button";
 import SearchWithResults, {SearchOption} from "../form/search_with_results";
 import Sort from "../lib/sort";
-import Textarea from "../form/textarea";
 import SubstringHighlighter from "../shared_ui/substring_highlighter";
 
 interface Props {
@@ -28,6 +27,13 @@ interface State {
 interface RankedSearchOption extends SearchOption {
   rank: number
 }
+
+interface FunctionSearchResult {
+  start: number,
+  lines: Array<string>
+}
+
+const LINES_TO_SHOW = 7;
 
 class QuickSearchPanel extends React.Component<Props, State> {
   searchInput: Option<SearchWithResults>;
@@ -138,10 +144,7 @@ class QuickSearchPanel extends React.Component<Props, State> {
     return Sort.arrayAlphabeticalBy(actionOptions.concat(otherOptions), (ea) => `${ea.rank}${ea.name}`);
   };
 
-  getCurrentSelectionFunctionLines(): {
-    start: number,
-    lines: Array<string>
-  } {
+  getCurrentSelectionFunctionLines(): FunctionSearchResult {
     const id = this.state.currentResultValue;
     const editable = this.props.group.behaviorVersions.find((ea) => ea.getPersistentId() === id) ||
       this.props.group.libraryVersions.find((ea) => ea.getPersistentId() === id);
@@ -152,12 +155,12 @@ class QuickSearchPanel extends React.Component<Props, State> {
         const firstLine = Math.max(firstRelevantLine - 1, 0);
         return {
           start: firstLine,
-          lines: functionLines.slice(firstLine, firstLine + 10)
+          lines: functionLines.slice(firstLine, firstLine + LINES_TO_SHOW)
         };
       } else {
         return {
           start: 1,
-          lines: functionLines.slice(0, 10)
+          lines: functionLines.slice(0, LINES_TO_SHOW)
         };
       }
     } else {
@@ -172,8 +175,27 @@ class QuickSearchPanel extends React.Component<Props, State> {
     return text.replace(/\s/g, "\u00A0");
   }
 
+  renderFunctionLine(line: string, index: number, start: number) {
+    return (
+      <div key={`line${index}`}>
+        <span className="bg-light type-disabled mrs display-inline-block width-2 align-r phxs">{start + index + 1}</span>
+        <span><SubstringHighlighter substring={this.preserveSpaces(this.state.currentSearchValue)} text={this.preserveSpaces(line)} /></span>
+      </div>
+    );
+  }
+
+  renderEmptyLines(linesNeeded: number) {
+    return Array(linesNeeded).fill("").map((ea, index) => (
+      <div key={`emptyLine${index}`}>
+        <span className="bg-light type-disabled mrs display-inline-block width-2 align-r phxs">&nbsp;</span>
+        <span>&nbsp;</span>
+      </div>
+    ));
+  }
+
   render() {
     const functionResult = this.getCurrentSelectionFunctionLines();
+    const linesNeeded = LINES_TO_SHOW - functionResult.lines.length;
     return (
       <div className="box-action phn">
         <div className="container container-c">
@@ -192,16 +214,13 @@ class QuickSearchPanel extends React.Component<Props, State> {
                 onSelect={this.onSelectResult}
                 onEnterKey={this.onSelect}
                 onEscKey={this.onEscKey}
+                fullWidth={true}
               />
             </div>
             <div className="column column-one-half">
-              <div className="display-nowrap display-overflow-hidden border type-monospace type-s">
-                {functionResult.lines.map((ea, index) => (
-                  <div key={`line${index}`}>
-                    <span className="bg-light type-disabled mrs display-inline-block width-2 align-r">{functionResult.start + index + 1}</span>
-                    <span><SubstringHighlighter substring={this.preserveSpaces(this.state.currentSearchValue)} text={this.preserveSpaces(ea)} /></span>
-                  </div>
-                ))}
+              <div className="mvl display-nowrap display-overflow-hidden border type-monospace type-s">
+                {functionResult.lines.map((ea, index) => this.renderFunctionLine(ea, index, functionResult.start))}
+                {this.renderEmptyLines(linesNeeded)}
               </div>
             </div>
           </div>
