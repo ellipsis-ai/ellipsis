@@ -46,6 +46,8 @@ interface Props {
   nodeModules: Array<NodeModuleVersion>,
 
   functionBody: string,
+  firstLineNumber: number,
+  lastLineNumber: number,
   onChangeFunctionBody: (s: string) => void,
   onCursorChange: (newPosition: EditorCursorPosition) => void,
   useLineWrapping: boolean,
@@ -290,7 +292,7 @@ ${this.props.nodeModules.map((ea) => this.emptyModuleFor(ea.from)).join("\n")}
               value={this.props.functionBody}
               onChange={this.props.onChangeFunctionBody}
               onCursorChange={this.props.onCursorChange}
-              firstLineNumber={this.getFirstLineNumberForCode()}
+              firstLineNumber={this.props.firstLineNumber}
               lineWrapping={this.props.useLineWrapping}
               definitions={this.getCodeDefinitions()}
               language={"javascript"}
@@ -300,7 +302,7 @@ ${this.props.nodeModules.map((ea) => this.emptyModuleFor(ea.from)).join("\n")}
           <div className="pts mbxxl">
             <div className="columns columns-elastic">
               <div className="column column-shrink plxxxl prn align-r position-relative">
-                <code className="type-disabled type-s position-absolute position-top-right prxs">{this.getLastLineNumberForCode()}</code>
+                <code className="type-disabled type-s position-absolute position-top-right prxs">{this.props.lastLineNumber}</code>
               </div>
               <div className="column column-expand pll">
                 <div className="columns columns-elastic">

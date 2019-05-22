@@ -121,6 +121,15 @@ abstract class Editable implements EditableInterface {
       return this.functionBody || "";
     }
 
+    getFirstLineNumberForCode(): number {
+      return 2;
+    }
+
+    getLastLineNumberForCode(): number {
+      const numLines = this.functionBody.split('\n').length;
+      return this.getFirstLineNumberForCode() + numLines;
+    }
+
     getEnvVarNamesInFunction(): Array<string> {
       const vars: Set<string> = new Set();
       const body = this.getFunctionBody();

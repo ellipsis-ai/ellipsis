@@ -357,6 +357,16 @@ class BehaviorEditor extends React.Component<Props, State> {
     return selected && selected.functionBody || "";
   }
 
+  getFunctionFirstLineNumber(): number {
+    const selected = this.getSelected();
+    return selected && selected.getFirstLineNumberForCode() || 0;
+  }
+
+  getFunctionLastLineNumber(): number {
+    const selected = this.getSelected();
+    return selected && selected.getLastLineNumberForCode() || 0;
+  }
+
   getInputIds(): Array<string> {
     const selected = this.getSelectedBehavior();
     return selected && selected.inputIds || [];
@@ -1925,6 +1935,8 @@ class BehaviorEditor extends React.Component<Props, State> {
         nodeModules={this.getNodeModuleVersions()}
 
         functionBody={this.getFunctionBody()}
+        firstLineNumber={this.getFunctionFirstLineNumber()}
+        lastLineNumber={this.getFunctionLastLineNumber()}
         onChangeFunctionBody={this.updateCode}
         onChangeCanBeMemoized={this.onChangeCanBeMemoized}
         isMemoizationEnabled={codeConfigProps.isMemoizationEnabled}

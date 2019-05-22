@@ -150,16 +150,17 @@ class QuickSearchPanel extends React.Component<Props, State> {
       this.props.group.libraryVersions.find((ea) => ea.getPersistentId() === id);
     if (editable) {
       const functionLines = editable.functionBody.split("\n");
-      const firstRelevantLine = functionLines.findIndex((line) => line.toLowerCase().includes(this.state.currentSearchValue.toLowerCase()));
-      if (firstRelevantLine !== -1) {
-        const firstLine = Math.max(firstRelevantLine - 1, 0);
+      const firstRelevantLineIndex = functionLines.findIndex((line) => line.toLowerCase().includes(this.state.currentSearchValue.toLowerCase()));
+      const firstLineNumber = editable.getFirstLineNumberForCode();
+      if (firstRelevantLineIndex !== -1) {
+        const firstLineIndex = Math.max(firstRelevantLineIndex - 1, 0);
         return {
-          start: firstLine,
-          lines: functionLines.slice(firstLine, firstLine + LINES_TO_SHOW)
+          start: firstLineIndex + firstLineNumber,
+          lines: functionLines.slice(firstLineIndex, firstLineIndex + LINES_TO_SHOW)
         };
       } else {
         return {
-          start: 1,
+          start: firstLineNumber,
           lines: functionLines.slice(0, LINES_TO_SHOW)
         };
       }
@@ -179,7 +180,7 @@ class QuickSearchPanel extends React.Component<Props, State> {
     return (
       <div key={`line${index}`}>
         <code>
-          <span className="bg-light type-disabled mrs display-inline-block width-2 align-r phxs">{start + index + 1}</span>
+          <span className="bg-light type-disabled mrs display-inline-block width-2 align-r phxs">{start + index}</span>
           <span><SubstringHighlighter substring={this.preserveSpaces(this.state.currentSearchValue)} text={this.preserveSpaces(line)} /></span>
         </code>
       </div>
