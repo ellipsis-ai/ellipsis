@@ -104,15 +104,6 @@ class CodeConfiguration extends React.Component<Props, State> {
       return (<SVGSettingsIcon label="Editor settings" />);
     }
 
-    getFirstLineNumberForCode(): number {
-      return 2;
-    }
-
-    getLastLineNumberForCode(): number {
-      const numLines = this.props.functionBody.split('\n').length;
-      return this.getFirstLineNumberForCode() + numLines;
-    }
-
     hasUsedOAuthApplication(code: string, nameInCode: string): boolean {
       var pattern = new RegExp(`\\bellipsis\\.accessTokens\\.${nameInCode}\\b`);
       return pattern.test(code);
