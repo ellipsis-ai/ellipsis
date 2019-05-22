@@ -126,7 +126,7 @@ abstract class Editable implements EditableInterface {
     }
 
     getLastLineNumberForCode(): number {
-      const numLines = this.functionBody.split('\n').length;
+      const numLines = this.getFunctionBody().split('\n').length;
       return this.getFirstLineNumberForCode() + numLines;
     }
 

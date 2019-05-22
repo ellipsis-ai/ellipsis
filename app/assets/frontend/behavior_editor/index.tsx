@@ -88,7 +88,8 @@ import Trigger from "../models/trigger";
 import BehaviorConfig, {BehaviorConfigInterface} from "../models/behavior_config";
 import {EditorCursorPosition} from "./code_editor";
 import QuickSearchPanel from "./quick_search_panel";
-import ToggleGroup, {ToggleGroupItem} from "../form/toggle_group";
+import SVGSearch from "../svg/search";
+import KeyboardShortcut from "../lib/keyboard_shortcut";
 
 export interface BehaviorEditorProps {
   group: BehaviorGroup
@@ -175,6 +176,11 @@ interface CodeConfigProps {
   isMemoizationEnabled: boolean
   functionExecutesImmediately?: boolean
 }
+
+const keyboardShortcuts = {
+  save: new KeyboardShortcut({ command: true, shift: false, key: 's' }),
+  open: new KeyboardShortcut({ command: true, shift: true, key: 'o' })
+};
 
 class BehaviorEditor extends React.Component<Props, State> {
   resetNotificationsEventually: () => void;
@@ -984,14 +990,14 @@ class BehaviorEditor extends React.Component<Props, State> {
   onDocumentKeyDown(event: KeyboardEvent): void {
     if (Event.keyPressWasEsc(event)) {
       this.handleEscKey();
-    } else if (Event.keyPressWasSaveShortcut(event)) {
+    } else if (Event.keyPressMatchesShortcut(event, keyboardShortcuts.save)) {
       event.preventDefault();
       if (this.isModified()) {
         this.onSaveBehaviorGroup();
       }
-    } else if (Event.keyPressWasOpenShortcut(event)) {
+    } else if (Event.keyPressMatchesShortcut(event, keyboardShortcuts.open)) {
       event.preventDefault();
-      this.toggleActivePanel("quickSearch", true);
+      this.toggleQuickSearchPanel();
     }
   }
 
@@ -1235,6 +1241,10 @@ class BehaviorEditor extends React.Component<Props, State> {
 
   toggleDetailsPanelIconPicker(): void {
     this.toggleActiveDropdown("behaviorGroupDetailsPanelIconPicker");
+  }
+
+  toggleQuickSearchPanel(): void {
+    this.toggleActivePanel("quickSearch", true);
   }
 
   toggleActivePanel(name: string, beModal?: boolean, optionalCallback?: () => void): void {
@@ -2251,8 +2261,8 @@ class BehaviorEditor extends React.Component<Props, State> {
           >
             <Notifications notifications={this.getNotifications()} />
             <div className="container container-wide ptm border-top">
-              <div>
-                <div>
+              <div className="columns columns-elastic">
+                <div className="column column-expand">
                   <DynamicLabelButton
                     onClick={this.onSaveClick}
                     labels={[{
@@ -2297,6 +2307,11 @@ class BehaviorEditor extends React.Component<Props, State> {
                   <div className="display-inline-block align-button mbm">
                     {this.renderFooterStatus()}
                   </div>
+                </div>
+                <div className="column column-shrink">
+                  <Button onClick={this.toggleQuickSearchPanel} className="button-symbol">
+                    <SVGSearch label={`${keyboardShortcuts.open.keyDescription()}Quick open/search`} />
+                  </Button>
                 </div>
               </div>
             </div>
