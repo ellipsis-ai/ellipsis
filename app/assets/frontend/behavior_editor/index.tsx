@@ -88,7 +88,8 @@ import Trigger from "../models/trigger";
 import BehaviorConfig, {BehaviorConfigInterface} from "../models/behavior_config";
 import {EditorCursorPosition} from "./code_editor";
 import QuickSearchPanel from "./quick_search_panel";
-import ToggleGroup, {ToggleGroupItem} from "../form/toggle_group";
+import SVGSearch from "../svg/search";
+import KeyboardShortcut from "../lib/keyboard_shortcut";
 
 export interface BehaviorEditorProps {
   group: BehaviorGroup
@@ -175,6 +176,11 @@ interface CodeConfigProps {
   isMemoizationEnabled: boolean
   functionExecutesImmediately?: boolean
 }
+
+const keyboardShortcuts = {
+  save: new KeyboardShortcut({ command: true, shift: false, key: 's' }),
+  open: new KeyboardShortcut({ command: true, shift: true, key: 'o' })
+};
 
 class BehaviorEditor extends React.Component<Props, State> {
   resetNotificationsEventually: () => void;
@@ -355,6 +361,16 @@ class BehaviorEditor extends React.Component<Props, State> {
   getFunctionBody(): string {
     const selected = this.getSelected();
     return selected && selected.functionBody || "";
+  }
+
+  getFunctionFirstLineNumber(): number {
+    const selected = this.getSelected();
+    return selected && selected.getFirstLineNumberForCode() || 0;
+  }
+
+  getFunctionLastLineNumber(): number {
+    const selected = this.getSelected();
+    return selected && selected.getLastLineNumberForCode() || 0;
   }
 
   getInputIds(): Array<string> {
@@ -974,14 +990,14 @@ class BehaviorEditor extends React.Component<Props, State> {
   onDocumentKeyDown(event: KeyboardEvent): void {
     if (Event.keyPressWasEsc(event)) {
       this.handleEscKey();
-    } else if (Event.keyPressWasSaveShortcut(event)) {
+    } else if (Event.keyPressMatchesShortcut(event, keyboardShortcuts.save)) {
       event.preventDefault();
       if (this.isModified()) {
         this.onSaveBehaviorGroup();
       }
-    } else if (Event.keyPressWasOpenShortcut(event)) {
+    } else if (Event.keyPressMatchesShortcut(event, keyboardShortcuts.open)) {
       event.preventDefault();
-      this.toggleActivePanel("quickSearch", true);
+      this.toggleQuickSearchPanel();
     }
   }
 
@@ -1225,6 +1241,10 @@ class BehaviorEditor extends React.Component<Props, State> {
 
   toggleDetailsPanelIconPicker(): void {
     this.toggleActiveDropdown("behaviorGroupDetailsPanelIconPicker");
+  }
+
+  toggleQuickSearchPanel(): void {
+    this.toggleActivePanel("quickSearch", true);
   }
 
   toggleActivePanel(name: string, beModal?: boolean, optionalCallback?: () => void): void {
@@ -1925,6 +1945,8 @@ class BehaviorEditor extends React.Component<Props, State> {
         nodeModules={this.getNodeModuleVersions()}
 
         functionBody={this.getFunctionBody()}
+        firstLineNumber={this.getFunctionFirstLineNumber()}
+        lastLineNumber={this.getFunctionLastLineNumber()}
         onChangeFunctionBody={this.updateCode}
         onChangeCanBeMemoized={this.onChangeCanBeMemoized}
         isMemoizationEnabled={codeConfigProps.isMemoizationEnabled}
@@ -2019,11 +2041,13 @@ class BehaviorEditor extends React.Component<Props, State> {
             onChange={this.collapsiblePanelDidUpdate}
             animationDuration={0.1}
           >
-            <QuickSearchPanel
-              group={this.getBehaviorGroup()}
-              onDone={this.props.onClearActivePanel}
-              onSelect={this.onSelect}
-            />
+            {this.props.activePanelName === 'quickSearch' ? (
+              <QuickSearchPanel
+                group={this.getBehaviorGroup()}
+                onDone={this.props.onClearActivePanel}
+                onSelect={this.onSelect}
+              />
+            ) : null}
           </Collapsible>
 
           <Collapsible ref={(el) => this.props.onRenderPanel("requestBehaviorGroupDetails", el)}
@@ -2237,8 +2261,8 @@ class BehaviorEditor extends React.Component<Props, State> {
           >
             <Notifications notifications={this.getNotifications()} />
             <div className="container container-wide ptm border-top">
-              <div>
-                <div>
+              <div className="columns columns-elastic">
+                <div className="column column-expand">
                   <DynamicLabelButton
                     onClick={this.onSaveClick}
                     labels={[{
@@ -2283,6 +2307,11 @@ class BehaviorEditor extends React.Component<Props, State> {
                   <div className="display-inline-block align-button mbm">
                     {this.renderFooterStatus()}
                   </div>
+                </div>
+                <div className="column column-shrink">
+                  <Button onClick={this.toggleQuickSearchPanel} className="button-symbol">
+                    <SVGSearch label={`${keyboardShortcuts.open.keyDescription()}Quick open/search`} />
+                  </Button>
                 </div>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {KeyboardShortcutInterface} from "./keyboard_shortcut";
 
 export type AnyKeyboardEvent = KeyboardEvent | React.KeyboardEvent<any>
 
@@ -52,13 +53,12 @@ class Event {
       }
     }
 
-    static keyPressWasSaveShortcut(event: AnyKeyboardEvent): boolean {
-      return Event.keyPressIncludedPlatformCommandKey(event, false) && event.key === 's';
-    }
-
-    static keyPressWasOpenShortcut(event: AnyKeyboardEvent): boolean {
-      /* Safari won't allow hijacking Cmd-o without shift key */
-      return Event.keyPressIncludedPlatformCommandKey(event, true) && event.key === 'o';
+    static keyPressMatchesShortcut(event: AnyKeyboardEvent, shortcut: KeyboardShortcutInterface): boolean {
+      if (shortcut.command) {
+        return Event.keyPressIncludedPlatformCommandKey(event, shortcut.shift) && event.key === shortcut.key;
+      } else {
+        return Event.keyPressIncludedShift(event) && event.key === shortcut.key;
+      }
     }
 }
 
