@@ -2019,11 +2019,13 @@ class BehaviorEditor extends React.Component<Props, State> {
             onChange={this.collapsiblePanelDidUpdate}
             animationDuration={0.1}
           >
-            <QuickSearchPanel
-              group={this.getBehaviorGroup()}
-              onDone={this.props.onClearActivePanel}
-              onSelect={this.onSelect}
-            />
+            {this.props.activePanelName === 'quickSearch' ? (
+              <QuickSearchPanel
+                group={this.getBehaviorGroup()}
+                onDone={this.props.onClearActivePanel}
+                onSelect={this.onSelect}
+              />
+            ) : null}
           </Collapsible>
 
           <Collapsible ref={(el) => this.props.onRenderPanel("requestBehaviorGroupDetails", el)}

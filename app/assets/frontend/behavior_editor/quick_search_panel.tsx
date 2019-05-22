@@ -33,7 +33,7 @@ interface FunctionSearchResult {
   lines: Array<string>
 }
 
-const LINES_TO_SHOW = 7;
+const LINES_TO_SHOW = 8;
 
 class QuickSearchPanel extends React.Component<Props, State> {
   searchInput: Option<SearchWithResults>;
@@ -178,8 +178,10 @@ class QuickSearchPanel extends React.Component<Props, State> {
   renderFunctionLine(line: string, index: number, start: number) {
     return (
       <div key={`line${index}`}>
-        <span className="bg-light type-disabled mrs display-inline-block width-2 align-r phxs">{start + index + 1}</span>
-        <span><SubstringHighlighter substring={this.preserveSpaces(this.state.currentSearchValue)} text={this.preserveSpaces(line)} /></span>
+        <code>
+          <span className="bg-light type-disabled mrs display-inline-block width-2 align-r phxs">{start + index + 1}</span>
+          <span><SubstringHighlighter substring={this.preserveSpaces(this.state.currentSearchValue)} text={this.preserveSpaces(line)} /></span>
+        </code>
       </div>
     );
   }
@@ -187,8 +189,10 @@ class QuickSearchPanel extends React.Component<Props, State> {
   renderEmptyLines(linesNeeded: number) {
     return Array(linesNeeded).fill("").map((ea, index) => (
       <div key={`emptyLine${index}`}>
-        <span className="bg-light type-disabled mrs display-inline-block width-2 align-r phxs">&nbsp;</span>
-        <span>&nbsp;</span>
+        <code>
+          <span className="bg-light type-disabled mrs display-inline-block width-2 align-r phxs">&nbsp;</span>
+          <span>&nbsp;</span>
+        </code>
       </div>
     ));
   }
@@ -201,28 +205,24 @@ class QuickSearchPanel extends React.Component<Props, State> {
         <div className="container container-c">
           <h4 className="mvn">Search any action, data type, library or test in this skill</h4>
 
-          <div className="columns">
-            <div className="column column-one-half">
-              <SearchWithResults
-                ref={(el) => this.searchInput = el}
-                placeholder={"Search by name, trigger or code"}
-                value={this.state.currentResultValue}
-                options={this.state.results}
-                isSearching={false}
-                noMatches={!this.state.hasMatches}
-                onChangeSearch={this.onChangeSearchText}
-                onSelect={this.onSelectResult}
-                onEnterKey={this.onSelect}
-                onEscKey={this.onEscKey}
-                fullWidth={true}
-              />
-            </div>
-            <div className="column column-one-half">
-              <div className="mvl display-nowrap display-overflow-hidden border type-monospace type-s">
-                {functionResult.lines.map((ea, index) => this.renderFunctionLine(ea, index, functionResult.start))}
-                {this.renderEmptyLines(linesNeeded)}
-              </div>
-            </div>
+          <div>
+            <SearchWithResults
+              ref={(el) => this.searchInput = el}
+              placeholder={"Search by name, trigger or code"}
+              value={this.state.currentResultValue}
+              options={this.state.results}
+              isSearching={false}
+              noMatches={!this.state.hasMatches}
+              onChangeSearch={this.onChangeSearchText}
+              onSelect={this.onSelectResult}
+              onEnterKey={this.onSelect}
+              onEscKey={this.onEscKey}
+              fullWidth={true}
+            />
+          </div>
+          <div className="mbl display-nowrap display-overflow-hidden border border-radius type-xs">
+            {functionResult.lines.map((ea, index) => this.renderFunctionLine(ea, index, functionResult.start))}
+            {this.renderEmptyLines(linesNeeded)}
           </div>
 
           <Button className="button-primary mrs" onClick={this.onSelect} disabled={!this.state.currentResultValue}>Switch to selection</Button>
