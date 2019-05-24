@@ -4,7 +4,7 @@ import SectionHeading from '../shared_ui/section_heading';
 import ScheduleChannelEditor from './schedule_channel_editor';
 import ScheduledItemConfig from './scheduled_item_config';
 import BehaviorGroup from '../models/behavior_group';
-import ScheduledAction, {ScheduledActionArgument} from '../models/scheduled_action';
+import ScheduledAction, {ScheduledActionArgument, ScheduleType} from '../models/scheduled_action';
 import Recurrence from "../models/recurrence";
 import autobind from "../lib/autobind";
 import User from "../models/user";
@@ -56,6 +56,27 @@ class ScheduledItemEditor extends React.Component<Props> {
     }
   }
 
+  updateSkill(behaviorGroupId: string): void {
+    if (this.props.scheduledAction) {
+      this.props.onChange(this.props.scheduledAction.clone({
+        behaviorGroupId: behaviorGroupId,
+        behaviorId: null
+      }));
+    }
+  }
+
+  toggleByTrigger(byTrigger: boolean): void {
+    if (this.props.scheduledAction) {
+      this.props.onChange(this.props.scheduledAction.clone({
+        trigger: byTrigger ? "" : null,
+        behaviorGroupId: null,
+        behaviorId: null,
+        arguments: [],
+        scheduleType: byTrigger ? ScheduleType.Message : ScheduleType.Behavior
+      }));
+    }
+  }
+
   updateChannel(channelId: string, useDM: boolean): void {
     if (this.props.scheduledAction) {
       this.props.onChange(this.props.scheduledAction.clone({
@@ -93,6 +114,8 @@ class ScheduledItemEditor extends React.Component<Props> {
               behaviorGroups={this.props.behaviorGroups}
               onChangeTriggerText={this.updateTriggerText}
               onChangeAction={this.updateAction}
+              onChangeSkill={this.updateSkill}
+              onToggleByTrigger={this.toggleByTrigger}
             />
           </div>
           <div className="container container-wide border-bottom pvxxl">

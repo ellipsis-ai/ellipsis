@@ -8,21 +8,32 @@ import ScheduledAction, {ScheduledActionArgument} from '../models/scheduled_acti
 import Sort from '../lib/sort';
 import autobind from "../lib/autobind";
 import Button from "../form/button";
+import ToggleGroup, {ToggleGroupItem} from "../form/toggle_group";
 
 interface Props {
   scheduledAction: ScheduledAction
   behaviorGroups: Array<BehaviorGroup>
   onChangeTriggerText: (text: string) => void
   onChangeAction: (behaviorId: string, newArgs: Array<ScheduledActionArgument>, callback?: () => void) => void
+  onChangeSkill: (behaviorGroupId: string) => void
+  onToggleByTrigger: (byTrigger: boolean) => void
 }
 
 class ScheduledItemTitle extends React.PureComponent<Props> {
     nameInputs: Array<Option<FormInput>>;
+    triggerInput: Option<FormInput>;
 
     constructor(props: Props) {
       super(props);
       autobind(this);
       this.nameInputs = [];
+    }
+
+    componentDidUpdate(prevProps: Readonly<Props>): void {
+      if (typeof prevProps.scheduledAction.trigger !== "string" &&
+        typeof this.props.scheduledAction.trigger === "string" && this.triggerInput) {
+        this.triggerInput.focus();
+      }
     }
 
     getActionId(): Option<string> {
@@ -45,8 +56,12 @@ class ScheduledItemTitle extends React.PureComponent<Props> {
       this.props.onChangeTriggerText(newText);
     }
 
-    onChangeAction(newId: string): void {
-      this.props.onChangeAction(newId, this.getArguments());
+    onChangeAction(newBehaviorId: string): void {
+      this.props.onChangeAction(newBehaviorId, this.getArguments());
+    }
+
+    onChangeSkill(newGroupId: string): void {
+      this.props.onChangeSkill(newGroupId);
     }
 
     onChangeArgument(index: number, newArg: ScheduledActionArgument): void {
@@ -88,61 +103,96 @@ class ScheduledItemTitle extends React.PureComponent<Props> {
       }
     }
 
+    getSkillOptions(): Array<{ name: string, value: string }> {
+      return [{
+        name: "Select a skill…",
+        value: ""
+      }].concat(this.props.behaviorGroups.filter((ea) => Boolean(ea.id)).map((ea) => {
+        return {
+          name: ea.getName(),
+          value: ea.id as string
+        };
+      }));
+    }
+
     getActionOptions(): Array<{ name: string, value: string }> {
-      const group = this.props.behaviorGroups.find((ea) => ea.id === this.props.scheduledAction.behaviorGroupId);
+      const group = this.props.scheduledAction.behaviorGroupId ?
+        this.props.behaviorGroups.find((ea) => ea.id === this.props.scheduledAction.behaviorGroupId) : null;
+      const firstAction = {
+        name: "Select an action…",
+        value: ""
+      };
       if (group) {
         const namedActions = group.getActions().filter((ea) => {
           return ea.behaviorId && ea.getName().length > 0;
         });
-        const options = namedActions.map((ea) => {
+        const actionOptions = namedActions.map((ea) => {
           return {
             name: ea.getName(),
             value: ea.behaviorId
           };
         });
-        return Sort.arrayAlphabeticalBy(options, (ea) => ea.name);
+        return [firstAction].concat(Sort.arrayAlphabeticalBy(actionOptions, (ea) => ea.name));
       } else {
-        return [];
+        return [firstAction];
       }
+    }
+
+    selectScheduleByTrigger(): void {
+      this.props.onToggleByTrigger(true);
+    }
+
+    selectScheduleByAction(): void {
+      this.props.onToggleByTrigger(false);
     }
 
     renderTriggerConfig() {
       return (
         <div>
           <div className="type-s mbxs">Run any action triggered by the message:</div>
-          <FormInput placeholder="Enter a message that would trigger a response"
-            value={this.getTriggerText()}
-            onChange={this.onChangeTriggerText}
-          />
+          <div>
+            <FormInput
+              ref={(el) => this.triggerInput = el}
+              placeholder="Enter a message that would trigger a response"
+              value={this.getTriggerText()}
+              onChange={this.onChangeTriggerText}
+            />
+          </div>
         </div>
       );
     }
 
     renderActionConfig() {
       const actions = this.getActionOptions();
-      const skillName = this.props.scheduledAction.getSkillNameFromGroups(this.props.behaviorGroups);
+      const skills = this.getSkillOptions();
       return (
         <div>
           <div className="mbl">
-            <span className="align-button mrm type-s">Run the action named</span>
+            <span className="align-button mrm type-s">Run action from skill</span>
+            <span className="align-button mrm height-xl">
+              <Select
+                className="form-select-s width-10"
+                value={this.props.scheduledAction.behaviorGroupId || ""}
+                onChange={this.onChangeSkill}
+              >
+                {skills.map((ea) => (
+                  <option key={ea.value} value={ea.value}>{ea.name}</option>
+                ))}
+              </Select>
+            </span>
+            <span className="align-button mrm type-s">named</span>
             <span className="align-button mrm height-xl">
               <Select
                 className="form-select-s width-10"
                 value={this.props.scheduledAction.behaviorId || ""}
                 onChange={this.onChangeAction}
+                disabled={!this.props.scheduledAction.behaviorGroupId}
               >
                 {actions.map((ea) => (
                   <option key={ea.value} value={ea.value}>{ea.name}</option>
                 ))}
               </Select>
             </span>
-            {skillName ? (
-              <span className="align-button type-s">
-                <span> in the </span>
-                <span className="border phxs mhxs type-black bg-white">{skillName}</span>
-                <span> skill</span>
-              </span>
-            ) : null}
           </div>
           <div className="mtl">
             {this.renderArguments()}
@@ -197,13 +247,40 @@ class ScheduledItemTitle extends React.PureComponent<Props> {
       }
     }
 
-    render() {
+    renderforScheduleType() {
       if (this.hasTriggerText()) {
         return this.renderTriggerConfig();
       } else {
         return this.renderActionConfig();
       }
     }
+
+    renderScheduleTypeToggle() {
+      if (this.props.scheduledAction.isNew()) {
+        return (
+          <div className="mbm">
+            <ToggleGroup className={"form-toggle-group-s"}>
+              <ToggleGroupItem activeWhen={this.hasTriggerText()} label={"By trigger text"}
+                onClick={this.selectScheduleByTrigger} />
+              <ToggleGroupItem activeWhen={!this.hasTriggerText()} label={"By action name"}
+                onClick={this.selectScheduleByAction} />
+            </ToggleGroup>
+          </div>
+        );
+      } else {
+        return null;
+      }
+    }
+
+    render() {
+      return (
+        <div>
+          {this.renderScheduleTypeToggle()}
+          {this.renderforScheduleType()}
+        </div>
+      );
+    }
+
 }
 
 export default ScheduledItemTitle;

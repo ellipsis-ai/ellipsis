@@ -8,6 +8,11 @@ export interface ScheduledActionArgument {
   value: any
 }
 
+export enum ScheduleType {
+  Message = "message",
+  Behavior = "behavior"
+}
+
 export interface ScheduledActionJson {
   id?: Option<string>,
   scheduleType: string,
@@ -31,7 +36,7 @@ export interface ScheduledActionInterface extends ScheduledActionJson {
 
 class ScheduledAction implements ScheduledActionInterface {
   readonly id: Option<string>;
-  readonly scheduleType: string;
+  readonly scheduleType: ScheduleType;
   readonly behaviorId: Option<string>;
   readonly behaviorGroupId: Option<string>;
   readonly trigger: Option<string>;
@@ -46,7 +51,7 @@ class ScheduledAction implements ScheduledActionInterface {
     constructor(props: Partial<ScheduledActionInterface>) {
       const initialProps: ScheduledActionInterface = Object.assign({
         id: null,
-        scheduleType: null,
+        scheduleType: ScheduleType.Message,
         behaviorId: null,
         behaviorGroupId: null,
         trigger: null,
@@ -115,9 +120,9 @@ class ScheduledAction implements ScheduledActionInterface {
     }
 
     isValidForScheduleType(): boolean {
-      if (this.scheduleType === "message") {
+      if (this.scheduleType === ScheduleType.Message) {
         return Boolean(this.trigger && this.trigger.length > 0);
-      } else if (this.scheduleType === "behavior") {
+      } else if (this.scheduleType === ScheduleType.Behavior) {
         return Boolean(this.behaviorId && this.behaviorGroupId && this.behaviorId.length > 0 && this.behaviorGroupId.length > 0);
       } else {
         return false;
@@ -163,7 +168,7 @@ class ScheduledAction implements ScheduledActionInterface {
 
     static newWithDefaults(timeZone: Option<string>, timeZoneName: Option<string>): ScheduledAction {
       return new ScheduledAction({
-        scheduleType: "message",
+        scheduleType: ScheduleType.Message,
         trigger: "",
         recurrence: new Recurrence({
           frequency: 1,
