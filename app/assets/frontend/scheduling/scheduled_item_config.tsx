@@ -240,9 +240,10 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
               )}
               <span className="align-m">
                 <span>Will trigger action </span>
-                <b className="border bg-white phxs">{matchingBehavior.getName()}</b>
+                <b className="border bg-white phxs mhxs">{matchingBehavior.getName()}</b>
                 <span> in skill </span>
-                <b className="border bg-white phxs">{matchingGroup.getName()}</b>
+                <b className="border bg-white phxs mhxs">{matchingGroup.getName()}</b>
+                {this.renderEditLink(matchingGroup.id, matchingBehavior.behaviorId)}
               </span>
             </div>
           );
@@ -250,6 +251,13 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
           return null;
         }
       });
+    }
+
+    renderEditLink(groupId: Option<string>, behaviorId: Option<string>) {
+      const editUrl = groupId ? jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url : null;
+      return editUrl ? (
+        <a href={editUrl} className="type-s mls" target={"editSkill"}>Edit</a>
+      ) : null;
     }
 
     renderTriggerConfig() {
@@ -331,6 +339,9 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
                   <option key={ea.value} value={ea.value}>{ea.name}</option>
                 ))}
               </Select>
+            </span>
+            <span className="align-button height-xl">
+              {this.renderEditLink(this.props.scheduledAction.behaviorGroupId, this.props.scheduledAction.behaviorId)}
             </span>
           </div>
           <div className="mtl">
