@@ -32,6 +32,11 @@ interface ValidTriggerJson {
   behaviorId: string
 }
 
+interface MatchingGroupAndBehaviorVersion {
+  group: BehaviorGroup
+  behaviorVersion: BehaviorVersion
+}
+
 interface State {
   matchingValidTriggers: Array<ValidTriggerJson>
   loadingValidation: boolean
@@ -219,23 +224,37 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       this.props.onToggleByTrigger(false);
     }
 
+    getMatchingGroupAndBehavior(desiredBehaviorId: string): Option<MatchingGroupAndBehaviorVersion> {
+      let matchingBehavior: Option<BehaviorVersion>;
+      const matchingGroup = this.props.behaviorGroups.find((group) => {
+        return group.behaviorVersions.some((behaviorVersion) => {
+          if (behaviorVersion.behaviorId === desiredBehaviorId) {
+            matchingBehavior = behaviorVersion;
+            return true;
+          } else {
+            return false;
+          }
+        });
+      });
+      if (matchingGroup && matchingBehavior) {
+        return {
+          group: matchingGroup,
+          behaviorVersion: matchingBehavior
+        };
+      } else {
+        return null;
+      }
+    }
+
     getMatchingActions() {
       const oneValidTrigger = this.state.matchingValidTriggers.length === 1;
       return this.state.matchingValidTriggers.map((match) => {
-        let matchingBehavior: Option<BehaviorVersion>;
-        const matchingGroup = this.props.behaviorGroups.find((group) => {
-          return group.behaviorVersions.some((behaviorVersion) => {
-            if (behaviorVersion.behaviorId === match.behaviorId) {
-              matchingBehavior = behaviorVersion;
-              return true;
-            } else {
-              return false;
-            }
-          });
-        });
-        if (matchingGroup && matchingBehavior) {
+        const matching = this.getMatchingGroupAndBehavior(match.behaviorId);
+        if (matching) {
+          const group = matching.group;
+          const behaviorVersion = matching.behaviorVersion;
           return (
-            <div key={`behaviorId${matchingBehavior.behaviorId}`} className="mvxs">
+            <div key={`behaviorId${behaviorVersion.behaviorId}`} className="mvxs">
               {oneValidTrigger ? (
                 <span className="display-inline-block height-xl type-green mrs align-m">
                   <SVGCheckmark />
@@ -247,10 +266,10 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
               )}
               <span className="align-m">
                 <span>Will trigger action </span>
-                <b className="border bg-white phxs mhxs">{matchingBehavior.getName()}</b>
+                <b className="border bg-white phxs mhxs">{behaviorVersion.getName()}</b>
                 <span> in skill </span>
-                <b className="border bg-white phxs mhxs">{matchingGroup.getName()}</b>
-                {this.renderEditLink(matchingGroup.id, matchingBehavior.behaviorId)}
+                <b className="border bg-white phxs mhxs">{group.getName()}</b>
+                {this.renderEditLink(group.id, behaviorVersion.behaviorId)}
               </span>
             </div>
           );
