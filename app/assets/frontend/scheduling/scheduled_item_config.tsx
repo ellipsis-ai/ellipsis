@@ -83,16 +83,12 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     }
 
     beginValidatingTrigger(text: string): void {
-      if (!this.state.loadingValidation) {
-        this.setState({
-          loadingValidation: true,
-          matchingValidTriggers: []
-        }, () => {
-          this.validateTrigger(text);
-        });
-      } else {
+      this.setState({
+        loadingValidation: true,
+        matchingValidTriggers: []
+      }, () => {
         this.validateTrigger(text);
-      }
+      });
     }
 
     _validateTrigger(text: string): void {
@@ -104,6 +100,11 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
           this.setState({
             loadingValidation: false,
             matchingValidTriggers: results
+          });
+        } else {
+          // Throw away results if the user's trigger text has changed before request completes
+          this.setState({
+            loadingValidation: false
           });
         }
       }).catch(() => {
