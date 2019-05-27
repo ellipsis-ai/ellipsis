@@ -10,7 +10,7 @@ import RecurrenceIntervalEditor from "./recurrence_interval_editor";
 import autobind from "../lib/autobind";
 import Formatter, {Timestamp} from "../lib/formatter";
 import * as debounce from "javascript-debounce";
-import {DataRequest} from "../lib/data_request";
+import {DataRequest, ResponseError} from "../lib/data_request";
 import ScheduledAction from "../models/scheduled_action";
 
 interface BaseRecurrenceEditorProps {
@@ -89,11 +89,14 @@ class RecurrenceEditor extends React.Component<Props, State> {
             validated: data,
             isValidating: false
           });
-        }).catch(() => {
+        }).catch((err: Error | ResponseError) => {
+          const errorMessage = ((err as ResponseError).status === 400) ?
+            "This is not a valid schedule." :
+            "An error occurred trying to validate this schedule. You may not have a working connection.";
           this.setState({
             validated: null,
             isValidating: false,
-            error: "This is not a valid schedule."
+            error: errorMessage
           });
         });
     }
