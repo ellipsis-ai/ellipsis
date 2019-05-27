@@ -61,7 +61,7 @@ trait MessageEvent extends Event {
           }.getOrElse(Future.successful(None))
         } yield maybeResponse
       }).map(_.flatten)
-      possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(this, maybeTeam, maybeChannel, eventContext.name, maybeLimitToBehavior)
+      possibleActivatedTriggers <- dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(maybeTeam, maybeChannel, eventContext.name, maybeLimitToBehavior)
       activatedTriggers <- activatedTriggersIn(possibleActivatedTriggers, dataService)
       triggerResponses <- Future.sequence(activatedTriggers.map { trigger =>
         for {

@@ -13,10 +13,10 @@ const errorMessages = {
 };
 
 function errorHandler(ellipsis, args, message) {
-  if (args && args.error) {
-    args.error(message);
-  } else if (ellipsis && ellipsis.error) {
-    ellipsis.error(message);
+  if (args && args.validationError) {
+    args.validationError(message);
+  } else if (ellipsis && ellipsis.validationError) {
+    ellipsis.validationError(message);
   } else {
     throw message;
   }

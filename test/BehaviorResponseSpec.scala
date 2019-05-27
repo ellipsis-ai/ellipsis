@@ -35,7 +35,7 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar {
         )
         val mediumTrigger = generalTrigger.copy(id = IDs.next, template = "trigger me {foo}")
         val specificTrigger = generalTrigger.copy(id = IDs.next, template = "trigger me {foo} {bar}")
-        when(dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(event, Some(team), event.maybeChannel, event.eventContext.name, None)).
+        when(dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(Some(team), event.maybeChannel, event.eventContext.name, None)).
           thenReturn(Future.successful(Seq(generalTrigger, mediumTrigger, specificTrigger)))
         val groupVersion = mock[BehaviorGroupVersion]
         val fooParam = BehaviorParameter(IDs.next, 1, Input(IDs.next, IDs.next, None, "foo", None, TextType, false, false, groupVersion), version)

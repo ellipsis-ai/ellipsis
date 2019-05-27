@@ -17,10 +17,9 @@ trait BehaviorGroupDeploymentService {
 
   def maybeActiveBehaviorGroupVersionFor(group: BehaviorGroup, context: String, channel: String): Future[Option[BehaviorGroupVersion]]
 
-  def allActiveTriggersFor(context: String, channel: String, team: Team): Future[Seq[Trigger]]
+  def allActiveTriggersFor(context: String, maybeChannel: Option[String], team: Team): Future[Seq[Trigger]]
 
   def possibleActivatedTriggersFor(
-                             event: Event,
                              maybeTeam: Option[Team],
                              maybeChannel: Option[String],
                              context: String,

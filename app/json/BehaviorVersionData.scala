@@ -275,15 +275,7 @@ object BehaviorVersionData {
           behaviorVersion.functionBody,
           behaviorVersion.maybeResponseTemplate.getOrElse(""),
           params.map(_.input.inputId),
-          triggers.map(ea =>
-            BehaviorTriggerData(
-              ea.pattern,
-              requiresMention = ea.requiresBotMention,
-              isRegex = ea.shouldTreatAsRegex,
-              caseSensitive = ea.isCaseSensitive,
-              triggerType = ea.triggerType.toString
-            )
-          ),
+          triggers.map(BehaviorTriggerData.fromTrigger),
           config,
           behavior.maybeExportId,
           Some(behaviorVersion.createdAt)

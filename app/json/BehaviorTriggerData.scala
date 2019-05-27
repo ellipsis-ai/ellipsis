@@ -40,3 +40,15 @@ case class BehaviorTriggerData(
     }
   }
 }
+
+object BehaviorTriggerData {
+  def fromTrigger(trigger: Trigger): BehaviorTriggerData = {
+    BehaviorTriggerData(
+      trigger.pattern,
+      requiresMention = trigger.requiresBotMention,
+      isRegex = trigger.shouldTreatAsRegex,
+      caseSensitive = trigger.isCaseSensitive,
+      triggerType = trigger.triggerType.toString
+    )
+  }
+}

@@ -558,20 +558,23 @@ class Scheduling extends React.Component<Props, State> {
             </div>
           </Collapsible>
           <Collapsible revealWhen={this.isEditing()}>
-            <ScheduledItemEditor
-              scheduledAction={selectedItem}
-              orgChannels={this.props.orgChannels}
-              behaviorGroups={this.props.behaviorGroups}
-              onChange={this.updateSelectedItem}
-              teamTimeZone={this.props.teamTimeZone || "America/New_York"}
-              teamTimeZoneName={this.props.teamTimeZoneName || "Eastern Time"}
-              slackUserId={this.props.slackUserId || ""}
-              slackBotUserId={this.props.slackBotUserId || ""}
-              isAdmin={this.props.isAdmin}
-              scheduleUser={selectedItem && selectedItem.userId ? this.lookupUser(selectedItem.userId) : null}
-              userTimeZoneName={this.state.userTimeZoneName}
-              csrfToken={this.props.csrfToken}
-            />
+            {this.isEditing() ? (
+              <ScheduledItemEditor
+                teamId={this.props.teamId}
+                scheduledAction={selectedItem}
+                orgChannels={this.props.orgChannels}
+                behaviorGroups={this.props.behaviorGroups}
+                onChange={this.updateSelectedItem}
+                teamTimeZone={this.props.teamTimeZone || "America/New_York"}
+                teamTimeZoneName={this.props.teamTimeZoneName || "Eastern Time"}
+                slackUserId={this.props.slackUserId || ""}
+                slackBotUserId={this.props.slackBotUserId || ""}
+                isAdmin={this.props.isAdmin}
+                scheduleUser={selectedItem && selectedItem.userId ? this.lookupUser(selectedItem.userId) : null}
+                userTimeZoneName={this.state.userTimeZoneName}
+                csrfToken={this.props.csrfToken}
+              />
+            ) : null}
           </Collapsible>
 
           {this.props.onRenderFooter((

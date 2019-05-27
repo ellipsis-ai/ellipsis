@@ -70,7 +70,7 @@ case class SlackMessageEvent(
     message.unformattedText
   }
 
-  lazy val includesBotMention: Boolean = eventContext.isDirectMessage || profile.includesBotMention(message)
+  lazy val includesBotMention: Boolean = maybeScheduled.isDefined || eventContext.isDirectMessage || profile.includesBotMention(message)
 
   def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]] = {
     UserData.allFromSlackUserDataListAction(message.userList, ellipsisTeamId, services)
