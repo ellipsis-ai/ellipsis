@@ -9,10 +9,12 @@ import com.mohiva.play.silhouette.api.Silhouette
 import json.Formatting._
 import json._
 import models.accounts.user.User
+import models.behaviors.events.{MessageEvent, TestEventContext}
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
+import models.behaviors.testing.TestMessageEvent
 import models.silhouette.EllipsisEnv
 import models.team.Team
 import play.api.Configuration
@@ -348,6 +350,35 @@ class ScheduledActionsController @Inject()(
           ))
         }.getOrElse {
           BadRequest("No valid recurrence was found.")
+        }
+      }
+    )
+  }
+
+  def validateTrigger = silhouette.SecuredAction(parse.json).async { implicit request =>
+    val user = request.identity
+    request.body.validate[TriggerValidationData].fold(
+      jsonError => {
+        Future.successful(BadRequest(JsError.toJson(jsonError)))
+      },
+      data => {
+        for {
+          teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
+          maybeResults <- teamAccess.maybeTargetTeam.map { team =>
+            val text = MessageEvent.ellipsisShortcutMentionRegex.replaceFirstIn(data.text, "")
+            val testEvent = TestMessageEvent(TestEventContext(user, team), text, includesBotMention = true, None)
+            dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(Some(team), None, "Test", None).map { allTriggers =>
+              allTriggers.filter(ea => ea.isActivatedBy(testEvent))
+            }.map(Some(_))
+          }.getOrElse(Future.successful(None))
+        } yield {
+          maybeResults.map { results =>
+            Ok(Json.toJson(results.map { trigger =>
+              ValidTriggerData(BehaviorTriggerData.fromTrigger(trigger), trigger.behaviorVersion.behavior.id)
+            }))
+          }.getOrElse {
+            NotFound("Team not found")
+          }
         }
       }
     )

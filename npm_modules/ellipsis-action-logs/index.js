@@ -6,13 +6,13 @@ module.exports = {
     const ellipsis = args.ellipsis;
     if (typeof ellipsis !== "object") {
       const msg = "You need to pass an `ellipsis` object through from an Ellipsis action";
-      if (args.error) {
-        args.error(msg);
+      if (args.validationError) {
+        args.validationError(msg);
       } else {
         throw msg;
       }
     } else {
-      const errorHandler = typeof args.error === "function" ? args.error : ellipsis.error;
+      const errorHandler = typeof args.validationError === "function" ? args.validationError : ellipsis.validationError;
       const actionName = args.action || args.actionName;
       if (!actionName) {
         errorHandler("You need to pass an `action` argument");

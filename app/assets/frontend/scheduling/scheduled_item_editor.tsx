@@ -11,6 +11,7 @@ import User from "../models/user";
 import OrgChannels from "../models/org_channels";
 
 interface Props {
+  teamId: string
   scheduledAction: Option<ScheduledAction>,
   orgChannels: OrgChannels,
   behaviorGroups: Array<BehaviorGroup>,
@@ -110,6 +111,8 @@ class ScheduledItemEditor extends React.Component<Props> {
           <div className="container container-wide border-bottom pvxxl">
             <SectionHeading number="1">What to do</SectionHeading>
             <ScheduledItemConfig
+              teamId={this.props.teamId}
+              csrfToken={this.props.csrfToken}
               scheduledAction={scheduledAction}
               behaviorGroups={this.props.behaviorGroups}
               onChangeTriggerText={this.updateTriggerText}

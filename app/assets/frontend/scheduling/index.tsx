@@ -559,6 +559,7 @@ class Scheduling extends React.Component<Props, State> {
           </Collapsible>
           <Collapsible revealWhen={this.isEditing()}>
             <ScheduledItemEditor
+              teamId={this.props.teamId}
               scheduledAction={selectedItem}
               orgChannels={this.props.orgChannels}
               behaviorGroups={this.props.behaviorGroups}

@@ -71,9 +71,11 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
     } yield maybeGroupVersion
   }
 
-  def allActiveTriggersFor(context: String, channel: String, team: Team): Future[Seq[Trigger]] = {
+  def allActiveTriggersFor(context: String, maybeChannel: Option[String], team: Team): Future[Seq[Trigger]] = {
     for {
-      maybeDevModeChannel <- dataService.devModeChannels.find(context, channel, team)
+      maybeDevModeChannel <- maybeChannel.map { channel =>
+        dataService.devModeChannels.find(context, channel, team)
+      }.getOrElse(Future.successful(None))
       triggers <- if (maybeDevModeChannel.nonEmpty) {
         dataService.triggers.allActiveFor(team)
       } else {
@@ -94,7 +96,6 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
   }
 
   def possibleActivatedTriggersFor(
-                                     event: Event,
                                      maybeTeam: Option[Team],
                                      maybeChannel: Option[String],
                                      context: String,
@@ -109,9 +110,8 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
       }.getOrElse {
         (for {
           team <- maybeTeam
-          channel <- maybeChannel
         } yield {
-          dataService.behaviorGroupDeployments.allActiveTriggersFor(context, channel, team)
+          dataService.behaviorGroupDeployments.allActiveTriggersFor(context, maybeChannel, team)
         }).getOrElse(Future.successful(Seq()))
       }
     } yield triggers

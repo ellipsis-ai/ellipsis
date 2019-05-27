@@ -70,7 +70,8 @@ declare var jsRoutes: {
       delete: () => JsRoute,
       index: (selectedId: Option<string>, isNewSchedule: Option<boolean>, filterChannelId: Option<string>, teamId: Option<string>, forceAdmin: Option<boolean>) => JsRoute,
       save: () => JsRoute,
-      validateRecurrence: () => JsRoute
+      validateRecurrence: () => JsRoute,
+      validateTrigger: () => JsRoute
     },
     SocialAuthController: {
       authenticateGithub: (redirectUrl?: Option<string>, teamId?: Option<string>, channelId?: Option<string>) => JsRoute
