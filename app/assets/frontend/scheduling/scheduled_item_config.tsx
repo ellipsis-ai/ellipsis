@@ -14,7 +14,6 @@ import {DataRequest} from "../lib/data_request";
 import {TriggerJson} from "../models/trigger";
 import BehaviorVersion from "../models/behavior_version";
 import SVGCheckmark from "../svg/checkmark";
-import SVGWarning from "../svg/warning";
 import SVGInfo from "../svg/info";
 
 interface Props {
@@ -59,6 +58,8 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     componentDidMount(): void {
       if (this.props.scheduledAction.trigger) {
         this.beginValidatingTrigger(this.props.scheduledAction.trigger);
+      } else if (typeof this.props.scheduledAction.trigger === "string" && this.triggerInput) {
+        this.triggerInput.focus();
       }
     }
 
@@ -66,6 +67,11 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       if (typeof prevProps.scheduledAction.trigger !== "string" &&
         typeof this.props.scheduledAction.trigger === "string" && this.triggerInput) {
         this.triggerInput.focus();
+      }
+      if (prevProps.scheduledAction.id !== this.props.scheduledAction.id) {
+        this.setState({
+          matchingValidTriggers: []
+        });
       } else if (this.props.scheduledAction.trigger && prevProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
         this.beginValidatingTrigger(this.props.scheduledAction.trigger);
       }
@@ -74,7 +80,8 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     beginValidatingTrigger(text: string): void {
       if (!this.state.loadingValidation) {
         this.setState({
-          loadingValidation: true
+          loadingValidation: true,
+          matchingValidTriggers: []
         }, () => {
           this.validateTrigger(text);
         });
