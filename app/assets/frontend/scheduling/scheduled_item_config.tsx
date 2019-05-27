@@ -15,6 +15,7 @@ import {TriggerJson} from "../models/trigger";
 import BehaviorVersion from "../models/behavior_version";
 import SVGCheckmark from "../svg/checkmark";
 import SVGWarning from "../svg/warning";
+import SVGInfo from "../svg/info";
 
 interface Props {
   teamId: string,
@@ -227,14 +228,14 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         });
         if (matchingGroup && matchingBehavior) {
           return (
-            <div key={`behaviorId${matchingBehavior.behaviorId}`}>
+            <div key={`behaviorId${matchingBehavior.behaviorId}`} className="mvxs">
               {oneValidTrigger ? (
                 <span className="display-inline-block height-xl type-green mrs align-m">
                   <SVGCheckmark />
                 </span>
               ) : (
-                <span className="display-inline-block height-xl type-yellow mrs align-m">
-                  <SVGWarning />
+                <span className="display-inline-block height-xl type-pink mrs align-m">
+                  <SVGInfo />
                 </span>
               )}
               <span className="align-m">
@@ -264,7 +265,12 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
             />
           </div>
           <div>
-            <h5>{this.state.matchingValidTriggers.length <= 1 ? "Matching action" : "Multiple matching actions"}</h5>
+            <h5>{this.state.matchingValidTriggers.length <= 1 ? "Matching action" : "Matching actions"}</h5>
+            {this.state.matchingValidTriggers.length > 1 ? (
+              <div className="type-pink type-bold type-italic">
+                Warning: this text will trigger {this.state.matchingValidTriggers.length} actions to run at the same time.
+              </div>
+            ) : null}
             {this.renderMatchingActions()}
           </div>
         </div>
