@@ -123,6 +123,8 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     promptTextForAction(maybePreviousCollectedValue, context, Some(paramState), isReminding).map(context.simpleTextResultFor)
   }
 
+  def validValuesFor(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Seq[ValidValue] = Seq()
+
   def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     DBIO.successful(result)
   }
@@ -870,6 +872,14 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
             }
           }.getOrElse(cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context))
         }
+      } else if (validValues.size == 1 && context.maybeConversation.isDefined) {
+        val conversation = context.maybeConversation.get
+        for {
+          _ <- DBIO.from(context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues))
+          _ <- context.services.dataService.collectedParameterValues.ensureForAction(context.parameter, conversation, validValues.head.label)
+          updated <- conversation.updateToNextStateAction(context.event, context.services)
+          res <- updated.respondAction(context.event, isReminding = false, context.services)
+        } yield res
       } else {
         context.maybeConversation.foreach { conversation =>
           context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), validValues)
@@ -896,12 +906,15 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     } yield output
   }
 
-  override def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
-    val validValues = result match {
+  override def validValuesFor(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Seq[ValidValue] = {
+    result match {
       case r: SuccessResult => extractValidValues(r, context)
       case _ => Seq()
     }
-    promptResultWithValidValues(validValues, context)
+  }
+
+  override def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    promptResultWithValidValues(validValuesFor(result, context), context)
   }
 
   private def isCollectingOther(context: BehaviorParameterContext): Future[Boolean] = {
