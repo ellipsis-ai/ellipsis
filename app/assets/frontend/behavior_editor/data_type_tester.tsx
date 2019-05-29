@@ -189,23 +189,6 @@ class DataTypeTester extends React.Component<Props, State> {
       }
     }
 
-    renderSearchQuery() {
-      if (this.props.isSearch) {
-        return (
-          <FormInput
-            className="width-20 mrs mbs"
-            placeholder="Search query"
-            ref={(el) => this.searchQueryInput = el}
-            value={this.state.searchQuery}
-            onChange={this.onChangeSearchQuery}
-            onEnterKey={this.onEnterKey}
-          />
-        );
-      } else {
-        return null;
-      }
-    }
-
     renderResultStatus() {
       const result = this.getResults()[this.getResults().length - 1];
       const parsedResult = result ? this.getParsedResponse(result) : null;
@@ -221,7 +204,7 @@ class DataTypeTester extends React.Component<Props, State> {
       } else if (result) {
         return (
           <span className="type-pink">
-            <span>Last response invalid: must call <code>ellipsis.success</code> with an array of objects, </span>
+            <span>Last response invalid: must call <code>ellipsis.success</code> with either a single object or an array of objects, </span>
             <span>each with an <code className="type-black">id</code> and <code className="type-black">label</code> property.</span>
           </span>
         );
@@ -386,6 +369,16 @@ class DataTypeTester extends React.Component<Props, State> {
       );
     }
 
+    allInputsFilled() {
+      let missingInput = false;
+      this.props.inputs.forEach(ea => {
+        if (!Boolean(this.state.inputValues[ea.name])) {
+          missingInput = true;
+        }
+      });
+      return !missingInput;
+    }
+
     renderTester() {
       const inputs = this.props.inputs;
       return (
@@ -402,7 +395,7 @@ class DataTypeTester extends React.Component<Props, State> {
 
                 <button className="button-primary mbs" type="button"
                   onClick={this.onClick}
-                  disabled={this.state.isTesting}
+                  disabled={this.state.isTesting || !this.allInputsFilled()}
                 >Test</button>
               </div>
               <div className="column column-shrink align-b">
