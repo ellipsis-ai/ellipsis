@@ -1,3 +1,3 @@
 package json
 
-case class ValidTriggerData(trigger: BehaviorTriggerData, behaviorId: String)
+case class ValidTriggerData(text: String, matchingTriggers: Seq[BehaviorTriggerData], matchingBehaviorIds: Seq[String])

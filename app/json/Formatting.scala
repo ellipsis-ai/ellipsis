@@ -140,7 +140,7 @@ object Formatting {
   lazy implicit val scheduleChannelDataWrites = Json.writes[ScheduleChannelData]
 
   lazy implicit val recurrenceValidationDataFormat = Json.format[RecurrenceValidationData]
-  lazy implicit val triggerValidationDataFormat = Json.format[TriggerValidationData]
+  lazy implicit val triggerValidationDataFormat = Json.format[ValidateTriggersRequestData]
   lazy implicit val validTriggerDataFormat = Json.format[ValidTriggerData]
 
   lazy implicit val teamChannelsDataFormat = Json.format[TeamChannelsData]
