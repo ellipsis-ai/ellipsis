@@ -48,7 +48,7 @@
   routes.javascript.ScheduledActionsController.delete,
   routes.javascript.ScheduledActionsController.save,
   routes.javascript.ScheduledActionsController.validateRecurrence,
-  routes.javascript.ScheduledActionsController.validateTrigger,
+  routes.javascript.ScheduledActionsController.validateTriggers,
   routes.javascript.SocialAuthController.authenticateGithub,
   routes.javascript.SupportController.sendRequest,
 

@@ -28,8 +28,9 @@ interface Props {
 }
 
 interface ValidTriggerJson {
-  trigger: TriggerJson
-  behaviorId: string
+  text: string
+  matchingTriggers: Array<TriggerJson>
+  matchingBehaviorIds: Array<string>
 }
 
 interface MatchingGroupAndBehaviorVersion {
@@ -38,7 +39,7 @@ interface MatchingGroupAndBehaviorVersion {
 }
 
 interface State {
-  matchingValidTriggers: Array<ValidTriggerJson>
+  matchingBehaviorIds: Array<string>
   loadingValidation: boolean
   validationError: Option<string>
 }
@@ -54,7 +55,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       this.nameInputs = [];
       this.validateTrigger = debounce(this._validateTrigger, 500);
       this.state = {
-        matchingValidTriggers: [],
+        matchingBehaviorIds: [],
         loadingValidation: Boolean(this.props.scheduledAction.trigger),
         validationError: null
       };
@@ -75,7 +76,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       }
       if (prevProps.scheduledAction.id !== this.props.scheduledAction.id) {
         this.setState({
-          matchingValidTriggers: []
+          matchingBehaviorIds: []
         });
       } else if (this.props.scheduledAction.trigger && prevProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
         this.beginValidatingTrigger(this.props.scheduledAction.trigger);
@@ -85,21 +86,22 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     beginValidatingTrigger(text: string): void {
       this.setState({
         loadingValidation: true,
-        matchingValidTriggers: []
+        matchingBehaviorIds: []
       }, () => {
         this.validateTrigger(text);
       });
     }
 
     _validateTrigger(text: string): void {
-      DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.validateTrigger().url, {
-        text: text,
+      DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.validateTriggers().url, {
+        triggerMessages: [text],
         teamId: this.props.teamId
       }, this.props.csrfToken).then((results: Array<ValidTriggerJson>) => {
         if (this.props.scheduledAction.trigger === text) {
+          const firstMatch = results.find((ea) => ea.text === text);
           this.setState({
             loadingValidation: false,
-            matchingValidTriggers: results
+            matchingBehaviorIds: firstMatch ? firstMatch.matchingBehaviorIds : []
           });
         } else {
           // Throw away results if the user's trigger text has changed before request completes
@@ -248,9 +250,9 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     }
 
     getMatchingActions() {
-      const oneValidTrigger = this.state.matchingValidTriggers.length === 1;
-      return this.state.matchingValidTriggers.map((match) => {
-        const matching = this.getMatchingGroupAndBehavior(match.behaviorId);
+      const oneValidTrigger = this.state.matchingBehaviorIds.length === 1;
+      return this.state.matchingBehaviorIds.map((behaviorId) => {
+        const matching = this.getMatchingGroupAndBehavior(behaviorId);
         if (matching) {
           const group = matching.group;
           const behaviorVersion = matching.behaviorVersion;
@@ -300,10 +302,10 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
             />
           </div>
           <div>
-            <h5>{this.state.matchingValidTriggers.length <= 1 ? "Matching action" : "Matching actions"}</h5>
-            {this.state.matchingValidTriggers.length > 1 ? (
+            <h5>{this.state.matchingBehaviorIds.length <= 1 ? "Matching action" : "Matching actions"}</h5>
+            {this.state.matchingBehaviorIds.length > 1 ? (
               <div className="type-pink type-bold type-italic">
-                Warning: this text will trigger {this.state.matchingValidTriggers.length} actions to run at the same time.
+                Warning: this text will trigger {this.state.matchingBehaviorIds.length} actions to run at the same time.
               </div>
             ) : null}
             {this.renderMatchingActions()}
@@ -317,7 +319,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         return (
           <div className="pulse type-weak type-italic">Checking trigger text…</div>
         );
-      } else if (this.state.matchingValidTriggers.length > 0) {
+      } else if (this.state.matchingBehaviorIds.length > 0) {
         return (
           <div>{this.getMatchingActions()}</div>
         );

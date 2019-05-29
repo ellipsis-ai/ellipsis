@@ -355,27 +355,27 @@ class ScheduledActionsController @Inject()(
     )
   }
 
-  def validateTrigger = silhouette.SecuredAction(parse.json).async { implicit request =>
+  def validateTriggers = silhouette.SecuredAction(parse.json).async { implicit request =>
     val user = request.identity
-    request.body.validate[TriggerValidationData].fold(
+    request.body.validate[ValidateTriggersRequestData].fold(
       jsonError => {
         Future.successful(BadRequest(JsError.toJson(jsonError)))
       },
       data => {
         for {
           teamAccess <- dataService.users.teamAccessFor(user, Some(data.teamId))
-          maybeResults <- teamAccess.maybeTargetTeam.map { team =>
-            val text = MessageEvent.ellipsisShortcutMentionRegex.replaceFirstIn(data.text, "")
-            val testEvent = TestMessageEvent(TestEventContext(user, team), text, includesBotMention = true, None)
-            dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(Some(team), None, "Test", None).map { allTriggers =>
-              allTriggers.filter(ea => ea.isActivatedBy(testEvent))
-            }.map(Some(_))
-          }.getOrElse(Future.successful(None))
+          allTriggers <- teamAccess.maybeTargetTeam.map { team =>
+            dataService.behaviorGroupDeployments.possibleActivatedTriggersFor(Some(team), None, "Test", None)
+          }.getOrElse(Future.successful(Seq.empty))
         } yield {
-          maybeResults.map { results =>
-            Ok(Json.toJson(results.map { trigger =>
-              ValidTriggerData(BehaviorTriggerData.fromTrigger(trigger), trigger.behaviorVersion.behavior.id)
-            }))
+          teamAccess.maybeTargetTeam.map { team =>
+            val results = data.triggerMessages.map { triggerText =>
+              val text = MessageEvent.ellipsisShortcutMentionRegex.replaceFirstIn(triggerText, "")
+              val testEvent = TestMessageEvent(TestEventContext(user, team), text, includesBotMention = true, None)
+              val validTriggers = allTriggers.filter(ea => ea.isActivatedBy(testEvent))
+              ValidTriggerData(triggerText, validTriggers.map(BehaviorTriggerData.fromTrigger), validTriggers.map(_.behaviorVersion.behavior.id))
+            }
+            Ok(Json.toJson(results))
           }.getOrElse {
             NotFound("Team not found")
           }
