@@ -106,7 +106,7 @@ trait Event {
                         maybeConversation: Option[Conversation],
                         services: DefaultServices
                       )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[MessageObject]] = {
-    DBIO.successful(None)
+    MessageObject.buildForAction(this, maybeConversation, services).map(Some(_))
   }
 
   def messageUserDataListAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Set[UserData]]

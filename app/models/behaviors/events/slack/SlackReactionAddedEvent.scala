@@ -4,8 +4,6 @@ import akka.actor.ActorSystem
 import json.UserData
 import models.behaviors.BehaviorResponse
 import models.behaviors.behavior.Behavior
-import models.behaviors.conversations.conversation.Conversation
-import models.behaviors.ellipsisobject.MessageObject
 import models.behaviors.events.{Event, EventType, SlackEventContext}
 import models.behaviors.scheduling.Scheduled
 import models.team.Team
@@ -32,13 +30,6 @@ case class SlackReactionAddedEvent(
   lazy val invocationLogText: String = relevantMessageText
 
   val maybeOriginalEventType: Option[EventType] = None
-
-  override def maybeMessageInfoAction(
-                                       maybeConversation: Option[Conversation],
-                                       services: DefaultServices
-                                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[MessageObject]] = {
-    MessageObject.buildForAction(this, maybeConversation, services).map(Some(_))
-  }
 
   override def maybePermalinkFor(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[String]] = {
     (for {
