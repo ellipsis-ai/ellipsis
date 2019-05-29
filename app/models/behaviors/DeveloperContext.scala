@@ -20,7 +20,7 @@ case class DeveloperContext(
     val baseUrl = configuration.get[String]("application.apiBaseUrl")
     val helpUrl = baseUrl + controllers.routes.HelpController.devMode(Some(teamIdForContext), Some(botName)).url
     val maybeEditUrl = maybeBehaviorVersion.map { behaviorVersion =>
-      baseUrl + controllers.routes.BehaviorEditorController.edit(behaviorVersion.groupVersion.id, Some(behaviorVersion.behavior.id), None).url
+      baseUrl + controllers.routes.BehaviorEditorController.edit(behaviorVersion.group.id, Some(behaviorVersion.behavior.id), None).url
     }
     if (isForUndeployedBehaviorVersion) {
       val editLink = maybeEditUrl.map { url =>
