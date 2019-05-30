@@ -123,6 +123,8 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
     promptTextForAction(maybePreviousCollectedValue, context, Some(paramState), isReminding).map(context.simpleTextResultFor)
   }
 
+  def validValuesFor(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Seq[ValidValue] = Seq()
+
   def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     DBIO.successful(result)
   }
@@ -731,6 +733,28 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
+  private def extractSingleValidValue(
+                                  result: SuccessResult,
+                                  context: BehaviorParameterContext
+                                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Option[ValidValue] = {
+    result.maybeLogResult.foreach { logResult =>
+      if (result.shouldIncludeLogs && logResult.authorDefinedLogStatements.nonEmpty) {
+        sendLogMessageInBackgroundFor(result, context)
+      }
+    }
+    result.result.validate[JsObject] match {
+      case JsSuccess(data, _) => {
+        extractValidValueFrom(data)
+      }
+      case _: JsError => {
+        result.result.validate[String] match {
+          case JsSuccess(string, _) => Some(ValidValue(string, string, Json.obj()))
+          case _: JsError => None
+        }
+      }
+    }
+  }
+
   private def validValuesFromDefaultStorageFor(
                                                 maybeMatchText: Option[String],
                                                 context: BehaviorParameterContext
@@ -766,14 +790,14 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
 
   private def getValidValuesAction(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[ValidValue]] = {
     if (dataTypeConfig.usesCode) {
-      getValidValuesSuccessResultAction(maybeMatchText, context).map(res => extractValidValues(res, context))
+      getValidValuesSuccessResultAction(maybeMatchText, context).map { res =>
+        maybeSingleValidValueFor(res, context).map(Seq(_)).getOrElse {
+          validValuesFor(res, context)
+        }
+      }
     } else {
       validValuesFromDefaultStorageFor(maybeMatchText, context)
     }
-  }
-
-  private def getValidValues(maybeMatchText: Option[String], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Seq[ValidValue]] = {
-    context.dataService.run(getValidValuesAction(maybeMatchText, context))
   }
 
   private def textMatchesLabel(text: String, label: String, context: BehaviorParameterContext): Boolean = {
@@ -857,6 +881,16 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     buttonLength <= MAX_SIMPLE_BUTTONS && validValues.forall(isSimpleValidValue)
   }
 
+  private def promptResultWithSingleValidValue(validValue: ValidValue, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    val conversation = context.maybeConversation.get
+    for {
+      _ <- DBIO.from(context.cacheService.cacheValidValues(valuesListCacheKeyFor(conversation, context.parameter), Seq(validValue)))
+      _ <- context.services.dataService.collectedParameterValues.ensureForAction(context.parameter, conversation, validValue.label)
+      updated <- conversation.updateToNextStateAction(context.event, context.services)
+      res <- updated.respondAction(context.event, isReminding = false, context.services)
+    } yield res
+  }
+
   private def promptResultWithValidValues(validValues: Seq[ValidValue], context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       params <- context.services.dataService.behaviorParameters.allForAction(behaviorVersion)
@@ -896,12 +930,24 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     } yield output
   }
 
-  override def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
-    val validValues = result match {
+  override def validValuesFor(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Seq[ValidValue] = {
+    result match {
       case r: SuccessResult => extractValidValues(r, context)
       case _ => Seq()
     }
-    promptResultWithValidValues(validValues, context)
+  }
+
+  def maybeSingleValidValueFor(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Option[ValidValue] = {
+    result match {
+      case r: SuccessResult => extractSingleValidValue(r, context)
+      case _ => None
+    }
+  }
+
+  override def promptResultWithValidValuesResult(result: BotResult, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
+    maybeSingleValidValueFor(result, context).map { single =>
+      promptResultWithSingleValidValue(single, context)
+    }.getOrElse(promptResultWithValidValues(validValuesFor(result, context), context))
   }
 
   private def isCollectingOther(context: BehaviorParameterContext): Future[Boolean] = {

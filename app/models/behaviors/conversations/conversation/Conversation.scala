@@ -93,6 +93,7 @@ trait Conversation {
 
   def updateStateToAction(newState: String, dataService: DataService): DBIO[Conversation]
   def cancelAction(dataService: DataService): DBIO[Conversation] = updateStateToAction(Conversation.DONE_STATE, dataService)
+  def updateToNextStateAction(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Conversation]
   def updateWithAction(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Conversation]
 
   def respondAction(
@@ -116,6 +117,11 @@ trait Conversation {
       result <- updatedConversation.respondAction(event, isReminding=false, services)
     } yield result
   }
+
+  def maybeNextParamToCollectAction(
+                               event: Event,
+                               services: DefaultServices
+                             )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Option[BehaviorParameter]]
 
   def maybeNextParamToCollect(
                                event: Event,

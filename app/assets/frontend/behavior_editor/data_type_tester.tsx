@@ -8,6 +8,7 @@ import InvocationResults from './behavior_tester_invocation_results';
 import InvocationTestResult, {BehaviorInvocationTestReportOutput} from '../models/behavior_invocation_result';
 import BehaviorTesterInvocationResultFile from './behavior_tester_invocation_result_file';
 import autobind from "../lib/autobind";
+import Input from "../models/input";
 
 const MAX_RESULTS_TO_SHOW = 10;
 
@@ -17,14 +18,18 @@ interface Props {
   isSearch?: Option<boolean>,
   csrfToken: string,
   onDone: () => void,
-  appsRequiringAuth: Array<RequiredOAuthApplication>
+  appsRequiringAuth: Array<RequiredOAuthApplication>,
+  inputs: Array<Input>
 }
 
 interface State {
   searchQuery: string,
   results: Array<InvocationTestResult>,
   isTesting: boolean,
-  hasTested: boolean
+  hasTested: boolean,
+  inputValues: {
+    [name: string]: string
+  },
 }
 
 interface DataTypeChoice {
@@ -43,7 +48,8 @@ class DataTypeTester extends React.Component<Props, State> {
         searchQuery: '',
         results: [],
         isTesting: false,
-        hasTested: false
+        hasTested: false,
+        inputValues: {}
       };
     }
 
@@ -72,6 +78,8 @@ class DataTypeTester extends React.Component<Props, State> {
           });
         } else if (this.isValidDataTypeArray(parsed)) {
           return parsed;
+        } else if (this.isValidDataTypeOption(parsed)) {
+          return [parsed];
         } else {
           return null;
         }
@@ -117,11 +125,7 @@ class DataTypeTester extends React.Component<Props, State> {
     }
 
     params(): { [name: string]: string } {
-      if (this.state.searchQuery) {
-        return { searchQuery: this.state.searchQuery };
-      } else {
-        return {};
-      }
+      return this.state.inputValues;
     }
 
     fetchResult() {
@@ -185,23 +189,6 @@ class DataTypeTester extends React.Component<Props, State> {
       }
     }
 
-    renderSearchQuery() {
-      if (this.props.isSearch) {
-        return (
-          <FormInput
-            className="width-20 mrs mbs"
-            placeholder="Search query"
-            ref={(el) => this.searchQueryInput = el}
-            value={this.state.searchQuery}
-            onChange={this.onChangeSearchQuery}
-            onEnterKey={this.onEnterKey}
-          />
-        );
-      } else {
-        return null;
-      }
-    }
-
     renderResultStatus() {
       const result = this.getResults()[this.getResults().length - 1];
       const parsedResult = result ? this.getParsedResponse(result) : null;
@@ -217,7 +204,7 @@ class DataTypeTester extends React.Component<Props, State> {
       } else if (result) {
         return (
           <span className="type-pink">
-            <span>Last response invalid: must call <code>ellipsis.success</code> with an array of objects, </span>
+            <span>Last response invalid: must call <code>ellipsis.success</code> with either a single object or an array of objects, </span>
             <span>each with an <code className="type-black">id</code> and <code className="type-black">label</code> property.</span>
           </span>
         );
@@ -342,17 +329,73 @@ class DataTypeTester extends React.Component<Props, State> {
       }
     }
 
+    onChangeInputValue(name: string, value: string): void {
+      const newInputValues = Object.assign({}, this.state.inputValues);
+      newInputValues[name] = value;
+      this.setState({
+        inputValues: newInputValues
+      });
+    }
+
+    getValueForInputName(name: string) {
+      return (
+        <FormInput
+          className="form-input-borderless"
+          value={this.state.inputValues[name] || ''}
+          onChange={this.onChangeInputValue.bind(this, name)}
+          placeholder="None"
+        />
+      );
+    }
+
+    renderInputs(inputs: Array<Input>) {
+      return (
+        <div className="columns columns-elastic">
+          <div className="column-group">
+            {inputs.map((input, index) => (
+              <div key={`input${index}`} className="column-row">
+                <div className="column column-shrink type-monospace type-weak type-s prs pts">{input.name}:</div>
+                <div className="column column-expand">{this.getValueForInputName(input.name)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    renderNoInputs() {
+      return (
+        <p className="type-weak">No user input has been defined.</p>
+      );
+    }
+
+    allInputsFilled() {
+      let missingInput = false;
+      this.props.inputs.forEach(ea => {
+        if (!Boolean(this.state.inputValues[ea.name])) {
+          missingInput = true;
+        }
+      });
+      return !missingInput;
+    }
+
     renderTester() {
+      const inputs = this.props.inputs;
       return (
         <div>
           <div className="mbxl">
             {this.renderIntro()}
             <div className="columns columns-elastic">
               <div className="column column-expand">
-                {this.renderSearchQuery()}
+
+                <h4 className="mbxs">
+                  <span>User input </span>
+                </h4>
+                {inputs.length > 0 ? this.renderInputs(inputs) : this.renderNoInputs()}
+
                 <button className="button-primary mbs" type="button"
                   onClick={this.onClick}
-                  disabled={this.state.isTesting || Boolean(this.props.isSearch && !this.state.searchQuery)}
+                  disabled={this.state.isTesting || !this.allInputsFilled()}
                 >Test</button>
               </div>
               <div className="column column-shrink align-b">

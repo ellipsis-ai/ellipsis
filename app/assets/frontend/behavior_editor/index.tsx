@@ -2215,6 +2215,7 @@ class BehaviorEditor extends React.Component<Props, State> {
                 csrfToken={this.props.csrfToken}
                 onDone={this.props.onClearActivePanel}
                 appsRequiringAuth={this.getOAuthApplicationsRequiringAuth()}
+                inputs={this.getInputs()}
               />
             </Collapsible>
           ) : null}
