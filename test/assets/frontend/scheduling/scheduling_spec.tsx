@@ -79,7 +79,10 @@ const emptyConfig: SchedulingProps = {
   isAdmin: false,
   userMap: {},
   onLoadUserData: emptyFn,
-  csrfToken: "FANCY_TOKEN"
+  csrfToken: "FANCY_TOKEN",
+  validTriggers: [],
+  isValidatingTriggers: false,
+  triggerValidationError: null
 };
 
 function newSchedule(props?: Partial<ScheduledActionInterface>) {
