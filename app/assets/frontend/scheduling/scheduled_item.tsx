@@ -4,6 +4,9 @@ import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduledItemTitle from './scheduled_item_title';
 import autobind from "../lib/autobind";
+import {ValidTriggerInterface} from "./loader";
+import SVGInfo from "../svg/info";
+import SVGWarning from "../svg/warning";
 
 interface Props {
   scheduledAction: ScheduledAction,
@@ -12,6 +15,7 @@ interface Props {
   className?: Option<string>
   userTimeZone: Option<string>
   userTimeZoneName: Option<string>
+  validTrigger: Option<ValidTriggerInterface>
 }
 
 class ScheduledItem extends React.Component<Props> {
@@ -33,6 +37,31 @@ class ScheduledItem extends React.Component<Props> {
       const isUserZone = this.props.scheduledAction.recurrence.timeZone === this.props.userTimeZone;
       const isUserZoneName = this.props.scheduledAction.recurrence.timeZoneName === this.props.userTimeZoneName;
       return hasUserZoneName && (!isUserZone && !isUserZoneName);
+    }
+
+    renderWarning() {
+      const actionCount = this.props.validTrigger && this.props.validTrigger.matchingBehaviorIds.length;
+      if (actionCount === 0) {
+        return (
+          <div className="mtl type-s fade-in">
+            <span className="type-pink display-inline-block height-xl align-m mrs">
+              <SVGWarning />
+            </span>
+            <span className="type-italic type-weak">Warning: this scheduled message will not trigger any known action.</span>
+          </div>
+        );
+      } else if (typeof actionCount === "number" && actionCount > 1) {
+        return (
+          <div className="mtl type-s fade-in">
+            <span className="type-yellow display-inline-block height-xl align-m mrs">
+              <SVGInfo />
+            </span>
+            <span className="type-italic type-weak">This scheduled message will trigger {actionCount} actions.</span>
+          </div>
+        );
+      } else {
+        return null;
+      }
     }
 
     render() {
@@ -70,6 +99,7 @@ class ScheduledItem extends React.Component<Props> {
                 </div>
               </div>
             ) : null}
+            {this.renderWarning()}
           </div>
         </button>
       );

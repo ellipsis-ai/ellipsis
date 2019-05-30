@@ -144,7 +144,7 @@ class Trigger implements Diffable, TriggerInterface {
       return Trigger.fromProps(Object.assign({}, this, props));
     }
 
-    static fromProps(props: TriggerInterface): Trigger {
+    static fromJson(props: TriggerJson): Trigger {
       return new Trigger(
         props.triggerType,
         props.text,
@@ -153,8 +153,12 @@ class Trigger implements Diffable, TriggerInterface {
       );
     }
 
+    static fromProps(props: TriggerInterface): Trigger {
+      return Trigger.fromJson(props);
+    }
+
     static triggersFromJson(jsonArray: Array<TriggerJson>) {
-      return jsonArray.map((triggerObj) => Trigger.fromProps(triggerObj));
+      return jsonArray.map((triggerObj) => Trigger.fromJson(triggerObj));
     }
 }
 

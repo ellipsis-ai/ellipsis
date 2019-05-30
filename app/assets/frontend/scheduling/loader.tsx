@@ -11,6 +11,7 @@ import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import autobind from "../lib/autobind";
 import User, {UserJson} from "../models/user";
 import OrgChannels, {OrgChannelsJson} from "../models/org_channels";
+import Trigger, {TriggerJson} from "../models/trigger";
 
 interface Props {
   containerId: string
@@ -33,31 +34,99 @@ export interface UserMap {
   [userId: string]: Option<User>
 }
 
+export interface ValidTriggerJson {
+  text: string
+  matchingTriggers: Array<TriggerJson>
+  matchingBehaviorIds: Array<string>
+}
+
+export interface ValidTriggerInterface extends ValidTriggerJson {
+  matchingTriggers: Array<Trigger>
+}
+
 interface State {
   scheduledActions: Array<ScheduledAction>,
+  validTriggers: Array<ValidTriggerInterface>
   behaviorGroups: Array<BehaviorGroup>,
   isSaving: boolean,
   justSavedAction: Option<ScheduledAction>,
   isDeleting: boolean,
   error: Option<string>,
-  userMap: UserMap
+  userMap: UserMap,
+  isValidatingTriggers: boolean,
+  triggerValidationError: Option<string>
 }
 
 declare var SchedulingConfig: Props;
 
 class SchedulingLoader extends React.Component<Props, State> {
+  triggerValidationTimer: number | undefined;
+
   constructor(props: Props) {
     super(props);
     autobind(this);
     this.state = {
       scheduledActions: this.props.scheduledActions.map(ScheduledAction.fromJson),
+      validTriggers: [],
       behaviorGroups: this.props.behaviorGroups.map(BehaviorGroup.fromJson),
       isSaving: false,
       justSavedAction: null,
       isDeleting: false,
       error: null,
-      userMap: {}
+      userMap: {},
+      isValidatingTriggers: false,
+      triggerValidationError: null
     };
+  }
+
+  componentDidMount(): void {
+    this.startTriggerValidationTimer();
+    window.addEventListener('blur', this.clearTriggerValidationTimer);
+    window.addEventListener('focus', this.startTriggerValidationTimer);
+  }
+
+  componentWillUnmount(): void {
+    this.clearTriggerValidationTimer();
+    window.removeEventListener('blur', this.clearTriggerValidationTimer);
+    window.removeEventListener('focus', this.startTriggerValidationTimer);
+  }
+
+  startTriggerValidationTimer(): void {
+    this.resetTriggerValidation();
+    this.triggerValidationTimer = setInterval(this.resetTriggerValidation, 30000);
+  }
+
+  clearTriggerValidationTimer(): void {
+    clearInterval(this.triggerValidationTimer);
+  }
+
+  resetTriggerValidation(): void {
+    const possibleTriggers = this.state.scheduledActions.map((ea) => ea.trigger).filter((ea): ea is string => Boolean(ea));
+    const uniqueTriggers = Array.from(new Set(possibleTriggers));
+    if (uniqueTriggers.length > 0) {
+      this.setState({ isValidatingTriggers: true });
+      DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.validateTriggers().url, {
+        triggerMessages: uniqueTriggers,
+        teamId: this.props.teamId
+      }, this.props.csrfToken).then((results: Array<ValidTriggerJson>) => {
+        this.setState({
+          isValidatingTriggers: false,
+          validTriggers: results.map((result) => Object.assign({}, result, {
+            matchingTriggers: result.matchingTriggers.map((triggerJson) => Trigger.fromJson(triggerJson))
+          }))
+        });
+      }).catch(() => {
+        this.setState({
+          isValidatingTriggers: false,
+          triggerValidationError: "An error occurred while trying to validate scheduled triggers."
+        });
+      });
+    } else {
+      this.setState({
+        validTriggers: [],
+        triggerValidationError: null
+      });
+    }
   }
 
         onSave(scheduledAction: ScheduledAction): void {
@@ -86,6 +155,7 @@ class SchedulingLoader extends React.Component<Props, State> {
                   justSavedAction: newAction,
                   scheduledActions: newActions
                 });
+                this.resetTriggerValidation();
               })
               .catch(() => {
                 this.setState({
@@ -115,6 +185,7 @@ class SchedulingLoader extends React.Component<Props, State> {
                     isDeleting: false,
                     scheduledActions: ImmutableObjectUtils.arrayRemoveElementAtIndex(this.state.scheduledActions, oldActionIndex)
                   });
+                  this.resetTriggerValidation();
                 } else {
                   throw Error("No action deleted");
                 }
@@ -190,6 +261,9 @@ class SchedulingLoader extends React.Component<Props, State> {
                 userMap={this.state.userMap}
                 onLoadUserData={this.onLoadUserData}
                 csrfToken={this.props.csrfToken}
+                validTriggers={this.state.validTriggers}
+                isValidatingTriggers={this.state.isValidatingTriggers}
+                triggerValidationError={this.state.triggerValidationError}
                 {...pageProps}
               />
             )} />

@@ -11,10 +11,10 @@ import Button from "../form/button";
 import ToggleGroup, {ToggleGroupItem} from "../form/toggle_group";
 import * as debounce from "javascript-debounce";
 import {DataRequest} from "../lib/data_request";
-import {TriggerJson} from "../models/trigger";
 import BehaviorVersion from "../models/behavior_version";
 import SVGCheckmark from "../svg/checkmark";
 import SVGInfo from "../svg/info";
+import {ValidTriggerJson} from "./loader";
 
 interface Props {
   teamId: string,
@@ -25,12 +25,6 @@ interface Props {
   onChangeAction: (behaviorId: string, newArgs: Array<ScheduledActionArgument>, callback?: () => void) => void
   onChangeSkill: (behaviorGroupId: string) => void
   onToggleByTrigger: (byTrigger: boolean) => void
-}
-
-interface ValidTriggerJson {
-  text: string
-  matchingTriggers: Array<TriggerJson>
-  matchingBehaviorIds: Array<string>
 }
 
 interface MatchingGroupAndBehaviorVersion {
@@ -63,10 +57,15 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
 
     componentDidMount(): void {
       if (this.props.scheduledAction.trigger) {
-        this.beginValidatingTrigger(this.props.scheduledAction.trigger);
+        this.beginValidatingTrigger();
       } else if (typeof this.props.scheduledAction.trigger === "string" && this.triggerInput) {
         this.triggerInput.focus();
       }
+      window.addEventListener('focus', this.beginValidatingTrigger);
+    }
+
+    componentWillUnmount(): void {
+      window.removeEventListener('focus', this.beginValidatingTrigger);
     }
 
     componentDidUpdate(prevProps: Readonly<Props>): void {
@@ -79,17 +78,20 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
           matchingBehaviorIds: []
         });
       } else if (this.props.scheduledAction.trigger && prevProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
-        this.beginValidatingTrigger(this.props.scheduledAction.trigger);
+        this.beginValidatingTrigger();
       }
     }
 
-    beginValidatingTrigger(text: string): void {
-      this.setState({
-        loadingValidation: true,
-        matchingBehaviorIds: []
-      }, () => {
-        this.validateTrigger(text);
-      });
+    beginValidatingTrigger(): void {
+      const text = this.props.scheduledAction.trigger;
+      if (text) {
+        this.setState({
+          loadingValidation: true,
+          matchingBehaviorIds: []
+        }, () => {
+          this.validateTrigger(text);
+        });
+      }
     }
 
     _validateTrigger(text: string): void {
@@ -263,7 +265,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
                   <SVGCheckmark />
                 </span>
               ) : (
-                <span className="display-inline-block height-xl type-pink mrs align-m">
+                <span className="display-inline-block height-xl type-yellow mrs align-m">
                   <SVGInfo />
                 </span>
               )}
@@ -304,8 +306,8 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
           <div>
             <h5>{this.state.matchingBehaviorIds.length <= 1 ? "Matching action" : "Matching actions"}</h5>
             {this.state.matchingBehaviorIds.length > 1 ? (
-              <div className="type-pink type-bold type-italic">
-                Warning: this text will trigger {this.state.matchingBehaviorIds.length} actions to run at the same time.
+              <div className="type-yellow type-bold type-italic">
+                This text will trigger {this.state.matchingBehaviorIds.length} actions to run at the same time.
               </div>
             ) : null}
             {this.renderMatchingActions()}
