@@ -100,19 +100,19 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
 
     getFilteredChannelGroups(): Array<ScheduleChannelGroup> {
       let groups: Array<ScheduleChannelGroup> = [];
-      groups.push(this.getChannelGroupFor("Shared within organization", this.props.orgChannels.orgSharedChannels));
-      groups.push(this.getChannelGroupFor("Shared externally", this.props.orgChannels.externallySharedChannels));
+      groups.push(this.getChannelGroupFor("Direct messages", this.props.orgChannels.dmChannels));
+      groups.push(this.getChannelGroupFor("Private groups", this.props.orgChannels.mpimChannels));
       this.props.orgChannels.teamChannels.forEach(ea => {
         groups.push(this.getChannelGroupFor(ea.teamName, ea.channelList));
       });
-      groups.push(this.getChannelGroupFor("Private groups", this.props.orgChannels.mpimChannels));
-      groups.push(this.getChannelGroupFor("Direct messages", this.props.orgChannels.dmChannels));
+      groups.push(this.getChannelGroupFor("Shared within organization", this.props.orgChannels.orgSharedChannels));
+      groups.push(this.getChannelGroupFor("Shared externally", this.props.orgChannels.externallySharedChannels));
       return groups;
     }
 
     updateSearch(newValue: string): void {
       const selectedChannel = this.findChannelFor(this.props.scheduledAction.channel);
-      if (!selectedChannel || !this.searchIncludes(selectedChannel, newValue)) {
+      if (newValue && (!selectedChannel || !this.searchIncludes(selectedChannel, newValue))) {
         const newChannel = this.hasChannelList() ?
           this.props.orgChannels.allChannels().find((ea) => this.canSelectChannel(ea) && this.searchIncludes(ea, newValue)) : null;
         this.selectChannel(newChannel ? newChannel.id : "");
@@ -137,7 +137,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
 
     channelMissing(): boolean {
       const channelId = this.props.scheduledAction.channel;
-      return !channelId || !this.findChannelFor(channelId);
+      return Boolean(channelId) && !this.findChannelFor(channelId);
     }
 
     channelArchived(): boolean {
@@ -221,11 +221,7 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
           </span>
         );
       } else {
-        return (
-          <span className="type-pink">
-            Select a channel for Ellipsis to run this action.
-          </span>
-        );
+        return null;
       }
     }
 
@@ -238,9 +234,11 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
       });
       const hasNoMatches = Boolean(this.state.searchText) && channelOptionGroups.every(ea => ea.options.length === 0);
       const isDM = this.channelIsDM(this.props.scheduledAction.channel);
+      const shouldShowChannels = this.shouldShowChannels();
+      const hasChannelList = this.hasChannelList();
       return (
         <div>
-          <Collapsible revealWhen={this.shouldShowChannels()}>
+          <Collapsible revealWhen={shouldShowChannels}>
             <SearchWithGroupedResults
               ref={(searcher) => this.searcher = searcher}
               placeholder="Search for a channel"
@@ -251,29 +249,32 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
               onChangeSearch={this.updateSearch}
               onSelect={this.selectChannel}
               onEnterKey={this.selectChannel}
+              noValueOptionText={"No channel selected"}
             />
           </Collapsible>
           <div className="mtm mbs">
-            <div className="border border-light bg-white display-inline-block pvxs phs mbs">
+            <div className="border border-light bg-white display-inline-block align-m pvxs phs mbs mrm">
               {this.nameForChannel(this.props.scheduledAction.channel)}
             </div>
-            <div className="type-s">{this.renderChannelWarning()}</div>
+            <div className="display-inline-block align-m type-s mbs">{this.renderChannelWarning()}</div>
           </div>
           <div className="type-s mvs">
             <Checkbox
-              disabledWhen={isDM || !this.hasChannelList()}
+              disabledWhen={isDM || !hasChannelList}
               checked={this.props.scheduledAction.useDM}
               onChange={this.updateDM}
               label="Send to each channel member privately"
               className={isDM ? "type-disabled" : ""}
             />
           </div>
-          <Collapsible revealWhen={!this.shouldShowChannels() && this.hasChannelList()}>
-            <div>
-              <button type="button" className="button-s" onClick={this.showChannels}>
-                Change channel
-              </button>
-            </div>
+          <Collapsible revealWhen={!shouldShowChannels && hasChannelList}>
+            {!shouldShowChannels && hasChannelList ? (
+              <div>
+                <button type="button" className="button-s" onClick={this.showChannels}>
+                  Change channel
+                </button>
+              </div>
+            ) : null}
           </Collapsible>
         </div>
       );

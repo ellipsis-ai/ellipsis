@@ -259,7 +259,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
           const group = matching.group;
           const behaviorVersion = matching.behaviorVersion;
           return (
-            <div key={`behaviorId${behaviorVersion.behaviorId}`} className="mvxs">
+            <div key={`behaviorId${behaviorVersion.behaviorId}`} className="mtxs">
               {oneValidTrigger ? (
                 <span className="display-inline-block height-xl type-green mrs align-m">
                   <SVGCheckmark />
@@ -310,7 +310,9 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
                 This text will trigger {this.state.matchingBehaviorIds.length} actions to run at the same time.
               </div>
             ) : null}
-            {this.renderMatchingActions()}
+            <div className="mtxs min-height-2-lines">
+              {this.renderMatchingActions()}
+            </div>
           </div>
         </div>
       );

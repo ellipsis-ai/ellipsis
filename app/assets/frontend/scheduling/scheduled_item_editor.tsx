@@ -108,39 +108,66 @@ class ScheduledItemEditor extends React.Component<Props> {
               </div>
             </div>
           ) : null}
-          <div className="container container-wide border-bottom pvxxl">
-            <SectionHeading number="1">What to do</SectionHeading>
-            <ScheduledItemConfig
-              teamId={this.props.teamId}
-              csrfToken={this.props.csrfToken}
-              scheduledAction={scheduledAction}
-              behaviorGroups={this.props.behaviorGroups}
-              onChangeTriggerText={this.updateTriggerText}
-              onChangeAction={this.updateAction}
-              onChangeSkill={this.updateSkill}
-              onToggleByTrigger={this.toggleByTrigger}
-            />
+
+          <div className="columns border-bottom">
+            <div className="column column-page-sidebar pvxxl mobile-pbn">
+              <div className="container">
+                <SectionHeading number="1">What to do</SectionHeading>
+              </div>
+            </div>
+            <div className="column column-page-main pvxxl mobile-ptn">
+              <div className="container container-wide">
+                <ScheduledItemConfig
+                  teamId={this.props.teamId}
+                  csrfToken={this.props.csrfToken}
+                  scheduledAction={scheduledAction}
+                  behaviorGroups={this.props.behaviorGroups}
+                  onChangeTriggerText={this.updateTriggerText}
+                  onChangeAction={this.updateAction}
+                  onChangeSkill={this.updateSkill}
+                  onToggleByTrigger={this.toggleByTrigger}
+                />
+              </div>
+            </div>
           </div>
-          <div className="container container-wide border-bottom pvxxl">
-            <SectionHeading number="2">Where to do it</SectionHeading>
-            <ScheduleChannelEditor
-              scheduledAction={scheduledAction}
-              orgChannels={this.props.orgChannels}
-              onChange={this.updateChannel}
-              slackUserId={this.props.slackUserId}
-              slackBotUserId={this.props.slackBotUserId}
-            />
+
+          <div className="columns border-bottom">
+            <div className="column column-page-sidebar pvxxl mobile-pbn">
+              <div className="container">
+                <SectionHeading number="2">Where to do it</SectionHeading>
+              </div>
+            </div>
+            <div className="column column-page-main ptl pbxxl mobile-ptn">
+              <div className="container container-wide">
+                <ScheduleChannelEditor
+                  scheduledAction={scheduledAction}
+                  orgChannels={this.props.orgChannels}
+                  onChange={this.updateChannel}
+                  slackUserId={this.props.slackUserId}
+                  slackBotUserId={this.props.slackBotUserId}
+                />
+              </div>
+            </div>
           </div>
-          <div className="container container-wide pvxxl">
-            <SectionHeading number="3">When to do it</SectionHeading>
-            <RecurrenceEditor
-              onChange={this.updateRecurrence}
-              scheduledAction={scheduledAction}
-              teamTimeZone={this.props.teamTimeZone}
-              teamTimeZoneName={this.props.teamTimeZoneName}
-              userTimeZoneName={this.props.userTimeZoneName}
-              csrfToken={this.props.csrfToken}
-            />
+
+          <div className="columns border-bottom">
+            <div className="column column-page-sidebar pvxxl mobile-pbn">
+              <div className="container">
+                <SectionHeading number="3">When to do it</SectionHeading>
+              </div>
+            </div>
+            <div className="column column-page-main ptl pbxxl mobile-ptn">
+              <div className="container container-wide">
+                <RecurrenceEditor
+                  onChange={this.updateRecurrence}
+                  scheduledAction={scheduledAction}
+                  teamTimeZone={this.props.teamTimeZone}
+                  teamTimeZoneName={this.props.teamTimeZoneName}
+                  userTimeZoneName={this.props.userTimeZoneName}
+                  csrfToken={this.props.csrfToken}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -21,6 +21,7 @@ interface Props {
   onSelect: (newValue: string, newIndex: number) => void,
   onEnterKey?: Option<(value: string) => void>
   onEscKey?: () => void
+  noValueOptionText?: Option<string>
 }
 
 interface State {
@@ -172,6 +173,9 @@ class SearchWithGroupedResults extends React.Component<Props, State> {
                 size={5}
                 withSearch={true}
               >
+                {this.props.noValueOptionText && !this.props.noMatches ? (
+                  <option value="">{this.props.noValueOptionText}</option>
+                ) : null}
                 {this.props.optionGroups.map(this.renderGroup)}
               </Select>
               <div className="position-absolute position-z-popup position-top-left">
