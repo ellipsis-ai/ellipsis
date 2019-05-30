@@ -234,9 +234,11 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
       });
       const hasNoMatches = Boolean(this.state.searchText) && channelOptionGroups.every(ea => ea.options.length === 0);
       const isDM = this.channelIsDM(this.props.scheduledAction.channel);
+      const shouldShowChannels = this.shouldShowChannels();
+      const hasChannelList = this.hasChannelList();
       return (
         <div>
-          <Collapsible revealWhen={this.shouldShowChannels()}>
+          <Collapsible revealWhen={shouldShowChannels}>
             <SearchWithGroupedResults
               ref={(searcher) => this.searcher = searcher}
               placeholder="Search for a channel"
@@ -258,19 +260,21 @@ class ScheduleChannelEditor extends React.Component<Props, State> {
           </div>
           <div className="type-s mvs">
             <Checkbox
-              disabledWhen={isDM || !this.hasChannelList()}
+              disabledWhen={isDM || !hasChannelList}
               checked={this.props.scheduledAction.useDM}
               onChange={this.updateDM}
               label="Send to each channel member privately"
               className={isDM ? "type-disabled" : ""}
             />
           </div>
-          <Collapsible revealWhen={!this.shouldShowChannels() && this.hasChannelList()}>
-            <div>
-              <button type="button" className="button-s" onClick={this.showChannels}>
-                Change channel
-              </button>
-            </div>
+          <Collapsible revealWhen={!shouldShowChannels && hasChannelList}>
+            {!shouldShowChannels && hasChannelList ? (
+              <div>
+                <button type="button" className="button-s" onClick={this.showChannels}>
+                  Change channel
+                </button>
+              </div>
+            ) : null}
           </Collapsible>
         </div>
       );
