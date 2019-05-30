@@ -14,7 +14,7 @@ import ScheduledItemTitle from './scheduled_item_title';
 import Sort from '../lib/sort';
 import {PageRequiredProps} from '../shared_ui/page';
 import autobind from '../lib/autobind';
-import {UserMap} from "./loader";
+import {UserMap, ValidTriggerInterface} from "./loader";
 import User from '../models/user';
 import SVGWarning from "../svg/warning";
 import OrgChannels from "../models/org_channels";
@@ -43,7 +43,10 @@ export interface SchedulingProps {
   isAdmin: boolean,
   userMap: UserMap,
   onLoadUserData: (userId: string) => void,
-  csrfToken: string
+  csrfToken: string,
+  validTriggers: Array<ValidTriggerInterface>,
+  isValidatingTriggers: boolean,
+  triggerValidationError: Option<string>
 }
 
 type Props = SchedulingProps & PageRequiredProps
@@ -358,6 +361,10 @@ class Scheduling extends React.Component<Props, State> {
       return !original.isIdenticalTo(selected);
     }
 
+    getTriggerValidationFor(action: ScheduledAction) {
+      return this.props.validTriggers.find((ea) => ea.text === action.trigger);
+    }
+
     renderSubheading() {
       if (!this.hasChannelList()) {
         return (
@@ -488,6 +495,7 @@ class Scheduling extends React.Component<Props, State> {
                     onClick={this.toggleEditor}
                     userTimeZone={this.state.userTimeZone}
                     userTimeZoneName={this.state.userTimeZoneName}
+                    validTrigger={this.getTriggerValidationFor(action)}
                   />
                 )) : (
                   <div className="mhl mvs pal mobile-pam border border-light bg-white">
@@ -638,6 +646,11 @@ class Scheduling extends React.Component<Props, State> {
             <Collapsible revealWhen={this.state.justDeleted}>
               <div className="container pvxl border-top">
                 <span className="fade-in type-green type-bold type-italic">The item has been unscheduled.</span>
+              </div>
+            </Collapsible>
+            <Collapsible revealWhen={!this.state.justSaved && !this.state.justDeleted && Boolean(this.props.triggerValidationError)}>
+              <div className="container pvxl border-top">
+                <span className="fade-in type-pink type-bold type-italic">{this.props.triggerValidationError}</span>
               </div>
             </Collapsible>
             <Collapsible revealWhen={this.shouldShowActions()}>
