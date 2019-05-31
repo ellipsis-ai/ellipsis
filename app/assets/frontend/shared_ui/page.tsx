@@ -31,6 +31,7 @@ import Button from '../form/button';
 import NavItem from './nav_item';
 import autobind from '../lib/autobind';
 import PageFooterRenderingError from './page_footer_rendering_error';
+import * as debounce from "javascript-debounce";
 
 type Props = {
   onRender: <P extends PageRequiredProps>(pageProps: PageRequiredProps) => React.ReactElement<P>,
@@ -58,6 +59,8 @@ class Page extends React.Component<Props, State> {
     navItems: Option<HTMLElement>;
     navActions: Option<HTMLElement>;
     static feedbackContainerId: string;
+    debounceResetHeaderHeight: () => void;
+    setFooterHeight: (newHeight: number) => void;
 
     constructor(props: Props) {
       super(props);
@@ -68,6 +71,8 @@ class Page extends React.Component<Props, State> {
       this.navItems = document.getElementById("mainNavItems");
       this.navActions = document.getElementById("mainNavActions");
       this.header = document.getElementById("main-header");
+      this.debounceResetHeaderHeight = debounce(this.resetHeaderHeight, 150);
+      this.setFooterHeight = debounce(this._setFooterHeight, 25);
     }
 
     getDefaultState(): State {
@@ -176,12 +181,15 @@ class Page extends React.Component<Props, State> {
     componentDidMount(): void {
       window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
       window.document.addEventListener('focus', this.handleModalFocus, true);
-      const container = this.props.feedbackContainer || document.getElementById(Page.feedbackContainerId);
-      if (this.footer && container) {
-        ReactDOM.render(this.renderFeedbackLink(), container);
-      } else if (container && !this.footer) {
+      window.addEventListener('resize', this.debounceResetHeaderHeight);
+      const feedbackContainer = this.props.feedbackContainer || document.getElementById(Page.feedbackContainerId);
+      if (feedbackContainer && !this.footer) {
         throw new PageFooterRenderingError(this);
       }
+    }
+
+    componentDidUpdate(): void {
+      this.resetHeaderHeight();
     }
 
     getFooterHeight(): number {
@@ -200,7 +208,7 @@ class Page extends React.Component<Props, State> {
       }
     }
 
-    setFooterHeight(number: number): void {
+    _setFooterHeight(number: number): void {
       this.setState({
         footerHeight: number
       });
@@ -225,35 +233,34 @@ class Page extends React.Component<Props, State> {
     }
 
     onRenderNavItems(navItems: Array<NavItemContent>) {
-      // This should use ReactDOM.createPortal when we upgrade to React 16
-      const el = this.navItems;
-      if (el) {
-        ReactDOM.render((
-          <div className="columns">
-            {navItems.map((ea, index) => (
-              <NavItem key={`navItem${index}`} title={ea.title} url={ea.url} callback={ea.callback} />
-            ))}
-          </div>
-        ), el);
+      let portal;
+      if (this.navItems) {
+        portal = ReactDOM.createPortal(
+          navItems.map((ea, index) => (
+            <NavItem key={`navItem${index}`} title={ea.title} url={ea.url} callback={ea.callback} />
+          )), this.navItems);
       }
-      this.resetHeaderHeight();
+      return portal;
     }
 
     onRenderNavActions(content: React.ReactNode) {
-      // This should use ReactDOM.createPortal when we upgrade to React 16
       const el = this.navActions;
+      let portal;
       if (el) {
-        ReactDOM.render((
-          <div>{content}</div>
-        ), el);
+        portal = ReactDOM.createPortal(content, el);
       }
-      this.resetHeaderHeight();
+      return portal;
     }
 
     renderFeedbackLink() {
-      return (
-        <Button className="button-dropdown-item plm" onClick={this.toggleFeedback}>Feedback</Button>
-      );
+      const container = this.props.feedbackContainer || document.getElementById(Page.feedbackContainerId);
+      if (container) {
+        return ReactDOM.createPortal((
+          <Button className="button-dropdown-item plm" onClick={this.toggleFeedback}>Feedback</Button>
+        ), container);
+      } else {
+        return null;
+      }
     }
 
     render() {
@@ -273,6 +280,7 @@ class Page extends React.Component<Props, State> {
             onRevealedPanel: this.onRevealedPanel,
             ref: (component: React.Component) => this.component = component
           })}
+          {this.renderFeedbackLink()}
         </div>
       );
     }

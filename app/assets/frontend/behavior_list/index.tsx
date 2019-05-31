@@ -136,12 +136,7 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.props.onRenderNavActions(this.renderNavActions());
     window.addEventListener('scroll', this.delayOnScroll);
-  }
-
-  componentDidUpdate() {
-    this.props.onRenderNavActions(this.renderNavActions());
   }
 
   getSearchText(): string {
@@ -153,7 +148,7 @@ class BehaviorList extends React.Component<Props, State> {
   }
 
   renderNavActions() {
-    return (
+    return this.props.onRenderNavActions(
       <div className="mtl">
         <a href={jsRoutes.controllers.BehaviorEditorController.newGroup(this.props.teamId).url}
           className="button button-s button-shrink mrs">
@@ -1040,6 +1035,7 @@ class BehaviorList extends React.Component<Props, State> {
             </Collapsible>
           </div>
         ))}
+        {this.renderNavActions()}
       </div>
     );
   }

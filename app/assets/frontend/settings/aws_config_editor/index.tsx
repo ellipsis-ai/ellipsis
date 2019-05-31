@@ -49,14 +49,6 @@ class AwsConfigEditor extends React.Component<Props, State> {
       };
     }
 
-    componentDidMount(): void {
-      this.renderNav();
-    }
-
-    componentDidUpdate(): void {
-      this.renderNav();
-    }
-
     getName(): string {
       return this.state.name;
     }
@@ -177,18 +169,13 @@ class AwsConfigEditor extends React.Component<Props, State> {
               </div>
             ))}
           </form>
+          {this.renderNav()}
         </SettingsPage>
       );
     }
 
     renderNav() {
-      const navItems: Array<NavItemContent> = [{
-        title: "Settings"
-      }, {
-        url: jsRoutes.controllers.web.settings.IntegrationsController.list(this.props.isAdmin ? this.props.teamId : null).url,
-        title: "Integrations"
-      }];
-      this.props.onRenderNavItems(navItems.concat(this.renderConfigNavItems()));
+      return this.props.onRenderNavItems(this.renderConfigNavItems());
     }
 
     renderConfigNavItems(): Array<NavItemContent> {

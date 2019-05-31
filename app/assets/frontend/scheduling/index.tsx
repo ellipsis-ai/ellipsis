@@ -125,8 +125,6 @@ class Scheduling extends React.Component<Props, State> {
     componentDidMount(): void {
       this.updateURL();
       this.getUserTimeZoneName();
-      this.renderNavItems();
-      this.renderNavActions();
     }
 
     componentDidUpdate(prevProps: Props, prevState: State): void {
@@ -134,8 +132,6 @@ class Scheduling extends React.Component<Props, State> {
         window.scrollTo(0, 0);
       }
       this.updateURL();
-      this.renderNavItems();
-      this.renderNavActions();
     }
 
     updateURL(): void {
@@ -160,16 +156,14 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     renderNavItems() {
-      const items = [{
-        title: "Scheduling"
-      }];
+      const items = [];
       if (this.state.isEditing) {
         const item = this.getSelectedItem();
         items.push({
           title: item && !item.isNew() ? "Edit schedule" : "New schedule"
         });
       }
-      this.props.onRenderNavItems(items);
+      return this.props.onRenderNavItems(items);
     }
 
     renderNavActions() {
@@ -178,7 +172,7 @@ class Scheduling extends React.Component<Props, State> {
           <Button className="button-shrink button-s" onClick={this.addNewItem}>Schedule something new</Button>
         </div>
       );
-      this.props.onRenderNavActions(actions);
+      return this.props.onRenderNavActions(actions);
     }
 
     hasChannelList(): boolean {
@@ -697,6 +691,8 @@ class Scheduling extends React.Component<Props, State> {
             </Collapsible>
             </div>
           ))}
+          {this.renderNavItems()}
+          {this.renderNavActions()}
         </div>
       );
     }
