@@ -40,6 +40,7 @@ import models.behaviors.conversations.parentconversation.ParentConversationServi
 import models.behaviors.datatypeconfig.DataTypeConfigService
 import models.behaviors.datatypefield.DataTypeFieldService
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
+import models.behaviors.form.FormService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.invocationtoken.InvocationTokenService
@@ -125,6 +126,7 @@ class MockDataService extends DataService with MockitoSugar {
   val managedBehaviorGroups: ManagedBehaviorGroupService = mock[ManagedBehaviorGroupService]
   val behaviorGroupVersionSHAs = mock[BehaviorGroupVersionSHAService]
   val slackMemberStatuses = mock[SlackMemberStatusService]
+  val forms = mock[FormService]
   val behaviorTestResults = mock[BehaviorTestResultService]
   val behaviorResponses = mock[BehaviorResponseService]
   val subscriptions = mock[SubscriptionService]

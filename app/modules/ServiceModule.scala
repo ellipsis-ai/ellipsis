@@ -42,6 +42,7 @@ import models.behaviors.datatypeconfig.{DataTypeConfigService, DataTypeConfigSer
 import models.behaviors.datatypefield.{DataTypeFieldService, DataTypeFieldServiceImpl}
 import models.behaviors.defaultstorageitem.{DefaultStorageItemService, DefaultStorageItemServiceImpl}
 import models.behaviors.events.EventHandler
+import models.behaviors.form.{FormService, FormServiceImpl}
 import models.behaviors.input.{InputService, InputServiceImpl}
 import models.behaviors.invocationlogentry.{InvocationLogEntryService, InvocationLogEntryServiceImpl}
 import models.behaviors.invocationtoken.{InvocationTokenService, InvocationTokenServiceImpl}
@@ -137,6 +138,7 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[ManagedBehaviorGroupService].to[ManagedBehaviorGroupServiceImpl]
     bind[BehaviorGroupVersionSHAService].to[BehaviorGroupVersionSHAServiceImpl]
     bind[SlackMemberStatusService].to[SlackMemberStatusServiceImpl]
+    bind[FormService].to[FormServiceImpl]
     bind[BehaviorTestResultService].to[BehaviorTestResultServiceImpl]
 
 

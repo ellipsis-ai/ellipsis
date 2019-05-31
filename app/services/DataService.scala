@@ -39,6 +39,7 @@ import models.behaviors.conversations.parentconversation.ParentConversationServi
 import models.behaviors.datatypeconfig.DataTypeConfigService
 import models.behaviors.datatypefield.DataTypeFieldService
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
+import models.behaviors.form.FormService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.invocationtoken.InvocationTokenService
@@ -126,6 +127,7 @@ trait DataService {
   val managedBehaviorGroups: ManagedBehaviorGroupService
   val behaviorGroupVersionSHAs: BehaviorGroupVersionSHAService
   val slackMemberStatuses: SlackMemberStatusService
+  val forms: FormService
   val behaviorTestResults: BehaviorTestResultService
   def behaviorResponses: BehaviorResponseService
 

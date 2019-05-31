@@ -41,6 +41,7 @@ import models.behaviors.conversations.parentconversation.ParentConversationServi
 import models.behaviors.datatypeconfig.DataTypeConfigService
 import models.behaviors.datatypefield.DataTypeFieldService
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
+import models.behaviors.form.FormService
 import models.behaviors.input.InputService
 import models.behaviors.invocationlogentry.InvocationLogEntryService
 import models.behaviors.invocationtoken.InvocationTokenService
@@ -125,6 +126,7 @@ class PostgresDataService @Inject() (
                                       val managedBehaviorGroupsProvider: Provider[ManagedBehaviorGroupService],
                                       val behaviorGroupVersionSHAsProvider: Provider[BehaviorGroupVersionSHAService],
                                       val slackMemberStatusesProvider: Provider[SlackMemberStatusService],
+                                      val formsProvider: Provider[FormService],
                                       val behaviorTestResultsProvider: Provider[BehaviorTestResultService],
                                       val behaviorResponsesProvider: Provider[BehaviorResponseService],
                                       val subscriptionsProvider: Provider[SubscriptionService],
@@ -190,6 +192,7 @@ class PostgresDataService @Inject() (
   val managedBehaviorGroups: ManagedBehaviorGroupService = managedBehaviorGroupsProvider.get
   val behaviorGroupVersionSHAs = behaviorGroupVersionSHAsProvider.get
   val slackMemberStatuses = slackMemberStatusesProvider.get
+  val forms = formsProvider.get
   val behaviorTestResults = behaviorTestResultsProvider.get
   val subscriptions = subscriptionsProvider.get
   val plans = planProvider.get
