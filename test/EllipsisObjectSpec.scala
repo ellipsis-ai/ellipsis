@@ -136,6 +136,7 @@ class EllipsisObjectSpec extends DBSpec {
           selectedId = event.maybeScheduled.map(_.id),
           newSchedule = None,
           channelId = maybeChannel,
+          skillId = event.maybeScheduled.flatMap(_.maybeBehaviorGroupId),
           teamId = Some(event.ellipsisTeamId),
           forceAdmin = None
         ).url

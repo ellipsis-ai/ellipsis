@@ -126,6 +126,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeScheduledId = None,
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
+          maybeFilterBehaviorGroupId = None,
           maybeCsrfToken = maybeCsrfToken,
           forceAdmin = false
         )(actorSystem, ec))
@@ -145,6 +146,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeScheduledId = None,
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
+          maybeFilterBehaviorGroupId = None,
           maybeCsrfToken = maybeCsrfToken,
           forceAdmin = false
         )(actorSystem, ec))
@@ -170,6 +172,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeScheduledId = None,
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
+          maybeFilterBehaviorGroupId = None,
           maybeCsrfToken = maybeCsrfToken,
           forceAdmin = false
         )(actorSystem, ec))
@@ -196,6 +199,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeScheduledId = None,
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
+          maybeFilterBehaviorGroupId = None,
           maybeCsrfToken = maybeCsrfToken,
           forceAdmin = true
         )(actorSystem, ec))
@@ -222,6 +226,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeScheduledId = None,
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
+          maybeFilterBehaviorGroupId = None,
           maybeCsrfToken = maybeCsrfToken,
           forceAdmin = false
         )(actorSystem, ec))
@@ -246,6 +251,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeScheduledId = None,
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
+          maybeFilterBehaviorGroupId = None,
           maybeCsrfToken = maybeCsrfToken,
           forceAdmin = false
         )(actorSystem, ec))
