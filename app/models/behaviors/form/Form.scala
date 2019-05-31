@@ -12,11 +12,12 @@ case class InvalidFormConfigException(json: JsValue) extends Exception {
 case class Form(
                  id: String,
                  config: FormConfig,
+                 createdFromBehaviorGroupVersionId: String,
                  createdAt: OffsetDateTime
                ) {
 
   def toRaw: RawForm = {
-    RawForm(id, Json.toJson(config), createdAt)
+    RawForm(id, Json.toJson(config), createdFromBehaviorGroupVersionId, createdAt)
   }
 }
 
@@ -24,7 +25,7 @@ object Form {
 
   def fromRaw(raw: RawForm): Form = {
     raw.config.validate[FormConfig] match {
-      case JsSuccess(config, _) => Form(raw.id, config, raw.createdAt)
+      case JsSuccess(config, _) => Form(raw.id, config, raw.createdFromBehaviorGroupVersionId, raw.createdAt)
       case JsError(errors) => throw InvalidFormConfigException(JsError.toJson(errors))
     }
 

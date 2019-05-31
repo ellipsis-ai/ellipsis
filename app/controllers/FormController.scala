@@ -1,21 +1,10 @@
 package controllers
 
-import java.time.OffsetDateTime
-import java.time.format.TextStyle
-import java.util.Locale
-
-import javax.inject.Inject
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
-import json._
+import javax.inject.Inject
 import models.silhouette.EllipsisEnv
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.libs.json.Json
-import play.filters.csrf.CSRF
-import services.{DefaultServices, GithubService}
-import utils.github.{GithubPublishedBehaviorGroupsFetcher, GithubSingleCommitFetcher, GithubSkillCommitsFetcher}
-import utils.{CitiesToTimeZones, FuzzyMatcher, TimeZoneParser}
+import services.DefaultServices
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,8 +14,6 @@ class FormController @Inject() (
                                   val assetsProvider: Provider[RemoteAssets],
                                   implicit val ec: ExecutionContext
                                 ) extends ReAuthable {
-
-  import json.Formatting._
 
   val configuration = services.configuration
   val dataService = services.dataService

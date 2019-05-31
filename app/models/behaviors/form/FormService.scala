@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 trait FormService {
 
-  def create(config: FormConfig): Future[Form]
+  def create(config: FormConfig, createdFromBehaviorGroupVersionId: String): Future[Form]
 
   def find(id: String): Future[Option[Form]]
 
