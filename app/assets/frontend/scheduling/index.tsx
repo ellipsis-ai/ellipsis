@@ -20,6 +20,7 @@ import SVGWarning from "../svg/warning";
 import OrgChannels from "../models/org_channels";
 import {DataRequest} from "../lib/data_request";
 import {TimeZoneData} from "../time_zone/team_time_zone_setter";
+import Select from "../form/select";
 
 export interface SchedulingProps {
   scheduledActions: Array<ScheduledAction>,
@@ -39,6 +40,7 @@ export interface SchedulingProps {
   justSavedAction: Option<ScheduledAction>,
   selectedScheduleId: Option<string>,
   filterChannelId: Option<string>,
+  filterBehaviorGroupId: Option<string>,
   newAction: Option<boolean>,
   isAdmin: boolean,
   userMap: UserMap,
@@ -52,6 +54,7 @@ export interface SchedulingProps {
 type Props = SchedulingProps & PageRequiredProps
 
 type State = {
+  filterBehaviorGroupId: Option<string>,
   filterChannelId: Option<string>,
   selectedItem: Option<ScheduledAction>,
   justSaved: boolean,
@@ -86,6 +89,7 @@ class Scheduling extends React.Component<Props, State> {
       const selectedItem = this.getDefaultSelectedItem();
       this.state = {
         filterChannelId: this.props.filterChannelId,
+        filterBehaviorGroupId: this.props.filterBehaviorGroupId,
         selectedItem: selectedItem,
         justSaved: false,
         justDeleted: false,
@@ -125,6 +129,19 @@ class Scheduling extends React.Component<Props, State> {
     componentDidMount(): void {
       this.updateURL();
       this.getUserTimeZoneName();
+    }
+
+    componentWillUpdate(nextProps: Props, nextState: State, nextContext: any): void {
+      const nextBehaviorGroupId = nextState.filterBehaviorGroupId;
+      if (nextBehaviorGroupId && nextBehaviorGroupId !== this.state.filterBehaviorGroupId && nextState.filterChannelId) {
+        const matchingActions = this.props.scheduledActions.filter((action) => action.channel === nextState.filterChannelId &&
+          this.scheduledActionTriggersSkillId(action, nextBehaviorGroupId));
+        if (!matchingActions.length && this.props.scheduledActions.length > 0) {
+          this.setState({
+            filterChannelId: null
+          });
+        }
+      }
     }
 
     componentDidUpdate(prevProps: Props, prevState: State): void {
@@ -190,12 +207,13 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     getCorrectedURL(explicitTeamId: Option<string>, forceAdmin: Option<boolean>): string {
+      const filterBehaviorGroupId = this.state.filterBehaviorGroupId || null;
       if (this.state.isEditing && this.state.selectedItem && !this.state.selectedItem.isNew()) {
-        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, this.state.filterChannelId, explicitTeamId, forceAdmin).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, this.state.filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       } else if (this.state.isEditing && this.state.selectedItem) {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, true, this.state.filterChannelId, explicitTeamId, forceAdmin).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(null, true, this.state.filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       } else {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, null, this.state.filterChannelId, explicitTeamId, forceAdmin).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(null, null, this.state.filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       }
     }
 
@@ -230,15 +248,29 @@ class Scheduling extends React.Component<Props, State> {
       };
     }
 
+    scheduledActionTriggersSkillId(action: ScheduledAction, skillId: string): boolean {
+      const matchingTriggers = this.props.validTriggers.filter((ea) => ea.text === action.trigger);
+      const behaviorGroup = this.props.behaviorGroups.find((ea) => ea.id === skillId);
+      return matchingTriggers.some((trigger) => {
+        return Boolean(behaviorGroup && behaviorGroup.behaviorVersions.some((behaviorVersion) => trigger.matchingBehaviorIds.includes(behaviorVersion.behaviorId)));
+      });
+    }
+
     getScheduleByChannel(): Array<ScheduleGroup> {
       const groupsByName: SchedulesGroupedByName = {};
       this.props.scheduledActions.forEach((action) => {
-        const channel = this.findChannelFor(action.channel);
-        const channelName = channel ? channel.getFormattedName() : null;
-        const groupName = channelName || "[unknown]";
-        const group = groupsByName[groupName] || this.groupForChannel(channel, channelName);
-        group.actions.push(action);
-        groupsByName[groupName] = group;
+        const filterSkillId = this.state.filterBehaviorGroupId;
+        const includeAction = !filterSkillId ||
+          action.behaviorGroupId === filterSkillId ||
+          this.scheduledActionTriggersSkillId(action, filterSkillId);
+        if (includeAction) {
+          const channel = this.findChannelFor(action.channel);
+          const channelName = channel ? channel.getFormattedName() : null;
+          const groupName = channelName || "[unknown]";
+          const group = groupsByName[groupName] || this.groupForChannel(channel, channelName);
+          group.actions.push(action);
+          groupsByName[groupName] = group;
+        }
       });
       if (this.props.filterChannelId && !this.props.scheduledActions.some((ea) => ea.channel === this.props.filterChannelId)) {
         const channel = this.findChannelFor(this.props.filterChannelId);
@@ -379,6 +411,19 @@ class Scheduling extends React.Component<Props, State> {
 
     hasActiveRequest(): boolean {
       return this.props.isSaving || this.props.isDeleting;
+    }
+
+    updateSkillFilter(skillId: string): void {
+      this.setState({
+        filterBehaviorGroupId: skillId
+      });
+    }
+
+    getSkillOptions(): Array<{ id: string, name: string}> {
+      return this.props.behaviorGroups.map((group) => ({
+        id: group.id || "",
+        name: group.getName()
+      })).filter((ea) => Boolean(ea.id));
     }
 
     renderSidebar(groups: Array<ScheduleGroup>) {
@@ -536,6 +581,22 @@ class Scheduling extends React.Component<Props, State> {
       return groups.length > 0 ? this.renderGroups(groups) : this.renderNoSchedules();
     }
 
+    renderHeader() {
+      return this.props.onRenderHeader(this.isEditing() ? null : (
+        <div className="bg-white-translucent pvs border-bottom">
+          <div className="container container-wide">
+            <h5 className="display-inline-block mtn mrm">Skill</h5>
+            <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter} disabled={this.props.isValidatingTriggers}>
+              <option value="">All skills</option>
+              {this.getSkillOptions().map((ea) => (
+                <option key={`filterSkillId-${ea.id}`} value={ea.id}>{ea.name}</option>
+              ))}
+            </Select>
+          </div>
+        </div>
+      ));
+    }
+
     render() {
       const groups = this.getScheduleByChannel();
       const selectedItem = this.getSelectedItem();
@@ -544,6 +605,7 @@ class Scheduling extends React.Component<Props, State> {
       const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
         <div className="flex-row-cascade">
+          {this.renderHeader()}
           <Collapsible revealWhen={!this.isEditing()} className={"flex-row-cascade mobile-flex-no-expand"}>
             <div className="flex-columns flex-row-expand">
               <div className="flex-column flex-column-left flex-rows container container-wide phn">

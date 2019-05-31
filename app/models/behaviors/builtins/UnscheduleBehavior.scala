@@ -60,6 +60,7 @@ case class UnscheduleBehavior(
         selectedId = None,
         newSchedule = None,
         channelId = None,
+        skillId = None,
         teamId = Some(event.ellipsisTeamId),
         forceAdmin = None
       )

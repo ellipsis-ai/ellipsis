@@ -26,6 +26,8 @@ case class ScheduledMessage(
                              createdAt: OffsetDateTime
                            ) extends Scheduled {
 
+  val maybeBehaviorGroupId: Option[String] = None
+
   def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     Future.successful(s"`$text`")
   }

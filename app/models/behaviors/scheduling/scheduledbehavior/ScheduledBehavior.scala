@@ -29,6 +29,8 @@ case class ScheduledBehavior(
                               createdAt: OffsetDateTime
                            ) extends Scheduled {
 
+  val maybeBehaviorGroupId: Option[String] = behavior.maybeGroup.map(_.id)
+
   def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
     for {
       maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(behavior)

@@ -2,16 +2,14 @@ package controllers
 
 import java.time.OffsetDateTime
 
-import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
+import javax.inject.Inject
 import json.Formatting._
 import json._
 import models.accounts.user.User
 import models.behaviors.events.{MessageEvent, TestEventContext}
-import models.behaviors.scheduling.Scheduled
-import models.behaviors.scheduling.recurrence.Recurrence
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.testing.TestMessageEvent
@@ -42,6 +40,7 @@ class ScheduledActionsController @Inject()(
              maybeScheduledId: Option[String],
              maybeNewSchedule: Option[Boolean],
              maybeChannelId: Option[String],
+             maybeBehaviorGroupId: Option[String],
              maybeTeamId: Option[String],
              maybeForceAdmin: Option[Boolean]
            ) = silhouette.SecuredAction.async { implicit request =>
@@ -61,6 +60,7 @@ class ScheduledActionsController @Inject()(
             maybeScheduledId = maybeScheduledId,
             maybeNewSchedule = maybeNewSchedule,
             maybeFilterChannelId = maybeChannelId,
+            maybeFilterBehaviorGroupId = maybeBehaviorGroupId,
             maybeCsrfToken = CSRF.getToken(request).map(_.value),
             forceAdmin = forceAdmin
           )
@@ -87,6 +87,7 @@ class ScheduledActionsController @Inject()(
               maybeScheduledId,
               maybeNewSchedule,
               maybeChannelId,
+              maybeBehaviorGroupId,
               maybeTeamId,
               maybeForceAdmin
             ))

@@ -79,7 +79,7 @@ GET         /settings/aws_configs/:id/edit            @controllers.web.settings.
 POST        /settings/aws_configs                     @controllers.web.settings.AWSConfigController.save
 
 
-GET         /scheduling                               @controllers.ScheduledActionsController.index(selectedId: Option[String], newSchedule: Option[Boolean], channelId: Option[String], teamId: Option[String], forceAdmin: Option[Boolean])
+GET         /scheduling                               @controllers.ScheduledActionsController.index(selectedId: Option[String], newSchedule: Option[Boolean], channelId: Option[String], skillId: Option[String], teamId: Option[String], forceAdmin: Option[Boolean])
 POST        /save_schedule                            @controllers.ScheduledActionsController.save
 POST        /delete_schedule                          @controllers.ScheduledActionsController.delete
 POST        /validate_recurrence                      @controllers.ScheduledActionsController.validateRecurrence

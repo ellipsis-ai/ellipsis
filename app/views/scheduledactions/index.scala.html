@@ -3,6 +3,7 @@
   maybeScheduledId: Option[String],
   maybeNewSchedule: Option[Boolean],
   maybeChannelId: Option[String],
+  maybeSkillId: Option[String],
   maybeTeamId: Option[String],
   maybeForceAdmin: Option[Boolean]
 )(implicit messages: Messages, r: RequestHeader)
@@ -16,6 +17,7 @@
       selectedId = maybeScheduledId,
       newSchedule = maybeNewSchedule,
       channelId = maybeChannelId,
+      skillId = maybeSkillId,
       teamId = maybeTeamId,
       forceAdmin = maybeForceAdmin
     )"></script>

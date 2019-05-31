@@ -37,6 +37,7 @@ case class ListScheduledBehavior(
       selectedId = None,
       newSchedule = None,
       channelId = None,
+      skillId = None,
       teamId = Some(event.ellipsisTeamId),
       forceAdmin = None
     )
@@ -48,6 +49,7 @@ case class ListScheduledBehavior(
       selectedId = None,
       newSchedule = Some(true),
       channelId = None,
+      skillId = None,
       teamId = Some(event.ellipsisTeamId),
       forceAdmin = None
     )
@@ -59,6 +61,7 @@ case class ListScheduledBehavior(
       selectedId = None,
       newSchedule = None,
       channelId = Some(channelId),
+      skillId = None,
       teamId = Some(event.ellipsisTeamId),
       forceAdmin = None
     )

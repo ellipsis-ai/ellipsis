@@ -40,6 +40,7 @@ object NavItem {
         selectedId = None,
         newSchedule = None,
         channelId = None,
+        skillId = None,
         teamId = maybeTeamId,
         forceAdmin = None
       ))

@@ -75,6 +75,7 @@ const emptyConfig: SchedulingProps = {
   justSavedAction: null,
   selectedScheduleId: null,
   filterChannelId: null,
+  filterBehaviorGroupId: null,
   newAction: false,
   isAdmin: false,
   userMap: {},

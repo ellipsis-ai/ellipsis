@@ -13,6 +13,7 @@ object ScheduleInfo {
         selectedId = Some(scheduled.id),
         newSchedule = None,
         channelId = scheduled.maybeChannel,
+        skillId = scheduled.maybeBehaviorGroupId,
         teamId = Some(event.ellipsisTeamId),
         forceAdmin = None
       ).url

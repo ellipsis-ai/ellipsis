@@ -12,6 +12,7 @@ function getPageRequiredProps(): PageRequiredProps {
     onToggleActivePanel: placeholderCallback,
     onClearActivePanel: placeholderCallback,
     onRenderFooter: renderPlaceholder,
+    onRenderHeader: renderPlaceholder,
     onRenderPanel: renderPlaceholder,
     onRenderNavItems: () => null,
     onRenderNavActions: renderPlaceholder,

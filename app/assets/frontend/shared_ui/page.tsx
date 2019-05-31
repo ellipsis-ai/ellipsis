@@ -12,7 +12,8 @@ export interface PageRequiredProps {
   activePanelIsModal: boolean,
   onToggleActivePanel: (name: string, beModal?: boolean, optionalCallback?: () => void) => void,
   onClearActivePanel: (optionalCallback?: () => void) => void,
-  onRenderFooter: (content?: any, footerClassName?: string) => any,
+  onRenderHeader: (content?: React.ReactNode) => any,
+  onRenderFooter: (content?: React.ReactNode, footerClassName?: string) => any,
   onRenderNavItems: (items: Array<NavItemContent>) => void,
   onRenderNavActions: (content: React.ReactNode) => void,
   onRenderPanel: (panelName: string, panel: Container) => void,
@@ -232,24 +233,32 @@ class Page extends React.Component<Props, State> {
       );
     }
 
+    onRenderHeader(content?: React.ReactNode) {
+      if (this.header) {
+        return ReactDOM.createPortal(content, this.header);
+      } else {
+        return null;
+      }
+    }
+
     onRenderNavItems(navItems: Array<NavItemContent>) {
-      let portal;
       if (this.navItems) {
-        portal = ReactDOM.createPortal(
+        return ReactDOM.createPortal(
           navItems.map((ea, index) => (
             <NavItem key={`navItem${index}`} title={ea.title} url={ea.url} callback={ea.callback} />
           )), this.navItems);
+      } else {
+        return null;
       }
-      return portal;
     }
 
     onRenderNavActions(content: React.ReactNode) {
       const el = this.navActions;
-      let portal;
       if (el) {
-        portal = ReactDOM.createPortal(content, el);
+        return ReactDOM.createPortal(content, el);
+      } else {
+        return null;
       }
-      return portal;
     }
 
     renderFeedbackLink() {
@@ -272,6 +281,7 @@ class Page extends React.Component<Props, State> {
             onToggleActivePanel: this.toggleActivePanel,
             onClearActivePanel: this.clearActivePanel,
             onRenderFooter: this.onRenderFooter,
+            onRenderHeader: this.onRenderHeader,
             onRenderPanel: this.onRenderPanel,
             onRenderNavItems: this.onRenderNavItems,
             onRenderNavActions: this.onRenderNavActions,
