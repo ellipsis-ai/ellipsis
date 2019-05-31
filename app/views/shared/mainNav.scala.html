@@ -57,8 +57,7 @@
                 </li>
 
                 <li id="header-feedback">
-                  @* Placeholder button replaced by React Page *@
-                  <button class="button button-dropdown-item plm" type="button">Feedback</button>
+                  @* Placeholder filled by React Page *@
                 </li>
               </ul>
             </div>
@@ -66,8 +65,8 @@
             <div class="height-logo mvm type-ml">@shared.mainLogo(config, inverted = true)</div>
           }
         </div>
-        <div class="flex-column flex-column-left" id="mainNavItems">
-          <div class="columns">
+        <div class="flex-column flex-column-left">
+          <div class="columns" id="mainNavItems">
             @navItems.map { navItem =>
               @shared.navItem(navItem)
             }

@@ -13,7 +13,7 @@ function getPageRequiredProps(): PageRequiredProps {
     onClearActivePanel: placeholderCallback,
     onRenderFooter: renderPlaceholder,
     onRenderPanel: renderPlaceholder,
-    onRenderNavItems: renderPlaceholder,
+    onRenderNavItems: () => null,
     onRenderNavActions: renderPlaceholder,
     onRevealedPanel: placeholderCallback,
     headerHeight: 0,

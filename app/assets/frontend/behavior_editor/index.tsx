@@ -1831,13 +1831,6 @@ class BehaviorEditor extends React.Component<Props, State> {
     if (this.props.showVersions) {
       this.showVersions();
     }
-    this.renderNavItems();
-    this.renderNavActions();
-  }
-
-  componentDidUpdate(): void {
-    this.renderNavItems();
-    this.renderNavActions();
   }
 
   getSelectedIdFromBrowser(): Option<string> {
@@ -2902,20 +2895,13 @@ class BehaviorEditor extends React.Component<Props, State> {
 
   renderNavItems() {
     const versionBrowserOpen = this.props.activePanelName === 'versionBrowser';
-    const indexUrl = jsRoutes.controllers.ApplicationController.index(this.props.isAdmin ? this.props.group.teamId : null).url;
-    const items: Array<NavItemContent> = [{
-      title: "Skills",
-      url: indexUrl
-    }, {
-      title: this.getBehaviorGroup().getName(),
-      callback: versionBrowserOpen ? this.props.onClearActivePanel : null
-    }];
+    const items: Array<NavItemContent> = [];
     if (versionBrowserOpen) {
       items.push({
         title: "Review changes"
       });
     }
-    this.props.onRenderNavItems(items);
+    return this.props.onRenderNavItems(items);
   }
 
   renderDeployStatus() {
@@ -2932,11 +2918,11 @@ class BehaviorEditor extends React.Component<Props, State> {
     );
   }
 
- renderNavActions() {
+  renderNavActions() {
     if (this.state.versionBrowserOpen) {
-      this.props.onRenderNavActions(null);
+      return this.props.onRenderNavActions(null);
     } else {
-      this.props.onRenderNavActions(this.renderDeployStatus());
+      return this.props.onRenderNavActions(this.renderDeployStatus());
     }
   }
 
@@ -2951,6 +2937,8 @@ class BehaviorEditor extends React.Component<Props, State> {
         <div className={versionBrowserShouldOpen ? "" : "flex-row-cascade"}>
           {this.renderEditorPage()}
         </div>
+        {this.renderNavItems()}
+        {this.renderNavActions()}
       </div>
     );
   }
