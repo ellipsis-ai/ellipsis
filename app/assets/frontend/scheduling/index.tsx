@@ -554,10 +554,10 @@ class Scheduling extends React.Component<Props, State> {
             <div className="flex-columns flex-row-expand">
               <div className="flex-column flex-column-left flex-rows container container-wide phn">
                 <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
-                  <div className="column column-one-quarter flex-column mobile-column-full ptxl phn bg-white border-right border-light">
+                  <div className="column column-page-sidebar flex-column ptxl phn bg-white border-right border-light">
                     {this.renderSidebar(groups)}
                   </div>
-                  <div className="column mobile-column-full pbxxxxl column-three-quarters flex-column">
+                  <div className="column pbxxxxl column-page-main column-page-main-wide flex-column">
                     {this.renderSubheading()}
                     {this.renderScheduleList(groups)}
                   </div>
@@ -587,7 +587,11 @@ class Scheduling extends React.Component<Props, State> {
 
           {this.props.onRenderFooter((
             <div>
-            <Collapsible revealWhen={this.props.activePanelName === 'confirmDelete'}>
+            <Collapsible
+              revealWhen={this.props.activePanelName === 'confirmDelete'}
+              ref={(el) => this.props.onRenderPanel("confirmDelete", el)}
+              onChange={this.props.onRevealedPanel}
+            >
               <ConfirmActionPanel
                 confirmText="Unschedule"
                 confirmingText="Unscheduling…"
@@ -639,22 +643,22 @@ class Scheduling extends React.Component<Props, State> {
               </ConfirmActionPanel>
             </Collapsible>
             <Collapsible revealWhen={this.state.justSaved}>
-              <div className="container pvxl border-top">
+              <div className="container container-wide pvxl border-top">
                 <span className="fade-in type-green type-bold type-italic">Your changes have been saved.</span>
               </div>
             </Collapsible>
             <Collapsible revealWhen={this.state.justDeleted}>
-              <div className="container pvxl border-top">
+              <div className="container container-wide pvxl border-top">
                 <span className="fade-in type-green type-bold type-italic">The item has been unscheduled.</span>
               </div>
             </Collapsible>
             <Collapsible revealWhen={!this.state.justSaved && !this.state.justDeleted && Boolean(this.props.triggerValidationError)}>
-              <div className="container pvxl border-top">
+              <div className="container container-wide pvxl border-top">
                 <span className="fade-in type-pink type-bold type-italic">{this.props.triggerValidationError}</span>
               </div>
             </Collapsible>
             <Collapsible revealWhen={this.shouldShowActions()}>
-              <div className="container ptl pbs border-top">
+              <div className="container container-wide ptl pbs border-top">
                 <DynamicLabelButton
                   disabledWhen={!this.selectedItemHasChanges() || this.hasActiveRequest() || !selectedItemIsValid}
                   className="button-primary mbs mrs"

@@ -150,7 +150,7 @@ class ScheduledItemEditor extends React.Component<Props> {
             </div>
           </div>
 
-          <div className="columns border-bottom">
+          <div className="columns">
             <div className="column column-page-sidebar pvxxl mobile-pbn">
               <div className="container">
                 <SectionHeading number="3">When to do it</SectionHeading>
