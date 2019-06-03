@@ -10,6 +10,10 @@ import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
 import OrgChannels from "../../../../app/assets/frontend/models/org_channels";
 import TeamChannels from "../../../../app/assets/frontend/models/team_channels";
 import {getPageRequiredProps} from "../../../mocks/mock_page";
+import BehaviorGroup from "../../../../app/assets/frontend/models/behavior_group";
+import BehaviorVersion from "../../../../app/assets/frontend/models/behavior_version";
+import BehaviorConfig from "../../../../app/assets/frontend/models/behavior_config";
+import Trigger, {TriggerType} from "../../../../app/assets/frontend/models/trigger";
 
 jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
 jest.mock('../../../../app/assets/frontend/lib/browser_utils');
@@ -75,6 +79,7 @@ const emptyConfig: SchedulingProps = {
   justSavedAction: null,
   selectedScheduleId: null,
   filterChannelId: null,
+  filterBehaviorGroupId: null,
   newAction: false,
   isAdmin: false,
   userMap: {},
@@ -85,7 +90,7 @@ const emptyConfig: SchedulingProps = {
   triggerValidationError: null
 };
 
-function newSchedule(props?: Partial<ScheduledActionInterface>) {
+function newSchedule(props?: Partial<ScheduledActionInterface>): ScheduledAction {
   return new ScheduledAction(Object.assign<ScheduledActionInterface, Partial<ScheduledActionInterface> | undefined>({
     id: ID.next(),
     scheduleType: "message",
@@ -104,7 +109,7 @@ function newSchedule(props?: Partial<ScheduledActionInterface>) {
   }, props));
 }
 
-function newChannel(props?: Partial<ScheduleChannelInterface>) {
+function newChannel(props?: Partial<ScheduleChannelInterface>): ScheduleChannel {
   return new ScheduleChannel(Object.assign<ScheduleChannelInterface, Partial<ScheduleChannelInterface> | undefined>({
     id: defaultChannelId,
     name: "channel",
@@ -119,6 +124,32 @@ function newChannel(props?: Partial<ScheduleChannelInterface>) {
     isExternallyShared: false,
     isReadOnly: false
   }, props));
+}
+
+function newBehaviorGroup(props?: Partial<BehaviorGroup>): BehaviorGroup {
+  return BehaviorGroup.fromJson({
+    id: ID.next(),
+    teamId: ID.next(),
+    actionInputs: [],
+    dataTypeInputs: [],
+    behaviorVersions: [BehaviorVersion.fromJson({
+      behaviorId: ID.next(),
+      inputIds: [],
+      triggers: [],
+      config: BehaviorConfig.fromJson({
+        responseTypeId: "Normal",
+        isDataType: false,
+        isTest: false
+      }),
+      functionBody: "",
+      name: "MyAction"
+    })],
+    libraryVersions: [],
+    requiredAWSConfigs: [],
+    requiredOAuthApiConfigs: [],
+    requiredSimpleTokenApis: [],
+    isManaged: false
+  }).clone(props || {});
 }
 
 describe('Scheduling', () => {
@@ -193,7 +224,7 @@ describe('Scheduling', () => {
       const page = wrapper.page;
       expect(page.state.selectedItem).toBe(null);
       expect(page.state.isEditing).toBe(false);
-      expect(page.state.filterChannelId).toBe(null);
+      expect(page.state.filterChannelId).toBe("");
     });
 
     it('sets the selected item, in editing state', () => {
@@ -215,7 +246,7 @@ describe('Scheduling', () => {
       const page = wrapper.page;
       expect(page.state.selectedItem).toBe(schedules[0]);
       expect(page.state.isEditing).toBe(true);
-      expect(page.state.filterChannelId).toEqual(null);
+      expect(page.state.filterChannelId).toEqual("");
     });
 
     it('sets the channel filter', () => {
@@ -262,6 +293,31 @@ describe('Scheduling', () => {
       expect(page.state.filterChannelId).toEqual(channels[0].id);
     });
 
+    it('sets the skill filter', () => {
+      const channels = [newChannel()];
+      const behaviorGroups: Array<BehaviorGroup> = [newBehaviorGroup()];
+      const schedules = [newSchedule({
+        channel: channels[0].id,
+        behaviorGroupId: behaviorGroups[0].id,
+        behaviorId: behaviorGroups[0].behaviorVersions[0].behaviorId,
+        trigger: null
+      })];
+      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
+        scheduledActions: schedules,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [{
+            teamName: "Test team",
+            channelList: channels
+          }]
+        }),
+        selectedScheduleId: null,
+        filterChannelId: null,
+        filterBehaviorGroupId: behaviorGroups[0].id
+      }));
+      const page = wrapper.page;
+      expect(page.state.filterBehaviorGroupId).toEqual(behaviorGroups[0].id);
+    });
+
   });
 
   describe('componentWillReceiveProps', () => {
@@ -294,7 +350,7 @@ describe('Scheduling', () => {
         isDeleting: false
       });
       expect(stateSpy).toHaveBeenCalledWith({
-        filterChannelId: null,
+        filterChannelId: "",
         selectedItem: null,
         justSaved: false,
         justDeleted: true,
@@ -364,12 +420,52 @@ describe('Scheduling', () => {
         isDeleting: false
       });
       expect(stateSpy).toHaveBeenCalledWith({
-        filterChannelId: null,
+        filterChannelId: "",
         selectedItem: null,
         justSaved: false,
         justDeleted: true,
         isEditing: false
       });
+    });
+  });
+
+  describe('componentWillUpdate', () => {
+    it('clears the channel filter if a new skill ID is chosen and the current channel filter has no remaining actions', () => {
+      const channels = [newChannel({
+        id: ID.next()
+      }), newChannel({
+        id: ID.next()
+      })];
+      const schedules = [newSchedule({
+        channel: channels[0].id,
+        behaviorGroupId: "1"
+      }), newSchedule({
+        channel: channels[1].id,
+        behaviorGroupId: "2"
+      })];
+      const config = Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
+        scheduledActions: schedules,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "test", channelList: channels })]
+        }),
+        filterBehaviorGroupId: null,
+        filterChannelId: channels[0].id
+      });
+      const wrapper = createIndexWrapper(config);
+      const page = wrapper.page;
+      expect(page.state.filterChannelId).toEqual(channels[0].id);
+      page.setState({
+        filterBehaviorGroupId: "1"
+      });
+      expect(page.state.filterChannelId).toEqual(channels[0].id);
+      page.setState({
+        filterBehaviorGroupId: ""
+      });
+      expect(page.state.filterChannelId).toEqual(channels[0].id);
+      page.setState({
+        filterBehaviorGroupId: "2"
+      });
+      expect(page.state.filterChannelId).toEqual("");
     });
   });
 
@@ -393,5 +489,61 @@ describe('Scheduling', () => {
       expect(grouped[0].actions).toEqual([action2, action4]);
       expect(grouped[1].actions).toEqual([action3, action1]);
     });
-  })
+
+    it('returns actions that fit the current filters', () => {
+      const channel1 = newChannel({ name: "channel1", id: "channel1" });
+      const channel2 = newChannel({ name: "channel2", id: "channel2" });
+      const action1 = newSchedule({ firstRecurrence: new Date("2020-01-01T00:00:00.000Z"), channel: "channel1", behaviorGroupId: "g1", behaviorId: "b2", trigger: null });
+      const action2 = newSchedule({ firstRecurrence: new Date("2018-01-01T00:00:00.000Z"), channel: "channel2", behaviorGroupId: "g2", behaviorId: "b3", trigger: null });
+      const action3 = newSchedule({ firstRecurrence: new Date("2019-01-01T00:00:00.000Z"), channel: "channel1", behaviorGroupId: "g2", behaviorId: "b3", trigger: null });
+      const action4 = newSchedule({ firstRecurrence: new Date("2020-01-01T00:00:00.000Z"), channel: "channel2", trigger: ":tada:", behaviorGroupId: null, behaviorId: null });
+      const group = newBehaviorGroup({
+        id: "g1",
+        behaviorVersions: [BehaviorVersion.fromJson({
+          id: "bv1",
+          triggers: [Trigger.fromJson({
+            text: ":tada",
+            isRegex: false,
+            caseSensitive: false,
+            requiresMention: false,
+            triggerType: TriggerType.MessageSent
+          })],
+          behaviorId: "b1",
+          inputIds: [],
+          config: BehaviorConfig.fromJson({
+            responseTypeId: "normal",
+            isDataType: false,
+            isTest: false
+          }),
+          functionBody: ''
+        })]
+      });
+      const wrapper = createIndexWrapper(Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
+        scheduledActions: [action1, action2, action3, action4],
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "Test team", channelList: [channel1, channel2] })]
+        }),
+        behaviorGroups: [group],
+        validTriggers: [{
+          text: ":tada:",
+          matchingTriggers: [group.behaviorVersions[0].triggers[0]],
+          matchingBehaviorIds: ["b1"]
+        }],
+        filterChannelId: "channel1",
+        filterBehaviorGroupId: "g1"
+      }));
+      const page = wrapper.page;
+      const grouped = page.getScheduleByChannel();
+      expect(grouped.length).toEqual(2);
+      expect(grouped[0].actions).toEqual([action1]);
+      expect(grouped[1].actions).toEqual([action4]);
+      page.setState({
+        filterBehaviorGroupId: "g2"
+      });
+      const grouped2 = page.getScheduleByChannel();
+      expect(grouped2.length).toEqual(2);
+      expect(grouped2[0].actions).toEqual([action2]);
+      expect(grouped2[1].actions).toEqual([action3]);
+    });
+  });
 });

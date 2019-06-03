@@ -90,7 +90,7 @@ class ScheduledItemEditor extends React.Component<Props> {
   renderDetails(scheduledAction: ScheduledAction) {
     return (
       <div>
-        <div className="pbxxxxl">
+        <div>
           {this.props.isAdmin ? (
             <div className="bg-light type-weak">
               <div className="container container-wide pvm">

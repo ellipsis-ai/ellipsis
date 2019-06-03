@@ -27,6 +27,7 @@ trait Scheduled {
   val maybeUser: Option[User]
   val team: Team
   val maybeChannel: Option[String]
+  val maybeBehaviorGroupId: Option[String]
   val isForIndividualMembers: Boolean
   val recurrence: Recurrence
   val nextSentAt: OffsetDateTime
@@ -50,7 +51,7 @@ trait Scheduled {
 
   def maybeEditScheduleUrlFor(configuration: Configuration): Option[String] = {
     configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(Some(id), None, maybeChannel, Some(team.id), None)
+      val path = controllers.routes.ScheduledActionsController.index(Some(id), newSchedule = None, maybeChannel, skillId = None, Some(team.id), forceAdmin = None)
       baseUrl + path
     }
   }

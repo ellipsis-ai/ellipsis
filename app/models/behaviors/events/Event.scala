@@ -146,6 +146,7 @@ trait Event {
         selectedId = None,
         newSchedule = None,
         channelId = maybeChannel,
+        skillId = None,
         teamId = Some(ellipsisTeamId),
         forceAdmin = None
       )
