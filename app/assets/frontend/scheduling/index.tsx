@@ -16,7 +16,6 @@ import {PageRequiredProps} from '../shared_ui/page';
 import autobind from '../lib/autobind';
 import {UserMap, ValidTriggerInterface} from "./loader";
 import User from '../models/user';
-import SVGWarning from "../svg/warning";
 import OrgChannels from "../models/org_channels";
 import {DataRequest} from "../lib/data_request";
 import {TimeZoneData} from "../time_zone/team_time_zone_setter";
