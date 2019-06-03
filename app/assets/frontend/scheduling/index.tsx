@@ -54,8 +54,8 @@ export interface SchedulingProps {
 type Props = SchedulingProps & PageRequiredProps
 
 type State = {
-  filterBehaviorGroupId: Option<string>,
-  filterChannelId: Option<string>,
+  filterBehaviorGroupId: string,
+  filterChannelId: string,
   selectedItem: Option<ScheduledAction>,
   justSaved: boolean,
   justDeleted: boolean,
@@ -88,8 +88,8 @@ class Scheduling extends React.Component<Props, State> {
       autobind(this);
       const selectedItem = this.getDefaultSelectedItem();
       this.state = {
-        filterChannelId: this.props.filterChannelId,
-        filterBehaviorGroupId: this.props.filterBehaviorGroupId,
+        filterChannelId: this.props.filterChannelId || "",
+        filterBehaviorGroupId: this.props.filterBehaviorGroupId || "",
         selectedItem: selectedItem,
         justSaved: false,
         justDeleted: false,
@@ -117,7 +117,7 @@ class Scheduling extends React.Component<Props, State> {
         const hasRemainingActionsInFilteredChannel = this.state.filterChannelId ?
           nextProps.scheduledActions.some((ea) => ea.channel === this.state.filterChannelId) : false;
         this.setState({
-          filterChannelId: hasRemainingActionsInFilteredChannel ? this.state.filterChannelId : null,
+          filterChannelId: hasRemainingActionsInFilteredChannel ? this.state.filterChannelId : "",
           selectedItem: nextProps.error ? this.state.selectedItem : null,
           justSaved: false,
           justDeleted: !nextProps.error,
@@ -138,7 +138,7 @@ class Scheduling extends React.Component<Props, State> {
           this.scheduledActionTriggersSkillId(action, nextBehaviorGroupId));
         if (!matchingActions.length && this.props.scheduledActions.length > 0) {
           this.setState({
-            filterChannelId: null
+            filterChannelId: ""
           });
         }
       }
@@ -295,15 +295,9 @@ class Scheduling extends React.Component<Props, State> {
       return !this.state.filterChannelId || this.state.filterChannelId === channelId;
     }
 
-    toggleFilter(channelId: string) {
+    changeChannelFilter(channelId: string) {
       this.setState({
-        filterChannelId: this.filterActiveFor(channelId) ? null : channelId
-      });
-    }
-
-    clearFilters() {
-      this.setState({
-        filterChannelId: null
+        filterChannelId: this.filterActiveFor(channelId) ? "" : channelId
       });
     }
 
@@ -394,7 +388,7 @@ class Scheduling extends React.Component<Props, State> {
     renderSubheading() {
       if (!this.hasChannelList()) {
         return (
-          <div className="ptxl container container-wide">
+          <div className="ptxl">
             <div className="type-pink type-italic type-m align-m">
               Warning: An error occurred loading channel information
             </div>
@@ -426,84 +420,29 @@ class Scheduling extends React.Component<Props, State> {
       })).filter((ea) => Boolean(ea.id));
     }
 
-    renderSidebar(groups: Array<ScheduleGroup>) {
-      return (
-        <div>
-          <div className="phxl mobile-phl mbs">
-            <h5 className="mtn display-inline-block prm">Channel</h5>
-          </div>
-
-          <div>
-            <Button
-              className={`button-block width-full phxl mobile-phl pvxs mvxs ${
-                this.state.filterChannelId ? "type-link" : "bg-blue type-white"
-              }`}
-              onClick={this.clearFilters}
-            >
-              <div className={"type-bold"}>All channels</div>
-            </Button>
-            {this.renderFilterList(groups)}
-          </div>
-        </div>
-      );
-    }
-
-    renderFilterList(groups: Array<ScheduleGroup>) {
-      if (groups.length > 1) {
-        return groups.map((group) => (
-          <Button
-            className={`button-block width-full phxl mobile-phl pvxs mvxs ${
-              this.filterActiveFor(group.channelId) ? "bg-blue type-white " : "type-link "
-              }`}
-            key={`filter-${group.channelName || "[unknown]"}`}
-            onClick={() => this.toggleFilter(group.channelId)}
-          >
-            <div className="display-inline-block align-m">
-              {group.channelName || (
-                <i>Unknown channel</i>
-              )}
-            </div>
-            {this.renderGroupWarningIcon(group)}
-          </Button>
-        ));
-      } else {
-        return null;
-      }
-    }
-
-    renderGroupWarningIcon(group: ScheduleGroup) {
-      if (group.isArchived || group.excludesBot || group.isMissing || group.isReadOnly) {
-        return (
-          <span className="mls display-inline-block type-pink height-xl align-m"><SVGWarning/></span>
-        );
-      } else {
-        return null;
-      }
-    }
-
     renderGroupWarningText(group: ScheduleGroup) {
       if (group.isArchived) {
         return (
-          <span className="type-s type-pink type-bold type-italic">
-            — Warning: This channel is archived.
+          <span className="type-s type-pink">
+            Warning: This channel is archived.
           </span>
         );
       } else if (group.excludesBot) {
         return (
-          <span className="type-s type-pink type-bold type-italic">
-            — Warning: The bot must be invited to this channel for any scheduled action to run.
+          <span className="type-s type-pink">
+            Warning: The bot must be invited to this channel for any scheduled action to run.
           </span>
         );
       } else if (group.isMissing) {
         return (
-          <span className="type-s type-pink type-bold type-italic">
-            — Warning: No information about this channel was found. It may be private and the bot is not a member, or it may no longer exist.
+          <span className="type-s type-pink">
+            Warning: No information about this channel was found. It may be private and the bot is not a member, or it may no longer exist.
           </span>
         );
       } else if (group.isReadOnly) {
         return (
-          <span className="type-s type-pink type-bold type-italic">
-            — Warning: The bot is restricted from posting to this channel by the admin.
+          <span className="type-s type-pink">
+            Warning: The bot is restricted from posting to this channel by the admin.
           </span>
         );
       } else {
@@ -512,35 +451,37 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     renderGroups(groups: Array<ScheduleGroup>) {
-      return groups.map((group) => {
+      return groups.map((group, index) => {
         const hasActions = group.actions.length > 0;
         return (
           <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
-            <div className="pvl">
-              <div>
-                <h4 className="mvn">
-                  <span className="mrxs"><ChannelName channel={group.channel} /></span>
-                  {this.renderGroupWarningText(group)}
-                </h4>
+            <div className={`columns pvl ${index > 0 ? "border-top border-light" : ""}`}>
+              <div className="column column-page-sidebar ptm mobile-ptn prn">
+                <div className="container">
+                  <h4 className="mvn"><ChannelName channel={group.channel} /></h4>
+                  <div>{this.renderGroupWarningText(group)}</div>
+                </div>
               </div>
 
-              <div>
-                {hasActions ? group.actions.map((action) => (
-                  <ScheduledItem
-                    key={`${action.scheduleType}-${action.id}`}
-                    className={`mvs pal mobile-pam border border-light bg-white`}
-                    scheduledAction={action}
-                    behaviorGroups={this.props.behaviorGroups}
-                    onClick={this.toggleEditor}
-                    userTimeZone={this.state.userTimeZone}
-                    userTimeZoneName={this.state.userTimeZoneName}
-                    validTrigger={this.getTriggerValidationFor(action)}
-                  />
-                )) : (
-                  <div className="mhl mvs pal mobile-pam border border-light bg-white">
-                    There are no scheduled actions in this channel.
-                  </div>
-                )}
+              <div className="column column-page-main pln">
+                <div className="container container-narrow">
+                  {hasActions ? group.actions.map((action) => (
+                    <ScheduledItem
+                      key={`${action.scheduleType}-${action.id}`}
+                      className={`mvs pal mobile-pam border border-light bg-white`}
+                      scheduledAction={action}
+                      behaviorGroups={this.props.behaviorGroups}
+                      onClick={this.toggleEditor}
+                      userTimeZone={this.state.userTimeZone}
+                      userTimeZoneName={this.state.userTimeZoneName}
+                      validTrigger={this.getTriggerValidationFor(action)}
+                    />
+                  )) : (
+                    <div className="mhl mvs pal mobile-pam border border-light bg-white">
+                      There are no scheduled actions in this channel.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </Collapsible>
@@ -599,17 +540,28 @@ class Scheduling extends React.Component<Props, State> {
       return groups.length > 0 ? this.renderGroups(groups) : this.renderNoSchedules();
     }
 
-    renderHeader() {
+    renderHeader(groups: Array<ScheduleGroup>) {
       return this.props.onRenderHeader(this.isEditing() ? null : (
-        <div className="bg-white-translucent pvs border-bottom">
-          <div className="container container-wide">
-            <h5 className="display-inline-block mtn mrm">Skill</h5>
-            <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter} disabled={this.props.isValidatingTriggers}>
-              <option value="">All skills</option>
-              {this.getSkillOptions().map((ea) => (
-                <option key={`filterSkillId-${ea.id}`} value={ea.id}>{ea.name}</option>
-              ))}
-            </Select>
+        <div className="bg-white-translucent border-bottom">
+          <div className="container container-narrow mts">
+            <div className="display-inline-block align-m mrl mbs">
+              <h5 className="display-inline-block mtn mrs">Skill</h5>
+              <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter} disabled={this.props.isValidatingTriggers}>
+                <option value="">All skills</option>
+                {this.getSkillOptions().map((ea) => (
+                  <option key={`filterSkillId-${ea.id}`} value={ea.id}>{ea.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="display-inline-block align-m mbs">
+              <h5 className="display-inline-block mtn mrs">Channel</h5>
+              <Select value={this.state.filterChannelId} className="form-select-s align-m" onChange={this.changeChannelFilter}>
+                <option value="">All channels</option>
+                {groups.map((group) => (
+                  <option key={`filterChannelId-${group.channelId}`} value={group.channelId}>{group.channelName || "Unknown channel"}</option>
+                ))}
+              </Select>
+            </div>
           </div>
         </div>
       ));
@@ -622,21 +574,12 @@ class Scheduling extends React.Component<Props, State> {
       const selectedItemIsValid = Boolean(selectedItem && selectedItem.isValid());
       const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
-        <div className="flex-row-cascade">
-          {this.renderHeader()}
+        <div className="flex-row-cascade" style={{ paddingBottom: this.props.footerHeight }}>
+          {this.renderHeader(groups)}
           <Collapsible revealWhen={!this.isEditing()} className={"flex-row-cascade mobile-flex-no-expand"}>
-            <div className="flex-columns flex-row-expand">
-              <div className="flex-column flex-column-left flex-rows container container-wide phn">
-                <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
-                  <div className="column column-page-sidebar flex-column ptxl phn bg-white border-right border-light">
-                    {this.renderSidebar(groups)}
-                  </div>
-                  <div className="column ptm pbxxxxl phxl column-page-main column-page-main-wide flex-column">
-                    {this.renderSubheading()}
-                    {this.renderScheduleList(groups)}
-                  </div>
-                </div>
-              </div>
+            <div>
+              {this.renderSubheading()}
+              {this.renderScheduleList(groups)}
             </div>
           </Collapsible>
           <Collapsible revealWhen={this.isEditing()}>

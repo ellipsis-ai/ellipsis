@@ -194,7 +194,7 @@ describe('Scheduling', () => {
       const page = wrapper.page;
       expect(page.state.selectedItem).toBe(null);
       expect(page.state.isEditing).toBe(false);
-      expect(page.state.filterChannelId).toBe(null);
+      expect(page.state.filterChannelId).toBe("");
     });
 
     it('sets the selected item, in editing state', () => {
@@ -216,7 +216,7 @@ describe('Scheduling', () => {
       const page = wrapper.page;
       expect(page.state.selectedItem).toBe(schedules[0]);
       expect(page.state.isEditing).toBe(true);
-      expect(page.state.filterChannelId).toEqual(null);
+      expect(page.state.filterChannelId).toEqual("");
     });
 
     it('sets the channel filter', () => {
@@ -295,7 +295,7 @@ describe('Scheduling', () => {
         isDeleting: false
       });
       expect(stateSpy).toHaveBeenCalledWith({
-        filterChannelId: null,
+        filterChannelId: "",
         selectedItem: null,
         justSaved: false,
         justDeleted: true,
@@ -365,7 +365,7 @@ describe('Scheduling', () => {
         isDeleting: false
       });
       expect(stateSpy).toHaveBeenCalledWith({
-        filterChannelId: null,
+        filterChannelId: "",
         selectedItem: null,
         justSaved: false,
         justDeleted: true,
