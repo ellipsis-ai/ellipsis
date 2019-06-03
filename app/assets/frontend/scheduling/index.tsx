@@ -207,13 +207,14 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     getCorrectedURL(explicitTeamId: Option<string>, forceAdmin: Option<boolean>): string {
+      const filterChannelId = this.state.filterChannelId || null;
       const filterBehaviorGroupId = this.state.filterBehaviorGroupId || null;
       if (this.state.isEditing && this.state.selectedItem && !this.state.selectedItem.isNew()) {
-        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, this.state.filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       } else if (this.state.isEditing && this.state.selectedItem) {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, true, this.state.filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(null, true, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       } else {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, null, this.state.filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
+        return jsRoutes.controllers.ScheduledActionsController.index(null, null, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       }
     }
 
