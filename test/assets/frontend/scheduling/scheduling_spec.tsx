@@ -10,6 +10,9 @@ import {SchedulingProps} from "../../../../app/assets/frontend/scheduling";
 import OrgChannels from "../../../../app/assets/frontend/models/org_channels";
 import TeamChannels from "../../../../app/assets/frontend/models/team_channels";
 import {getPageRequiredProps} from "../../../mocks/mock_page";
+import BehaviorGroup from "../../../../app/assets/frontend/models/behavior_group";
+import BehaviorVersion from "../../../../app/assets/frontend/models/behavior_version";
+import BehaviorConfig from "../../../../app/assets/frontend/models/behavior_config";
 
 jest.mock('../../../../app/assets/frontend/lib/data_request', () => MockDataRequest);
 jest.mock('../../../../app/assets/frontend/lib/browser_utils');
@@ -263,6 +266,53 @@ describe('Scheduling', () => {
       expect(page.state.filterChannelId).toEqual(channels[0].id);
     });
 
+    it('sets the skill filter', () => {
+      const channels = [newChannel()];
+      const behaviorGroups: Array<BehaviorGroup> = [BehaviorGroup.fromJson({
+        id: ID.next(),
+        teamId: ID.next(),
+        actionInputs: [],
+        dataTypeInputs: [],
+        behaviorVersions: [BehaviorVersion.fromJson({
+          behaviorId: ID.next(),
+          inputIds: [],
+          triggers: [],
+          config: BehaviorConfig.fromJson({
+            responseTypeId: "Normal",
+            isDataType: false,
+            isTest: false
+          }),
+          functionBody: "",
+          name: "MyAction"
+        })],
+        libraryVersions: [],
+        requiredAWSConfigs: [],
+        requiredOAuthApiConfigs: [],
+        requiredSimpleTokenApis: [],
+        isManaged: false
+      })];
+      const schedules = [newSchedule({
+        channel: channels[0].id,
+        behaviorGroupId: behaviorGroups[0].id,
+        behaviorId: behaviorGroups[0].behaviorVersions[0].behaviorId,
+        trigger: null
+      })];
+      const wrapper = createIndexWrapper(Object.assign({}, emptyConfig, {
+        scheduledActions: schedules,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [{
+            teamName: "Test team",
+            channelList: channels
+          }]
+        }),
+        selectedScheduleId: null,
+        filterChannelId: null,
+        filterBehaviorGroupId: behaviorGroups[0].id
+      }));
+      const page = wrapper.page;
+      expect(page.state.filterBehaviorGroupId).toEqual(behaviorGroups[0].id);
+    });
+
   });
 
   describe('componentWillReceiveProps', () => {
@@ -371,6 +421,46 @@ describe('Scheduling', () => {
         justDeleted: true,
         isEditing: false
       });
+    });
+  });
+
+  describe('componentWillUpdate', () => {
+    it('clears the channel filter if a new skill ID is chosen and the current channel filter has no remaining actions', () => {
+      const channels = [newChannel({
+        id: ID.next()
+      }), newChannel({
+        id: ID.next()
+      })];
+      const schedules = [newSchedule({
+        channel: channels[0].id,
+        behaviorGroupId: "1"
+      }), newSchedule({
+        channel: channels[1].id,
+        behaviorGroupId: "2"
+      })];
+      const config = Object.assign<{}, SchedulingProps, Partial<SchedulingProps>>({}, emptyConfig, {
+        scheduledActions: schedules,
+        orgChannels: emptyConfig.orgChannels.clone({
+          teamChannels: [TeamChannels.fromJson({ teamName: "test", channelList: channels })]
+        }),
+        filterBehaviorGroupId: null,
+        filterChannelId: channels[0].id
+      });
+      const wrapper = createIndexWrapper(config);
+      const page = wrapper.page;
+      expect(page.state.filterChannelId).toEqual(channels[0].id);
+      page.setState({
+        filterBehaviorGroupId: "1"
+      });
+      expect(page.state.filterChannelId).toEqual(channels[0].id);
+      page.setState({
+        filterBehaviorGroupId: ""
+      });
+      expect(page.state.filterChannelId).toEqual(channels[0].id);
+      page.setState({
+        filterBehaviorGroupId: "2"
+      });
+      expect(page.state.filterChannelId).toEqual("");
     });
   });
 

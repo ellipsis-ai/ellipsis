@@ -134,7 +134,7 @@ class Scheduling extends React.Component<Props, State> {
       const nextBehaviorGroupId = nextState.filterBehaviorGroupId;
       if (nextBehaviorGroupId && nextBehaviorGroupId !== this.state.filterBehaviorGroupId && nextState.filterChannelId) {
         const matchingActions = this.props.scheduledActions.filter((action) => action.channel === nextState.filterChannelId &&
-          this.scheduledActionTriggersSkillId(action, nextBehaviorGroupId));
+          this.scheduledActionTriggersBehaviorGroupId(action, nextBehaviorGroupId));
         if (!matchingActions.length && this.props.scheduledActions.length > 0) {
           this.setState({
             filterChannelId: ""
@@ -248,21 +248,23 @@ class Scheduling extends React.Component<Props, State> {
       };
     }
 
-    scheduledActionTriggersSkillId(action: ScheduledAction, skillId: string): boolean {
-      const matchingTriggers = this.props.validTriggers.filter((ea) => ea.text === action.trigger);
-      const behaviorGroup = this.props.behaviorGroups.find((ea) => ea.id === skillId);
-      return matchingTriggers.some((trigger) => {
-        return Boolean(behaviorGroup && behaviorGroup.behaviorVersions.some((behaviorVersion) => trigger.matchingBehaviorIds.includes(behaviorVersion.behaviorId)));
-      });
+    scheduledActionTriggersBehaviorGroupId(action: ScheduledAction, behaviorGroupId: string): boolean {
+      if (action.behaviorGroupId) {
+        return action.behaviorGroupId === behaviorGroupId;
+      } else {
+        const matchingTriggers = this.props.validTriggers.filter((ea) => ea.text === action.trigger);
+        const behaviorGroup = this.props.behaviorGroups.find((ea) => ea.id === behaviorGroupId);
+        return matchingTriggers.some((trigger) => {
+          return Boolean(behaviorGroup && behaviorGroup.behaviorVersions.some((behaviorVersion) => trigger.matchingBehaviorIds.includes(behaviorVersion.behaviorId)));
+        });
+      }
     }
 
     getScheduleByChannel(): Array<ScheduleGroup> {
       const groupsByName: SchedulesGroupedByName = {};
       this.props.scheduledActions.forEach((action) => {
         const filterSkillId = this.state.filterBehaviorGroupId;
-        const includeAction = !filterSkillId ||
-          action.behaviorGroupId === filterSkillId ||
-          this.scheduledActionTriggersSkillId(action, filterSkillId);
+        const includeAction = !filterSkillId || this.scheduledActionTriggersBehaviorGroupId(action, filterSkillId);
         if (includeAction) {
           const channel = this.findChannelFor(action.channel);
           const channelName = channel ? channel.getFormattedName() : null;
