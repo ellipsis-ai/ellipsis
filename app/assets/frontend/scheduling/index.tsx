@@ -516,8 +516,8 @@ class Scheduling extends React.Component<Props, State> {
         const hasActions = group.actions.length > 0;
         return (
           <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
-            <div className="ptxl pbxl">
-              <div className="phxl mobile-phl">
+            <div className="pvl">
+              <div>
                 <h4 className="mvn">
                   <span className="mrxs"><ChannelName channel={group.channel} /></span>
                   {this.renderGroupWarningText(group)}
@@ -528,7 +528,7 @@ class Scheduling extends React.Component<Props, State> {
                 {hasActions ? group.actions.map((action) => (
                   <ScheduledItem
                     key={`${action.scheduleType}-${action.id}`}
-                    className={`mhl mvs pal mobile-pam border border-light bg-white`}
+                    className={`mvs pal mobile-pam border border-light bg-white`}
                     scheduledAction={action}
                     behaviorGroups={this.props.behaviorGroups}
                     onClick={this.toggleEditor}
@@ -557,14 +557,32 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     renderNoSchedulesMessage() {
+      const selectedGroup = this.state.filterBehaviorGroupId ? this.props.behaviorGroups.find((ea) => ea.id === this.state.filterBehaviorGroupId) : null;
       return (
         <div>
-          <p className="type-bold">Nothing is currently scheduled in channels you can access on this team.</p>
+          <p className="type-bold">{this.renderNoScheduleMessageFor(selectedGroup)}</p>
 
           <p>You can schedule any action to run on a recurring basis in a particular channel.</p>
 
         </div>
       );
+    }
+
+    renderNoScheduleMessageFor(selectedGroup: Option<BehaviorGroup>) {
+      if (selectedGroup && this.props.isValidatingTriggers) {
+        return (
+          <span className="pulse">Checking scheduled messages…</span>
+        );
+      } else if (selectedGroup && !this.props.isValidatingTriggers) {
+        return (
+          <span>Nothing is currently scheduled in the <b>{selectedGroup.getName()}</b> skill.</span>
+        );
+      } else {
+        return (
+          <span>Nothing is currently scheduled on this team.</span>
+        );
+      }
+
     }
 
     renderErrorMessage() {
@@ -613,7 +631,7 @@ class Scheduling extends React.Component<Props, State> {
                   <div className="column column-page-sidebar flex-column ptxl phn bg-white border-right border-light">
                     {this.renderSidebar(groups)}
                   </div>
-                  <div className="column pbxxxxl column-page-main column-page-main-wide flex-column">
+                  <div className="column ptm pbxxxxl phxl column-page-main column-page-main-wide flex-column">
                     {this.renderSubheading()}
                     {this.renderScheduleList(groups)}
                   </div>
