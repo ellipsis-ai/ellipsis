@@ -526,8 +526,10 @@ describe('Scheduling', () => {
         behaviorGroups: [group],
         validTriggers: [{
           text: ":tada:",
-          matchingTriggers: [group.behaviorVersions[0].triggers[0]],
-          matchingBehaviorIds: ["b1"]
+          matchingBehaviorTriggers: [{
+            behaviorId: group.behaviorVersions[0].behaviorId,
+            triggers: group.behaviorVersions[0].triggers
+          }]
         }],
         filterChannelId: "channel1",
         filterBehaviorGroupId: "g1"

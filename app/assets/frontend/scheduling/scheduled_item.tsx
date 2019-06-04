@@ -18,6 +18,11 @@ interface Props {
   validTrigger: Option<ValidTriggerInterface>
 }
 
+interface ValidationCount {
+  actionCount: number
+  triggerCount: number
+}
+
 class ScheduledItem extends React.Component<Props> {
     constructor(props: Props) {
       super(props);
@@ -39,9 +44,22 @@ class ScheduledItem extends React.Component<Props> {
       return hasUserZoneName && (!isUserZone && !isUserZoneName);
     }
 
+    getValidationWarning(): Option<ValidationCount> {
+      if (this.props.scheduledAction.behaviorId) {
+        return null;
+      } else {
+        const actionCount = this.props.validTrigger && this.props.validTrigger.matchingBehaviorTriggers.length;
+        const triggerCount = this.props.validTrigger && this.props.validTrigger.matchingBehaviorTriggers.reduce((prev, curr) => prev + curr.triggers.length, 0);
+        return typeof actionCount === "number" ? {
+          actionCount: actionCount || 0,
+          triggerCount: triggerCount || 0
+        } : null;
+      }
+    }
+
     renderWarning() {
-      const actionCount = this.props.validTrigger && this.props.validTrigger.matchingBehaviorIds.length;
-      if (actionCount === 0) {
+      const warning = this.getValidationWarning();
+      if (warning && warning.actionCount === 0) {
         return (
           <div className="mtl type-s fade-in">
             <span className="type-pink display-inline-block height-xl align-m mrs">
@@ -50,15 +68,24 @@ class ScheduledItem extends React.Component<Props> {
             <span className="type-italic type-weak">Warning: this scheduled message will not trigger any known action.</span>
           </div>
         );
-      } else if (typeof actionCount === "number" && actionCount > 1) {
+      } else if (warning && warning.actionCount > 1) {
         return (
           <div className="mtl type-s fade-in">
             <span className="type-yellow display-inline-block height-xl align-m mrs">
               <SVGInfo />
             </span>
-            <span className="type-italic type-weak">This scheduled message will trigger {actionCount} actions.</span>
+            <span className="type-italic type-weak">This scheduled message will trigger {warning.actionCount} actions.</span>
           </div>
         );
+      } else if (warning && warning.triggerCount > 1) {
+        return (
+          <div className="mtl type-s fade-in">
+            <span className="type-yellow display-inline-block height-xl align-m mrs">
+              <SVGInfo />
+            </span>
+            <span className="type-italic type-weak">This scheduled message matches {warning.triggerCount} different triggers on the same action.</span>
+          </div>
+        )
       } else {
         return null;
       }

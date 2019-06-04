@@ -14,7 +14,7 @@ import {DataRequest} from "../lib/data_request";
 import BehaviorVersion from "../models/behavior_version";
 import SVGCheckmark from "../svg/checkmark";
 import SVGInfo from "../svg/info";
-import {ValidTriggerJson} from "./loader";
+import {ValidBehaviorIdTriggerJson, ValidTriggerJson} from "./loader";
 
 interface Props {
   teamId: string,
@@ -33,7 +33,7 @@ interface MatchingGroupAndBehaviorVersion {
 }
 
 interface State {
-  matchingBehaviorIds: Array<string>
+  matchingBehaviorTriggers: Array<ValidBehaviorIdTriggerJson>
   loadingValidation: boolean
   validationError: Option<string>
 }
@@ -49,7 +49,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       this.nameInputs = [];
       this.validateTrigger = debounce(this._validateTrigger, 500);
       this.state = {
-        matchingBehaviorIds: [],
+        matchingBehaviorTriggers: [],
         loadingValidation: Boolean(this.props.scheduledAction.trigger),
         validationError: null
       };
@@ -75,7 +75,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       }
       if (prevProps.scheduledAction.id !== this.props.scheduledAction.id) {
         this.setState({
-          matchingBehaviorIds: []
+          matchingBehaviorTriggers: []
         });
       } else if (this.props.scheduledAction.trigger && prevProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
         this.beginValidatingTrigger();
@@ -87,7 +87,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       if (text) {
         this.setState({
           loadingValidation: true,
-          matchingBehaviorIds: []
+          matchingBehaviorTriggers: []
         }, () => {
           this.validateTrigger(text);
         });
@@ -103,7 +103,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
           const firstMatch = results.find((ea) => ea.text === text);
           this.setState({
             loadingValidation: false,
-            matchingBehaviorIds: firstMatch ? firstMatch.matchingBehaviorIds : []
+            matchingBehaviorTriggers: firstMatch ? firstMatch.matchingBehaviorTriggers : []
           });
         } else {
           // Throw away results if the user's trigger text has changed before request completes
@@ -252,30 +252,48 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     }
 
     getMatchingActions() {
-      const oneValidTrigger = this.state.matchingBehaviorIds.length === 1;
-      return this.state.matchingBehaviorIds.map((behaviorId) => {
-        const matching = this.getMatchingGroupAndBehavior(behaviorId);
+      const behaviorCount = this.state.matchingBehaviorTriggers.length;
+      const oneValidBehavior = behaviorCount === 1;
+      return this.state.matchingBehaviorTriggers.map((behaviorTriggers) => {
+        const matching = this.getMatchingGroupAndBehavior(behaviorTriggers.behaviorId);
         if (matching) {
           const group = matching.group;
           const behaviorVersion = matching.behaviorVersion;
+          const triggerCount = behaviorTriggers.triggers.length;
+          const oneValidTrigger = triggerCount === 1;
           return (
-            <div key={`behaviorId${behaviorVersion.behaviorId}`} className="mtxs">
-              {oneValidTrigger ? (
-                <span className="display-inline-block height-xl type-green mrs align-m">
-                  <SVGCheckmark />
-                </span>
-              ) : (
-                <span className="display-inline-block height-xl type-yellow mrs align-m">
-                  <SVGInfo />
-                </span>
-              )}
-              <span className="align-m">
+            <div key={`behaviorId${behaviorVersion.behaviorId}`} className="mtxs columns columns-elastic">
+              <div className="column column-shrink prs">
+                {oneValidBehavior && oneValidTrigger ? (
+                  <div className="height-xl type-green">
+                    <SVGCheckmark />
+                  </div>
+                ) : (
+                  <div className="height-xl type-yellow">
+                    <SVGInfo />
+                  </div>
+                )}
+              </div>
+              <div className="column column-expand">
                 <span>Will trigger action </span>
                 <b className="border bg-white phxs mhxs">{behaviorVersion.getName()}</b>
                 <span> in skill </span>
                 <b className="border bg-white phxs mhxs">{group.getName()}</b>
                 {this.renderEditLink(group.id, behaviorVersion.behaviorId)}
-              </span>
+                {triggerCount > 1 ? (
+                  <div className="type-s mtxs bg-white pvxs phs border border-yellow">
+                    <div className="type-yellow type-bold type-italic">Warning: matches {triggerCount} different triggers:</div>
+                    <div>
+                      {behaviorTriggers.triggers.map((trigger, index) => (
+                        <span
+                          key={`behaviorVersion-${behaviorVersion.behaviorId}-trigger${index}`}
+                          className="box-chat mrs"
+                        >{trigger.text}</span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
           );
         } else {
@@ -304,10 +322,10 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
             />
           </div>
           <div>
-            <h5>{this.state.matchingBehaviorIds.length <= 1 ? "Matching action" : "Matching actions"}</h5>
-            {this.state.matchingBehaviorIds.length > 1 ? (
+            <h5>{this.state.matchingBehaviorTriggers.length <= 1 ? "Matching action" : "Matching actions"}</h5>
+            {this.state.matchingBehaviorTriggers.length > 1 ? (
               <div className="type-yellow type-bold type-italic">
-                This text will trigger {this.state.matchingBehaviorIds.length} actions to run at the same time.
+                This text will trigger {this.state.matchingBehaviorTriggers.length} actions to run at the same time.
               </div>
             ) : null}
             <div className="mtxs min-height-2-lines">
@@ -323,7 +341,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         return (
           <div className="pulse type-weak type-italic">Checking trigger text…</div>
         );
-      } else if (this.state.matchingBehaviorIds.length > 0) {
+      } else if (this.state.matchingBehaviorTriggers.length > 0) {
         return (
           <div>{this.getMatchingActions()}</div>
         );

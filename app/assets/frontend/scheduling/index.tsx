@@ -255,7 +255,9 @@ class Scheduling extends React.Component<Props, State> {
         const matchingTriggers = this.props.validTriggers.filter((ea) => ea.text === action.trigger);
         const behaviorGroup = this.props.behaviorGroups.find((ea) => ea.id === behaviorGroupId);
         return matchingTriggers.some((trigger) => {
-          return Boolean(behaviorGroup && behaviorGroup.behaviorVersions.some((behaviorVersion) => trigger.matchingBehaviorIds.includes(behaviorVersion.behaviorId)));
+          return trigger.matchingBehaviorTriggers.some((matchingBehavior) => {
+            return Boolean(behaviorGroup && behaviorGroup.behaviorVersions.some((behaviorVersion) => behaviorVersion.behaviorId === matchingBehavior.behaviorId));
+          });
         });
       }
     }
@@ -548,7 +550,7 @@ class Scheduling extends React.Component<Props, State> {
           <div className="container container-narrow mts">
             <div className="display-inline-block align-m mrl mbs">
               <h5 className="display-inline-block mtn mrs">Skill</h5>
-              <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter} disabled={this.props.isValidatingTriggers}>
+              <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter}>
                 <option value="">All skills</option>
                 {this.getSkillOptions().map((ea) => (
                   <option key={`filterSkillId-${ea.id}`} value={ea.id}>{ea.name}</option>
