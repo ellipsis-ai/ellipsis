@@ -100,10 +100,11 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
 
     lazy val authorizationUrl = "https://authorize.me/oauth2/authorize"
     lazy val oauth2ApiId = IDs.next
-    lazy val oauth2Api = OAuth2Api(oauth2ApiId, "", AuthorizationCode, Some(authorizationUrl), "", None, None, None)
+    lazy val oauth2Api = OAuth2Api(oauth2ApiId, "", AuthorizationCode, Some(authorizationUrl), "", None, None, None, None)
     lazy val oauth2AppId = IDs.next
     lazy val oauth2App = OAuth2Application(oauth2AppId, "", oauth2Api, IDs.next, IDs.next, None, teamId, isShared = false)
 
   }
 
 }
+IntegrationsControllerSpec.scala:53IntegrationsControllerSpec.scala:53
