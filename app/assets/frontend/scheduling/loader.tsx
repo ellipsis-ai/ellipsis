@@ -35,14 +35,22 @@ export interface UserMap {
   [userId: string]: Option<User>
 }
 
+export interface ValidBehaviorIdTriggerJson {
+  behaviorId: string
+  triggers: Array<TriggerJson>
+}
+
+export interface ValidBehaviorIdTriggerInterface extends ValidBehaviorIdTriggerJson {
+  triggers: Array<Trigger>
+}
+
 export interface ValidTriggerJson {
   text: string
-  matchingTriggers: Array<TriggerJson>
-  matchingBehaviorIds: Array<string>
+  matchingBehaviorTriggers: Array<ValidBehaviorIdTriggerJson>
 }
 
 export interface ValidTriggerInterface extends ValidTriggerJson {
-  matchingTriggers: Array<Trigger>
+  matchingBehaviorTriggers: Array<ValidBehaviorIdTriggerInterface>
 }
 
 interface State {
@@ -112,9 +120,17 @@ class SchedulingLoader extends React.Component<Props, State> {
       }, this.props.csrfToken).then((results: Array<ValidTriggerJson>) => {
         this.setState({
           isValidatingTriggers: false,
-          validTriggers: results.map((result) => Object.assign({}, result, {
-            matchingTriggers: result.matchingTriggers.map((triggerJson) => Trigger.fromJson(triggerJson))
-          }))
+          validTriggers: results.map((result) => {
+            return {
+              text: result.text,
+              matchingBehaviorTriggers: result.matchingBehaviorTriggers.map((behaviorTriggers) => {
+                return {
+                  behaviorId: behaviorTriggers.behaviorId,
+                  triggers: behaviorTriggers.triggers.map(Trigger.fromJson)
+                };
+              })
+            };
+          })
         });
       }).catch(() => {
         this.setState({

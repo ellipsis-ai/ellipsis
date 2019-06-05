@@ -374,7 +374,11 @@ class ScheduledActionsController @Inject()(
               val text = MessageEvent.ellipsisShortcutMentionRegex.replaceFirstIn(triggerText, "")
               val testEvent = TestMessageEvent(TestEventContext(user, team), text, includesBotMention = true, None)
               val validTriggers = allTriggers.filter(ea => ea.isActivatedBy(testEvent))
-              ValidTriggerData(triggerText, validTriggers.map(BehaviorTriggerData.fromTrigger), validTriggers.map(_.behaviorVersion.behavior.id))
+              val validBehaviorIds = validTriggers.map(_.behaviorVersion.behavior.id).distinct
+              val behaviorIdTriggersData = validBehaviorIds.map { behaviorId =>
+                ValidBehaviorIdTriggerData(behaviorId, validTriggers.filter(_.behaviorVersion.behavior.id == behaviorId).map(BehaviorTriggerData.fromTrigger))
+              }
+              ValidTriggerData(triggerText, behaviorIdTriggersData)
             }
             Ok(Json.toJson(results))
           }.getOrElse {
