@@ -21,6 +21,7 @@ class OAuth2ApiPopulator @Inject() (
       "https://github.com/login/oauth/access_token",
       Some("https://github.com/settings/applications/new"),
       Some("https://developer.github.com/v3/oauth/#scopes"),
+      None,
       None
     ),
     OAuth2Api(
@@ -31,6 +32,7 @@ class OAuth2ApiPopulator @Inject() (
       "https://todoist.com/oauth/access_token",
       Some("https://developer.todoist.com/appconsole.html"),
       Some("https://developer.todoist.com/index.html#oauth"),
+      None,
       None
     ),
     OAuth2Api(
@@ -41,6 +43,7 @@ class OAuth2ApiPopulator @Inject() (
       "https://www.googleapis.com/oauth2/v4/token",
       Some("https://console.developers.google.com/apis"),
       Some("https://developers.google.com/identity/protocols/googlescopes"),
+      None,
       None
     ),
     OAuth2Api(
@@ -51,7 +54,19 @@ class OAuth2ApiPopulator @Inject() (
       "https://api.yelp.com/oauth2/token",
       Some("https://www.yelp.com/developers/v3/manage_app"),
       Some("https://www.yelp.com/developers/documentation/v3/get_started"),
+      None,
       None
+    ),
+    OAuth2Api(
+      "bu9G_rKuR6mcMZN2iYZ1hg",
+      "Jira",
+      AuthorizationCode,
+      Some("https://auth.atlassian.com/authorize"),
+      "https://auth.atlassian.com/oauth/token",
+      Some("https://developer.atlassian.com/apps"),
+      Some("https://developer.atlassian.com/cloud/jira/platform/scopes/"),
+      None,
+      Some("api.atlassian.com")
     )
   )
 
