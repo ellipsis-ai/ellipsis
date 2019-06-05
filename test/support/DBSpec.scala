@@ -210,7 +210,7 @@ trait DBSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar {
   }
 
   def newSavedOAuth2Api: OAuth2Api = {
-    runNow(dataService.oauth2Apis.save(OAuth2Api(IDs.next, IDs.next, AuthorizationCode, Some(""), "", None, None, None)))
+    runNow(dataService.oauth2Apis.save(OAuth2Api(IDs.next, IDs.next, AuthorizationCode, Some(""), "", None, None, None, None)))
   }
 
   def newSavedOAuth2ApplicationFor(api: OAuth2Api, team: Team): OAuth2Application = {

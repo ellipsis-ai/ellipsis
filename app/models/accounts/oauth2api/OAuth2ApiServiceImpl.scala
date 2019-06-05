@@ -24,8 +24,9 @@ class OAuth2ApisTable(tag: Tag) extends Table[OAuth2Api](tag, "oauth2_apis") {
   def maybeNewApplicationUrl = column[Option[String]]("new_application_url")
   def maybeScopeDocumentationUrl = column[Option[String]]("scope_documentation_url")
   def maybeTeamId = column[Option[String]]("team_id")
+  def maybeAudience = column[Option[String]]("audience")
 
-  def * = (id, name, grantType, maybeAuthorizationUrl, accessTokenUrl, maybeNewApplicationUrl, maybeScopeDocumentationUrl, maybeTeamId) <>
+  def * = (id, name, grantType, maybeAuthorizationUrl, accessTokenUrl, maybeNewApplicationUrl, maybeScopeDocumentationUrl, maybeTeamId, maybeAudience) <>
     ((OAuth2Api.apply _).tupled, OAuth2Api.unapply _)
 
 }

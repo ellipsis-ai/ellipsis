@@ -11,7 +11,8 @@ case class OAuth2Api(
                       accessTokenUrl: String,
                       maybeNewApplicationUrl: Option[String],
                       maybeScopeDocumentationUrl: Option[String],
-                      maybeTeamId: Option[String]
+                      maybeTeamId: Option[String],
+                      maybeAudience: Option[String]
                     ) extends OAuthApi {
 
   val requiresAuth: Boolean = grantType.requiresAuth

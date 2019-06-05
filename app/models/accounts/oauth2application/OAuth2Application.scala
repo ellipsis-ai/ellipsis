@@ -26,17 +26,18 @@ case class OAuth2Application(
   val scopeString = maybeScope.getOrElse("")
 
   def maybeAuthorizationRequestFor(state: OAuth2State, redirectUrl: String, ws: WSClient): Option[WSRequest] = {
+    val params = Seq(
+      "client_id" -> clientId,
+      "redirect_uri" -> redirectUrl,
+      "scope" -> scopeString,
+      "state" -> state.encodedString,
+      "access_type" -> "offline",
+      "response_type" -> "code",
+      "prompt" -> "consent",
+      "include_granted_scopes" -> "true"
+    ) ++ api.maybeAudience.map(a => "audience" -> a).toSeq
     maybeAuthorizationUrl.map { authorizationUrl =>
-      ws.url(authorizationUrl).withQueryStringParameters(
-        "client_id" -> clientId,
-        "redirect_uri" -> redirectUrl,
-        "scope" -> scopeString,
-        "state" -> state.encodedString,
-        "access_type" -> "offline",
-        "response_type" -> "code",
-        "prompt" -> "consent",
-        "include_granted_scopes" -> "true"
-      )
+      ws.url(authorizationUrl).withQueryStringParameters(params: _*)
     }
   }
 
