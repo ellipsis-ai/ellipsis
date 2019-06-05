@@ -107,4 +107,3 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
   }
 
 }
-IntegrationsControllerSpec.scala:53IntegrationsControllerSpec.scala:53
