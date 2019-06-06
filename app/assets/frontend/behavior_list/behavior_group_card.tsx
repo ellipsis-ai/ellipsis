@@ -79,13 +79,13 @@ class BehaviorGroupCard extends React.PureComponent<Props> {
   }
 
   getMoreInfoText(): string {
-    var actionCount = this.props.group.behaviorVersions.filter((ea) => !ea.isDataType()).length;
-    if (actionCount === 0) {
+    const triggerableActionCount = this.props.group.getActions().filter((ea) => ea.triggers.length > 0).length;
+    if (triggerableActionCount === 0) {
       return "More info";
-    } else if (actionCount === 1) {
+    } else if (triggerableActionCount === 1) {
       return "1 action";
     } else {
-      return `${actionCount} actions`;
+      return `${triggerableActionCount} actions`;
     }
   }
 

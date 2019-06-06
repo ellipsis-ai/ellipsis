@@ -7,6 +7,11 @@ import BehaviorVersion from "../models/behavior_version";
 import autobind from "../lib/autobind";
 import {ReactNode} from "react";
 import {BehaviorSelectCallback} from "../behavior_editor/behavior_switcher";
+import {Emoji} from "emoji-mart";
+
+const EMOJI_SET = "twitter";
+const EMOJI_SHEET_SIZE = 32;
+const EMOJI_SIZE = 14;
 
 interface Props {
   version: Editable,
@@ -16,9 +21,10 @@ interface Props {
   onClick?: Option<BehaviorSelectCallback>,
   isImportable?: Option<boolean>,
   className?: Option<string>,
-  triggerClassName?: Option<string>,
   highlightText?: Option<string>,
   renderStatus?: (e: Editable) => ReactNode
+  enableWrapping?: Option<boolean>
+  selected?: Option<boolean>
 }
 
 class EditableName extends React.Component<Props> {
@@ -28,12 +34,35 @@ class EditableName extends React.Component<Props> {
     }
 
     getTriggerClass(): string {
-      return "box-chat " + (this.props.triggerClassName || "");
+      return `box-chat ${this.props.selected ? "box-chat-selected" : ""}`;
     }
 
-    getLabelFromTrigger(trigger: Trigger, showLink: boolean) {
+    renderEmojiTrigger(trigger: Trigger, key?: string) {
+      return (
+        <span
+          className={`box-emoji-reaction ${this.props.selected ? "box-emoji-reaction-selected" : ""} mrs`}
+          title={`When user reacts with the :${trigger.text}: emoji`}
+          key={key}
+        >
+          <span className="display-inline-block opacity-75 mrxs">+</span>
+          <span className="display-inline-block align-t mtneg1">
+            <Emoji
+              native={true}
+              emoji={trigger.text}
+              size={EMOJI_SIZE}
+              sheetSize={EMOJI_SHEET_SIZE}
+              set={EMOJI_SET}
+            />
+          </span>
+        </span>
+      );
+    }
+
+    getLabelFromTrigger(trigger: Option<Trigger>, showLink: boolean) {
       var className = showLink ? "link" : "";
-      if (trigger && trigger.text) {
+      if (trigger && trigger.isReactionAddedTrigger()) {
+        return this.renderEmojiTrigger(trigger);
+      } else if (trigger && trigger.text) {
         return (
           <span className={`${className} ${this.getTriggerClass()} mrs`}>
             <SubstringHighlighter text={trigger.displayText()} substring={this.props.highlightText} />
@@ -53,10 +82,21 @@ class EditableName extends React.Component<Props> {
     }
 
     getNonRegexTriggerLabelsFromTriggers(triggers: Array<Trigger>) {
-      return triggers.filter((trigger) => !trigger.isRegex).map((trigger, index) => {
-        if (trigger.text) {
+      return triggers.filter((trigger) => !trigger.isRegex).sort((a, b) => {
+        if (a.isReactionAddedTrigger() && !b.isReactionAddedTrigger()) {
+          return 1;
+        } else if (b.isReactionAddedTrigger() && !a.isReactionAddedTrigger()) {
+          return -1;
+        } else {
+          return 0;
+        }
+      }).map((trigger, index) => {
+        const key = "regularTrigger" + index;
+        if (trigger.isReactionAddedTrigger()) {
+          return this.renderEmojiTrigger(trigger, key);
+        } else if (trigger.text) {
           return (
-            <span className={`${this.getTriggerClass()} mrs`} key={"regularTrigger" + index}>
+            <span className={`${this.getTriggerClass()} mrs`} key={key}>
               <SubstringHighlighter text={trigger.displayText()} substring={this.props.highlightText} />
             </span>
           );
@@ -110,7 +150,7 @@ class EditableName extends React.Component<Props> {
 
     getTriggersFromVersion(version: BehaviorVersion, linkFirstTrigger: boolean) {
       var firstTriggerIndex = version.findFirstTriggerIndexForDisplay();
-      var firstTrigger = version.triggers[firstTriggerIndex];
+      var firstTrigger: Option<Trigger> = version.triggers[firstTriggerIndex];
       var otherTriggers = ImmutableObjectUtils.arrayRemoveElementAtIndex(version.triggers, firstTriggerIndex);
       return (
         <span title={this.getBehaviorSummary(firstTrigger, otherTriggers)}>
@@ -121,9 +161,13 @@ class EditableName extends React.Component<Props> {
       );
     }
 
+    getWrapClasses(): string {
+      return this.props.enableWrapping ? "" : "display-limit-width display-ellipsis";
+    }
+
     getDisplayClassesFor(version: Editable): string {
       const italic = !version.name ? "type-italic" : "";
-      return `${italic} display-limit-width display-ellipsis`;
+      return `${italic} ${this.getWrapClasses()}`;
     }
 
     getDataTypeLabelFromVersion(version: BehaviorVersion) {
@@ -154,7 +198,7 @@ class EditableName extends React.Component<Props> {
       if (name && name.trim().length > 0) {
         return (
           <div>
-            <div className="display-limit-width display-ellipsis">
+            <div className={this.getWrapClasses()}>
               {this.renderStatus()}
               <span className={"mrs " + (this.props.disableLink ? "" : "link")}>
                 <SubstringHighlighter text={name} substring={this.props.highlightText} />
@@ -162,7 +206,7 @@ class EditableName extends React.Component<Props> {
               {this.getTriggersFromVersion(version, false)}
             </div>
             {includeDescription ? (
-                <div className="display-limit-width display-ellipsis">
+                <div className={this.getWrapClasses()}>
                   {this.getDescriptionFromVersion(version)}
                 </div>
               ) : null}
@@ -170,7 +214,7 @@ class EditableName extends React.Component<Props> {
         );
       } else {
         return (
-          <div className="display-limit-width display-ellipsis">
+          <div className={this.getWrapClasses()}>
             {this.renderStatus()}
             {this.getTriggersFromVersion(version, !this.props.disableLink)}
           </div>

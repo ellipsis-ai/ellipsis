@@ -89,21 +89,34 @@
 @box-chat-color: @gray-lightest;
 @box-chat-selected-color: @blue-medium-alt;
 
-.box-chat {
+.box-chat, .box-emoji-reaction {
   position: relative;
-  display: inline;
+  display: inline-block;
   box-sizing: border-box;
-  border-radius: @border-radius-small @border-radius-small @border-radius-small 0;
   vertical-align: middle;
-  padding: 0 6px;
-  background-color: @box-chat-color;
-  .type-monospace();
-  margin-left: 6px;
 }
 
-.box-chat-selected {
-  border-color: @box-chat-selected-color;
+.box-emoji-reaction {
+  border: @border-width solid @border-color;
+  border-radius: @border-radius;
+  font-size: @type-s;
+  padding: 0 @xs;
+  height: @line-height-s;
+}
+
+.box-chat {
+  border-radius: @border-radius-small @border-radius-small @border-radius-small 0;
+  padding: 0 7px;
+  background-color: @box-chat-color;
+  .type-monospace();
+  margin-left: 7px;
+}
+
+.box-chat-selected,
+.box-emoji-reaction-selected {
   background-color: @box-chat-selected-color;
+  border-color: @box-chat-selected-color;
+  color: @white;
 }
 
 .box-chat-help {
@@ -114,11 +127,11 @@
 .box-chat::after {
   content: '';
   position: absolute;
-  left: -6px;
+  left: -7px;
   bottom: 0;
   width: 0;
-  border-left: 6px solid transparent;
-  border-bottom: 8px solid @box-chat-color;
+  border-left: 7px solid transparent;
+  border-bottom: 9px solid @box-chat-color;
 }
 
 .box-chat-selected::after {
