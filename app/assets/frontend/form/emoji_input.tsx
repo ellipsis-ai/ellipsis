@@ -4,9 +4,9 @@ import autobind from '../lib/autobind';
 import DropdownContainer from "../shared_ui/dropdown_container";
 import Button from "./button";
 
-const EMOJI_SIZE = 32;
-const EMOJI_SHEET_SIZE = 64;
-const EMOJI_SET = "twitter";
+export const EMOJI_SIZE = 32;
+export const EMOJI_SHEET_SIZE = 64;
+export const EMOJI_SET = "twitter";
 
 interface Props {
   id?: string

@@ -101,7 +101,14 @@ class Trigger implements Diffable, TriggerInterface {
     }
 
     displayText(): string {
-      return this.getText();
+      const text = this.getText();
+      if (this.isReactionAddedTrigger()) {
+        return `:${text}:`;
+      } else if (this.isRegex) {
+        return text.replace(/(^\^|\$$)/g, "");
+      } else {
+        return text;
+      }
     }
 
     hasNonRegexParams(): boolean {

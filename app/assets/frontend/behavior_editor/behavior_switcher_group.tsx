@@ -36,7 +36,7 @@ class BehaviorSwitcherGroup extends React.Component<Props> {
       return (
         <EditableName
           className="plxl mobile-pll"
-          triggerClassName={this.isSelected(editable) ? "box-chat-selected" : "opacity-75"}
+          selected={this.isSelected(editable)}
           version={editable}
           disableLink={this.isSelected(editable)}
           omitDescription={true}

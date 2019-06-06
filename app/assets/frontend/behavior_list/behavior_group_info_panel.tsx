@@ -27,9 +27,9 @@ import User from "../models/user";
       autobind(this);
     }
 
-    getBehaviors(): Array<BehaviorVersion> {
-      var behaviorVersions = this.props.groupData && this.props.groupData.behaviorVersions || [];
-      return Sort.arrayAlphabeticalBy(behaviorVersions.filter((version) => !version.isDataType()), (version) => version.sortKey());
+    getActions(): Array<BehaviorVersion> {
+      const triggerableActions = this.props.groupData && this.props.groupData.getActions().filter((ea) => ea.triggers.length > 0) || [];
+      return Sort.arrayAlphabeticalBy(triggerableActions, (version) => version.sortKey());
     }
 
     getName(group: BehaviorGroup) {
@@ -93,20 +93,21 @@ import User from "../models/user";
     }
 
     renderBehaviors() {
-      const behaviors = this.getBehaviors();
-      const behaviorCount = behaviors.length;
+      const actions = this.getActions();
+      const actionCount = actions.length;
       const exportId = this.props.groupData && this.props.groupData.exportId ? this.props.groupData.exportId : "";
       const hasGroupId = Boolean(this.props.groupData && this.props.groupData.id);
       return (
         <div className="type-s">
-          <h5 className="mtn mbxs">{behaviorCount === 1 ? "1 action" : `${behaviorCount} actions`}</h5>
+          <h5 className="mtn mbxs">{actionCount === 1 ? "1 action" : `${actionCount} actions`}</h5>
           <div style={{ overflowY: "auto", maxHeight: "21em" }}>
-            {behaviors.map((behavior, index) => (
+            {actions.map((action, index) => (
               <div className="pvs" key={`group-${exportId}-behavior${index}`}>
                 <EditableName
-                  version={behavior}
-                  disableLink={!hasGroupId || !behavior.behaviorId}
+                  version={action}
+                  disableLink={!hasGroupId || !action.behaviorId}
                   isImportable={true}
+                  enableWrapping={true}
                 />
               </div>
             ))}
