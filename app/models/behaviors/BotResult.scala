@@ -596,7 +596,8 @@ case class NoCallbackTriggeredResult(
 
 case class AdminSkillErrorNotificationResult(
                                               event: Event,
-                                              originalResult: BotResult
+                                              originalResult: BotResult,
+                                              maybeAdditionalMessage: Option[String]
                                             ) extends BotResult {
 
   val resultType = ResultType.AdminSkillErrorNotification
@@ -627,12 +628,14 @@ case class AdminSkillErrorNotificationResult(
        |Team: $teamLink
        |$contextUserText
        |Result type: ${originalResult.resultType}
+       |Additional information: ${maybeAdditionalMessage.getOrElse("none")}
        |
        |Result text delivered:
        |
        |---
        |
        |${originalResult.text}
+       |
      """.stripMargin
   }
 

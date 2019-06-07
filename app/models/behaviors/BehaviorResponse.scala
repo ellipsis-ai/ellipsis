@@ -78,7 +78,7 @@ case class BehaviorResponse(
         Some(event.originalEventType)
       )
       wasSent <- maybeAdminTeamEvent.map { adminTeamEvent =>
-        val resultToSend = AdminSkillErrorNotificationResult(adminTeamEvent, result)
+        val resultToSend = AdminSkillErrorNotificationResult(adminTeamEvent, result, None)
         services.botResultService.sendIn(resultToSend, None).map(_.isDefined).recover {
           case e: SlackApiError => {
             false

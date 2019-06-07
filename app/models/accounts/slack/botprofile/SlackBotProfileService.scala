@@ -90,7 +90,17 @@ trait SlackBotProfileService {
             None,
             beQuiet = false
           )
-        }.getOrElse(Future.successful(None))
+        }.getOrElse {
+          Logger.error(
+            s"""Tried to send DM warning message to Slack user ID ${slackUserId}, but I was unable to open a DM channel.
+               |
+               |Original event info:
+               |Ellipsis team ID: ${event.ellipsisTeamId}
+               |Slack team ID: ${event.eventContext.teamIdForContext}
+               |Original message: $message
+             """.stripMargin)
+          Future.successful(None)
+        }
       } yield maybeTs
     } else {
       Logger.error(s"Bot cannot send DM warning to itself. Original message: $message")
