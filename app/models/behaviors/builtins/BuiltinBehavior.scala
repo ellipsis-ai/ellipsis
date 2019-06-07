@@ -37,6 +37,7 @@ object BuiltinBehavior {
   val disableDevModeChannelRegex = s"""(?i)^disable dev mode$$""".r
 
   val adminLookupUserRegex: Regex = s"""(?i)^admin (?:lookup|whois|who is)\\s*(slack|ellipsis|msteams)?\\s*user(?:\\s*id)? (\\S+)(?: on (slack|ellipsis|msteams) team(?:\\s*id)? (\\S+))?$$""".r
+  val adminLookupTeamRegex: Regex = s"""(?i)^admin lookup slack team (\\S+)$$""".r
   val adminSearchFunctions: Regex = s"""(?i)^admin search(?:\\s*all)? functions(?:\\s*for)?\\s+([`"'])(.+)\\1$$""".r
 
   def maybeFrom(event: Event, services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BuiltinBehavior]] = {
@@ -93,6 +94,7 @@ object BuiltinBehavior {
       case adminLookupUserRegex(userIdTypeOrNull, userId, teamIdTypeOrNull, teamIdOrNull) => withAdminAccess(event, services, { () =>
         maybeAdminLookupUser(event, services, Option(userIdTypeOrNull), userId, Option(teamIdTypeOrNull), Option(teamIdOrNull))
       })
+      case adminLookupTeamRegex(slackTeamId) => withAdminAccess(event, services, () => Some(AdminLookupSlackTeamBehavior(slackTeamId, event, services)))
       case adminSearchFunctions(_, searchText) => withAdminAccess(event, services, { () =>
         Some(AdminSearchCurrentFunctionsBehavior(searchText, event, services))
       })
