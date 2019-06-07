@@ -3,6 +3,7 @@ package models.accounts.slack.botprofile
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
+import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
@@ -10,7 +11,7 @@ import models.behaviors.events.slack.SlackMessageEvent
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.Logger
-import services.DefaultServices
+import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackChannels
 
@@ -41,6 +42,15 @@ trait SlackBotProfileService {
   def channelsFor(botProfile: SlackBotProfile): SlackChannels
 
   def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]]
+
+  def eventualMaybeManagedSkillErrorEvent(originalEventType: EventType): Future[Option[SlackMessageEvent]] = {
+    eventualMaybeEvent(
+      LinkedAccount.ELLIPSIS_SLACK_TEAM_ID,
+      LinkedAccount.ELLIPSIS_MANAGED_SKILL_ERRORS_CHANNEL_ID,
+      None,
+      Some(originalEventType)
+    )
+  }
 
   def maybeNameFor(slackTeamId: String): Future[Option[String]]
 

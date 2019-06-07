@@ -71,14 +71,9 @@ case class BehaviorResponse(
   def notifyAdmins(result: BotResult)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Unit] = {
     val msg = result.fullText
     for {
-      maybeAdminTeamEvent <- services.dataService.slackBotProfiles.eventualMaybeEvent(
-        LinkedAccount.ELLIPSIS_SLACK_TEAM_ID,
-        LinkedAccount.ELLIPSIS_MANAGED_SKILL_ERRORS_CHANNEL_ID,
-        None,
-        Some(event.originalEventType)
-      )
+      maybeAdminTeamEvent <- services.dataService.slackBotProfiles.eventualMaybeManagedSkillErrorEvent(event.originalEventType)
       wasSent <- maybeAdminTeamEvent.map { adminTeamEvent =>
-        val resultToSend = AdminSkillErrorNotificationResult(adminTeamEvent, result, None)
+        val resultToSend = AdminSkillErrorNotificationResult(services.configuration, adminTeamEvent, result, None)
         services.botResultService.sendIn(resultToSend, None).map(_.isDefined).recover {
           case e: SlackApiError => {
             false

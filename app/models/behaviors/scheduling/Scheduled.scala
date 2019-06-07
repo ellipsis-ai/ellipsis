@@ -268,15 +268,21 @@ trait Scheduled {
                   isAdmin && user.teamId != event.ellipsisTeamId
                 }
               }.getOrElse(Future.successful(false))
+              maybeAdminTeamEvent <- if (isAdminUserOnOtherTeam) {
+                services.dataService.slackBotProfiles.eventualMaybeManagedSkillErrorEvent(event.originalEventType)
+              } else {
+                Future.successful(None)
+              }
               result <- {
-                val message =
-                  s"""**I was unable to run ${scheduledDisplayText} on schedule for you in the specified channel.** ${c.formattedChannelReason}
-                     |
-                     |${editLink}
-                     |""".stripMargin
-                if (isAdminUserOnOtherTeam) {
-                  services.botResultService.sendIn(AdminSkillErrorNotificationResult(event, result, Some(message)), None)
-                } else {
+                maybeAdminTeamEvent.map { adminEvent =>
+                  val message = s"Unable to run ${scheduledDisplayText} on schedule. ${c.rawChannelReason}"
+                  services.botResultService.sendIn(AdminSkillErrorNotificationResult(services.configuration, adminEvent, result, Some(message)), None)
+                }.getOrElse {
+                  val message =
+                    s"""**I was unable to run ${scheduledDisplayText} on schedule for you in the specified channel.** ${c.formattedChannelReason}
+                       |
+                       |${editLink}
+                       |""".stripMargin
                   services.dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, profile, slackUserId, message)
                 }
               }

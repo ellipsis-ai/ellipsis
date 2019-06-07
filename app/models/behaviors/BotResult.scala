@@ -298,6 +298,12 @@ sealed trait BotResult {
 
   def shouldNotifyAdmins(implicit ec: ExecutionContext): Future[Boolean] = Future.successful(false)
 
+  def teamLink(configuration: Configuration, teamId: String, teamName: String): String = {
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val path = controllers.routes.ApplicationController.index(Some(teamId))
+    val url = s"$baseUrl$path"
+    s"[${teamName}](${url})"
+  }
 }
 
 trait BotResultWithLogResult extends BotResult {
@@ -455,13 +461,6 @@ trait WithBehaviorLink {
     s"[$text](${link})"
   }
 
-  def teamLink: String = {
-    val baseUrl = configuration.get[String]("application.apiBaseUrl")
-    val path = controllers.routes.ApplicationController.index(Some(team.id))
-    val url = s"$baseUrl$path"
-    s"[${team.name}](${url})"
-  }
-
 }
 
 case class ExecutionErrorResult(
@@ -595,6 +594,7 @@ case class NoCallbackTriggeredResult(
 }
 
 case class AdminSkillErrorNotificationResult(
+                                              configuration: Configuration,
                                               event: Event,
                                               originalResult: BotResult,
                                               maybeAdditionalMessage: Option[String]
@@ -611,8 +611,8 @@ case class AdminSkillErrorNotificationResult(
     case _ => ""
   }
   lazy val teamLink: String = originalResult match {
-    case r: WithBehaviorLink => r.teamLink
-    case _ => ""
+    case r: WithBehaviorLink => r.teamLink(configuration, r.team.id, r.team.name)
+    case _ => originalResult.teamLink(configuration, originalResult.event.ellipsisTeamId, s"Ellipsis team ID ${originalResult.event.ellipsisTeamId}")
   }
   lazy val description: String = originalResult.maybeBehaviorVersion.map { bv =>
     val action = bv.maybeName.getOrElse(bv.id)
