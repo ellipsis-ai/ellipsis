@@ -11,7 +11,7 @@ import models.behaviors.events.slack.SlackMessageEvent
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.Logger
-import services.{DataService, DefaultServices}
+import services.DefaultServices
 import slick.dbio.DBIO
 import utils.SlackChannels
 
