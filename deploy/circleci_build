@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Use trap so that CNTRL-C kills all the subshells
+# Use trap so that CTRL-C kills all the subshells
 trap "kill 0" SIGINT
 
 RED=`tput setaf 1`   # Use red for errors
@@ -192,6 +192,25 @@ else
   exit 1
 fi
 
+npm install @sentry/cli
+SENTRY_VERSION=$(./node_modules/.bin/sentry-cli releases propose-version)
+if [ $? -eq 1 ]
+then
+  printf "Failed to acquire a release version from Sentry"
+  exit 1
+fi
+./node_modules/.bin/sentry-cli releases new -p $TARGET_ENV $SENTRY_VERSION
+if [ $? -eq 1 ]
+then
+  printf "Failed to create a new release on Sentry"
+  exit 1
+fi
+./node_modules/.bin/sentry-cli releases set-commits --auto $SENTRY_VERSION
+if [ $? -eq 1 ]
+then
+  printf "Failed to set commits on the new release for Sentry"
+  exit 1
+fi
 
 printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
 printf "_____________________________________________________ \n";
