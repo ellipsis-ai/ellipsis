@@ -2,6 +2,7 @@ import * as React from 'react';
 import autobind from "../lib/autobind";
 import {OptionHTMLAttributes} from "react";
 import {FocusableTextInputInterface} from "./input";
+import Event from "../lib/event";
 
 interface Props {
   className?: Option<string>,
@@ -12,6 +13,7 @@ interface Props {
   disabled?: Option<boolean>,
   size?: number,
   withSearch?: Option<boolean>
+  onEnterKey?: Option<() => void>
 }
 
 interface State {
@@ -73,6 +75,12 @@ class Select extends React.Component<Props, State> implements FocusableTextInput
       this.setState({ focused: false });
     }
 
+    onKeyUp(event: React.KeyboardEvent<HTMLSelectElement>): void {
+      if (Event.keyPressWasEnter(event) && this.props.onEnterKey) {
+        this.props.onEnterKey();
+      }
+    }
+
     selectNextItem(): Option<number> {
       if (this.selectElement && this.selectElement.selectedIndex + 1 < this.selectElement.options.length) {
         this.selectElement.selectedIndex++;
@@ -132,6 +140,7 @@ class Select extends React.Component<Props, State> implements FocusableTextInput
             onChange={this.onChange}
             onFocus={this.onFocus}
             onBlur={this.onBlur}
+            onKeyUp={this.onKeyUp}
             size={this.props.size}
             style={this.props.size ? { minHeight: `${(this.props.size * 1.5) + 0.5}em` } : undefined}
             disabled={!!this.props.disabled}
