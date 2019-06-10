@@ -161,6 +161,7 @@ class SearchWithResults extends React.Component<Props, State> {
                   onChange={this.onSelect}
                   size={5}
                   withSearch={true}
+                  onEnterKey={this.onEnterKey}
                 >
                   {this.props.options.map((ea) => (
                     <option key={ea.value} value={ea.value} className={ea.value ? "" : "type-italic"}>{ea.name}</option>
