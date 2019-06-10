@@ -194,7 +194,7 @@ fi
 
 npm install @sentry/cli
 SENTRY_VERSION=$(./node_modules/.bin/sentry-cli releases propose-version)
-./node_modules/.bin/sentry-cli releases new -p Prod $SENTRY_VERSION
+./node_modules/.bin/sentry-cli releases new -p $TARGET_ENV $SENTRY_VERSION
 ./node_modules/.bin/sentry-cli releases set-commits --auto $SENTRY_VERSION
 
 printf "\n\n${GREEN}Sending notifications...${PLAIN}\n";
