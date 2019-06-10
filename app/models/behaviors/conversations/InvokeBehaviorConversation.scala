@@ -12,6 +12,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.slack.SlackMessageEvent
 import models.behaviors.events.{Event, EventType}
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.triggers.Trigger
 import services.caching.CacheService
 import services.{DataService, DefaultServices}
@@ -197,7 +198,13 @@ object InvokeBehaviorConversation {
         OffsetDateTime.now,
         None,
         Conversation.NEW_STATE,
-        event.maybeScheduled.map(_.id),
+        // TODO: Either remove scheduled message ID column or allow conversations to link to scheduled behaviors too
+        event.maybeScheduled.flatMap { scheduled =>
+          scheduled match {
+            case sm: ScheduledMessage => Some(sm.id)
+            case _ => None
+          }
+        },
         Some(event.originalEventType),
         maybeParent.map(_.id)
       ))
