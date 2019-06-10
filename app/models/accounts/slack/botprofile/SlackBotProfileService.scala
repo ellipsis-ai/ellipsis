@@ -3,6 +3,7 @@ package models.accounts.slack.botprofile
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
+import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
@@ -41,6 +42,15 @@ trait SlackBotProfileService {
   def channelsFor(botProfile: SlackBotProfile): SlackChannels
 
   def eventualMaybeEvent(slackTeamId: String, channelId: String, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Option[SlackMessageEvent]]
+
+  def eventualMaybeManagedSkillErrorEvent(originalEventType: EventType): Future[Option[SlackMessageEvent]] = {
+    eventualMaybeEvent(
+      LinkedAccount.ELLIPSIS_SLACK_TEAM_ID,
+      LinkedAccount.ELLIPSIS_MANAGED_SKILL_ERRORS_CHANNEL_ID,
+      None,
+      Some(originalEventType)
+    )
+  }
 
   def maybeNameFor(slackTeamId: String): Future[Option[String]]
 
@@ -90,7 +100,17 @@ trait SlackBotProfileService {
             None,
             beQuiet = false
           )
-        }.getOrElse(Future.successful(None))
+        }.getOrElse {
+          Logger.error(
+            s"""Tried to send DM warning message to Slack user ID ${slackUserId}, but I was unable to open a DM channel.
+               |
+               |Original event info:
+               |Ellipsis team ID: ${event.ellipsisTeamId}
+               |Slack team ID: ${event.eventContext.teamIdForContext}
+               |Original message: $message
+             """.stripMargin)
+          Future.successful(None)
+        }
       } yield maybeTs
     } else {
       Logger.error(s"Bot cannot send DM warning to itself. Original message: $message")

@@ -9,7 +9,7 @@ import drivers.SlickPostgresDriver.api._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
-import models.behaviors.BotResult
+import models.behaviors.{AdminSkillErrorNotificationResult, BotResult}
 import models.behaviors.events.{Event, EventHandler}
 import models.behaviors.scheduling.recurrence.Recurrence
 import models.team.Team
@@ -261,14 +261,32 @@ trait Scheduled {
             val editLink = maybeEditScheduleUrlFor(services.configuration).map { url =>
               s"[✎ Edit schedule]($url)"
             }.getOrElse("")
-            displayText(services.dataService).flatMap { scheduledDisplayText =>
-              val message =
-                s"""**I was unable to run ${scheduledDisplayText} on schedule for you in the specified channel.** ${c.formattedChannelReason}
-                   |
-                   |${editLink}
-                   |""".stripMargin
-              services.dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, profile, slackUserId, message)
-            }
+            for {
+              scheduledDisplayText <- displayText(services.dataService)
+              isAdminUserOnOtherTeam <- maybeUser.map { user =>
+                services.dataService.users.isAdmin(user).map { isAdmin =>
+                  isAdmin && user.teamId != event.ellipsisTeamId
+                }
+              }.getOrElse(Future.successful(false))
+              maybeAdminTeamEvent <- if (isAdminUserOnOtherTeam) {
+                services.dataService.slackBotProfiles.eventualMaybeManagedSkillErrorEvent(event.originalEventType)
+              } else {
+                Future.successful(None)
+              }
+              result <- {
+                maybeAdminTeamEvent.map { adminEvent =>
+                  val message = s"Unable to run ${scheduledDisplayText} on schedule. ${c.rawChannelReason}"
+                  services.botResultService.sendIn(AdminSkillErrorNotificationResult(services.configuration, adminEvent, result, Some(message)), None)
+                }.getOrElse {
+                  val message =
+                    s"""**I was unable to run ${scheduledDisplayText} on schedule for you in the specified channel.** ${c.formattedChannelReason}
+                       |
+                       |${editLink}
+                       |""".stripMargin
+                  services.dataService.slackBotProfiles.sendDMWarningMessageFor(event, services, profile, slackUserId, message)
+                }
+              }
+            } yield result
           } else {
             throw c
           }
