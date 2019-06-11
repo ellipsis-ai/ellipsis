@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter
 
 import akka.actor.ActorSystem
 import drivers.SlickPostgresDriver.api._
+import models.accounts.{BotContext, SlackContext}
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.User
@@ -32,6 +33,7 @@ trait Scheduled {
   val recurrence: Recurrence
   val nextSentAt: OffsetDateTime
   val createdAt: OffsetDateTime
+  val context: BotContext = SlackContext // TODO: Implement scheduled behaviors for other contexts
 
   def displayText(dataService: DataService)(implicit ec: ExecutionContext): Future[String]
 
