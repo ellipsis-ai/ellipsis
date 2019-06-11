@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.slack.SlackRunEvent
 import models.behaviors.events.{EventType, SlackEventContext}
 import models.behaviors.scheduling.Scheduled
@@ -52,8 +53,17 @@ case class ScheduledBehavior(
     }
   }
 
+  def maybeBehaviorVersionFor(channel: String, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[BehaviorVersion]] = {
+    for {
+      maybeGroupVersion <- services.dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(behavior.group, context.name, channel)
+      maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+        services.dataService.behaviorVersions.findFor(behavior, groupVersion)
+      }.getOrElse(Future.successful(None))
+    } yield maybeBehaviorVersion
+  }
+
   def eventFor(channel: String, slackUserId: String, profile: SlackBotProfile, services: DefaultServices)(implicit ec: ExecutionContext): Future[Option[SlackRunEvent]] = {
-    services.dataService.behaviors.maybeCurrentVersionFor(behavior).map { maybeBehaviorVersion =>
+    maybeBehaviorVersionFor(channel, services).map { maybeBehaviorVersion =>
       maybeBehaviorVersion.map { behaviorVersion =>
         SlackRunEvent(
           SlackEventContext(

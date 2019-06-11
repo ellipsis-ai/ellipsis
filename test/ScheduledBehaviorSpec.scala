@@ -3,6 +3,7 @@ import java.time.OffsetDateTime
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.IDs
+import models.accounts.SlackContext
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
@@ -278,13 +279,16 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val slackTeamId = "T1234567"
         val token = IDs.next
+        val channel = "C1234567"
         val behavior = newBehavior(team)
         val behaviorVersion = mock[BehaviorVersion]
+        val behaviorGroupVersion = mock[BehaviorGroupVersion]
         val sb = newScheduledBehavior(user, behavior, team, recurrence = Minutely(IDs.next, 1, 0, None))
         val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         when(dataService.scheduledBehaviors.updateForNextRunAction(sb)).thenReturn(DBIO.successful(sb))
-        when(dataService.behaviors.maybeCurrentVersionFor(behavior)).thenReturn(Future.successful(Some(behaviorVersion)))
-        val maybeEvent = runNow(sb.eventFor("C1234567", "U1234567", botProfile, services)(ec))
+        when(dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(behavior.group, sb.context.name, channel)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
+        when(dataService.behaviorVersions.findFor(behavior, behaviorGroupVersion)).thenReturn(Future.successful(Some(behaviorVersion)))
+        val maybeEvent = runNow(sb.eventFor(channel, "U1234567", botProfile, services)(ec))
         val event = maybeEvent.get
         event mustBe a[RunEvent]
         val eventScheduled = event.maybeScheduled.get
