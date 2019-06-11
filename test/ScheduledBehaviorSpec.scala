@@ -281,13 +281,11 @@ class ScheduledBehaviorSpec extends PlaySpec with MockitoSugar {
         val token = IDs.next
         val behavior = newBehavior(team)
         val behaviorVersion = mock[BehaviorVersion]
-        val behaviorGroup = mock[BehaviorGroup]
         val behaviorGroupVersion = mock[BehaviorGroupVersion]
-        when(behavior.group).thenReturn(behaviorGroup)
         val sb = newScheduledBehavior(user, behavior, team, recurrence = Minutely(IDs.next, 1, 0, None))
         val botProfile = SlackBotProfile("UMOCKBOT", team.id, slackTeamId, token, OffsetDateTime.now, allowShortcutMention = true)
         when(dataService.scheduledBehaviors.updateForNextRunAction(sb)).thenReturn(DBIO.successful(sb))
-        when(services.dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(behaviorGroup, SlackContext.name, sb.maybeChannel.get)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
+        when(services.dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(behavior.group, SlackContext.name, sb.maybeChannel.get)).thenReturn(Future.successful(Some(behaviorGroupVersion)))
         when(services.dataService.behaviorVersions.findFor(behavior, behaviorGroupVersion)).thenReturn(Future.successful(Some(behaviorVersion)))
         val maybeEvent = runNow(sb.eventFor("C1234567", "U1234567", botProfile, services)(ec))
         val event = maybeEvent.get
