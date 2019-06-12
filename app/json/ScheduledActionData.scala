@@ -3,6 +3,7 @@ package json
 import java.time.OffsetDateTime
 
 import models.accounts.user.UserTeamAccess
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.team.Team
@@ -91,6 +92,17 @@ object ScheduledActionData {
           action.userId.contains(teamAccess.user.id) || convoIds.contains(action.channel)
         }
       }
+    }
+  }
+
+  def buildFor(group: BehaviorGroup, dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
+    for {
+      behaviors <- dataService.behaviors.allForGroup(group)
+      scheduledBehaviors <- Future.sequence(behaviors.map(ea => dataService.scheduledBehaviors.allForBehavior(ea, None, None))).map(_.flatten)
+      scheduledMessages <- Future.successful(Seq.empty[ScheduledMessage]) // TODO
+    } yield {
+      scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior) ++
+        scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
     }
   }
 }

@@ -7,6 +7,8 @@ import akka.actor.ActorSystem
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.slack.profile.SlackProfile
 import models.accounts.user.{User, UserTeamAccess}
+import models.behaviors.behaviorgroup.BehaviorGroup
+import models.team.Team
 import services.DefaultServices
 import services.slack.SlackApiError
 import utils.{SlackChannels, SlackConversation}
@@ -140,20 +142,16 @@ object ScheduledActionsConfig {
     }
   }
 
-  def buildConfigFor(
-                      user: User,
-                      teamAccess: UserTeamAccess,
-                      services: DefaultServices,
-                      maybeScheduledId: Option[String],
-                      maybeNewSchedule: Option[Boolean],
-                      maybeFilterChannelId: Option[String],
-                      maybeFilterBehaviorGroupId: Option[String],
-                      maybeCsrfToken: Option[String],
-                      forceAdmin: Boolean
-                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ScheduledActionsConfig]] = {
+  case class SlackScheduleData(team: Team, teamChannelsData: Seq[TeamChannelsData], slackUserId: Option[String], botUserId: Option[String])
+
+  private def withSlackScheduleDataFor(
+                                    user: User,
+                                    teamAccess: UserTeamAccess,
+                                    isAdminMode: Boolean,
+                                    services: DefaultServices,
+                                    toConfig: (Team, Seq[TeamChannelsData], Option[String], Option[String]) => Future[ScheduledActionsConfig]
+                                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ScheduledActionsConfig]] = {
     val dataService = services.dataService
-    val cacheService = services.cacheService
-    val isAdminMode = teamAccess.isAdminAccess || forceAdmin
     teamAccess.maybeTargetTeam.map { team =>
       for {
         maybeSlackUserProfile <- if (isAdminMode && !teamAccess.maybeTargetTeam.contains(teamAccess.loggedInTeam)) {
@@ -177,7 +175,27 @@ object ScheduledActionsConfig {
             case e: SlackApiError => Seq()
           }
         }
-        scheduledActions <- ScheduledActionData.buildForUserTeamAccess(team, teamAccess, dataService, teamChannelsData, maybeSlackUserProfile.map(_.slackUserId), forceAdmin)
+        maybeConfig <- toConfig(team, teamChannelsData, maybeSlackUserProfile.map(_.slackUserId), botProfiles.headOption.map(_.userId)).map(Some(_))
+      } yield maybeConfig
+    }.getOrElse(Future.successful(None))
+  }
+
+  def buildConfigFor(
+                      user: User,
+                      teamAccess: UserTeamAccess,
+                      services: DefaultServices,
+                      maybeScheduledId: Option[String],
+                      maybeNewSchedule: Option[Boolean],
+                      maybeFilterChannelId: Option[String],
+                      maybeFilterBehaviorGroupId: Option[String],
+                      maybeCsrfToken: Option[String],
+                      forceAdmin: Boolean
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ScheduledActionsConfig]] = {
+    val dataService = services.dataService
+    val isAdminMode = teamAccess.isAdminAccess || forceAdmin
+    withSlackScheduleDataFor(user, teamAccess, isAdminMode, services, (team, teamChannelsData, maybeSlackUserId, maybeBotUserId) => {
+      for {
+        scheduledActions <- ScheduledActionData.buildForUserTeamAccess(team, teamAccess, dataService, teamChannelsData, maybeSlackUserId, forceAdmin)
         behaviorGroups <- dataService.behaviorGroups.allFor(team)
         groupData <- Future.sequence(behaviorGroups.map { group =>
           dataService.behaviorGroups.maybeDataFor(group.id, user)
@@ -191,7 +209,7 @@ object ScheduledActionsConfig {
           }
         }
         val filterBehaviorGroupId = maybeFilterBehaviorGroupId.filter(groupId => behaviorGroups.exists(_.id == groupId))
-        Some(ScheduledActionsConfig(
+        ScheduledActionsConfig(
           containerId = "scheduling",
           csrfToken = maybeCsrfToken,
           teamId = team.id,
@@ -206,15 +224,56 @@ object ScheduledActionsConfig {
           behaviorGroups = groupData,
           teamTimeZone = team.maybeTimeZone.map(_.toString),
           teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
-          slackUserId = maybeSlackUserProfile.map(_.slackUserId),
-          slackBotUserId = botProfiles.headOption.map(_.userId),
+          slackUserId = maybeSlackUserId,
+          slackBotUserId = maybeBotUserId,
           selectedScheduleId = maybeScheduledId,
           filterChannelId = filterChannelId,
           filterBehaviorGroupId = filterBehaviorGroupId,
           newAction = maybeNewSchedule,
           isAdmin = forceAdmin || teamAccess.isAdminAccess
-        ))
+        )
       }
-    }.getOrElse(Future.successful(None))
+    })
+  }
+
+  def buildConfigFor(
+                      user: User,
+                      teamAccess: UserTeamAccess,
+                      services: DefaultServices,
+                      behaviorGroup: BehaviorGroup,
+                      maybeCsrfToken: Option[String]
+                    )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ScheduledActionsConfig]] = {
+    val dataService = services.dataService
+    withSlackScheduleDataFor(user, teamAccess, teamAccess.isAdminUser, services, (team, teamChannelsData, maybeSlackUserId, maybeBotUserId) => {
+      for {
+        scheduledActions <- ScheduledActionData.buildFor(behaviorGroup, dataService)
+        groupData <- dataService.behaviorGroups.maybeDataFor(behaviorGroup.id, user)
+      } yield {
+        ScheduledActionsConfig(
+          containerId = "scheduling",
+          csrfToken = maybeCsrfToken,
+          teamId = team.id,
+          scheduledActions = scheduledActions,
+          orgChannels = OrgChannelsData(
+            dmChannels = dmChannelsDataFor(teamChannelsData),
+            mpimChannels = mpimChannelsDataFor(teamChannelsData),
+            orgSharedChannels = orgSharedChannelsDataFor(teamChannelsData),
+            externallySharedChannels = externallySharedChannelsDataFor(teamChannelsData),
+            teamChannels = teamChannelsData.map(_.copyWithoutCommonChannels)
+          ),
+          behaviorGroups = Seq(groupData).flatten,
+          teamTimeZone = team.maybeTimeZone.map(_.toString),
+          teamTimeZoneName = team.maybeTimeZone.map(_.getDisplayName(TextStyle.FULL, Locale.ENGLISH)),
+          slackUserId = maybeSlackUserId,
+          slackBotUserId = maybeBotUserId,
+          selectedScheduleId = None,
+          filterChannelId = None,
+          filterBehaviorGroupId = Some(behaviorGroup.id),
+          newAction = None,
+          isAdmin = teamAccess.isAdminAccess
+        )
+      }
+    })
+    Future.successful(None)
   }
 }
