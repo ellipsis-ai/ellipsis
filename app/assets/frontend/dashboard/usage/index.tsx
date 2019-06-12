@@ -119,9 +119,9 @@ class UsageReport extends React.Component<Props, State> {
     } else if (this.state.period === TimePeriod.Period2019) {
       return "2020-01-15T00:00:00Z";
     } else if (this.state.period === TimePeriod.PeriodYear) {
-      return "2019-05-15T00:00:00Z";
+      return "2019-06-15T00:00:00Z";
     } else {
-      return "2019-05-15T00:00:00Z";
+      return "2019-06-15T00:00:00Z";
     }
   }
 
@@ -144,14 +144,14 @@ class UsageReport extends React.Component<Props, State> {
     } else if (this.state.period === TimePeriod.Period2019) {
       return "2019";
     } else if (this.state.period === TimePeriod.PeriodYear) {
-      return "May 2018 – April 2019";
+      return "June 2018 – May 2019";
     } else {
-      return "January 2018 — April 2019";
+      return "January 2018 — May 2019";
     }
   }
 
   fill2019(): Array<ChartDataPoint> {
-    return ["05", "06", "07", "08", "09", "10", "11", "12"].map((ea) => {
+    return ["06", "07", "08", "09", "10", "11", "12"].map((ea) => {
       return {
         t: new Date(`2019-${ea}-14T00:00:00Z`),
         y: 0
