@@ -68,7 +68,7 @@ class Checkbox extends React.PureComponent<Props> {
           onChange={this.onChange}
           onKeyPress={this.handleEnterKey}
           name={this.props.name}
-          value={this.props.value}
+          value={this.props.value || "on"}
           disabled={this.props.disabledWhen}
         />
         <span>{this.props.label}</span>

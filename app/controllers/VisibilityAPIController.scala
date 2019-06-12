@@ -10,6 +10,7 @@ import json.InvocationLogEntryData
 import models.behaviors.events.EventType
 import play.api.Configuration
 import play.api.libs.json.Json
+import play.api.mvc.{AnyContent, Request, Result}
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,12 +34,12 @@ class VisibilityAPIController @Inject() (
 
   private val dateFormatter =  DateTimeFormatter.ofPattern("EEE, dd MMM yyyy").withLocale(java.util.Locale.ENGLISH)
 
-  private def dateFor(year: String, month: String, day: String): OffsetDateTime = {
+  private def startOfDayFor(year: String, month: String, day: String): OffsetDateTime = {
     OffsetDateTime.of(year.toInt, month.toInt, day.toInt, 0, 0, 0, 0, ZoneOffset.UTC)
   }
 
   def invocationCountsForDate(token: String, year: String, month: String, day: String) = Action.async { implicit request =>
-    val date = dateFor(year, month, day)
+    val date = startOfDayFor(year, month, day)
     for {
       maybeTeam <- dataService.teams.findForInvocationToken(token)
       isAdmin <- maybeTeam.map { team =>
@@ -74,7 +75,7 @@ class VisibilityAPIController @Inject() (
   }
 
   def forTeamForDate(token: String, targetTeamName: String, year: String, month: String, day: String) = Action.async { implicit request =>
-    val date = dateFor(year, month, day)
+    val date = startOfDayFor(year, month, day)
     for {
       maybeRequestingTeam <- dataService.teams.findForInvocationToken(token)
       isAdmin <- maybeRequestingTeam.map { team =>
@@ -114,7 +115,7 @@ class VisibilityAPIController @Inject() (
                          month: String,
                          day: String
                        ) = Action.async { implicit request =>
-    val date = dateFor(year, month, day)
+    val date = startOfDayFor(year, month, day)
     for {
       maybeRequestingTeam <- dataService.teams.findForInvocationToken(token)
       isAdmin <- maybeRequestingTeam.map { team =>
@@ -185,8 +186,32 @@ class VisibilityAPIController @Inject() (
                                 month: String,
                                 day: String
                               ) = Action.async { implicit request =>
-    val start = dateFor(year, month, day)
+    val start = startOfDayFor(year, month, day)
     val end = OffsetDateTime.now
+    activeWorkflowsBetween(token, targetTeamName, start, end)
+  }
+
+  def activeWorkflowsFromDateToDate(
+                                     token: String,
+                                     targetTeamName: String,
+                                     fromYear: String,
+                                     fromMonth: String,
+                                     fromDay: String,
+                                     toYear: String,
+                                     toMonth: String,
+                                     toDay: String
+                                   ) = Action.async { implicit request =>
+    val start = startOfDayFor(fromYear, fromMonth, fromDay)
+    val inclusiveEnd = startOfDayFor(toYear, toMonth, toDay).plusDays(1)
+    activeWorkflowsBetween(token, targetTeamName, start, inclusiveEnd)
+  }
+
+  def activeWorkflowsBetween(
+                              token: String,
+                              targetTeamName: String,
+                              start: OffsetDateTime,
+                              end: OffsetDateTime
+                            )(implicit request: Request[AnyContent]): Future[Result] = {
     for {
       maybeRequestingTeam <- dataService.teams.findForInvocationToken(token)
       isAdmin <- maybeRequestingTeam.map { team =>
