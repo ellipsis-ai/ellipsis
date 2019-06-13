@@ -20,6 +20,7 @@ const webpackConfig = {
     apiTokenGenerator: './app/assets/frontend/settings/api_token_generator/loader',
     awsConfigEditor: './app/assets/frontend/settings/aws_config_editor/loader',
     behaviorEditor: './app/assets/frontend/behavior_editor/loader',
+    behaviorGroupScheduling: './app/assets/frontend/behavior_group_config/scheduling/loader',
     behaviorList: './app/assets/frontend/behavior_list/loader',
     dashboardUsage: './app/assets/frontend/dashboard/usage/loader',
     dashboardSkillManifest: './app/assets/frontend/dashboard/skill_manifest/loader',

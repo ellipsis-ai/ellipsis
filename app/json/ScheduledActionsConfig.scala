@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class ScheduledActionsConfig(
                                    containerId: String,
-                                   csrfToken: Option[String],
+                                   csrfToken: String,
                                    teamId: String,
                                    scheduledActions: Seq[ScheduledActionData],
                                    orgChannels: OrgChannelsData,
@@ -188,7 +188,7 @@ object ScheduledActionsConfig {
                       maybeNewSchedule: Option[Boolean],
                       maybeFilterChannelId: Option[String],
                       maybeFilterBehaviorGroupId: Option[String],
-                      maybeCsrfToken: Option[String],
+                      csrfToken: String,
                       forceAdmin: Boolean
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ScheduledActionsConfig]] = {
     val dataService = services.dataService
@@ -211,7 +211,7 @@ object ScheduledActionsConfig {
         val filterBehaviorGroupId = maybeFilterBehaviorGroupId.filter(groupId => behaviorGroups.exists(_.id == groupId))
         ScheduledActionsConfig(
           containerId = "scheduling",
-          csrfToken = maybeCsrfToken,
+          csrfToken = csrfToken,
           teamId = team.id,
           scheduledActions = scheduledActions,
           orgChannels = OrgChannelsData(
@@ -241,17 +241,17 @@ object ScheduledActionsConfig {
                       teamAccess: UserTeamAccess,
                       services: DefaultServices,
                       behaviorGroup: BehaviorGroup,
-                      maybeCsrfToken: Option[String]
+                      csrfToken: String
                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[ScheduledActionsConfig]] = {
     val dataService = services.dataService
     withSlackScheduleDataFor(user, teamAccess, teamAccess.isAdminUser, services, (team, teamChannelsData, maybeSlackUserId, maybeBotUserId) => {
       for {
-        scheduledActions <- ScheduledActionData.buildFor(behaviorGroup, dataService)
+        scheduledActions <- ScheduledActionData.buildFor(behaviorGroup, user, dataService)
         groupData <- dataService.behaviorGroups.maybeDataFor(behaviorGroup.id, user)
       } yield {
         ScheduledActionsConfig(
           containerId = "scheduling",
-          csrfToken = maybeCsrfToken,
+          csrfToken = csrfToken,
           teamId = team.id,
           scheduledActions = scheduledActions,
           orgChannels = OrgChannelsData(
@@ -274,6 +274,5 @@ object ScheduledActionsConfig {
         )
       }
     })
-    Future.successful(None)
   }
 }

@@ -13,7 +13,7 @@ import User, {UserJson} from "../models/user";
 import OrgChannels, {OrgChannelsJson} from "../models/org_channels";
 import Trigger, {TriggerJson} from "../models/trigger";
 
-interface Props {
+export interface SchedulingConfigInterface {
   containerId: string
   csrfToken: string
   teamId: string
@@ -66,12 +66,12 @@ interface State {
   triggerValidationError: Option<string>
 }
 
-declare var SchedulingConfig: Props;
+declare var SchedulingConfig: SchedulingConfigInterface;
 
-class SchedulingLoader extends React.Component<Props, State> {
+class SchedulingLoader extends React.Component<SchedulingConfigInterface, State> {
   triggerValidationTimer: number | undefined;
 
-  constructor(props: Props) {
+  constructor(props: SchedulingConfigInterface) {
     super(props);
     autobind(this);
     this.state = {

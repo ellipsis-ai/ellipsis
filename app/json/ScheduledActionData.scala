@@ -2,10 +2,12 @@ package json
 
 import java.time.OffsetDateTime
 
-import models.accounts.user.UserTeamAccess
+import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.events.{MessageEvent, TestEventContext}
 import models.behaviors.scheduling.scheduledbehavior.ScheduledBehavior
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
+import models.behaviors.testing.TestMessageEvent
 import models.team.Team
 import services.DataService
 
@@ -95,12 +97,18 @@ object ScheduledActionData {
     }
   }
 
-  def buildFor(group: BehaviorGroup, dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
+  def buildFor(group: BehaviorGroup, user: User, dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[ScheduledActionData]] = {
     for {
       behaviors <- dataService.behaviors.allForGroup(group)
       scheduledBehaviors <- Future.sequence(behaviors.map(ea => dataService.scheduledBehaviors.allForBehavior(ea, None, None))).map(_.flatten)
-      scheduledMessages <- Future.successful(Seq.empty[ScheduledMessage]) // TODO
+      allScheduledMessages <- dataService.scheduledMessages.allForTeam(group.team)
+      groupTriggers <- dataService.triggers.allActiveFor(group)
     } yield {
+      val scheduledMessages = allScheduledMessages.filter { sm =>
+        val text = MessageEvent.ellipsisShortcutMentionRegex.replaceFirstIn(sm.text, "")
+        val testEvent = TestMessageEvent(TestEventContext(user, group.team), text, includesBotMention = true, None)
+        groupTriggers.exists(_.isActivatedBy(testEvent))
+      }
       scheduledBehaviors.map(ScheduledActionData.fromScheduledBehavior) ++
         scheduledMessages.map(ScheduledActionData.fromScheduledMessage)
     }
