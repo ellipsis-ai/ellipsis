@@ -14,7 +14,7 @@ import ScheduledItemTitle from './scheduled_item_title';
 import Sort from '../lib/sort';
 import {PageRequiredProps} from '../shared_ui/page';
 import autobind from '../lib/autobind';
-import {UserMap, ValidTriggerInterface} from "./loader";
+import {UserMap, ValidTriggerInterface} from "./data_layer";
 import User from '../models/user';
 import OrgChannels from "../models/org_channels";
 import {DataRequest} from "../lib/data_request";
@@ -22,6 +22,8 @@ import {TimeZoneData} from "../time_zone/team_time_zone_setter";
 import Select from "../form/select";
 
 export interface SchedulingProps {
+  groupId: Option<string>,
+  sidebarWidth: number,
   scheduledActions: Array<ScheduledAction>,
   orgChannels: OrgChannels,
   behaviorGroups: Array<BehaviorGroup>,
@@ -79,9 +81,6 @@ type SchedulesGroupedByName = {
 }
 
 class Scheduling extends React.Component<Props, State> {
-
-    static defaultProps: PageRequiredProps;
-
     constructor(props: Props) {
       super(props);
       autobind(this);
@@ -205,15 +204,23 @@ class Scheduling extends React.Component<Props, State> {
       }
     }
 
+    prepareRoute(selectedItemId: Option<string>, isNewSchedule: Option<boolean>, filterChannelId: Option<string>, filterBehaviorGroupId: Option<string>, explicitTeamId: Option<string>, forceAdmin: Option<boolean>): JsRoute {
+      if (this.props.groupId) {
+        return jsRoutes.controllers.BehaviorGroupConfigController.schedules(this.props.groupId);
+      } else {
+        return jsRoutes.controllers.ScheduledActionsController.index(selectedItemId, isNewSchedule, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin);
+      }
+    }
+
     getCorrectedURL(explicitTeamId: Option<string>, forceAdmin: Option<boolean>): string {
       const filterChannelId = this.state.filterChannelId || null;
       const filterBehaviorGroupId = this.state.filterBehaviorGroupId || null;
       if (this.state.isEditing && this.state.selectedItem && !this.state.selectedItem.isNew()) {
-        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
+        return this.prepareRoute(this.state.selectedItem.id, null, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       } else if (this.state.isEditing && this.state.selectedItem) {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, true, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
+        return this.prepareRoute(null, true, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       } else {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, null, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
+        return this.prepareRoute(null, null, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       }
     }
 
@@ -460,14 +467,14 @@ class Scheduling extends React.Component<Props, State> {
         return (
           <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
             <div className={`columns pvl ${index > 0 ? "border-top border-light" : ""}`}>
-              <div className="column column-page-sidebar ptm mobile-ptn prn">
+              <div className={`column ${this.props.groupId ? "column-full" : "column-page-sidebar ptm"} mobile-ptn prn`}>
                 <div className="container">
                   <h4 className="mvn"><ChannelName channel={group.channel} /></h4>
                   <div>{this.renderGroupWarningText(group)}</div>
                 </div>
               </div>
 
-              <div className="column column-page-main pln">
+              <div className={`column ${this.props.groupId ? "column-full" : "column-page-main"} pln`}>
                 <div className="container container-narrow">
                   {hasActions ? group.actions.map((action) => (
                     <ScheduledItem
@@ -546,17 +553,19 @@ class Scheduling extends React.Component<Props, State> {
 
     renderHeader(groups: Array<ScheduleGroup>) {
       return this.props.onRenderHeader(this.isEditing() ? null : (
-        <div className="bg-white-translucent border-bottom">
+        <div className="bg-white-translucent border-bottom" style={{ marginLeft: this.props.sidebarWidth }}>
           <div className="container container-narrow mts">
-            <div className="display-inline-block align-m mrl mbs">
-              <h5 className="display-inline-block mtn mrs">Skill</h5>
-              <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter}>
-                <option value="">All skills</option>
-                {this.getSkillOptions().map((ea) => (
-                  <option key={`filterSkillId-${ea.id}`} value={ea.id}>{ea.name}</option>
-                ))}
-              </Select>
-            </div>
+            {this.props.groupId ? null : (
+              <div className="display-inline-block align-m mrl mbs">
+                <h5 className="display-inline-block mtn mrs">Skill</h5>
+                <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter}>
+                  <option value="">All skills</option>
+                  {this.getSkillOptions().map((ea) => (
+                    <option key={`filterSkillId-${ea.id}`} value={ea.id}>{ea.name}</option>
+                  ))}
+                </Select>
+              </div>
+            )}
             <div className="display-inline-block align-m mbs">
               <h5 className="display-inline-block mtn mrs">Channel</h5>
               <Select value={this.state.filterChannelId} className="form-select-s align-m" onChange={this.changeChannelFilter}>

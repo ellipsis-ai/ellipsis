@@ -19,6 +19,7 @@ case class ScheduledActionsConfig(
                                    containerId: String,
                                    csrfToken: String,
                                    teamId: String,
+                                   groupId: Option[String],
                                    scheduledActions: Seq[ScheduledActionData],
                                    orgChannels: OrgChannelsData,
                                    behaviorGroups: Seq[BehaviorGroupData],
@@ -213,6 +214,7 @@ object ScheduledActionsConfig {
           containerId = "scheduling",
           csrfToken = csrfToken,
           teamId = team.id,
+          groupId = None,
           scheduledActions = scheduledActions,
           orgChannels = OrgChannelsData(
             dmChannels = dmChannelsDataFor(teamChannelsData),
@@ -253,6 +255,7 @@ object ScheduledActionsConfig {
           containerId = "scheduling",
           csrfToken = csrfToken,
           teamId = team.id,
+          groupId = Some(behaviorGroup.id),
           scheduledActions = scheduledActions,
           orgChannels = OrgChannelsData(
             dmChannels = dmChannelsDataFor(teamChannelsData),

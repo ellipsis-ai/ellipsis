@@ -14,7 +14,7 @@ import {DataRequest} from "../lib/data_request";
 import BehaviorVersion from "../models/behavior_version";
 import SVGCheckmark from "../svg/checkmark";
 import SVGInfo from "../svg/info";
-import {ValidBehaviorIdTriggerJson, ValidTriggerJson} from "./loader";
+import {ValidBehaviorIdTriggerJson, ValidTriggerJson} from "./data_layer";
 
 interface Props {
   teamId: string,

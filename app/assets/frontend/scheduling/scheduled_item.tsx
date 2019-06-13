@@ -4,7 +4,7 @@ import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction from '../models/scheduled_action';
 import ScheduledItemTitle from './scheduled_item_title';
 import autobind from "../lib/autobind";
-import {ValidTriggerInterface} from "./loader";
+import {ValidTriggerInterface} from "./data_layer";
 import SVGInfo from "../svg/info";
 import SVGWarning from "../svg/warning";
 

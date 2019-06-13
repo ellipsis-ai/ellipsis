@@ -38,8 +38,8 @@ class BehaviorGroupConfigController @Inject()(
           maybeConfig.map { config =>
             Ok(views.js.shared.webpackLoader(
               viewConfig(Some(teamAccess)),
-              configName = "SchedulingConfig",
-              moduleToLoad = "scheduling",
+              configName = "BehaviorGroupSchedulingConfig",
+              moduleToLoad = "behaviorGroupScheduling",
               Json.toJson(config)
             ))
           }.getOrElse {
