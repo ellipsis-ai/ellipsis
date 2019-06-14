@@ -56,6 +56,8 @@ const defaultTimeZone = "America/New_York";
 const defaultTimeZoneName = "Eastern Time";
 
 const emptyConfig: SchedulingProps = {
+  groupId: null,
+  sidebarWidth: 0,
   scheduledActions: [],
   orgChannels: OrgChannels.fromJson({
     dmChannels: [],
