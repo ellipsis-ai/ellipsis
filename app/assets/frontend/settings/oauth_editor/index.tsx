@@ -7,6 +7,7 @@ import SettingsPage from '../../shared_ui/settings_page';
 import BrowserUtils from '../../lib/browser_utils';
 import {NavItemContent, PageRequiredProps} from '../../shared_ui/page';
 import {OAuthApiJson} from "../../models/oauth";
+import {User} from "../../models/user";
 import autobind from "../../lib/autobind";
 import Button from "../../form/button";
 
@@ -31,7 +32,8 @@ export interface OAuthEditorProps {
   mainUrl: string
   applicationId?: string,
   behaviorGroupId?: string,
-  behaviorId?: string
+  behaviorId?: string,
+  sharedTokenUser?: User
 }
 
 type Props = OAuthEditorProps & PageRequiredProps;
@@ -45,7 +47,8 @@ interface State {
   hasNamedApplication: boolean
   shouldRevealApplicationUrl: boolean
   isSaving: boolean
-  applicationShared: boolean
+  applicationShared: boolean,
+  sharedTokenUserId?: string
 }
 
 class IntegrationEditor extends React.Component<Props, State> {
@@ -63,7 +66,8 @@ class IntegrationEditor extends React.Component<Props, State> {
         hasNamedApplication: this.props.applicationSaved || false,
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false,
-        applicationShared: this.props.applicationShared
+        applicationShared: this.props.applicationShared,
+        sharedTokenUserId: this.props.sharedTokenUser ? this.props.sharedTokenUser.ellipsisUserId : undefined
       };
     }
 
@@ -130,6 +134,7 @@ class IntegrationEditor extends React.Component<Props, State> {
         hasNamedApplication: false,
         shouldRevealApplicationUrl: false,
         applicationShared: false,
+        sharedTokenUserId: undefined
       }, function() {
         BrowserUtils.removeQueryParam('apiId');
       });
@@ -505,6 +510,17 @@ class IntegrationEditor extends React.Component<Props, State> {
       );
     }
 
+    renderSharedTokenDetails() {
+      return (
+        <div className="mvm">
+          <h4 className="mbn position-relative">
+            <span className="position-hanging-indent">5</span>
+            <span>Share a single user's token for all access.</span>
+          </h4>
+        </div>
+      );
+    }
+
     renderConfigureApplicationDetails() {
       const newAppUrl = this.getApplicationApiNewApplicationUrl();
       return (
@@ -534,10 +550,12 @@ class IntegrationEditor extends React.Component<Props, State> {
 
             {this.renderScopeDetails()}
 
+            {this.renderSharedTokenDetails()}
+
             {this.applicationCanBeShared() ? (
               <div className="mvm">
                 <h4 className="mbn position-relative">
-                  <span className="position-hanging-indent">5</span>
+                  <span className="position-hanging-indent">6</span>
                   <span>Optionally share {this.getApplicationApiName()} with other teams.</span>
                 </h4>
                 <p className="type-s">

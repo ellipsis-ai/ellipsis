@@ -141,7 +141,8 @@ class IntegrationsController @Inject() (
               recommendedScope = maybeRequiredOAuthApplication.flatMap(_.maybeRecommendedScope),
               requiredNameInCode = maybeRequiredNameInCode,
               behaviorGroupId = maybeBehaviorGroupId,
-              behaviorId = maybeBehaviorId
+              behaviorId = maybeBehaviorId,
+              sharedTokenUser = None
             )
             Ok(views.js.shared.webpackLoader(
               viewConfig(Some(teamAccess)),
@@ -182,7 +183,8 @@ class IntegrationsController @Inject() (
                                     maybeBehaviorId: Option[String],
                                     maybeIsShared: Option[String],
                                     maybeRequiredNameInCode: Option[String],
-                                    isForOAuth1: Boolean
+                                    isForOAuth1: Boolean,
+                                    maybeSharedTokenUserId: Option[String]
                                   ) {
     val isShared: Boolean = maybeIsShared.contains("on")
   }
@@ -200,7 +202,8 @@ class IntegrationsController @Inject() (
       "behaviorId" -> optional(nonEmptyText),
       "isShared" -> optional(nonEmptyText),
       "requiredNameInCode" -> optional(nonEmptyText),
-      "isForOAuth1" -> boolean
+      "isForOAuth1" -> boolean,
+      "sharedTokenUserId" -> optional(nonEmptyText)
     )(OAuthApplicationInfo.apply)(OAuthApplicationInfo.unapply)
   )
 
@@ -266,7 +269,7 @@ class IntegrationsController @Inject() (
         team <- maybeTeam
       } yield {
         val isShared = isAdmin && info.isShared
-        val instance = OAuth2Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared)
+        val instance = OAuth2Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared, info.maybeSharedTokenUserId)
         dataService.oauth2Applications.save(instance).map(Some(_))
       }).getOrElse(Future.successful(None))
       _ <- (for {
@@ -329,7 +332,8 @@ class IntegrationsController @Inject() (
                              teamAccess: UserTeamAccess,
                              team: Team,
                              oauthApis: Seq[OAuthApi],
-                             isAdmin: Boolean
+                             isAdmin: Boolean,
+                             maybeSharedTokenUserData: Option[UserData]
                            )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): OAuthApplicationEditConfig = {
     OAuthApplicationEditConfig(
       containerId = "applicationEditor",
@@ -348,7 +352,8 @@ class IntegrationsController @Inject() (
       applicationScope = application.maybeScope,
       applicationSaved = true,
       applicationShared = application.isShared,
-      applicationCanBeShared = isAdmin
+      applicationCanBeShared = isAdmin,
+      sharedTokenUser = maybeSharedTokenUserData
     )
   }
 
@@ -369,13 +374,21 @@ class IntegrationsController @Inject() (
           maybeApp.filter(_.teamId == team.id)
         }
       }.getOrElse(Future.successful(None))
+      maybeSharedTokenUser <- maybeOAuth2Application.flatMap { oauth2Application =>
+        oauth2Application.maybeSharedTokenUserId.map { userId =>
+          dataService.users.find(userId)
+        }
+      }.getOrElse(Future.successful(None))
+      maybeSharedTokenUserData <- maybeSharedTokenUser.map { user =>
+        dataService.users.userDataFor(user, teamAccess.maybeTargetTeam.getOrElse(teamAccess.loggedInTeam)).map(Some(_))
+      }.getOrElse(Future.successful(None))
     } yield {
       val maybeOAuthApplication: Option[OAuthApplication] = maybeOAuth1Application.orElse(maybeOAuth2Application)
       render {
         case Accepts.JavaScript() => {
           (for {
             team <- teamAccess.maybeTargetTeam
-            config <- maybeOAuthApplication.map(editConfigFor(_, teamAccess, team, oauth1Apis ++ oauth2Apis, isAdmin))
+            config <- maybeOAuthApplication.map(editConfigFor(_, teamAccess, team, oauth1Apis ++ oauth2Apis, isAdmin, maybeSharedTokenUserData))
           } yield {
             Ok(views.js.shared.webpackLoader(
               viewConfig(Some(teamAccess)),

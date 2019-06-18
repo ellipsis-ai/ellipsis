@@ -22,5 +22,6 @@ case class OAuthApplicationEditConfig(
                                         applicationCanBeShared: Boolean = false,
                                         requiredNameInCode: Option[String] = None,
                                         behaviorGroupId: Option[String] = None,
-                                        behaviorId: Option[String] = None
+                                        behaviorId: Option[String] = None,
+                                        sharedTokenUser: Option[UserData] = None
                                       )
