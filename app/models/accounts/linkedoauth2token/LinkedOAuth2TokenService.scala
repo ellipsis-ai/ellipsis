@@ -9,6 +9,8 @@ import scala.concurrent.Future
 
 trait LinkedOAuth2TokenService {
 
+  def sharedForUserAction(user: User, ws: WSClient): DBIO[Seq[LinkedOAuth2Token]]
+
   def allForUserAction(user: User, ws: WSClient): DBIO[Seq[LinkedOAuth2Token]]
 
   def allForUser(user: User, ws: WSClient): Future[Seq[LinkedOAuth2Token]]

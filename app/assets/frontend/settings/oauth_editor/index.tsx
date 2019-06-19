@@ -510,13 +510,31 @@ class IntegrationEditor extends React.Component<Props, State> {
       );
     }
 
+    renderSharedTokenUser() {
+      const sharedTokenUserName = this.props.sharedTokenUser ? this.props.sharedTokenUser.fullName : undefined;
+      if (this.props.sharedTokenUser) {
+        return (
+          <div>
+            <span>Token provided by {sharedTokenUserName} is shared for all users on the team.</span>
+          </div>
+        );
+      } else {
+        return (
+          <div>
+            <span>No token sharing: each individual user must authorize the bot.</span>
+          </div>
+        );
+      }
+    }
+
     renderSharedTokenDetails() {
       return (
         <div className="mvm">
           <h4 className="mbn position-relative">
             <span className="position-hanging-indent">5</span>
-            <span>Share a single user's token for all access.</span>
+            <span>Token usage & sharing</span>
           </h4>
+          {this.renderSharedTokenUser()}
         </div>
       );
     }

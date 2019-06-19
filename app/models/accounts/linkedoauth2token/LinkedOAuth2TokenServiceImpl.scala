@@ -1,15 +1,14 @@
 package models.accounts.linkedoauth2token
 
 import java.time.OffsetDateTime
-import javax.inject.{Inject, Provider}
 
+import javax.inject.{Inject, Provider}
 import models.accounts.user.User
 import models.accounts.oauth2application.{OAuth2Application, OAuth2ApplicationQueries}
-import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.WSClient
-import play.api.mvc.Results
 import services.DataService
 import drivers.SlickPostgresDriver.api._
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -60,6 +59,19 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
       raw.userId,
       OAuth2ApplicationQueries.tuple2Application(tuple._2)
     )
+  }
+
+  def uncompiledAllSharedForTeamIdQuery(teamId: Rep[String]) = {
+    allWithApplication.
+      filter(_._2._1.maybeSharedTokenUserId.isDefined).
+      filter { case(_, (app, _)) => app.teamId === teamId || app.isShared }
+  }
+  val allSharedForTeamIdQuery = Compiled(uncompiledAllSharedForTeamIdQuery _)
+
+  def sharedForUserAction(user: User, ws: WSClient): DBIO[Seq[LinkedOAuth2Token]] = {
+    allSharedForTeamIdQuery(user.teamId).result.flatMap { r =>
+      DBIO.sequence(r.map(tuple2Token).map(refreshIfNecessaryAction))
+    }
   }
 
   def uncompiledAllForUserIdQuery(userId: Rep[String]) = {
