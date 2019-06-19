@@ -25,7 +25,7 @@ class IntegrationsControllerSpec extends PlaySpec with MockitoSugar {
       running(app) {
         val someOtherTeam = Team("Team1")
         val oauth1AppForOtherTeam = OAuth1Application(IDs.next, "", oauth1Api, IDs.next, IDs.next, None, someOtherTeam.id, isShared = true)
-        val oauth2AppForOtherTeam = OAuth2Application(IDs.next, "", oauth2Api, IDs.next, IDs.next, None, someOtherTeam.id, isShared = true)
+        val oauth2AppForOtherTeam = OAuth2Application(IDs.next, "", oauth2Api, IDs.next, IDs.next, None, someOtherTeam.id, isShared = true, maybeSharedTokenUserId = None)
         val teamAccess = UserTeamAccess(user, team, Some(team), Some("TestBot"), isAdminAccess = false, isAdminUser = false)
         when(dataService.users.teamAccessFor(user, None)).thenReturn(Future.successful(teamAccess))
         when(dataService.users.isAdmin(user)).thenReturn(Future.successful(false))

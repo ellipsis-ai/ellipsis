@@ -7,7 +7,7 @@ import SettingsPage from '../../shared_ui/settings_page';
 import BrowserUtils from '../../lib/browser_utils';
 import {NavItemContent, PageRequiredProps} from '../../shared_ui/page';
 import {OAuthApiJson} from "../../models/oauth";
-import {User} from "../../models/user";
+import User from "../../models/user";
 import autobind from "../../lib/autobind";
 import Button from "../../form/button";
 
