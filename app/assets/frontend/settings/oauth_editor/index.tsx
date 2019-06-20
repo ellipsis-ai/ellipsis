@@ -510,18 +510,32 @@ class IntegrationEditor extends React.Component<Props, State> {
       );
     }
 
+    resetSharedTokenUserId() {
+      this.setState({
+        sharedTokenUserId: undefined
+      });
+    }
+
     renderSharedTokenUser() {
       const sharedTokenUserName = this.props.sharedTokenUser ? this.props.sharedTokenUser.fullName : undefined;
-      if (this.props.sharedTokenUser) {
+      if (this.props.sharedTokenUser && this.state.sharedTokenUserId) {
         return (
           <div>
-            <span>Token provided by {sharedTokenUserName} is shared for all users on the team.</span>
+            <div>
+              <input type="hidden" name="sharedTokenUserId" value={this.state.sharedTokenUserId} />
+              <span>Token provided by {sharedTokenUserName} is shared for all users on the team.</span>
+            </div>
+            <div>
+              <Button
+                onClick={this.resetSharedTokenUserId}
+                className="button-s button-shrink">Reset</Button>
+            </div>
           </div>
         );
       } else {
         return (
           <div>
-            <span>No token sharing: each individual user must authorize the bot.</span>
+            <span>No sharing: each individual user must authorize the bot.</span>
           </div>
         );
       }
@@ -532,7 +546,7 @@ class IntegrationEditor extends React.Component<Props, State> {
         <div className="mvm">
           <h4 className="mbn position-relative">
             <span className="position-hanging-indent">5</span>
-            <span>Token usage & sharing</span>
+            <span>Token sharing</span>
           </h4>
           {this.renderSharedTokenUser()}
         </div>
