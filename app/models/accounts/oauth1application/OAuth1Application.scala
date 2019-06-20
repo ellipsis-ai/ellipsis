@@ -1,7 +1,10 @@
 package models.accounts.oauth1application
 
+import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import models.accounts.OAuthApplication
 import models.accounts.oauth1api.OAuth1Api
+import models.silhouette.EllipsisEnv
+import play.api.mvc.AnyContent
 
 case class OAuth1Application(
                               id: String,
@@ -16,6 +19,7 @@ case class OAuth1Application(
 
   val key: String = consumerKey
   val secret: String = consumerSecret
+  def maybeTokenSharingAuthUrl(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[String] = None
 
   def toRaw = RawOAuth1Application(
     id,

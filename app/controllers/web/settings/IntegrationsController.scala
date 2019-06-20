@@ -124,7 +124,6 @@ class IntegrationsController @Inject() (
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             val newApplicationId = IDs.next
-            val authState = OAuth2State(IDs.next, None, Some(routes.IntegrationsController.shareMyToken(newApplicationId, None).absoluteURL(secure = true))).encodedString
             val config = OAuthApplicationEditConfig(
               containerId = "applicationEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
@@ -133,7 +132,7 @@ class IntegrationsController @Inject() (
               apis = (oauth1Apis ++ oauth2Apis).map(ea => OAuthApiData.from(ea, assets)),
               oauth1CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth1Service(newApplicationId, None, None).absoluteURL(secure = true),
               oauth2CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None).absoluteURL(secure = true),
-              authorizationUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, Some(authState)).absoluteURL(secure = true),
+              authorizationUrl = None,
               requiresAuth = maybeRequiredOAuthApplication.flatMap(_.maybeApplication.map(_.api.requiresAuth)),
               mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
               applicationId = newApplicationId,
@@ -349,7 +348,6 @@ class IntegrationsController @Inject() (
                              isAdmin: Boolean,
                              maybeSharedTokenUserData: Option[UserData]
                            )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): OAuthApplicationEditConfig = {
-    val authState = OAuth2State(IDs.next, None, Some(routes.IntegrationsController.shareMyToken(application.id, None).absoluteURL(secure = true))).encodedString
     OAuthApplicationEditConfig(
       containerId = "applicationEditor",
       csrfToken = CSRF.getToken(request).map(_.value),
@@ -360,7 +358,7 @@ class IntegrationsController @Inject() (
       applicationSecret = Some(application.secret),
       oauth1CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth1Service(application.id, None, None).absoluteURL(secure = true),
       oauth2CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None).absoluteURL(secure = true),
-      authorizationUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, Some(authState)).absoluteURL(secure = true),
+      authorizationUrl = application.maybeTokenSharingAuthUrl,
       mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
       applicationId = application.id,
       applicationName = Some(application.name),

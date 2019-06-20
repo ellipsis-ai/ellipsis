@@ -548,15 +548,19 @@ class IntegrationEditor extends React.Component<Props, State> {
     }
 
     renderSharedTokenDetails() {
-      return (
-        <div className="mvm">
-          <h4 className="mbn position-relative">
-            <span className="position-hanging-indent">5</span>
-            <span>Token sharing</span>
-          </h4>
-          {this.renderSharedTokenUser()}
-        </div>
-      );
+      if (this.props.authorizationUrl) {
+        return (
+          <div className="mvm">
+            <h4 className="mbn position-relative">
+              <span className="position-hanging-indent">5</span>
+              <span>Token sharing</span>
+            </h4>
+            {this.renderSharedTokenUser()}
+          </div>
+        );
+      } else {
+        return null;
+      }
     }
 
     renderConfigureApplicationDetails() {

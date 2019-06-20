@@ -8,7 +8,7 @@ case class OAuthApplicationEditConfig(
                                         apis: Seq[OAuthApiData],
                                         oauth1CallbackUrl: String,
                                         oauth2CallbackUrl: String,
-                                        authorizationUrl: String,
+                                        authorizationUrl: Option[String] = None,
                                         requiresAuth: Option[Boolean] = None,
                                         applicationKey: Option[String] = None,
                                         applicationSecret: Option[String] = None,
