@@ -5,6 +5,7 @@ import {CSSProperties} from "react";
 export interface FixedElementProps {
   children: any;
   className?: string;
+  style?: Option<CSSProperties>;
   zIndexClassName?: string;
   onHeightChange?: (number: number) => void;
   marginTop?: Option<number>;
@@ -60,9 +61,9 @@ class FixedElement extends React.Component<Props, State> {
     }
 
     getStyle(): CSSProperties {
-      const style: CSSProperties = {
+      const style: CSSProperties = Object.assign({}, this.props.style, {
         marginTop: `${this.props.marginTop || 0}px`
-      };
+      });
       if (this.state.exceedsWindowHeight) {
         style.overflowY = 'auto';
       }

@@ -62,7 +62,8 @@ type State = {
   justDeleted: boolean,
   isEditing: boolean,
   userTimeZone: string | null,
-  userTimeZoneName: string | null
+  userTimeZoneName: string | null,
+  headerHeight: number
 }
 
 type ScheduleGroup = {
@@ -81,6 +82,8 @@ type SchedulesGroupedByName = {
 }
 
 class Scheduling extends React.Component<Props, State> {
+    header: Option<HTMLDivElement>;
+
     constructor(props: Props) {
       super(props);
       autobind(this);
@@ -93,7 +96,8 @@ class Scheduling extends React.Component<Props, State> {
         justDeleted: false,
         isEditing: Boolean(selectedItem),
         userTimeZone: null,
-        userTimeZoneName: null
+        userTimeZoneName: null,
+        headerHeight: 0
       };
     }
 
@@ -127,6 +131,7 @@ class Scheduling extends React.Component<Props, State> {
     componentDidMount(): void {
       this.updateURL();
       this.getUserTimeZoneName();
+      this.resetHeaderHeight();
     }
 
     componentWillUpdate(nextProps: Props, nextState: State, nextContext: any): void {
@@ -147,6 +152,20 @@ class Scheduling extends React.Component<Props, State> {
         window.scrollTo(0, 0);
       }
       this.updateURL();
+      this.resetHeaderHeight();
+    }
+
+    resetHeaderHeight(): void {
+      const newHeight = this.header ? this.header.offsetHeight : 0;
+      if (this.state.headerHeight !== newHeight) {
+        this.setState({
+          headerHeight: newHeight
+        });
+      }
+    }
+
+    isForSingleGroup(): boolean {
+      return Boolean(this.props.groupId);
     }
 
     updateURL(): void {
@@ -467,14 +486,18 @@ class Scheduling extends React.Component<Props, State> {
         return (
           <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
             <div className={`columns pvl ${index > 0 ? "border-top border-light" : ""}`}>
-              <div className={`column ${this.props.groupId ? "column-full" : "column-page-sidebar ptm"} mobile-ptn prn`}>
+              <div className={`column ${
+                this.isForSingleGroup() ? "column-full" : "column-page-sidebar ptm"
+              } mobile-ptn prn`}>
                 <div className="container">
                   <h4 className="mvn"><ChannelName channel={group.channel} /></h4>
                   <div>{this.renderGroupWarningText(group)}</div>
                 </div>
               </div>
 
-              <div className={`column ${this.props.groupId ? "column-full" : "column-page-main"} pln`}>
+              <div className={`column ${
+                this.isForSingleGroup() ? "column-full" : "column-page-main"
+              } pln`}>
                 <div className="container container-narrow">
                   {hasActions ? group.actions.map((action) => (
                     <ScheduledItem
@@ -552,32 +575,43 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     renderHeader(groups: Array<ScheduleGroup>) {
-      return this.props.onRenderHeader(this.isEditing() ? null : (
-        <div className="bg-white-translucent border-bottom" style={{ marginLeft: this.props.sidebarWidth }}>
-          <div className="container container-narrow mts">
-            {this.props.groupId ? null : (
-              <div className="display-inline-block align-m mrl mbs">
-                <h5 className="display-inline-block mtn mrs">Skill</h5>
-                <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter}>
-                  <option value="">All skills</option>
-                  {this.getSkillOptions().map((ea) => (
-                    <option key={`filterSkillId-${ea.id}`} value={ea.id}>{ea.name}</option>
-                  ))}
-                </Select>
+      return (
+        <div className={this.props.isMobile ? "" : "position-fixed"}
+          ref={(el) => this.header = el}
+          style={{
+            top: this.props.headerHeight,
+            left: this.props.sidebarWidth - (this.isForSingleGroup() ? 1 : 0),
+            right: 0
+          }}
+        >
+          <Collapsible revealWhen={!this.isEditing()} onChange={this.resetHeaderHeight}>
+            <div className={`bg-white-translucent border-bottom border-light ${this.isForSingleGroup() ? "border-left" : ""}`}>
+              <div className="container container-narrow pts">
+                {this.isForSingleGroup() ? null : (
+                  <div className="display-inline-block align-m mrl mbs">
+                    <h5 className="display-inline-block mtn mrs">Skill</h5>
+                    <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter}>
+                      <option value="">All skills</option>
+                      {this.getSkillOptions().map((ea) => (
+                        <option key={`filterSkillId-${ea.id}`} value={ea.id}>{ea.name}</option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+                <div className="display-inline-block align-m mbs">
+                  <h5 className="display-inline-block mtn mrs">Channel</h5>
+                  <Select value={this.state.filterChannelId} className="form-select-s align-m" onChange={this.changeChannelFilter}>
+                    <option value="">All channels</option>
+                    {groups.map((group) => (
+                      <option key={`filterChannelId-${group.channelId}`} value={group.channelId}>{group.channelName || "Unknown channel"}</option>
+                    ))}
+                  </Select>
+                </div>
               </div>
-            )}
-            <div className="display-inline-block align-m mbs">
-              <h5 className="display-inline-block mtn mrs">Channel</h5>
-              <Select value={this.state.filterChannelId} className="form-select-s align-m" onChange={this.changeChannelFilter}>
-                <option value="">All channels</option>
-                {groups.map((group) => (
-                  <option key={`filterChannelId-${group.channelId}`} value={group.channelId}>{group.channelName || "Unknown channel"}</option>
-                ))}
-              </Select>
             </div>
-          </div>
+          </Collapsible>
         </div>
-      ));
+      );
     }
 
     render() {
@@ -587,7 +621,10 @@ class Scheduling extends React.Component<Props, State> {
       const selectedItemIsValid = Boolean(selectedItem && selectedItem.isValid());
       const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
-        <div className="flex-row-cascade" style={{ paddingBottom: this.props.footerHeight }}>
+        <div className="flex-row-cascade" style={{
+          paddingTop: this.props.isMobile ? 0 : this.state.headerHeight,
+          paddingBottom: this.props.footerHeight
+        }}>
           {this.renderHeader(groups)}
           <Collapsible revealWhen={!this.isEditing()} className={"flex-row-cascade mobile-flex-no-expand"}>
             <div>
@@ -598,6 +635,7 @@ class Scheduling extends React.Component<Props, State> {
           <Collapsible revealWhen={this.isEditing()}>
             {this.isEditing() ? (
               <ScheduledItemEditor
+                isForSingleGroup={this.isForSingleGroup()}
                 teamId={this.props.teamId}
                 scheduledAction={selectedItem}
                 orgChannels={this.props.orgChannels}
@@ -726,7 +764,9 @@ class Scheduling extends React.Component<Props, State> {
               </div>
             </Collapsible>
             </div>
-          ))}
+          ), null, {
+            marginLeft: this.props.sidebarWidth
+          })}
           {this.renderNavItems()}
           {this.renderNavActions()}
         </div>

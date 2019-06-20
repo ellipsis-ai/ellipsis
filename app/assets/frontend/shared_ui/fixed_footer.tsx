@@ -10,6 +10,7 @@ class FixedFooter extends React.Component<FixedElementProps> {
         zIndexClassName={this.props.zIndexClassName}
         onHeightChange={this.props.onHeightChange}
         marginTop={this.props.marginTop}
+        style={this.props.style}
       >
         {this.props.children}
       </FixedElement>

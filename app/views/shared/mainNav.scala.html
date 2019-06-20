@@ -7,10 +7,10 @@
 @navPadding = @{ if (hideNav) { "container container-wide" } else { "" } }
 @navBorderColorForPage = @{if (hideNav) "" else " border-bottom-thick border-light "}
 <div class="@navPadding @navClass">
-  <div class="flex-columns flex-columns-wrap">
+  <div class="flex-columns flex-columns-wrap flex-columns-left">
     <div class="flex-column flex-column-left @navBorderColorForPage">
       <div class="flex-columns flex-columns-wrap">
-        <div class="flex-column flex-column-left flex-column-shrink">
+        <div class="flex-column flex-column-left flex-column-shrink display-nowrap">
           @if(!hideNav) {
             <button id="main-nav-button" type="button"
             class="border-radius-bottom-left-none button-subtle button-l button-dropdown-trigger

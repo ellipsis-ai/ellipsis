@@ -13,7 +13,7 @@ export interface PageRequiredProps {
   onToggleActivePanel: (name: string, beModal?: boolean, optionalCallback?: () => void) => void,
   onClearActivePanel: (optionalCallback?: () => void) => void,
   onRenderHeader: (content?: React.ReactNode) => any,
-  onRenderFooter: (content?: React.ReactNode, footerClassName?: string) => any,
+  onRenderFooter: (content?: React.ReactNode, footerClassName?: Option<string>, footerStyle?: Option<React.CSSProperties>) => any,
   onRenderNavItems: (items: Array<NavItemContent>) => void,
   onRenderNavActions: (content: React.ReactNode) => void,
   onRenderPanel: (panelName: string, panel: Container) => void,
@@ -21,6 +21,7 @@ export interface PageRequiredProps {
   headerHeight: number,
   footerHeight: number,
   ref?: any
+  isMobile: boolean
 }
 
 import Event from '../lib/event';
@@ -33,6 +34,7 @@ import NavItem from './nav_item';
 import autobind from '../lib/autobind';
 import PageFooterRenderingError from './page_footer_rendering_error';
 import * as debounce from "javascript-debounce";
+import {MOBILE_MAX_WIDTH} from "../lib/constants";
 
 type Props = {
   onRender: <P extends PageRequiredProps>(pageProps: PageRequiredProps) => React.ReactElement<P>,
@@ -47,6 +49,7 @@ type State = {
   previousPanelIsModal: boolean,
   headerHeight: number,
   footerHeight: number
+  isMobile: boolean
 }
 
 type Container = React.Component | HTMLElement | null;
@@ -60,7 +63,7 @@ class Page extends React.Component<Props, State> {
     navItems: Option<HTMLElement>;
     navActions: Option<HTMLElement>;
     static feedbackContainerId: string;
-    debounceResetHeaderHeight: () => void;
+    debounceOnResize: () => void;
     setFooterHeight: (newHeight: number) => void;
 
     constructor(props: Props) {
@@ -72,7 +75,7 @@ class Page extends React.Component<Props, State> {
       this.navItems = document.getElementById("mainNavItems");
       this.navActions = document.getElementById("mainNavActions");
       this.header = document.getElementById("main-header");
-      this.debounceResetHeaderHeight = debounce(this.resetHeaderHeight, 150);
+      this.debounceOnResize = debounce(this.onResize, 150);
       this.setFooterHeight = debounce(this._setFooterHeight, 25);
     }
 
@@ -83,7 +86,8 @@ class Page extends React.Component<Props, State> {
         previousPanelName: "",
         previousPanelIsModal: false,
         headerHeight: this.state ? this.state.headerHeight : 0,
-        footerHeight: this.state ? this.state.footerHeight : 0
+        footerHeight: this.state ? this.state.footerHeight : 0,
+        isMobile: window.innerWidth <= MOBILE_MAX_WIDTH
       };
     }
 
@@ -182,7 +186,7 @@ class Page extends React.Component<Props, State> {
     componentDidMount(): void {
       window.document.addEventListener('keydown', this.onDocumentKeyDown, false);
       window.document.addEventListener('focus', this.handleModalFocus, true);
-      window.addEventListener('resize', this.debounceResetHeaderHeight);
+      window.addEventListener('resize', this.debounceOnResize);
       const feedbackContainer = this.props.feedbackContainer || document.getElementById(Page.feedbackContainerId);
       if (feedbackContainer && !this.footer) {
         throw new PageFooterRenderingError(this);
@@ -190,7 +194,7 @@ class Page extends React.Component<Props, State> {
     }
 
     componentDidUpdate(): void {
-      this.resetHeaderHeight();
+      this.onResize();
     }
 
     getFooterHeight(): number {
@@ -201,10 +205,15 @@ class Page extends React.Component<Props, State> {
       return this.state.headerHeight;
     }
 
-    resetHeaderHeight(): void {
+    onResize(): void {
       if (this.header && this.header.offsetHeight !== this.state.headerHeight) {
         this.setState({
           headerHeight: this.header.offsetHeight
+        });
+      }
+      if (this.state.isMobile !== (window.innerWidth <= MOBILE_MAX_WIDTH)) {
+        this.setState({
+          isMobile: window.innerWidth <= MOBILE_MAX_WIDTH
         });
       }
     }
@@ -219,11 +228,15 @@ class Page extends React.Component<Props, State> {
       this.toggleActivePanel('feedback', true);
     }
 
-    onRenderFooter(content?: React.ReactNode, footerClassName?: string) {
+    onRenderFooter(content?: React.ReactNode, footerClassName?: Option<string>, footerStyle?: Option<React.CSSProperties>) {
       return (
         <div>
           <ModalScrim isActive={this.state.activePanelIsModal} onClick={this.clearActivePanel} />
-          <FixedFooter ref={(el) => this.footer = el} className={`bg-white ${footerClassName || ""}`} onHeightChange={this.setFooterHeight}>
+          <FixedFooter ref={(el) => this.footer = el}
+            className={`bg-white ${footerClassName || ""}`}
+            style={footerStyle}
+            onHeightChange={this.setFooterHeight}
+          >
             <Collapsible revealWhen={this.state.activePanelName === 'feedback'}>
               <FeedbackPanel onDone={this.toggleFeedback} csrfToken={this.props.csrfToken} />
             </Collapsible>
@@ -288,6 +301,7 @@ class Page extends React.Component<Props, State> {
             headerHeight: this.getHeaderHeight(),
             footerHeight: this.getFooterHeight(),
             onRevealedPanel: this.onRevealedPanel,
+            isMobile: this.state.isMobile,
             ref: (component: React.Component) => this.component = component
           })}
           {this.renderFeedbackLink()}

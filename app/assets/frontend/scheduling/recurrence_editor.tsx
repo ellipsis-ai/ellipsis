@@ -183,7 +183,7 @@ class RecurrenceEditor extends React.Component<Props, State> {
     render() {
       return (
         <div>
-          <div className="mvm">
+          <div className="mbm">
             <RecurrenceIntervalEditor
               recurrence={this.getRecurrence()}
               onChange={this.props.onChange}

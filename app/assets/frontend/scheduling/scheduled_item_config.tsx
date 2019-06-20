@@ -25,6 +25,7 @@ interface Props {
   onChangeAction: (behaviorId: string, newArgs: Array<ScheduledActionArgument>, callback?: () => void) => void
   onChangeSkill: (behaviorGroupId: string) => void
   onToggleByTrigger: (byTrigger: boolean) => void
+  isForSingleGroup: boolean
 }
 
 interface MatchingGroupAndBehaviorVersion {
@@ -302,6 +303,11 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       });
     }
 
+    getSkillName(): string {
+      const group = this.props.behaviorGroups.find((ea) => ea.id === this.props.scheduledAction.behaviorGroupId);
+      return group ? group.getName() : "Unknown";
+    }
+
     renderEditLink(groupId: Option<string>, behaviorId: Option<string>) {
       const editUrl = groupId ? jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url : null;
       return editUrl ? (
@@ -368,15 +374,19 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
           <div className="mbl">
             <span className="align-button mrm type-s">Run action from skill</span>
             <span className="align-button mrm height-xl">
-              <Select
-                className="form-select-s width-10"
-                value={this.props.scheduledAction.behaviorGroupId || ""}
-                onChange={this.onChangeSkill}
-              >
-                {skills.map((ea) => (
-                  <option key={ea.value} value={ea.value}>{ea.name}</option>
-                ))}
-              </Select>
+              {this.props.isForSingleGroup ? (
+                <span className="bg-white border phxs">{this.getSkillName()}</span>
+              ) : (
+                <Select
+                  className="form-select-s width-10"
+                  value={this.props.scheduledAction.behaviorGroupId || ""}
+                  onChange={this.onChangeSkill}
+                >
+                  {skills.map((ea) => (
+                    <option key={ea.value} value={ea.value}>{ea.name}</option>
+                  ))}
+                </Select>
+              )}
             </span>
             <span className="align-button mrm type-s">named</span>
             <span className="align-button mrm height-xl">

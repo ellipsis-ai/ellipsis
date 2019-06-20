@@ -34,7 +34,14 @@ class BehaviorGroupSchedulingLoader extends React.Component<SchedulingConfigInte
     return (
       <Page csrfToken={this.props.csrfToken}
         onRender={(pageProps) => (
-          <BehaviorGroupConfigPage activePage={"scheduling"} groupId={BehaviorGroupSchedulingConfig.groupId} onSidebarWidthChange={this.setSidebarWidth}>
+          <BehaviorGroupConfigPage
+            activePage={"scheduling"}
+            groupId={BehaviorGroupSchedulingConfig.groupId}
+            onSidebarWidthChange={this.setSidebarWidth}
+            headerHeight={pageProps.headerHeight}
+            footerHeight={pageProps.footerHeight}
+            isMobile={pageProps.isMobile}
+          >
             <SchedulingDataLayer {...BehaviorGroupSchedulingConfig} pageProps={pageProps} sidebarWidth={this.state.sidebarWidth} />
           </BehaviorGroupConfigPage>
         )} />
