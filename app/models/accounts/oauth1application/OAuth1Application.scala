@@ -1,6 +1,7 @@
 package models.accounts.oauth1application
 
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
+import controllers.web.settings.routes
 import models.accounts.OAuthApplication
 import models.accounts.oauth1api.OAuth1Api
 import models.silhouette.EllipsisEnv
@@ -14,12 +15,16 @@ case class OAuth1Application(
                               consumerSecret: String,
                               maybeScope: Option[String],
                               teamId: String,
-                              isShared: Boolean
+                              isShared: Boolean,
+                              maybeSharedTokenUserId: Option[String]
                             ) extends OAuthApplication {
 
   val key: String = consumerKey
   val secret: String = consumerSecret
-  def maybeTokenSharingAuthUrl(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[String] = None
+  def maybeTokenSharingAuthUrl(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[String] = {
+    val redirect = routes.IntegrationsController.shareMyOAuth1Token(id, None).absoluteURL(secure = true)
+    Some(controllers.routes.APIAccessController.linkCustomOAuth1Service(id, None, Some(redirect)).absoluteURL(secure = true))
+  }
 
   def toRaw = RawOAuth1Application(
     id,
@@ -29,6 +34,7 @@ case class OAuth1Application(
     consumerSecret,
     maybeScope,
     teamId,
-    isShared
+    isShared,
+    maybeSharedTokenUserId
   )
 }

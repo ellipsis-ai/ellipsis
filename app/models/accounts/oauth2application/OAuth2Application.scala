@@ -27,7 +27,7 @@ case class OAuth2Application(
   val key: String = clientId
   val secret: String = clientSecret
   def maybeTokenSharingAuthUrl(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[String] = {
-    val authState = OAuth2State(IDs.next, None, Some(routes.IntegrationsController.shareMyToken(id, None).absoluteURL(secure = true))).encodedString
+    val authState = OAuth2State(IDs.next, None, Some(routes.IntegrationsController.shareMyOAuth2Token(id, None).absoluteURL(secure = true))).encodedString
     Some(controllers.routes.APIAccessController.linkCustomOAuth2Service(id, None, Some(authState)).absoluteURL(secure = true))
   }
 

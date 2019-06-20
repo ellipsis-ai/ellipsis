@@ -223,7 +223,7 @@ class IntegrationsController @Inject() (
         team <- maybeTeam
       } yield {
         val isShared = isAdmin && info.isShared
-        val instance = OAuth1Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared)
+        val instance = OAuth1Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared, info.maybeSharedTokenUserId)
         dataService.oauth1Applications.save(instance).map(Some(_))
       }).getOrElse(Future.successful(None))
       _ <- (for {
@@ -328,7 +328,19 @@ class IntegrationsController @Inject() (
     )
   }
 
-  def shareMyToken(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def shareMyOAuth1Token(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeApplication <- dataService.oauth1Applications.find(applicationId)
+      _ <- maybeApplication.map { app =>
+        dataService.oauth1Applications.save(app.copy(maybeSharedTokenUserId = Some(user.id)))
+      }.getOrElse(Future.successful({}))
+    } yield {
+      Redirect(routes.IntegrationsController.edit(applicationId).absoluteURL(secure = true))
+    }
+  }
+
+  def shareMyOAuth2Token(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       maybeApplication <- dataService.oauth2Applications.find(applicationId)
@@ -383,17 +395,25 @@ class IntegrationsController @Inject() (
           maybeApp.filter(_.teamId == team.id)
         }
       }.getOrElse(Future.successful(None))
+      maybeSharedOAuth1TokenUser <- maybeOAuth1Application.flatMap { oauth1Application =>
+        oauth1Application.maybeSharedTokenUserId.map { userId =>
+          dataService.users.find(userId)
+        }
+      }.getOrElse(Future.successful(None))
+      maybeSharedOAuth1TokenUserData <- maybeSharedOAuth1TokenUser.map { user =>
+        dataService.users.userDataFor(user, teamAccess.maybeTargetTeam.getOrElse(teamAccess.loggedInTeam)).map(Some(_))
+      }.getOrElse(Future.successful(None))
       maybeOAuth2Application <- teamAccess.maybeTargetTeam.map { team =>
         dataService.oauth2Applications.find(id).map { maybeApp =>
           maybeApp.filter(_.teamId == team.id)
         }
       }.getOrElse(Future.successful(None))
-      maybeSharedTokenUser <- maybeOAuth2Application.flatMap { oauth2Application =>
+      maybeSharedOAuth2TokenUser <- maybeOAuth2Application.flatMap { oauth2Application =>
         oauth2Application.maybeSharedTokenUserId.map { userId =>
           dataService.users.find(userId)
         }
       }.getOrElse(Future.successful(None))
-      maybeSharedTokenUserData <- maybeSharedTokenUser.map { user =>
+      maybeSharedOAuth2TokenUserData <- maybeSharedOAuth2TokenUser.map { user =>
         dataService.users.userDataFor(user, teamAccess.maybeTargetTeam.getOrElse(teamAccess.loggedInTeam)).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield {
@@ -402,7 +422,7 @@ class IntegrationsController @Inject() (
         case Accepts.JavaScript() => {
           (for {
             team <- teamAccess.maybeTargetTeam
-            config <- maybeOAuthApplication.map(editConfigFor(_, teamAccess, team, oauth1Apis ++ oauth2Apis, isAdmin, maybeSharedTokenUserData))
+            config <- maybeOAuthApplication.map(editConfigFor(_, teamAccess, team, oauth1Apis ++ oauth2Apis, isAdmin, maybeSharedOAuth1TokenUserData.orElse(maybeSharedOAuth2TokenUserData)))
           } yield {
             Ok(views.js.shared.webpackLoader(
               viewConfig(Some(teamAccess)),

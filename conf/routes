@@ -73,7 +73,8 @@ GET         /settings/integrations                    @controllers.web.settings.
 GET         /settings/integrations/add                @controllers.web.settings.IntegrationsController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredNameInCode: Option[String] ?= None)
 POST        /settings/integrations                    @controllers.web.settings.IntegrationsController.save
 GET         /settings/integrations/:id/edit           @controllers.web.settings.IntegrationsController.edit(id: String, teamId: Option[String] ?= None)
-GET         /settings/integrations/:id/share_token    @controllers.web.settings.IntegrationsController.shareMyToken(id: String, teamId: Option[String] ?= None)
+GET         /settings/integrations/:id/share_oauth1_token    @controllers.web.settings.IntegrationsController.shareMyOAuth1Token(id: String, teamId: Option[String] ?= None)
+GET         /settings/integrations/:id/share_oauth2_token    @controllers.web.settings.IntegrationsController.shareMyOAuth2Token(id: String, teamId: Option[String] ?= None)
 
 GET         /settings/aws_configs/add                 @controllers.web.settings.AWSConfigController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredAWSConfigNameInCode: Option[String] ?= None)
 GET         /settings/aws_configs/:id/edit            @controllers.web.settings.AWSConfigController.edit(id: String, teamId: Option[String] ?= None)
