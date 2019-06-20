@@ -16,6 +16,7 @@ export interface OAuthEditorProps {
   apis: Array<OAuthApiJson>
   oauth1CallbackUrl: string
   oauth2CallbackUrl: string
+  authorizationUrl: string
   applicationKey?: string
   applicationSecret?: string
   requiresAuth?: boolean
@@ -535,7 +536,12 @@ class IntegrationEditor extends React.Component<Props, State> {
       } else {
         return (
           <div>
-            <span>No sharing: each individual user must authorize the bot.</span>
+            <div>
+              <span>No sharing: each individual user must authorize the bot.</span>
+            </div>
+            <div>
+              <a href={this.props.authorizationUrl}>Authorize and share your token</a>
+            </div>
           </div>
         );
       }

@@ -12,7 +12,7 @@ import models._
 import models.accounts.oauth1application.OAuth1Application
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.{User, UserTeamAccess}
-import models.accounts.{OAuthApi, OAuthApplication}
+import models.accounts.{OAuth2State, OAuthApi, OAuthApplication}
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.config.RequiredOAuthApiConfig
@@ -124,6 +124,7 @@ class IntegrationsController @Inject() (
         } yield {
           teamAccess.maybeTargetTeam.map { team =>
             val newApplicationId = IDs.next
+            val authState = OAuth2State(IDs.next, None, Some(routes.IntegrationsController.shareMyToken(newApplicationId, None).absoluteURL(secure = true))).encodedString
             val config = OAuthApplicationEditConfig(
               containerId = "applicationEditor",
               csrfToken = CSRF.getToken(request).map(_.value),
@@ -132,6 +133,7 @@ class IntegrationsController @Inject() (
               apis = (oauth1Apis ++ oauth2Apis).map(ea => OAuthApiData.from(ea, assets)),
               oauth1CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth1Service(newApplicationId, None, None).absoluteURL(secure = true),
               oauth2CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, None).absoluteURL(secure = true),
+              authorizationUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(newApplicationId, None, Some(authState)).absoluteURL(secure = true),
               requiresAuth = maybeRequiredOAuthApplication.flatMap(_.maybeApplication.map(_.api.requiresAuth)),
               mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
               applicationId = newApplicationId,
@@ -327,6 +329,18 @@ class IntegrationsController @Inject() (
     )
   }
 
+  def shareMyToken(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeApplication <- dataService.oauth2Applications.find(applicationId)
+      _ <- maybeApplication.map { app =>
+        dataService.oauth2Applications.save(app.copy(maybeSharedTokenUserId = Some(user.id)))
+      }.getOrElse(Future.successful({}))
+    } yield {
+      Redirect(routes.IntegrationsController.edit(applicationId).absoluteURL(secure = true))
+    }
+  }
+
   private def editConfigFor(
                              application: OAuthApplication,
                              teamAccess: UserTeamAccess,
@@ -335,6 +349,7 @@ class IntegrationsController @Inject() (
                              isAdmin: Boolean,
                              maybeSharedTokenUserData: Option[UserData]
                            )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): OAuthApplicationEditConfig = {
+    val authState = OAuth2State(IDs.next, None, Some(routes.IntegrationsController.shareMyToken(application.id, None).absoluteURL(secure = true))).encodedString
     OAuthApplicationEditConfig(
       containerId = "applicationEditor",
       csrfToken = CSRF.getToken(request).map(_.value),
@@ -345,6 +360,7 @@ class IntegrationsController @Inject() (
       applicationSecret = Some(application.secret),
       oauth1CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth1Service(application.id, None, None).absoluteURL(secure = true),
       oauth2CallbackUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None).absoluteURL(secure = true),
+      authorizationUrl = controllers.routes.APIAccessController.linkCustomOAuth2Service(application.id, None, Some(authState)).absoluteURL(secure = true),
       mainUrl = controllers.routes.ApplicationController.index().absoluteURL(secure = true),
       applicationId = application.id,
       applicationName = Some(application.name),
