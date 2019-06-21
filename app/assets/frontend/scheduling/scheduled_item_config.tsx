@@ -16,6 +16,10 @@ import SVGCheckmark from "../svg/checkmark";
 import SVGInfo from "../svg/info";
 import {ValidBehaviorIdTriggerJson, ValidTriggerJson} from "./data_layer";
 import SVGWarning from "../svg/warning";
+import Collapsible from "../shared_ui/collapsible";
+import SVGExpand from "../svg/expand";
+import {Diff, Diffable, maybeDiffFor} from "../models/diffs";
+import Trigger from "../models/trigger";
 
 interface Props {
   teamId: string,
@@ -39,6 +43,7 @@ interface State {
   matchingBehaviorTriggers: Array<ValidBehaviorIdTriggerJson>
   loadingValidation: boolean
   validationError: Option<string>
+  showPossibleTriggers: boolean
 }
 
 class ScheduledItemTitle extends React.PureComponent<Props, State> {
@@ -54,7 +59,8 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       this.state = {
         matchingBehaviorTriggers: [],
         loadingValidation: Boolean(this.props.scheduledAction.trigger),
-        validationError: null
+        validationError: null,
+        showPossibleTriggers: false
       };
     }
 
@@ -321,6 +327,12 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       return group ? group.getName() : "Unknown";
     }
 
+    toggleShowPossibleTriggers(): void {
+      this.setState({
+        showPossibleTriggers: !this.state.showPossibleTriggers
+      });
+    }
+
     renderEditLink(groupId: Option<string>, behaviorId: Option<string>) {
       const editUrl = groupId ? jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url : null;
       return editUrl ? (
@@ -339,6 +351,29 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
               value={this.getTriggerText()}
               onChange={this.onChangeTriggerText}
             />
+          </div>
+          <div>
+            {this.props.isForSingleGroup ? (
+              <div className="link type-s mts" onClick={this.toggleShowPossibleTriggers}>
+                <span className="display-inline-block height-l align-m mrxs"><SVGExpand expanded={this.state.showPossibleTriggers} /></span>
+                <span>Show all possible triggers</span>
+              </div>
+            ) : null}
+            <Collapsible revealWhen={this.state.showPossibleTriggers}>
+              {this.props.behaviorGroups[0].getActions().filter((ea) => ea.getRegularMessageTriggers().length > 0).map((action) => (
+                <div key={`possibleBehavior${action.behaviorId}`}>
+                  {action.getRegularMessageTriggers().map((trigger) => (
+                    <div key={`trigger${trigger.getIdForDiff()}`} className={`box-chat mvs ${
+                        this.state.matchingBehaviorTriggers.some((matchingBehavior) => matchingBehavior.behaviorId === action.behaviorId && 
+                          matchingBehavior.triggers.some((matchingTrigger) => !maybeDiffFor(trigger, Trigger.fromJson(matchingTrigger), null, false))) ?
+                          "box-chat-selected" : "box-chat-white"
+                      }`}>
+                      {trigger.getText()}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </Collapsible>
           </div>
           <div>
             <h5>{this.state.matchingBehaviorTriggers.length <= 1 ? "Matching action" : "Matching actions"}</h5>
