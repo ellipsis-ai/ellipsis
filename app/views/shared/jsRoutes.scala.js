@@ -37,6 +37,7 @@
   routes.javascript.BehaviorEditorController.pushToGithub,
   routes.javascript.BehaviorEditorController.linkToGithubRepo,
   routes.javascript.BehaviorEditorController.deploy,
+  routes.javascript.BehaviorGroupConfigController.schedules,
   routes.javascript.BehaviorImportExportController.doImport,
   routes.javascript.BehaviorImportExportController.export,
   routes.javascript.DashboardController.skillManifest,

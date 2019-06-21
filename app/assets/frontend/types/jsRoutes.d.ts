@@ -47,6 +47,9 @@ declare var jsRoutes: {
       updateNodeModules: () => JsRoute,
       versionInfoFor: (groupId: string) => JsRoute
     },
+    BehaviorGroupConfigController: {
+      schedules: (groupId: string) => JsRoute
+    },
     BehaviorImportExportController: {
       doImport: () => JsRoute,
       "export": (id: string) => JsRoute

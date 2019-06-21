@@ -270,6 +270,10 @@ class BehaviorVersion extends Editable implements Diffable, BehaviorVersionInter
       return this.triggers;
     }
 
+    getRegularMessageTriggers(): Array<Trigger> {
+      return this.triggers.filter((ea) => ea.isMessageSentTrigger() && !ea.isRegex);
+    }
+
     findFirstTriggerIndexForDisplay(): number {
       var firstTriggerIndex = this.getTriggers().findIndex(function(trigger) {
         return !!trigger.text && !trigger.isReactionAddedTrigger() && !trigger.isRegex;

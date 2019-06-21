@@ -18,7 +18,8 @@ function getPageRequiredProps(): PageRequiredProps {
     onRenderNavActions: renderPlaceholder,
     onRevealedPanel: placeholderCallback,
     headerHeight: 0,
-    footerHeight: 0
+    footerHeight: 0,
+    isMobile: false
   };
 };
 

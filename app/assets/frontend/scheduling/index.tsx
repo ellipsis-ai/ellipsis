@@ -6,7 +6,7 @@ import Collapsible from '../shared_ui/collapsible';
 import ConfirmActionPanel from '../panels/confirm_action';
 import DynamicLabelButton from '../form/dynamic_label_button';
 import BehaviorGroup from '../models/behavior_group';
-import ScheduledAction from '../models/scheduled_action';
+import ScheduledAction, {ScheduledActionInterface} from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
 import ScheduledItem from './scheduled_item';
 import ScheduledItemEditor from './scheduled_item_editor';
@@ -14,7 +14,7 @@ import ScheduledItemTitle from './scheduled_item_title';
 import Sort from '../lib/sort';
 import {PageRequiredProps} from '../shared_ui/page';
 import autobind from '../lib/autobind';
-import {UserMap, ValidTriggerInterface} from "./loader";
+import {UserMap, ValidTriggerInterface} from "./data_layer";
 import User from '../models/user';
 import OrgChannels from "../models/org_channels";
 import {DataRequest} from "../lib/data_request";
@@ -22,6 +22,8 @@ import {TimeZoneData} from "../time_zone/team_time_zone_setter";
 import Select from "../form/select";
 
 export interface SchedulingProps {
+  groupId: Option<string>,
+  sidebarWidth: number,
   scheduledActions: Array<ScheduledAction>,
   orgChannels: OrgChannels,
   behaviorGroups: Array<BehaviorGroup>,
@@ -60,7 +62,8 @@ type State = {
   justDeleted: boolean,
   isEditing: boolean,
   userTimeZone: string | null,
-  userTimeZoneName: string | null
+  userTimeZoneName: string | null,
+  headerHeight: number
 }
 
 type ScheduleGroup = {
@@ -79,8 +82,7 @@ type SchedulesGroupedByName = {
 }
 
 class Scheduling extends React.Component<Props, State> {
-
-    static defaultProps: PageRequiredProps;
+    header: Option<HTMLDivElement>;
 
     constructor(props: Props) {
       super(props);
@@ -94,7 +96,8 @@ class Scheduling extends React.Component<Props, State> {
         justDeleted: false,
         isEditing: Boolean(selectedItem),
         userTimeZone: null,
-        userTimeZoneName: null
+        userTimeZoneName: null,
+        headerHeight: 0
       };
     }
 
@@ -128,6 +131,7 @@ class Scheduling extends React.Component<Props, State> {
     componentDidMount(): void {
       this.updateURL();
       this.getUserTimeZoneName();
+      this.resetHeaderHeight();
     }
 
     componentWillUpdate(nextProps: Props, nextState: State, nextContext: any): void {
@@ -148,6 +152,20 @@ class Scheduling extends React.Component<Props, State> {
         window.scrollTo(0, 0);
       }
       this.updateURL();
+      this.resetHeaderHeight();
+    }
+
+    resetHeaderHeight(): void {
+      const newHeight = this.header ? this.header.offsetHeight : 0;
+      if (this.state.headerHeight !== newHeight) {
+        this.setState({
+          headerHeight: newHeight
+        });
+      }
+    }
+
+    isForSingleGroup(): boolean {
+      return Boolean(this.props.groupId);
     }
 
     updateURL(): void {
@@ -205,15 +223,23 @@ class Scheduling extends React.Component<Props, State> {
       }
     }
 
+    prepareRoute(selectedItemId: Option<string>, isNewSchedule: Option<boolean>, filterChannelId: Option<string>, filterBehaviorGroupId: Option<string>, explicitTeamId: Option<string>, forceAdmin: Option<boolean>): JsRoute {
+      if (this.props.groupId) {
+        return jsRoutes.controllers.BehaviorGroupConfigController.schedules(this.props.groupId);
+      } else {
+        return jsRoutes.controllers.ScheduledActionsController.index(selectedItemId, isNewSchedule, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin);
+      }
+    }
+
     getCorrectedURL(explicitTeamId: Option<string>, forceAdmin: Option<boolean>): string {
       const filterChannelId = this.state.filterChannelId || null;
       const filterBehaviorGroupId = this.state.filterBehaviorGroupId || null;
       if (this.state.isEditing && this.state.selectedItem && !this.state.selectedItem.isNew()) {
-        return jsRoutes.controllers.ScheduledActionsController.index(this.state.selectedItem.id, null, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
+        return this.prepareRoute(this.state.selectedItem.id, null, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       } else if (this.state.isEditing && this.state.selectedItem) {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, true, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
+        return this.prepareRoute(null, true, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       } else {
-        return jsRoutes.controllers.ScheduledActionsController.index(null, null, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
+        return this.prepareRoute(null, null, filterChannelId, filterBehaviorGroupId, explicitTeamId, forceAdmin).url;
       }
     }
 
@@ -320,7 +346,14 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     createNewSchedule(): ScheduledAction {
-      return ScheduledAction.newWithDefaults(this.props.teamTimeZone, this.props.teamTimeZoneName);
+      const defaults: Partial<ScheduledActionInterface> = this.isForSingleGroup() ? {
+        trigger: null,
+        behaviorGroupId: this.props.groupId
+      } : {
+        trigger: "",
+        behaviorGroupId: null
+      };
+      return ScheduledAction.newWithDefaults(defaults, this.props.teamTimeZone, this.props.teamTimeZoneName);
     }
 
     addNewItem() {
@@ -460,14 +493,18 @@ class Scheduling extends React.Component<Props, State> {
         return (
           <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
             <div className={`columns pvl ${index > 0 ? "border-top border-light" : ""}`}>
-              <div className="column column-page-sidebar ptm mobile-ptn prn">
+              <div className={`column ${
+                this.isForSingleGroup() ? "column-full" : "column-page-sidebar ptm"
+              } mobile-ptn prn`}>
                 <div className="container">
                   <h4 className="mvn"><ChannelName channel={group.channel} /></h4>
                   <div>{this.renderGroupWarningText(group)}</div>
                 </div>
               </div>
 
-              <div className="column column-page-main pln">
+              <div className={`column ${
+                this.isForSingleGroup() ? "column-full" : "column-page-main"
+              } pln`}>
                 <div className="container container-narrow">
                   {hasActions ? group.actions.map((action) => (
                     <ScheduledItem
@@ -545,30 +582,43 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     renderHeader(groups: Array<ScheduleGroup>) {
-      return this.props.onRenderHeader(this.isEditing() ? null : (
-        <div className="bg-white-translucent border-bottom">
-          <div className="container container-narrow mts">
-            <div className="display-inline-block align-m mrl mbs">
-              <h5 className="display-inline-block mtn mrs">Skill</h5>
-              <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter}>
-                <option value="">All skills</option>
-                {this.getSkillOptions().map((ea) => (
-                  <option key={`filterSkillId-${ea.id}`} value={ea.id}>{ea.name}</option>
-                ))}
-              </Select>
+      return (
+        <div className={this.props.isMobile ? "" : "position-fixed"}
+          ref={(el) => this.header = el}
+          style={{
+            top: this.props.headerHeight,
+            left: this.props.sidebarWidth - (this.isForSingleGroup() ? 1 : 0),
+            right: 0
+          }}
+        >
+          <Collapsible revealWhen={!this.isEditing()} onChange={this.resetHeaderHeight}>
+            <div className={`bg-white-translucent border-bottom border-light ${this.isForSingleGroup() ? "border-left" : ""}`}>
+              <div className="container container-narrow pts">
+                {this.isForSingleGroup() ? null : (
+                  <div className="display-inline-block align-m mrl mbs">
+                    <h5 className="display-inline-block mtn mrs">Skill</h5>
+                    <Select value={this.state.filterBehaviorGroupId || ""} className="form-select-s align-m" onChange={this.updateSkillFilter}>
+                      <option value="">All skills</option>
+                      {this.getSkillOptions().map((ea) => (
+                        <option key={`filterSkillId-${ea.id}`} value={ea.id}>{ea.name}</option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+                <div className="display-inline-block align-m mbs">
+                  <h5 className="display-inline-block mtn mrs">Channel</h5>
+                  <Select value={this.state.filterChannelId} className="form-select-s align-m" onChange={this.changeChannelFilter}>
+                    <option value="">All channels</option>
+                    {groups.map((group) => (
+                      <option key={`filterChannelId-${group.channelId}`} value={group.channelId}>{group.channelName || "Unknown channel"}</option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
             </div>
-            <div className="display-inline-block align-m mbs">
-              <h5 className="display-inline-block mtn mrs">Channel</h5>
-              <Select value={this.state.filterChannelId} className="form-select-s align-m" onChange={this.changeChannelFilter}>
-                <option value="">All channels</option>
-                {groups.map((group) => (
-                  <option key={`filterChannelId-${group.channelId}`} value={group.channelId}>{group.channelName || "Unknown channel"}</option>
-                ))}
-              </Select>
-            </div>
-          </div>
+          </Collapsible>
         </div>
-      ));
+      );
     }
 
     render() {
@@ -578,7 +628,10 @@ class Scheduling extends React.Component<Props, State> {
       const selectedItemIsValid = Boolean(selectedItem && selectedItem.isValid());
       const selectedItemIsNew = Boolean(selectedItem && selectedItem.isNew());
       return (
-        <div className="flex-row-cascade" style={{ paddingBottom: this.props.footerHeight }}>
+        <div className="flex-row-cascade" style={{
+          paddingTop: this.props.isMobile ? 0 : this.state.headerHeight,
+          paddingBottom: this.props.footerHeight
+        }}>
           {this.renderHeader(groups)}
           <Collapsible revealWhen={!this.isEditing()} className={"flex-row-cascade mobile-flex-no-expand"}>
             <div>
@@ -589,7 +642,9 @@ class Scheduling extends React.Component<Props, State> {
           <Collapsible revealWhen={this.isEditing()}>
             {this.isEditing() ? (
               <ScheduledItemEditor
+                isForSingleGroup={this.isForSingleGroup()}
                 teamId={this.props.teamId}
+                groupId={this.props.groupId}
                 scheduledAction={selectedItem}
                 orgChannels={this.props.orgChannels}
                 behaviorGroups={this.props.behaviorGroups}
@@ -717,7 +772,9 @@ class Scheduling extends React.Component<Props, State> {
               </div>
             </Collapsible>
             </div>
-          ))}
+          ), null, {
+            marginLeft: this.props.sidebarWidth
+          })}
           {this.renderNavItems()}
           {this.renderNavActions()}
         </div>

@@ -11,6 +11,8 @@ import User from "../models/user";
 import OrgChannels from "../models/org_channels";
 
 interface Props {
+  isForSingleGroup: boolean
+  groupId: Option<string>
   teamId: string
   scheduledAction: Option<ScheduledAction>,
   orgChannels: OrgChannels,
@@ -70,7 +72,7 @@ class ScheduledItemEditor extends React.Component<Props> {
     if (this.props.scheduledAction) {
       this.props.onChange(this.props.scheduledAction.clone({
         trigger: byTrigger ? "" : null,
-        behaviorGroupId: null,
+        behaviorGroupId: byTrigger ? null : this.props.groupId,
         behaviorId: null,
         arguments: [],
         scheduleType: byTrigger ? ScheduleType.Message : ScheduleType.Behavior
@@ -85,6 +87,14 @@ class ScheduledItemEditor extends React.Component<Props> {
         useDM: useDM
       }));
     }
+  }
+
+  classNameForHeading(): string {
+    return `column ${this.props.isForSingleGroup ? "ptxxl column-full" : "column-page-sidebar pvxxl mobile-pbn"}`;
+  }
+
+  classNameForEditComponent(): string {
+    return `column ${this.props.isForSingleGroup ? "pbxxl column-full" : "column-page-main pvxxl mobile-ptn"}`;
   }
 
   renderDetails(scheduledAction: ScheduledAction) {
@@ -110,12 +120,12 @@ class ScheduledItemEditor extends React.Component<Props> {
           ) : null}
 
           <div className="columns border-bottom">
-            <div className="column column-page-sidebar pvxxl mobile-pbn">
+            <div className={this.classNameForHeading()}>
               <div className="container">
                 <SectionHeading number="1">What to do</SectionHeading>
               </div>
             </div>
-            <div className="column column-page-main pvxxl mobile-ptn">
+            <div className={this.classNameForEditComponent()}>
               <div className="container container-wide">
                 <ScheduledItemConfig
                   teamId={this.props.teamId}
@@ -126,18 +136,20 @@ class ScheduledItemEditor extends React.Component<Props> {
                   onChangeAction={this.updateAction}
                   onChangeSkill={this.updateSkill}
                   onToggleByTrigger={this.toggleByTrigger}
+                  isForSingleGroup={this.props.isForSingleGroup}
+                  groupId={this.props.groupId}
                 />
               </div>
             </div>
           </div>
 
           <div className="columns border-bottom">
-            <div className="column column-page-sidebar pvxxl mobile-pbn">
+            <div className={this.classNameForHeading()}>
               <div className="container">
                 <SectionHeading number="2">Where to do it</SectionHeading>
               </div>
             </div>
-            <div className="column column-page-main ptl pbxxl mobile-ptn">
+            <div className={this.classNameForEditComponent()}>
               <div className="container container-wide">
                 <ScheduleChannelEditor
                   scheduledAction={scheduledAction}
@@ -151,12 +163,12 @@ class ScheduledItemEditor extends React.Component<Props> {
           </div>
 
           <div className="columns">
-            <div className="column column-page-sidebar pvxxl mobile-pbn">
+            <div className={this.classNameForHeading()}>
               <div className="container">
                 <SectionHeading number="3">When to do it</SectionHeading>
               </div>
             </div>
-            <div className="column column-page-main ptl pbxxl mobile-ptn">
+            <div className={this.classNameForEditComponent()}>
               <div className="container container-wide">
                 <RecurrenceEditor
                   onChange={this.updateRecurrence}

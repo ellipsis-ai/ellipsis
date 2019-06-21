@@ -47,7 +47,14 @@ object NavItem {
     } else {
       None
     })
+  }
 
+  def skillConfigFor(skillName: String): NavItem = {
+    NavItem(skillName, None)
+  }
+
+  def skillScheduling: NavItem = {
+    NavItem("Scheduling", None)
   }
 
   def teamSettings: NavItem = {

@@ -41,7 +41,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
     makeSlackGroup(channel1Id, "general"),
     makeSlackGroup(channel2Id, "other")
   )
-  val maybeCsrfToken = Some("nothing to see here")
+  val csrfToken = "nothing to see here"
   val dmId = "D1234"
   val dmName = "Direct message"
   val dmWithBot = SlackConversation.defaultFor(dmId, dmName)
@@ -127,7 +127,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
           maybeFilterBehaviorGroupId = None,
-          maybeCsrfToken = maybeCsrfToken,
+          csrfToken = csrfToken,
           forceAdmin = false
         )(actorSystem, ec))
         maybeConfig mustEqual None
@@ -147,7 +147,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
           maybeFilterBehaviorGroupId = None,
-          maybeCsrfToken = maybeCsrfToken,
+          csrfToken = csrfToken,
           forceAdmin = false
         )(actorSystem, ec))
         maybeConfig.map { config =>
@@ -173,7 +173,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
           maybeFilterBehaviorGroupId = None,
-          maybeCsrfToken = maybeCsrfToken,
+          csrfToken = csrfToken,
           forceAdmin = false
         )(actorSystem, ec))
         maybeConfig.map { config =>
@@ -200,7 +200,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
           maybeFilterBehaviorGroupId = None,
-          maybeCsrfToken = maybeCsrfToken,
+          csrfToken = csrfToken,
           forceAdmin = true
         )(actorSystem, ec))
         maybeConfig.map { config =>
@@ -227,7 +227,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
           maybeFilterBehaviorGroupId = None,
-          maybeCsrfToken = maybeCsrfToken,
+          csrfToken = csrfToken,
           forceAdmin = false
         )(actorSystem, ec))
         maybeConfig.map { config =>
@@ -252,7 +252,7 @@ class ScheduledActionsConfigSpec extends PlaySpec with MockitoSugar {
           maybeNewSchedule = None,
           maybeFilterChannelId = None,
           maybeFilterBehaviorGroupId = None,
-          maybeCsrfToken = maybeCsrfToken,
+          csrfToken = csrfToken,
           forceAdmin = false
         )(actorSystem, ec))
         maybeConfig.map { config =>

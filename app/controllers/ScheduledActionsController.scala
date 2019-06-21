@@ -19,8 +19,8 @@ import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json.{JsError, JsSuccess, Json}
-import play.filters.csrf.CSRF
 import services.DefaultServices
+import views.html.helper.CSRF
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -61,7 +61,7 @@ class ScheduledActionsController @Inject()(
             maybeNewSchedule = maybeNewSchedule,
             maybeFilterChannelId = maybeChannelId,
             maybeFilterBehaviorGroupId = maybeBehaviorGroupId,
-            maybeCsrfToken = CSRF.getToken(request).map(_.value),
+            csrfToken = CSRF.getToken(request).value,
             forceAdmin = forceAdmin
           )
         } yield {

@@ -14,7 +14,12 @@ import {DataRequest} from "../lib/data_request";
 import BehaviorVersion from "../models/behavior_version";
 import SVGCheckmark from "../svg/checkmark";
 import SVGInfo from "../svg/info";
-import {ValidBehaviorIdTriggerJson, ValidTriggerJson} from "./loader";
+import {ValidBehaviorIdTriggerJson, ValidTriggerJson} from "./data_layer";
+import SVGWarning from "../svg/warning";
+import Collapsible from "../shared_ui/collapsible";
+import SVGExpand from "../svg/expand";
+import {maybeDiffFor} from "../models/diffs";
+import Trigger from "../models/trigger";
 
 interface Props {
   teamId: string,
@@ -25,6 +30,8 @@ interface Props {
   onChangeAction: (behaviorId: string, newArgs: Array<ScheduledActionArgument>, callback?: () => void) => void
   onChangeSkill: (behaviorGroupId: string) => void
   onToggleByTrigger: (byTrigger: boolean) => void
+  isForSingleGroup: boolean,
+  groupId: Option<string>
 }
 
 interface MatchingGroupAndBehaviorVersion {
@@ -36,6 +43,7 @@ interface State {
   matchingBehaviorTriggers: Array<ValidBehaviorIdTriggerJson>
   loadingValidation: boolean
   validationError: Option<string>
+  showPossibleTriggers: boolean
 }
 
 class ScheduledItemTitle extends React.PureComponent<Props, State> {
@@ -51,21 +59,35 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       this.state = {
         matchingBehaviorTriggers: [],
         loadingValidation: Boolean(this.props.scheduledAction.trigger),
-        validationError: null
+        validationError: null,
+        showPossibleTriggers: false
       };
     }
 
     componentDidMount(): void {
-      if (this.props.scheduledAction.trigger) {
-        this.beginValidatingTrigger();
-      } else if (typeof this.props.scheduledAction.trigger === "string" && this.triggerInput) {
+      this.beginValidatingTrigger(this.props);
+      if (typeof this.props.scheduledAction.trigger === "string" && this.triggerInput) {
         this.triggerInput.focus();
       }
-      window.addEventListener('focus', this.beginValidatingTrigger);
+      window.addEventListener('focus', this.onFocus);
     }
 
     componentWillUnmount(): void {
-      window.removeEventListener('focus', this.beginValidatingTrigger);
+      window.removeEventListener('focus', this.onFocus);
+    }
+
+    onFocus(): void {
+      this.beginValidatingTrigger(this.props);
+    }
+
+    componentWillUpdate(nextProps: Readonly<Props>): void {
+      if (nextProps.scheduledAction.id !== this.props.scheduledAction.id) {
+        this.setState({
+          matchingBehaviorTriggers: []
+        });
+      } else if (nextProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
+        this.beginValidatingTrigger(nextProps);
+      }
     }
 
     componentDidUpdate(prevProps: Readonly<Props>): void {
@@ -73,23 +95,20 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         typeof this.props.scheduledAction.trigger === "string" && this.triggerInput) {
         this.triggerInput.focus();
       }
-      if (prevProps.scheduledAction.id !== this.props.scheduledAction.id) {
-        this.setState({
-          matchingBehaviorTriggers: []
-        });
-      } else if (this.props.scheduledAction.trigger && prevProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
-        this.beginValidatingTrigger();
-      }
     }
 
-    beginValidatingTrigger(): void {
-      const text = this.props.scheduledAction.trigger;
+    beginValidatingTrigger(props: Props): void {
+      const text = props.scheduledAction.trigger;
       if (text) {
         this.setState({
           loadingValidation: true,
           matchingBehaviorTriggers: []
         }, () => {
           this.validateTrigger(text);
+        });
+      } else {
+        this.setState({
+          matchingBehaviorTriggers: []
         });
       }
     }
@@ -254,7 +273,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     getMatchingActions() {
       const behaviorCount = this.state.matchingBehaviorTriggers.length;
       const oneValidBehavior = behaviorCount === 1;
-      return this.state.matchingBehaviorTriggers.map((behaviorTriggers) => {
+      return this.state.matchingBehaviorTriggers.map((behaviorTriggers, matchingTriggerIndex) => {
         const matching = this.getMatchingGroupAndBehavior(behaviorTriggers.behaviorId);
         if (matching) {
           const group = matching.group;
@@ -297,9 +316,49 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
             </div>
           );
         } else {
-          return null;
+          return (
+            <div key={`noMatch${matchingTriggerIndex}`} className="mtxs columns columns-elastic">
+              <div className="column column-shrink prs">
+                <div className="height-xl type-pink">
+                  <SVGWarning />
+                </div>
+              </div>
+              <div className="column column-expand">
+                <span>Will trigger an action in a different skill</span>
+              </div>
+            </div>
+          );
         }
       });
+    }
+
+    getSkillName(): string {
+      const group = this.props.behaviorGroups.find((ea) => ea.id === this.props.scheduledAction.behaviorGroupId);
+      return group ? group.getName() : "Unknown";
+    }
+
+    toggleShowPossibleTriggers(): void {
+      this.setState({
+        showPossibleTriggers: !this.state.showPossibleTriggers
+      });
+    }
+
+    possibleTriggerMatches(behavior: BehaviorVersion, trigger: Trigger): boolean {
+      return this.props.scheduledAction.trigger && trigger.isExactMatchFor(this.props.scheduledAction.trigger) ||
+        this.state.matchingBehaviorTriggers.some((matchingBehavior) => {
+          return matchingBehavior.behaviorId === behavior.behaviorId &&
+            matchingBehavior.triggers.some((matchingTrigger) => {
+              return !maybeDiffFor(trigger, Trigger.fromJson(matchingTrigger), null, false)
+            });
+        });
+    }
+
+    getActionsWithTriggers(): Array<BehaviorVersion> {
+      if (this.props.isForSingleGroup && this.props.behaviorGroups[0]) {
+        return this.props.behaviorGroups[0].getActions().filter((ea) => ea.getRegularMessageTriggers().length > 0);
+      } else {
+        return [];
+      }
     }
 
     renderEditLink(groupId: Option<string>, behaviorId: Option<string>) {
@@ -320,6 +379,32 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
               value={this.getTriggerText()}
               onChange={this.onChangeTriggerText}
             />
+          </div>
+          <div className="type-s">
+            {this.props.isForSingleGroup ? (
+              <div className="link mts" onClick={this.toggleShowPossibleTriggers}>
+                <span className="display-inline-block height-l align-m mrxs"><SVGExpand expanded={this.state.showPossibleTriggers} /></span>
+                <span>Show all possible triggers</span>
+              </div>
+            ) : null}
+            <Collapsible revealWhen={this.state.showPossibleTriggers}>
+              {this.getActionsWithTriggers().map((action) => (
+                <div key={`possibleBehavior${action.behaviorId}`}>
+                  {action.getRegularMessageTriggers().map((trigger) => (
+                    <button
+                      type="button"
+                      key={`trigger${trigger.getIdForDiff()}`}
+                      className="button-raw mvs mrxs"
+                      onClick={this.onChangeTriggerText.bind(this, trigger.getText())}
+                    >
+                      <span className={`box-chat ${
+                        this.possibleTriggerMatches(action, trigger) ? "box-chat-selected" : "box-chat-dark type-black"
+                      }`}>{trigger.getText()}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </Collapsible>
           </div>
           <div>
             <h5>{this.state.matchingBehaviorTriggers.length <= 1 ? "Matching action" : "Matching actions"}</h5>
@@ -368,15 +453,19 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
           <div className="mbl">
             <span className="align-button mrm type-s">Run action from skill</span>
             <span className="align-button mrm height-xl">
-              <Select
-                className="form-select-s width-10"
-                value={this.props.scheduledAction.behaviorGroupId || ""}
-                onChange={this.onChangeSkill}
-              >
-                {skills.map((ea) => (
-                  <option key={ea.value} value={ea.value}>{ea.name}</option>
-                ))}
-              </Select>
+              {this.props.isForSingleGroup ? (
+                <span className="bg-white border phxs">{this.getSkillName()}</span>
+              ) : (
+                <Select
+                  className="form-select-s width-10"
+                  value={this.props.scheduledAction.behaviorGroupId || ""}
+                  onChange={this.onChangeSkill}
+                >
+                  {skills.map((ea) => (
+                    <option key={ea.value} value={ea.value}>{ea.name}</option>
+                  ))}
+                </Select>
+              )}
             </span>
             <span className="align-button mrm type-s">named</span>
             <span className="align-button mrm height-xl">

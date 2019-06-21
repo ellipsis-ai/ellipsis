@@ -108,8 +108,13 @@
   border-radius: @border-radius-small @border-radius-small @border-radius-small 0;
   padding: 0 7px;
   background-color: @box-chat-color;
+  border-bottom-color: @box-chat-color;
   .type-monospace();
   margin-left: 7px;
+}
+
+.box-chat-dark {
+  background-color: @black-translucent;
 }
 
 .box-chat-selected,
@@ -136,6 +141,10 @@
 
 .box-chat-selected::after {
   border-bottom-color: @box-chat-selected-color;
+}
+
+.box-chat-dark::after {
+  border-bottom-color: @black-translucent;
 }
 
 .box-chat-help::after {

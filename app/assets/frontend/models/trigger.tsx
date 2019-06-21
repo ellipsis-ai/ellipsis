@@ -147,6 +147,11 @@ class Trigger implements Diffable, TriggerInterface {
       return this.triggerType === TriggerType.ReactionAdded;
     }
 
+    isExactMatchFor(text: string): boolean {
+      return this.isMessageSentTrigger() && !this.isRegex && this.text === text ||
+        !this.caseSensitive && this.text.toLowerCase() === text.toLowerCase();
+    }
+
     clone(props: Partial<TriggerInterface>): Trigger {
       return Trigger.fromProps(Object.assign({}, this, props));
     }

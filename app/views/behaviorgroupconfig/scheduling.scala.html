@@ -1,0 +1,20 @@
+@(
+  config: ViewConfig,
+  skillId: String,
+  skillName: String,
+  maybeTargetTeamId: Option[String]
+)(implicit messages: Messages, r: RequestHeader)
+
+@page.main(s"Scheduling for ${skillName}", config, Seq(
+  NavItem.skills(link = true, maybeTargetTeamId, None),
+  NavItem.skillConfigFor(skillName),
+  NavItem.skillScheduling)
+) {
+  <div id="content" class="flex-row-cascade">
+    <div id="scheduling" class="flex-row-cascade"></div>
+
+    <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
+    <script src="@routes.BehaviorGroupConfigController.schedules(skillId)"></script>
+    <script src='@config.assets.getWebpackBundle("behaviorGroupScheduling.js")'></script>
+  </div>
+}
