@@ -65,16 +65,29 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     }
 
     componentDidMount(): void {
-      if (this.props.scheduledAction.trigger) {
-        this.beginValidatingTrigger();
-      } else if (typeof this.props.scheduledAction.trigger === "string" && this.triggerInput) {
+      this.beginValidatingTrigger(this.props);
+      if (typeof this.props.scheduledAction.trigger === "string" && this.triggerInput) {
         this.triggerInput.focus();
       }
-      window.addEventListener('focus', this.beginValidatingTrigger);
+      window.addEventListener('focus', this.onFocus);
     }
 
     componentWillUnmount(): void {
-      window.removeEventListener('focus', this.beginValidatingTrigger);
+      window.removeEventListener('focus', this.onFocus);
+    }
+
+    onFocus(): void {
+      this.beginValidatingTrigger(this.props);
+    }
+
+    componentWillUpdate(nextProps: Readonly<Props>): void {
+      if (nextProps.scheduledAction.id !== this.props.scheduledAction.id) {
+        this.setState({
+          matchingBehaviorTriggers: []
+        });
+      } else if (nextProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
+        this.beginValidatingTrigger(nextProps);
+      }
     }
 
     componentDidUpdate(prevProps: Readonly<Props>): void {
@@ -82,23 +95,20 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         typeof this.props.scheduledAction.trigger === "string" && this.triggerInput) {
         this.triggerInput.focus();
       }
-      if (prevProps.scheduledAction.id !== this.props.scheduledAction.id) {
-        this.setState({
-          matchingBehaviorTriggers: []
-        });
-      } else if (this.props.scheduledAction.trigger && prevProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
-        this.beginValidatingTrigger();
-      }
     }
 
-    beginValidatingTrigger(): void {
-      const text = this.props.scheduledAction.trigger;
+    beginValidatingTrigger(props: Props): void {
+      const text = props.scheduledAction.trigger;
       if (text) {
         this.setState({
           loadingValidation: true,
           matchingBehaviorTriggers: []
         }, () => {
           this.validateTrigger(text);
+        });
+      } else {
+        this.setState({
+          matchingBehaviorTriggers: []
         });
       }
     }
@@ -334,7 +344,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     }
 
     possibleTriggerMatches(behavior: BehaviorVersion, trigger: Trigger): boolean {
-      return trigger.isExactMatchFor(this.props.scheduledAction.trigger || "") ||
+      return this.props.scheduledAction.trigger && trigger.isExactMatchFor(this.props.scheduledAction.trigger) ||
         this.state.matchingBehaviorTriggers.some((matchingBehavior) => {
           return matchingBehavior.behaviorId === behavior.behaviorId &&
             matchingBehavior.triggers.some((matchingTrigger) => {
