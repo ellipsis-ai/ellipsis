@@ -18,7 +18,7 @@ import {ValidBehaviorIdTriggerJson, ValidTriggerJson} from "./data_layer";
 import SVGWarning from "../svg/warning";
 import Collapsible from "../shared_ui/collapsible";
 import SVGExpand from "../svg/expand";
-import {Diff, Diffable, maybeDiffFor} from "../models/diffs";
+import {maybeDiffFor} from "../models/diffs";
 import Trigger from "../models/trigger";
 
 interface Props {
@@ -333,6 +333,16 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       });
     }
 
+    possibleTriggerMatches(behavior: BehaviorVersion, trigger: Trigger): boolean {
+      return trigger.isExactMatchFor(this.props.scheduledAction.trigger || "") ||
+        this.state.matchingBehaviorTriggers.some((matchingBehavior) => {
+          return matchingBehavior.behaviorId === behavior.behaviorId &&
+            matchingBehavior.triggers.some((matchingTrigger) => {
+              return !maybeDiffFor(trigger, Trigger.fromJson(matchingTrigger), null, false)
+            });
+        });
+    }
+
     renderEditLink(groupId: Option<string>, behaviorId: Option<string>) {
       const editUrl = groupId ? jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url : null;
       return editUrl ? (
@@ -352,9 +362,9 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
               onChange={this.onChangeTriggerText}
             />
           </div>
-          <div>
+          <div className="type-s">
             {this.props.isForSingleGroup ? (
-              <div className="link type-s mts" onClick={this.toggleShowPossibleTriggers}>
+              <div className="link mts" onClick={this.toggleShowPossibleTriggers}>
                 <span className="display-inline-block height-l align-m mrxs"><SVGExpand expanded={this.state.showPossibleTriggers} /></span>
                 <span>Show all possible triggers</span>
               </div>
@@ -363,13 +373,16 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
               {this.props.behaviorGroups[0].getActions().filter((ea) => ea.getRegularMessageTriggers().length > 0).map((action) => (
                 <div key={`possibleBehavior${action.behaviorId}`}>
                   {action.getRegularMessageTriggers().map((trigger) => (
-                    <div key={`trigger${trigger.getIdForDiff()}`} className={`box-chat mvs ${
-                        this.state.matchingBehaviorTriggers.some((matchingBehavior) => matchingBehavior.behaviorId === action.behaviorId && 
-                          matchingBehavior.triggers.some((matchingTrigger) => !maybeDiffFor(trigger, Trigger.fromJson(matchingTrigger), null, false))) ?
-                          "box-chat-selected" : "box-chat-white"
-                      }`}>
-                      {trigger.getText()}
-                    </div>
+                    <button
+                      type="button"
+                      key={`trigger${trigger.getIdForDiff()}`}
+                      className="button-raw mvs"
+                      onClick={this.onChangeTriggerText.bind(this, trigger.getText())}
+                    >
+                      <span className={`box-chat ${
+                        this.possibleTriggerMatches(action, trigger) ? "box-chat-selected" : "box-chat-dark type-black"
+                      }`}>{trigger.getText()}</span>
+                    </button>
                   ))}
                 </div>
               ))}
