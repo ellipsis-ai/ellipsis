@@ -7,6 +7,7 @@ import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import play.api.libs.ws.WSClient
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -48,6 +49,19 @@ class LinkedOAuth1TokenServiceImpl @Inject() (
       raw.userId,
       OAuth1ApplicationQueries.tuple2Application(tuple._2)
     )
+  }
+
+  def uncompiledAllSharedForTeamIdQuery(teamId: Rep[String]) = {
+    allWithApplication.
+      filter(_._2._1.maybeSharedTokenUserId.isDefined).
+      filter { case(_, (app, _)) => app.teamId === teamId || app.isShared }
+  }
+  val allSharedForTeamIdQuery = Compiled(uncompiledAllSharedForTeamIdQuery _)
+
+  def sharedForUserAction(user: User, ws: WSClient): DBIO[Seq[LinkedOAuth1Token]] = {
+    allSharedForTeamIdQuery(user.teamId).result.map { r =>
+      r.map(tuple2Token)
+    }
   }
 
   def uncompiledAllForUserIdQuery(userId: Rep[String]) = {

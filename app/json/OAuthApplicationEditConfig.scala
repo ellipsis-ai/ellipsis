@@ -8,6 +8,7 @@ case class OAuthApplicationEditConfig(
                                         apis: Seq[OAuthApiData],
                                         oauth1CallbackUrl: String,
                                         oauth2CallbackUrl: String,
+                                        authorizationUrl: Option[String] = None,
                                         requiresAuth: Option[Boolean] = None,
                                         applicationKey: Option[String] = None,
                                         applicationSecret: Option[String] = None,
@@ -22,5 +23,6 @@ case class OAuthApplicationEditConfig(
                                         applicationCanBeShared: Boolean = false,
                                         requiredNameInCode: Option[String] = None,
                                         behaviorGroupId: Option[String] = None,
-                                        behaviorId: Option[String] = None
+                                        behaviorId: Option[String] = None,
+                                        sharedTokenUser: Option[UserData] = None
                                       )

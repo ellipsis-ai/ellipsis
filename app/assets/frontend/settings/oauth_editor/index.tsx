@@ -7,6 +7,7 @@ import SettingsPage from '../../shared_ui/settings_page';
 import BrowserUtils from '../../lib/browser_utils';
 import {NavItemContent, PageRequiredProps} from '../../shared_ui/page';
 import {OAuthApiJson} from "../../models/oauth";
+import User from "../../models/user";
 import autobind from "../../lib/autobind";
 import Button from "../../form/button";
 
@@ -15,6 +16,7 @@ export interface OAuthEditorProps {
   apis: Array<OAuthApiJson>
   oauth1CallbackUrl: string
   oauth2CallbackUrl: string
+  authorizationUrl: string
   applicationKey?: string
   applicationSecret?: string
   requiresAuth?: boolean
@@ -31,7 +33,8 @@ export interface OAuthEditorProps {
   mainUrl: string
   applicationId?: string,
   behaviorGroupId?: string,
-  behaviorId?: string
+  behaviorId?: string,
+  sharedTokenUser?: User
 }
 
 type Props = OAuthEditorProps & PageRequiredProps;
@@ -45,7 +48,8 @@ interface State {
   hasNamedApplication: boolean
   shouldRevealApplicationUrl: boolean
   isSaving: boolean
-  applicationShared: boolean
+  applicationShared: boolean,
+  sharedTokenUserId?: string
 }
 
 class IntegrationEditor extends React.Component<Props, State> {
@@ -63,7 +67,8 @@ class IntegrationEditor extends React.Component<Props, State> {
         hasNamedApplication: this.props.applicationSaved || false,
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false,
-        applicationShared: this.props.applicationShared
+        applicationShared: this.props.applicationShared,
+        sharedTokenUserId: this.props.sharedTokenUser ? this.props.sharedTokenUser.ellipsisUserId : undefined
       };
     }
 
@@ -130,6 +135,7 @@ class IntegrationEditor extends React.Component<Props, State> {
         hasNamedApplication: false,
         shouldRevealApplicationUrl: false,
         applicationShared: false,
+        sharedTokenUserId: undefined
       }, function() {
         BrowserUtils.removeQueryParam('apiId');
       });
@@ -505,6 +511,58 @@ class IntegrationEditor extends React.Component<Props, State> {
       );
     }
 
+    resetSharedTokenUserId() {
+      this.setState({
+        sharedTokenUserId: undefined
+      });
+    }
+
+    renderSharedTokenUser() {
+      const sharedTokenUserName = this.props.sharedTokenUser ? this.props.sharedTokenUser.fullName : undefined;
+      if (this.props.sharedTokenUser && this.state.sharedTokenUserId) {
+        return (
+          <div>
+            <div>
+              <input type="hidden" name="sharedTokenUserId" value={this.state.sharedTokenUserId} />
+              <span>Token provided by {sharedTokenUserName} is shared for all users on the team.</span>
+            </div>
+            <div>
+              <Button
+                onClick={this.resetSharedTokenUserId}
+                className="button-s button-shrink">Reset</Button>
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <div>
+            <div>
+              <span>No sharing: each individual user must authorize the bot.</span>
+            </div>
+            <div>
+              <a href={this.props.authorizationUrl}>Authorize and share your token</a>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    renderSharedTokenDetails() {
+      if (this.props.authorizationUrl) {
+        return (
+          <div className="mvm">
+            <h4 className="mbn position-relative">
+              <span className="position-hanging-indent">5</span>
+              <span>Token sharing</span>
+            </h4>
+            {this.renderSharedTokenUser()}
+          </div>
+        );
+      } else {
+        return null;
+      }
+    }
+
     renderConfigureApplicationDetails() {
       const newAppUrl = this.getApplicationApiNewApplicationUrl();
       return (
@@ -534,10 +592,12 @@ class IntegrationEditor extends React.Component<Props, State> {
 
             {this.renderScopeDetails()}
 
+            {this.renderSharedTokenDetails()}
+
             {this.applicationCanBeShared() ? (
               <div className="mvm">
                 <h4 className="mbn position-relative">
-                  <span className="position-hanging-indent">5</span>
+                  <span className="position-hanging-indent">6</span>
                   <span>Optionally share {this.getApplicationApiName()} with other teams.</span>
                 </h4>
                 <p className="type-s">

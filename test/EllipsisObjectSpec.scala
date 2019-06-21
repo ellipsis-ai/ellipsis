@@ -82,6 +82,8 @@ class EllipsisObjectSpec extends DBSpec {
     )))
     when(services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)).thenReturn(DBIO.successful(Seq()))
     when(services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)).thenReturn(DBIO.successful(Seq()))
+    when(services.dataService.linkedOAuth1Tokens.sharedForUserAction(user, services.ws)).thenReturn(DBIO.successful(Seq()))
+    when(services.dataService.linkedOAuth2Tokens.sharedForUserAction(user, services.ws)).thenReturn(DBIO.successful(Seq()))
     when(services.dataService.linkedSimpleTokens.allForUserAction(user)).thenReturn(DBIO.successful(Seq()))
     when(services.dataService.linkedAccounts.allForAction(user)).thenReturn(DBIO.successful(Seq(
       LinkedAccount(user, LoginInfo(platformName, userIdForContext), OffsetDateTime.now)

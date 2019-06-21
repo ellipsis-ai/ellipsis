@@ -33,7 +33,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
     "Log user out and redirect to signin if not logged into the right team" in new TestContext {
       running(app) {
         val someOtherTeam = Team("")
-        val oauth2AppForOtherTeam = OAuth2Application(IDs.next, "", oauth2Api, IDs.next, IDs.next, None, someOtherTeam.id, isShared = false)
+        val oauth2AppForOtherTeam = OAuth2Application(IDs.next, "", oauth2Api, IDs.next, IDs.next, None, someOtherTeam.id, isShared = false, maybeSharedTokenUserId = None)
         when(dataService.oauth2Applications.find(oauth2AppForOtherTeam.id)).thenReturn(Future.successful(Some(oauth2AppForOtherTeam)))
         when(dataService.teams.find(someOtherTeam.id, user)).thenReturn(Future.successful(None))
         val request =
@@ -57,7 +57,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
     "Proceed if logged into another team for shared oauth2 applications" in new TestContext {
       running(app) {
         val someOtherTeam = Team("Team1")
-        val oauth2AppForOtherTeam = OAuth2Application(IDs.next, "", oauth2Api, IDs.next, IDs.next, None, someOtherTeam.id, isShared = true)
+        val oauth2AppForOtherTeam = OAuth2Application(IDs.next, "", oauth2Api, IDs.next, IDs.next, None, someOtherTeam.id, isShared = true, maybeSharedTokenUserId = None)
         when(dataService.oauth2Applications.find(oauth2AppForOtherTeam.id)).thenReturn(Future.successful(Some(oauth2AppForOtherTeam)))
         when(dataService.teams.find(someOtherTeam.id, user)).thenReturn(Future.successful(None))
         implicit val request =
@@ -102,7 +102,7 @@ class APIAccessControllerSpec extends PlaySpec with MockitoSugar {
     lazy val oauth2ApiId = IDs.next
     lazy val oauth2Api = OAuth2Api(oauth2ApiId, "", AuthorizationCode, Some(authorizationUrl), "", None, None, None, None)
     lazy val oauth2AppId = IDs.next
-    lazy val oauth2App = OAuth2Application(oauth2AppId, "", oauth2Api, IDs.next, IDs.next, None, teamId, isShared = false)
+    lazy val oauth2App = OAuth2Application(oauth2AppId, "", oauth2Api, IDs.next, IDs.next, None, teamId, isShared = false, maybeSharedTokenUserId = None)
 
   }
 

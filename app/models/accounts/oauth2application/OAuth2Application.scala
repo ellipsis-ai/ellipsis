@@ -1,9 +1,14 @@
 package models.accounts.oauth2application
 
+import com.mohiva.play.silhouette.api.actions.SecuredRequest
+import controllers.web.settings.routes
+import models.IDs
 import models.accounts.{OAuth2State, OAuthApplication}
 import models.accounts.oauth2api.OAuth2Api
+import models.silhouette.EllipsisEnv
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
+import play.api.mvc.AnyContent
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,11 +20,16 @@ case class OAuth2Application(
                               clientSecret: String,
                               maybeScope: Option[String],
                               teamId: String,
-                              isShared: Boolean
+                              isShared: Boolean,
+                              maybeSharedTokenUserId: Option[String]
                             ) extends OAuthApplication {
 
   val key: String = clientId
   val secret: String = clientSecret
+  def maybeTokenSharingAuthUrl(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[String] = {
+    val authState = OAuth2State(IDs.next, None, Some(routes.IntegrationsController.shareMyOAuth2Token(id, None).absoluteURL(secure = true))).encodedString
+    Some(controllers.routes.APIAccessController.linkCustomOAuth2Service(id, None, Some(authState)).absoluteURL(secure = true))
+  }
 
   val maybeAuthorizationUrl = api.maybeAuthorizationUrl
   val accessTokenUrl = api.accessTokenUrl
@@ -90,6 +100,7 @@ case class OAuth2Application(
     clientSecret,
     maybeScope,
     teamId,
-    isShared
+    isShared,
+    maybeSharedTokenUserId
   )
 }

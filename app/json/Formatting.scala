@@ -1,5 +1,6 @@
 package json
 
+import ai.x.play.json.Jsonx
 import json.web.settings.IntegrationListConfig
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -45,7 +46,9 @@ object Formatting {
 
   lazy implicit val linkedGithubRepoDataFormat = Json.format[LinkedGithubRepoData]
 
-  lazy implicit val oAuthApplicationEditConfigWrites = Json.writes[OAuthApplicationEditConfig]
+  lazy implicit val userDataFormat = Json.format[UserData]
+
+  lazy implicit val oAuthApplicationEditConfigFormat = Jsonx.formatCaseClass[OAuthApplicationEditConfig]
 
   lazy implicit val requiredOAuthApiConfigFormat = Json.format[RequiredOAuthApiConfigData]
 
@@ -58,8 +61,6 @@ object Formatting {
   lazy implicit val behaviorResponseTypeDataFormat = Json.format[BehaviorResponseTypeData]
 
   lazy implicit val legacyBehaviorConfigJson = Json.format[LegacyBehaviorConfigJson]
-
-  lazy implicit val userDataFormat = Json.format[UserData]
 
   lazy implicit val behaviorConfigReads = Json.reads[BehaviorConfig]
   lazy implicit val behaviorConfigWrites = Json.writes[BehaviorConfig]

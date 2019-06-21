@@ -77,11 +77,15 @@ object IdentityInfo {
     for {
       linkedOAuth1Tokens <- services.dataService.linkedOAuth1Tokens.allForUserAction(user, services.ws)
       linkedOAuth2Tokens <- services.dataService.linkedOAuth2Tokens.allForUserAction(user, services.ws)
+      sharedOAuth1Tokens <- services.dataService.linkedOAuth1Tokens.sharedForUserAction(user, services.ws)
+      sharedOAuth2Tokens <- services.dataService.linkedOAuth2Tokens.sharedForUserAction(user, services.ws)
       linkedSimpleTokens <- services.dataService.linkedSimpleTokens.allForUserAction(user)
       linkedAccounts <- services.dataService.linkedAccounts.allForAction(user)
     } yield {
       linkedOAuth1Tokens.map(IdentityInfo.forOAuth1Token) ++
         linkedOAuth2Tokens.map(IdentityInfo.forOAuth2Token) ++
+        sharedOAuth1Tokens.map(IdentityInfo.forOAuth1Token) ++
+        sharedOAuth2Tokens.map(IdentityInfo.forOAuth2Token) ++
         linkedSimpleTokens.map(IdentityInfo.forSimpleToken) ++
         linkedAccounts.map(IdentityInfo.forLinkedAccount)
     }
