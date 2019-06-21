@@ -328,7 +328,7 @@ class IntegrationsController @Inject() (
     )
   }
 
-  def shareMyOAuth1Token(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def doShareMyOAuth1Token(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       maybeApplication <- dataService.oauth1Applications.find(applicationId)
@@ -340,7 +340,22 @@ class IntegrationsController @Inject() (
     }
   }
 
-  def shareMyOAuth2Token(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def shareMyOAuth1Token(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      maybeApplication <- dataService.oauth1Applications.find(applicationId)
+      _ <- maybeApplication.map { app =>
+        dataService.oauth1Applications.save(app.copy(maybeSharedTokenUserId = Some(user.id)))
+      }.getOrElse(Future.successful({}))
+    } yield {
+      maybeApplication.map { application =>
+        Ok(views.html.apiaccess.shareMyOAuth1Token(viewConfig(Some(teamAccess)), teamAccess.maybeTargetTeam, application))
+      }.getOrElse(NotFound(""))
+    }
+  }
+
+  def doShareMyOAuth2Token(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       maybeApplication <- dataService.oauth2Applications.find(applicationId)
@@ -349,6 +364,21 @@ class IntegrationsController @Inject() (
       }.getOrElse(Future.successful({}))
     } yield {
       Redirect(routes.IntegrationsController.edit(applicationId).absoluteURL(secure = true))
+    }
+  }
+
+  def shareMyOAuth2Token(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      maybeApplication <- dataService.oauth2Applications.find(applicationId)
+      _ <- maybeApplication.map { app =>
+        dataService.oauth2Applications.save(app.copy(maybeSharedTokenUserId = Some(user.id)))
+      }.getOrElse(Future.successful({}))
+    } yield {
+      maybeApplication.map { application =>
+        Ok(views.html.apiaccess.shareMyOAuth2Token(viewConfig(Some(teamAccess)), teamAccess.maybeTargetTeam, application))
+      }.getOrElse(NotFound(""))
     }
   }
 
