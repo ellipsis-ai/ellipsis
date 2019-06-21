@@ -353,6 +353,14 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         });
     }
 
+    getActionsWithTriggers(): Array<BehaviorVersion> {
+      if (this.props.isForSingleGroup && this.props.behaviorGroups[0]) {
+        return this.props.behaviorGroups[0].getActions().filter((ea) => ea.getRegularMessageTriggers().length > 0);
+      } else {
+        return [];
+      }
+    }
+
     renderEditLink(groupId: Option<string>, behaviorId: Option<string>) {
       const editUrl = groupId ? jsRoutes.controllers.BehaviorEditorController.edit(groupId, behaviorId).url : null;
       return editUrl ? (
@@ -380,7 +388,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
               </div>
             ) : null}
             <Collapsible revealWhen={this.state.showPossibleTriggers}>
-              {this.props.behaviorGroups[0].getActions().filter((ea) => ea.getRegularMessageTriggers().length > 0).map((action) => (
+              {this.getActionsWithTriggers().map((action) => (
                 <div key={`possibleBehavior${action.behaviorId}`}>
                   {action.getRegularMessageTriggers().map((trigger) => (
                     <button
