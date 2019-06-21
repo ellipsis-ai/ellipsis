@@ -166,8 +166,8 @@ class ScheduledAction implements ScheduledActionInterface {
       return new ScheduledAction(materializedProps);
     }
 
-    static newWithDefaults(timeZone: Option<string>, timeZoneName: Option<string>): ScheduledAction {
-      return new ScheduledAction({
+    static newWithDefaults(props: Partial<ScheduledActionInterface>, timeZone: Option<string>, timeZoneName: Option<string>): ScheduledAction {
+      return new ScheduledAction(Object.assign({}, {
         scheduleType: ScheduleType.Message,
         trigger: "",
         recurrence: new Recurrence({
@@ -175,7 +175,7 @@ class ScheduledAction implements ScheduledActionInterface {
           timeZone: timeZone,
           timeZoneName: timeZoneName
         }).becomeDaily()
-      });
+      }, props));
     }
   }
 

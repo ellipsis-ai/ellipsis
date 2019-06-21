@@ -15,6 +15,7 @@ import BehaviorVersion from "../models/behavior_version";
 import SVGCheckmark from "../svg/checkmark";
 import SVGInfo from "../svg/info";
 import {ValidBehaviorIdTriggerJson, ValidTriggerJson} from "./data_layer";
+import SVGWarning from "../svg/warning";
 
 interface Props {
   teamId: string,
@@ -25,7 +26,8 @@ interface Props {
   onChangeAction: (behaviorId: string, newArgs: Array<ScheduledActionArgument>, callback?: () => void) => void
   onChangeSkill: (behaviorGroupId: string) => void
   onToggleByTrigger: (byTrigger: boolean) => void
-  isForSingleGroup: boolean
+  isForSingleGroup: boolean,
+  groupId: Option<string>
 }
 
 interface MatchingGroupAndBehaviorVersion {
@@ -255,7 +257,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     getMatchingActions() {
       const behaviorCount = this.state.matchingBehaviorTriggers.length;
       const oneValidBehavior = behaviorCount === 1;
-      return this.state.matchingBehaviorTriggers.map((behaviorTriggers) => {
+      return this.state.matchingBehaviorTriggers.map((behaviorTriggers, matchingTriggerIndex) => {
         const matching = this.getMatchingGroupAndBehavior(behaviorTriggers.behaviorId);
         if (matching) {
           const group = matching.group;
@@ -298,7 +300,18 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
             </div>
           );
         } else {
-          return null;
+          return (
+            <div key={`noMatch${matchingTriggerIndex}`} className="mtxs columns columns-elastic">
+              <div className="column column-shrink prs">
+                <div className="height-xl type-pink">
+                  <SVGWarning />
+                </div>
+              </div>
+              <div className="column column-expand">
+                <span>Will trigger an action in a different skill</span>
+              </div>
+            </div>
+          );
         }
       });
     }

@@ -6,7 +6,7 @@ import Collapsible from '../shared_ui/collapsible';
 import ConfirmActionPanel from '../panels/confirm_action';
 import DynamicLabelButton from '../form/dynamic_label_button';
 import BehaviorGroup from '../models/behavior_group';
-import ScheduledAction from '../models/scheduled_action';
+import ScheduledAction, {ScheduledActionInterface} from '../models/scheduled_action';
 import ScheduleChannel from '../models/schedule_channel';
 import ScheduledItem from './scheduled_item';
 import ScheduledItemEditor from './scheduled_item_editor';
@@ -346,7 +346,14 @@ class Scheduling extends React.Component<Props, State> {
     }
 
     createNewSchedule(): ScheduledAction {
-      return ScheduledAction.newWithDefaults(this.props.teamTimeZone, this.props.teamTimeZoneName);
+      const defaults: Partial<ScheduledActionInterface> = this.isForSingleGroup() ? {
+        trigger: null,
+        behaviorGroupId: this.props.groupId
+      } : {
+        trigger: "",
+        behaviorGroupId: null
+      };
+      return ScheduledAction.newWithDefaults(defaults, this.props.teamTimeZone, this.props.teamTimeZoneName);
     }
 
     addNewItem() {
@@ -637,6 +644,7 @@ class Scheduling extends React.Component<Props, State> {
               <ScheduledItemEditor
                 isForSingleGroup={this.isForSingleGroup()}
                 teamId={this.props.teamId}
+                groupId={this.props.groupId}
                 scheduledAction={selectedItem}
                 orgChannels={this.props.orgChannels}
                 behaviorGroups={this.props.behaviorGroups}

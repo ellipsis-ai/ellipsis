@@ -12,6 +12,7 @@ import OrgChannels from "../models/org_channels";
 
 interface Props {
   isForSingleGroup: boolean
+  groupId: Option<string>
   teamId: string
   scheduledAction: Option<ScheduledAction>,
   orgChannels: OrgChannels,
@@ -71,7 +72,7 @@ class ScheduledItemEditor extends React.Component<Props> {
     if (this.props.scheduledAction) {
       this.props.onChange(this.props.scheduledAction.clone({
         trigger: byTrigger ? "" : null,
-        behaviorGroupId: null,
+        behaviorGroupId: byTrigger ? null : this.props.groupId,
         behaviorId: null,
         arguments: [],
         scheduleType: byTrigger ? ScheduleType.Message : ScheduleType.Behavior
@@ -136,6 +137,7 @@ class ScheduledItemEditor extends React.Component<Props> {
                   onChangeSkill={this.updateSkill}
                   onToggleByTrigger={this.toggleByTrigger}
                   isForSingleGroup={this.props.isForSingleGroup}
+                  groupId={this.props.groupId}
                 />
               </div>
             </div>
