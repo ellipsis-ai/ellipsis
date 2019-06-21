@@ -394,7 +394,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
                     <button
                       type="button"
                       key={`trigger${trigger.getIdForDiff()}`}
-                      className="button-raw mvs"
+                      className="button-raw mvs mrxs"
                       onClick={this.onChangeTriggerText.bind(this, trigger.getText())}
                     >
                       <span className={`box-chat ${
