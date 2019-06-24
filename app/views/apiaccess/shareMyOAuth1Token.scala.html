@@ -28,7 +28,7 @@
           <div class="column column-three-quarters">
             <form method="POST" action="@{controllers.web.settings.routes.IntegrationsController.doShareMyOAuth1Token(oauth1Application.id, maybeTeam.map(_.id))}">
               @CSRF.formField
-              <input type="submit" value="Share my token"/>
+              <input type="submit" value="Share my token" />
             </form>
           </div>
         </div>

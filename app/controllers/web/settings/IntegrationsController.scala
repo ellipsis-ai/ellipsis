@@ -345,9 +345,6 @@ class IntegrationsController @Inject() (
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybeApplication <- dataService.oauth1Applications.find(applicationId)
-      _ <- maybeApplication.map { app =>
-        dataService.oauth1Applications.save(app.copy(maybeSharedTokenUserId = Some(user.id)))
-      }.getOrElse(Future.successful({}))
     } yield {
       maybeApplication.map { application =>
         Ok(views.html.apiaccess.shareMyOAuth1Token(viewConfig(Some(teamAccess)), teamAccess.maybeTargetTeam, application))
@@ -372,9 +369,6 @@ class IntegrationsController @Inject() (
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybeApplication <- dataService.oauth2Applications.find(applicationId)
-      _ <- maybeApplication.map { app =>
-        dataService.oauth2Applications.save(app.copy(maybeSharedTokenUserId = Some(user.id)))
-      }.getOrElse(Future.successful({}))
     } yield {
       maybeApplication.map { application =>
         Ok(views.html.apiaccess.shareMyOAuth2Token(viewConfig(Some(teamAccess)), teamAccess.maybeTargetTeam, application))

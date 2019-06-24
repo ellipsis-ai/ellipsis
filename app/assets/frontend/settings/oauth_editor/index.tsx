@@ -11,7 +11,6 @@ import User from "../../models/user";
 import autobind from "../../lib/autobind";
 import Button from "../../form/button";
 import DynamicLabelButton from "../../form/dynamic_label_button";
-import ToggleGroup, {ToggleGroupItem} from "../../form/toggle_group";
 
 export interface OAuthEditorProps {
   isAdmin: boolean,
@@ -51,7 +50,7 @@ interface State {
   shouldRevealApplicationUrl: boolean
   isSaving: boolean
   applicationShared: boolean,
-  sharedTokenUserId?: string
+  sharedTokenUserId: string
   revealEditor: boolean
 }
 
@@ -72,7 +71,7 @@ class IntegrationEditor extends React.Component<Props, State> {
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false,
         applicationShared: this.props.applicationShared,
-        sharedTokenUserId: this.props.sharedTokenUser ? this.props.sharedTokenUser.ellipsisUserId : undefined,
+        sharedTokenUserId: this.props.sharedTokenUser ? this.props.sharedTokenUser.ellipsisUserId : "",
         revealEditor: !this.props.applicationSaved
       };
     }
@@ -140,7 +139,7 @@ class IntegrationEditor extends React.Component<Props, State> {
         hasNamedApplication: false,
         shouldRevealApplicationUrl: false,
         applicationShared: false,
-        sharedTokenUserId: undefined
+        sharedTokenUserId: ""
       }, function() {
         BrowserUtils.removeQueryParam('apiId');
       });
@@ -278,7 +277,7 @@ class IntegrationEditor extends React.Component<Props, State> {
             </Collapsible>
 
             {this.props.onRenderFooter(
-              this.state.revealEditor ? (
+              <Collapsible revealWhen={this.state.revealEditor}>
                 <div className="container container-wide prn border-top">
                   <div className="columns mobile-columns-float">
                     <div className="column column-one-quarter" />
@@ -298,7 +297,7 @@ class IntegrationEditor extends React.Component<Props, State> {
                     </div>
                   </div>
                 </div>
-              ) : null
+              </Collapsible>
             )}
           </form>
           {this.renderNav()}
@@ -390,21 +389,24 @@ class IntegrationEditor extends React.Component<Props, State> {
     }
 
     renderConfigureApplication() {
-      if (this.state.revealEditor) {
-        return (
-          <div>
-            <p className="mtm mbxl">Set up a new {this.getApplicationApiName()} configuration so your skills can access
-              data from a {this.getApplicationApiName()} account.</p>
-
+      return (
+        <div>
+          <Collapsible revealWhen={!this.state.revealEditor}>
+            {this.renderApplicationSummary()}
+          </Collapsible>
+          <Collapsible revealWhen={this.state.revealEditor}>
             <div>
-              {this.renderConfigureApplicationName()}
-              {this.renderConfigureApplicationDetails()}
+              <p className="mtm mbxl">Set up a new {this.getApplicationApiName()} configuration so your skills can access
+                data from a {this.getApplicationApiName()} account.</p>
+
+              <div>
+                {this.renderConfigureApplicationName()}
+                {this.renderConfigureApplicationDetails()}
+              </div>
             </div>
-          </div>
-        );
-      } else {
-        return this.renderApplicationSummary();
-      }
+          </Collapsible>
+        </div>
+      );
     }
 
     toggleEditMode(): void {
@@ -588,7 +590,8 @@ class IntegrationEditor extends React.Component<Props, State> {
 
     resetSharedTokenUserId() {
       this.setState({
-        sharedTokenUserId: undefined
+        sharedTokenUserId: "",
+        isSaving: true
       }, () => {
         if (this.form) {
           this.form.submit();
@@ -598,7 +601,7 @@ class IntegrationEditor extends React.Component<Props, State> {
 
     renderSharedTokenUser() {
       const sharedTokenUserName = this.props.sharedTokenUser ? this.props.sharedTokenUser.fullName : undefined;
-      if (this.props.sharedTokenUser && this.state.sharedTokenUserId) {
+      if (this.props.sharedTokenUser && (this.state.sharedTokenUserId || this.state.isSaving)) {
         return (
           <div>
             <div>
@@ -607,16 +610,26 @@ class IntegrationEditor extends React.Component<Props, State> {
               <span>Authorized by {sharedTokenUserName} and access shared with the team.</span>
             </div>
             <div className="mtl">
-              <Button
-                onClick={this.resetSharedTokenUserId}
+              <DynamicLabelButton
                 className="button-shrink align-m mrxs"
-              >Remove shared authorization</Button> — Switch to individual user authorization
+                onClick={this.resetSharedTokenUserId}
+                disabledWhen={this.state.isSaving}
+                labels={[{
+                  text: "Remove shared authorization",
+                  displayWhen: !this.state.isSaving
+                }, {
+                  text: "Removing…",
+                  displayWhen: this.state.isSaving
+                }]}
+              />
+              <span> — Switch to individual user authorization</span>
             </div>
           </div>
         );
       } else {
         return (
           <div>
+            <input type="hidden" name="sharedTokenUserId" value={this.state.sharedTokenUserId} />
             <div>
               <b>Individual authorization: </b>
               <span>Each user must authorize individually with {this.getApplicationApiName()} to run any action using this integration.</span>
