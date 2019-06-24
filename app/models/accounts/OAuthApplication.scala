@@ -15,4 +15,5 @@ trait OAuthApplication {
   val isShared: Boolean
   val maybeSharedTokenUserId: Option[String]
   def maybeTokenSharingAuthUrl(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[String]
+  val maybeCustomHost: Option[String]
 }

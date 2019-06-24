@@ -185,7 +185,8 @@ class IntegrationsController @Inject() (
                                     maybeIsShared: Option[String],
                                     maybeRequiredNameInCode: Option[String],
                                     isForOAuth1: Boolean,
-                                    maybeSharedTokenUserId: Option[String]
+                                    maybeSharedTokenUserId: Option[String],
+                                    maybeCustomHost: Option[String]
                                   ) {
     val isShared: Boolean = maybeIsShared.contains("on")
   }
@@ -204,7 +205,8 @@ class IntegrationsController @Inject() (
       "isShared" -> optional(nonEmptyText),
       "requiredNameInCode" -> optional(nonEmptyText),
       "isForOAuth1" -> boolean,
-      "sharedTokenUserId" -> optional(nonEmptyText)
+      "sharedTokenUserId" -> optional(nonEmptyText),
+      "customHost" -> optional(nonEmptyText)
     )(OAuthApplicationInfo.apply)(OAuthApplicationInfo.unapply)
   )
 
@@ -270,7 +272,7 @@ class IntegrationsController @Inject() (
         team <- maybeTeam
       } yield {
         val isShared = isAdmin && info.isShared
-        val instance = OAuth2Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared, info.maybeSharedTokenUserId)
+        val instance = OAuth2Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared, info.maybeSharedTokenUserId, info.maybeCustomHost)
         dataService.oauth2Applications.save(instance).map(Some(_))
       }).getOrElse(Future.successful(None))
       _ <- (for {
@@ -409,7 +411,8 @@ class IntegrationsController @Inject() (
       applicationSaved = true,
       applicationShared = application.isShared,
       applicationCanBeShared = isAdmin,
-      sharedTokenUser = maybeSharedTokenUserData
+      sharedTokenUser = maybeSharedTokenUserData,
+      customHost = application.maybeCustomHost
     )
   }
 

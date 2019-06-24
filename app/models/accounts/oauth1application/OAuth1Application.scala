@@ -19,6 +19,8 @@ case class OAuth1Application(
                               maybeSharedTokenUserId: Option[String]
                             ) extends OAuthApplication {
 
+  val maybeCustomHost: Option[String] = None
+
   val key: String = consumerKey
   val secret: String = consumerSecret
   def maybeTokenSharingAuthUrl(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Option[String] = {

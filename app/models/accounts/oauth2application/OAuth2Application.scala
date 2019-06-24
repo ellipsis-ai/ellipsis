@@ -21,7 +21,8 @@ case class OAuth2Application(
                               maybeScope: Option[String],
                               teamId: String,
                               isShared: Boolean,
-                              maybeSharedTokenUserId: Option[String]
+                              maybeSharedTokenUserId: Option[String],
+                              maybeCustomHost: Option[String]
                             ) extends OAuthApplication {
 
   val key: String = clientId
@@ -31,9 +32,17 @@ case class OAuth2Application(
     Some(controllers.routes.APIAccessController.linkCustomOAuth2Service(id, None, Some(authState)).absoluteURL(secure = true))
   }
 
-  val maybeAuthorizationUrl = api.maybeAuthorizationUrl
-  val accessTokenUrl = api.accessTokenUrl
-  val scopeString = maybeScope.getOrElse("")
+  val maybeAuthorizationUrl: Option[String] = maybeCustomHost.map { host =>
+    api.maybeAuthorizationUrl.map { path =>
+      s"$host$path"
+    }
+  }.getOrElse(api.maybeAuthorizationUrl)
+
+  val accessTokenUrl: String = maybeCustomHost.map { host =>
+    s"$host${api.accessTokenUrl}"
+  }.getOrElse(api.accessTokenUrl)
+
+  val scopeString: String = maybeScope.getOrElse("")
 
   def maybeAuthorizationRequestFor(state: OAuth2State, redirectUrl: String, ws: WSClient): Option[WSRequest] = {
     val params = Seq(
@@ -101,6 +110,7 @@ case class OAuth2Application(
     maybeScope,
     teamId,
     isShared,
-    maybeSharedTokenUserId
+    maybeSharedTokenUserId,
+    maybeCustomHost
   )
 }
