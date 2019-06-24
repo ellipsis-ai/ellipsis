@@ -10,6 +10,8 @@ import {OAuthApiJson} from "../../models/oauth";
 import User from "../../models/user";
 import autobind from "../../lib/autobind";
 import Button from "../../form/button";
+import DynamicLabelButton from "../../form/dynamic_label_button";
+import ToggleGroup, {ToggleGroupItem} from "../../form/toggle_group";
 
 export interface OAuthEditorProps {
   isAdmin: boolean,
@@ -50,10 +52,12 @@ interface State {
   isSaving: boolean
   applicationShared: boolean,
   sharedTokenUserId?: string
+  revealEditor: boolean
 }
 
 class IntegrationEditor extends React.Component<Props, State> {
     applicationNameInput: Option<FormInput>;
+    form: Option<HTMLFormElement>;
 
     constructor(props: Props) {
       super(props);
@@ -68,7 +72,8 @@ class IntegrationEditor extends React.Component<Props, State> {
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false,
         applicationShared: this.props.applicationShared,
-        sharedTokenUserId: this.props.sharedTokenUser ? this.props.sharedTokenUser.ellipsisUserId : undefined
+        sharedTokenUserId: this.props.sharedTokenUser ? this.props.sharedTokenUser.ellipsisUserId : undefined,
+        revealEditor: !this.props.applicationSaved
       };
     }
 
@@ -215,6 +220,10 @@ class IntegrationEditor extends React.Component<Props, State> {
     onSaveClick(): void {
       this.setState({
         isSaving: true
+      }, () => {
+        if (this.form) {
+          this.form.submit();
+        }
       });
     }
 
@@ -251,7 +260,7 @@ class IntegrationEditor extends React.Component<Props, State> {
     render() {
       return (
         <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"}>
-          <form action={jsRoutes.controllers.web.settings.IntegrationsController.save().url} method="POST" className="flex-row-cascade">
+          <form ref={(el) => this.form = el} action={jsRoutes.controllers.web.settings.IntegrationsController.save().url} method="POST" className="flex-row-cascade">
             <CsrfTokenHiddenInput value={this.props.csrfToken} />
             <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
             <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
@@ -269,26 +278,27 @@ class IntegrationEditor extends React.Component<Props, State> {
             </Collapsible>
 
             {this.props.onRenderFooter(
-              <div className="container container-wide prn border-top">
-                <div className="columns mobile-columns-float">
-                  <div className="column column-one-quarter" />
-                  <div className="column column-three-quarters phxxxxl ptm">
-                    <button type="submit"
-                            className={"button-primary mrs mbm " + (this.state.isSaving ? "button-activated" : "")}
-                            disabled={!this.canBeSaved()}
-                            onClick={this.onSaveClick}
-                    >
-                      <span className="button-labels">
-                        <span className="button-normal-label">
-                          <span className="mobile-display-none">Save changes</span>
-                          <span className="mobile-display-only">Save</span>
-                        </span>
-                        <span className="button-activated-label">Saving…</span>
-                      </span>
-                    </button>
+              this.state.revealEditor ? (
+                <div className="container container-wide prn border-top">
+                  <div className="columns mobile-columns-float">
+                    <div className="column column-one-quarter" />
+                    <div className="column column-three-quarters phxxxxl ptm">
+                      <DynamicLabelButton
+                        onClick={this.onSaveClick}
+                        className="button-primary mrs mbm"
+                        disabledWhen={!this.canBeSaved()}
+                        labels={[{
+                          text: "Save changes",
+                          displayWhen: !this.state.isSaving
+                        }, {
+                          text: "Saving…",
+                          displayWhen: this.state.isSaving
+                        }]}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : null
             )}
           </form>
           {this.renderNav()}
@@ -313,7 +323,7 @@ class IntegrationEditor extends React.Component<Props, State> {
         }];
       } else {
         const configName = this.getApplicationName() || "Untitled configuration";
-        const title = configName === apiName ? apiName : `${configName} (${apiName})`;
+        const title = configName + this.getOptionalApiName();
         return [{
           title: title
         }];
@@ -359,13 +369,19 @@ class IntegrationEditor extends React.Component<Props, State> {
       );
     }
 
+    renderCallbackUrlInput() {
+      return (
+        <input type="text" readOnly={true} className="box-code-example display-ellipsis"
+          value={this.getCallbackUrl()} onFocus={this.onFocusExample} />
+      );
+    }
+
     renderCallbackUrl() {
       if (this.shouldRevealCallbackUrl()) {
         return (
           <li>
             <div>Copy and paste this for the <b>callback URL</b> (sometimes called <b>redirect URL</b>):</div>
-            <input type="text" readOnly={true} className="box-code-example display-ellipsis mtl"
-                   value={this.getCallbackUrl()} onFocus={this.onFocusExample}/>
+            <div className="mtl">{this.renderCallbackUrlInput()}</div>
           </li>
         );
       } else {
@@ -374,16 +390,75 @@ class IntegrationEditor extends React.Component<Props, State> {
     }
 
     renderConfigureApplication() {
+      if (this.state.revealEditor) {
+        return (
+          <div>
+            <p className="mtm mbxl">Set up a new {this.getApplicationApiName()} configuration so your skills can access
+              data from a {this.getApplicationApiName()} account.</p>
+
+            <div>
+              {this.renderConfigureApplicationName()}
+              {this.renderConfigureApplicationDetails()}
+            </div>
+          </div>
+        );
+      } else {
+        return this.renderApplicationSummary();
+      }
+    }
+
+    toggleEditMode(): void {
+      this.setState({
+        revealEditor: !this.state.revealEditor
+      });
+    }
+
+    getOptionalApiName() {
+      const apiName = this.getApplicationApiName();
+      const appName = this.getApplicationName();
+      if (appName.toLowerCase().includes(apiName.toLowerCase())) {
+        return ""
+      } else {
+        return ` (${apiName})`;
+      }
+    }
+
+    renderApplicationSummary() {
       return (
         <div>
-          <p className="mtm mbxl">Set up a new {this.getApplicationApiName()} configuration so your skills can access data from a {this.getApplicationApiName()} account.</p>
+          <h3>{this.getApplicationName()}{this.getOptionalApiName()}</h3>
 
-          <div>
-            {this.renderConfigureApplicationName()}
-            {this.renderConfigureApplicationDetails()}
+          <h5>Callback URL</h5>
+          <div>{this.renderCallbackUrlInput()}</div>
+
+          <div className="columns">
+            <div className="column column-one-third">
+              <h5>Client ID</h5>
+              <div className="display-ellipsis type-s type-monospace" title={this.getApplicationKey()}>{this.getApplicationKey()}</div>
+            </div>
+            <div className="column column-one-third">
+              <h5>Client secret</h5>
+              <div className="type-s type-disabled">•••••••••••••••••••••••</div>
+            </div>
+            <div className="column column-one-third">
+              <h5>Scope</h5>
+              <div className="display-ellipsis type-s type-monospace" title={this.getApplicationScope()}>{this.getApplicationScope()}</div>
+            </div>
           </div>
+
+          <input type="hidden" name="name" value={this.getApplicationName()} />
+          <input type="hidden" name="key" value={this.getApplicationKey()} />
+          <input type="hidden" name="secret" value={this.getApplicationSecret()} />
+          <input type="hidden" name="scope" value={this.getApplicationScope()} />
+
+          <div className="mvl">
+            <Button onClick={this.toggleEditMode}>Edit details</Button>
+          </div>
+
+          {this.renderSharedTokenDetails()}
+
         </div>
-      );
+      )
     }
 
     renderConfigureApplicationName() {
@@ -514,6 +589,10 @@ class IntegrationEditor extends React.Component<Props, State> {
     resetSharedTokenUserId() {
       this.setState({
         sharedTokenUserId: undefined
+      }, () => {
+        if (this.form) {
+          this.form.submit();
+        }
       });
     }
 
@@ -524,12 +603,14 @@ class IntegrationEditor extends React.Component<Props, State> {
           <div>
             <div>
               <input type="hidden" name="sharedTokenUserId" value={this.state.sharedTokenUserId} />
-              <span>Token provided by {sharedTokenUserName} is shared for all users on the team.</span>
+              <b>Shared authorization: </b>
+              <span>Authorized by {sharedTokenUserName} and access shared with the team.</span>
             </div>
-            <div>
+            <div className="mtl">
               <Button
                 onClick={this.resetSharedTokenUserId}
-                className="button-s button-shrink">Reset</Button>
+                className="button-shrink align-m mrxs"
+              >Remove shared authorization</Button> — Switch to individual user authorization
             </div>
           </div>
         );
@@ -537,10 +618,14 @@ class IntegrationEditor extends React.Component<Props, State> {
         return (
           <div>
             <div>
-              <span>No sharing: each individual user must authorize the bot.</span>
+              <b>Individual authorization: </b>
+              <span>Each user must authorize individually with {this.getApplicationApiName()} to run any action using this integration.</span>
             </div>
-            <div>
-              <a href={this.props.authorizationUrl}>Authorize and share your token</a>
+            <div className="mtl">
+              <a
+                className="button button-shrink align-m mrxs"
+                href={this.props.authorizationUrl}
+              >Shared authorization</a> — Authorize with your credentials to share your access with the team
             </div>
           </div>
         );
@@ -550,11 +635,10 @@ class IntegrationEditor extends React.Component<Props, State> {
     renderSharedTokenDetails() {
       if (this.props.authorizationUrl) {
         return (
-          <div className="mvm">
-            <h4 className="mbn position-relative">
-              <span className="position-hanging-indent">5</span>
-              <span>Token sharing</span>
-            </h4>
+          <div className="border-top mtxl ptxl">
+
+            <h5 className="mtn">Authorization sharing</h5>
+
             {this.renderSharedTokenUser()}
           </div>
         );
@@ -591,8 +675,6 @@ class IntegrationEditor extends React.Component<Props, State> {
             {this.renderOAuthDetails()}
 
             {this.renderScopeDetails()}
-
-            {this.renderSharedTokenDetails()}
 
             {this.applicationCanBeShared() ? (
               <div className="mvm">
