@@ -1,0 +1,40 @@
+@(
+  config: ViewConfig,
+  maybeTeam: Option[models.team.Team],
+  oauthApplication: models.accounts.OAuthApplication,
+  doShareRoute: (String, Option[String]) => Call
+)(implicit messages: Messages, r: RequestHeader)
+
+@page.main(
+  s"${oauthApplication.name} integration: Confirm shared authentication",
+  config,
+  Seq(
+    NavItem.teamSettings,
+    NavItem.integrations(link = false, maybeTeam.map(_.id)),
+    NavItem(oauthApplication.name, None),
+    NavItem("Shared authentication", None)
+  )
+) {
+  <div id="content" class="content">
+    <div class="container container-narrow container-c pvxxxxl mobile-pvxl">
+      <div class="columns">
+        <div class="column column-one-eighth narrow-display-none"></div>
+        <div class="column column-three-quarters narrow-column-full bg-white paxxl">
+          <h2 class="mtl">Confirm shared authentication</h2>
+          <p>Your authentication for the @oauthApplication.name integration was successful.</p>
+
+          <p>
+            <b>Please confirm that you want to share your access to this system with the team.</b>
+            <span>When authentication is shared, anyone who runs actions with this integration will re-use your access.</span>
+          </p>
+          <form class="mtxl" method="POST" action="@{doShareRoute(oauthApplication.id, maybeTeam.map(_.id))}">
+            @helper.CSRF.formField
+            <button class="button button-shrink button-primary mrs mbs" type="submit">Share my authentication</button>
+            <a class="button mrs mbs" href="@{controllers.web.settings.routes.IntegrationsController.edit(oauthApplication.id, maybeTeam.map(_.id))}">Cancel</a>
+          </form>
+        </div>
+        <div class="column column-one-eighth narrow-display-none"></div>
+      </div>
+    </div>
+  </div>
+}

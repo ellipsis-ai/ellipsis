@@ -347,7 +347,7 @@ class IntegrationsController @Inject() (
       maybeApplication <- dataService.oauth1Applications.find(applicationId)
     } yield {
       maybeApplication.map { application =>
-        Ok(views.html.apiaccess.shareMyOAuth1Token(viewConfig(Some(teamAccess)), teamAccess.maybeTargetTeam, application))
+        Ok(views.html.apiaccess.shareMyOAuthToken(viewConfig(Some(teamAccess)), teamAccess.maybeTargetTeam, application, routes.IntegrationsController.doShareMyOAuth1Token))
       }.getOrElse(NotFound(""))
     }
   }
@@ -371,7 +371,7 @@ class IntegrationsController @Inject() (
       maybeApplication <- dataService.oauth2Applications.find(applicationId)
     } yield {
       maybeApplication.map { application =>
-        Ok(views.html.apiaccess.shareMyOAuth2Token(viewConfig(Some(teamAccess)), teamAccess.maybeTargetTeam, application))
+        Ok(views.html.apiaccess.shareMyOAuthToken(viewConfig(Some(teamAccess)), teamAccess.maybeTargetTeam, application, routes.IntegrationsController.doShareMyOAuth2Token))
       }.getOrElse(NotFound(""))
     }
   }

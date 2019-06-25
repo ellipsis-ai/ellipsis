@@ -11,6 +11,7 @@ import User from "../../models/user";
 import autobind from "../../lib/autobind";
 import Button from "../../form/button";
 import DynamicLabelButton from "../../form/dynamic_label_button";
+import SVGCheckmark from "../../svg/checkmark";
 
 export interface OAuthEditorProps {
   isAdmin: boolean,
@@ -207,9 +208,16 @@ class IntegrationEditor extends React.Component<Props, State> {
     }
 
     canBeSaved(): boolean {
-      return Boolean(
-        this.getApplicationApiName() && this.getApplicationName() && this.oauthDetailsCanBeSaved()
-      );
+      const hasRequiredElements = Boolean(this.getApplicationApiName() && this.getApplicationName() && this.oauthDetailsCanBeSaved());
+      return hasRequiredElements && this.hasChanges();
+    }
+
+    hasChanges(): boolean {
+      return this.state.applicationName !== this.props.applicationName ||
+        this.state.applicationKey !== this.props.applicationKey ||
+        this.state.applicationSecret !== this.props.applicationSecret ||
+        this.state.applicationScope !== this.props.applicationScope ||
+        this.state.applicationShared !== this.props.applicationShared;
     }
 
     applicationCanBeShared(): boolean {
@@ -223,6 +231,17 @@ class IntegrationEditor extends React.Component<Props, State> {
         if (this.form) {
           this.form.submit();
         }
+      });
+    }
+
+    cancelEditMode(): void {
+      this.toggleEditMode();
+      this.setState({
+        applicationName: this.props.applicationName || "",
+        applicationKey: this.props.applicationKey || "",
+        applicationSecret: this.props.applicationSecret || "",
+        applicationScope: this.props.applicationScope || "",
+        applicationShared: this.props.applicationShared
       });
     }
 
@@ -294,6 +313,9 @@ class IntegrationEditor extends React.Component<Props, State> {
                           displayWhen: this.state.isSaving
                         }]}
                       />
+                      {this.props.applicationSaved ? (
+                        <Button className="mbm" onClick={this.cancelEditMode}>Cancel</Button>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -606,12 +628,13 @@ class IntegrationEditor extends React.Component<Props, State> {
           <div>
             <div>
               <input type="hidden" name="sharedTokenUserId" value={this.state.sharedTokenUserId} />
+              <span className="display-inline-block mrs type-green height-xl align-b"><SVGCheckmark /></span>
               <b>Shared authorization: </b>
               <span>Authorized by {sharedTokenUserName} and access shared with the team.</span>
             </div>
-            <div className="mtl">
+            <div className="mtl type-s">
               <DynamicLabelButton
-                className="button-shrink align-m mrxs"
+                className="button-s button-shrink align-m mrxs"
                 onClick={this.resetSharedTokenUserId}
                 disabledWhen={this.state.isSaving}
                 labels={[{
@@ -634,11 +657,11 @@ class IntegrationEditor extends React.Component<Props, State> {
               <b>Individual authorization: </b>
               <span>Each user must authorize individually with {this.getApplicationApiName()} to run any action using this integration.</span>
             </div>
-            <div className="mtl">
+            <div className="mtl type-s">
               <a
-                className="button button-shrink align-m mrxs"
+                className="button button-s button-shrink align-m mrxs"
                 href={this.props.authorizationUrl}
-              >Shared authorization</a> — Authorize with your credentials to share your access with the team
+              >Enable shared authorization</a> — Authorize with your credentials to share your access with the team
             </div>
           </div>
         );
