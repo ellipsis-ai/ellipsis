@@ -14,4 +14,6 @@ trait OAuth2ApplicationService {
 
   def save(application: OAuth2Application): Future[OAuth2Application]
 
+  def delete(application: OAuth2Application): Future[Boolean]
+
 }

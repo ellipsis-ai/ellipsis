@@ -74,4 +74,13 @@ class OAuth1ApplicationServiceImpl @Inject() (
     }.map( _ => application )
     dataService.run(action)
   }
+
+/*
+
+
+
+ */
+  def delete(application: OAuth1Application): Future[Boolean] = {
+    dataService.run(all.filter(_.id === application.id).delete.map { r => r > 0 })
+  }
 }

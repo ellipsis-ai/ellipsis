@@ -79,6 +79,7 @@ GET         /settings/integrations/:id/share_oauth1_token    @controllers.web.se
 GET         /settings/integrations/:id/share_oauth2_token    @controllers.web.settings.IntegrationsController.shareMyOAuth2Token(id: String, teamId: Option[String] ?= None)
 POST         /settings/integrations/:id/share_oauth1_token    @controllers.web.settings.IntegrationsController.doShareMyOAuth1Token(id: String, teamId: Option[String] ?= None)
 POST         /settings/integrations/:id/share_oauth2_token    @controllers.web.settings.IntegrationsController.doShareMyOAuth2Token(id: String, teamId: Option[String] ?= None)
+POST        /settings/integrations/delete             @controllers.web.settings.IntegrationsController.delete
 
 GET         /settings/aws_configs/add                 @controllers.web.settings.AWSConfigController.add(teamId: Option[String] ?= None, behaviorGroupId: Option[String] ?= None, behaviorId: Option[String] ?= None, requiredAWSConfigNameInCode: Option[String] ?= None)
 GET         /settings/aws_configs/:id/edit            @controllers.web.settings.AWSConfigController.edit(id: String, teamId: Option[String] ?= None)
