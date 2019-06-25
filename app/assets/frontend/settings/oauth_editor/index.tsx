@@ -12,6 +12,7 @@ import autobind from "../../lib/autobind";
 import Button from "../../form/button";
 import DynamicLabelButton from "../../form/dynamic_label_button";
 import SVGCheckmark from "../../svg/checkmark";
+import ConfirmActionPanel from "../../panels/confirm_action";
 
 export interface OAuthEditorProps {
   isAdmin: boolean,
@@ -50,14 +51,16 @@ interface State {
   hasNamedApplication: boolean
   shouldRevealApplicationUrl: boolean
   isSaving: boolean
+  isDeleting: boolean
   applicationShared: boolean,
   sharedTokenUserId: string
   revealEditor: boolean
 }
 
 class IntegrationEditor extends React.Component<Props, State> {
-    applicationNameInput: Option<FormInput>;
-    form: Option<HTMLFormElement>;
+  private applicationNameInput: Option<FormInput>;
+  private editForm: Option<HTMLFormElement>;
+  private deleteForm: Option<HTMLFormElement>;
 
     constructor(props: Props) {
       super(props);
@@ -71,6 +74,7 @@ class IntegrationEditor extends React.Component<Props, State> {
         hasNamedApplication: this.props.applicationSaved || false,
         shouldRevealApplicationUrl: this.props.applicationSaved || false,
         isSaving: false,
+        isDeleting: false,
         applicationShared: this.props.applicationShared,
         sharedTokenUserId: this.props.sharedTokenUser ? this.props.sharedTokenUser.ellipsisUserId : "",
         revealEditor: !this.props.applicationSaved
@@ -228,8 +232,8 @@ class IntegrationEditor extends React.Component<Props, State> {
       this.setState({
         isSaving: true
       }, () => {
-        if (this.form) {
-          this.form.submit();
+        if (this.editForm) {
+          this.editForm.submit();
         }
       });
     }
@@ -278,7 +282,7 @@ class IntegrationEditor extends React.Component<Props, State> {
     render() {
       return (
         <SettingsPage teamId={this.props.teamId} isAdmin={this.props.isAdmin} activePage={"oauthApplications"}>
-          <form ref={(el) => this.form = el} action={jsRoutes.controllers.web.settings.IntegrationsController.save().url} method="POST" className="flex-row-cascade">
+          <form ref={(el) => this.editForm = el} action={jsRoutes.controllers.web.settings.IntegrationsController.save().url} method="POST" className="flex-row-cascade">
             <CsrfTokenHiddenInput value={this.props.csrfToken} />
             <input type="hidden" name="apiId" value={this.getApplicationApiId()} />
             <input type="hidden" name="requiredNameInCode" value={this.props.requiredNameInCode} />
@@ -295,7 +299,20 @@ class IntegrationEditor extends React.Component<Props, State> {
               {this.renderConfigureApplication()}
             </Collapsible>
 
-            {this.props.onRenderFooter(
+          </form>
+          {this.props.onRenderFooter(
+            <div>
+              <Collapsible revealWhen={this.props.activePanelName === "confirmDeleteIntegration"}>
+                <ConfirmActionPanel
+                  onCancelClick={this.toggleConfirmDelete}
+                  onConfirmClick={this.doConfirmDelete}
+                  confirmText={"Remove"}
+                  confirmingText={"Removing…"}
+                  isConfirming={this.state.isDeleting}
+                >
+                  <div>Are you sure you want to remove the <b>{this.getApplicationName()}</b> integration?</div>
+                </ConfirmActionPanel>
+              </Collapsible>
               <Collapsible revealWhen={this.state.revealEditor}>
                 <div className="container container-wide prn border-top">
                   <div className="columns mobile-columns-float">
@@ -320,9 +337,14 @@ class IntegrationEditor extends React.Component<Props, State> {
                   </div>
                 </div>
               </Collapsible>
-            )}
-          </form>
+            </div>
+          )}
           {this.renderNav()}
+          <form ref={(el) => this.deleteForm = el} action={jsRoutes.controllers.web.settings.IntegrationsController.delete().url} method="post">
+            <CsrfTokenHiddenInput value={this.props.csrfToken} />
+            <input type="hidden" name="id" value={this.props.applicationId} />
+            <input type="hidden" name="teamId" value={this.props.teamId} />
+          </form>
         </SettingsPage>
       );
     }
@@ -343,10 +365,9 @@ class IntegrationEditor extends React.Component<Props, State> {
           title: `Add ${apiName} configuration`
         }];
       } else {
-        const configName = this.getApplicationName() || "Untitled configuration";
-        const title = configName + this.getOptionalApiName();
+        const configName = this.props.applicationName || "Untitled integration";
         return [{
-          title: title
+          title: this.appNameWithOptionalApiName(configName)
         }];
       }
     }
@@ -437,20 +458,33 @@ class IntegrationEditor extends React.Component<Props, State> {
       });
     }
 
-    getOptionalApiName() {
+    toggleConfirmDelete(): void {
+      this.props.onToggleActivePanel("confirmDeleteIntegration", true);
+    }
+
+    doConfirmDelete(): void {
+      this.setState({
+        isDeleting: true
+      }, () => {
+        if (this.deleteForm) {
+          this.deleteForm.submit();
+        }
+      });
+    }
+
+    appNameWithOptionalApiName(appName: string) {
       const apiName = this.getApplicationApiName();
-      const appName = this.getApplicationName();
       if (appName.toLowerCase().includes(apiName.toLowerCase())) {
-        return ""
+        return appName;
       } else {
-        return ` (${apiName})`;
+        return `${appName} (${apiName})`;
       }
     }
 
     renderApplicationSummary() {
       return (
         <div>
-          <h3>{this.getApplicationName()}{this.getOptionalApiName()}</h3>
+          <h3>{this.appNameWithOptionalApiName(this.getApplicationName())}</h3>
 
           <h5>Callback URL</h5>
           <div>{this.renderCallbackUrlInput()}</div>
@@ -476,7 +510,8 @@ class IntegrationEditor extends React.Component<Props, State> {
           <input type="hidden" name="scope" value={this.getApplicationScope()} />
 
           <div className="mvl">
-            <Button onClick={this.toggleEditMode}>Edit details</Button>
+            <Button className="mbs mrs" onClick={this.toggleEditMode}>Edit details</Button>
+            <Button className="mbs mrs" onClick={this.toggleConfirmDelete}>Remove integration</Button>
           </div>
 
           {this.renderSharedTokenDetails()}
@@ -615,8 +650,8 @@ class IntegrationEditor extends React.Component<Props, State> {
         sharedTokenUserId: "",
         isSaving: true
       }, () => {
-        if (this.form) {
-          this.form.submit();
+        if (this.editForm) {
+          this.editForm.submit();
         }
       });
     }

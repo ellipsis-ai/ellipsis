@@ -105,6 +105,7 @@ declare var jsRoutes: {
         },
         IntegrationsController: {
           add: (teamId: Option<string>, groupId: Option<string>, selectedId: Option<string>, nameInCode: Option<string>) => JsRoute,
+          delete: () => JsRoute,
           edit: (id: string, teamId: Option<string>) => JsRoute,
           list: (teamId?: Option<string>) => JsRoute,
           save: () => JsRoute

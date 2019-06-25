@@ -64,6 +64,7 @@
   web.settings.routes.javascript.RegionalSettingsController.index,
   web.settings.routes.javascript.IntegrationsController.list,
   web.settings.routes.javascript.IntegrationsController.add,
+  web.settings.routes.javascript.IntegrationsController.delete,
   web.settings.routes.javascript.IntegrationsController.edit,
   web.settings.routes.javascript.IntegrationsController.save,
   web.settings.routes.javascript.AWSConfigController.add,

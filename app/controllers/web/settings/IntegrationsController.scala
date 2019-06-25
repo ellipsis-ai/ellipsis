@@ -22,8 +22,9 @@ import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json.Json
-import play.api.mvc.AnyContent
+import play.api.mvc.{AnyContent, Result}
 import play.filters.csrf.CSRF
+import play.mvc.Http.Request
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -479,4 +480,63 @@ class IntegrationsController @Inject() (
     }
   }
 
+  case class DeleteInfo(id: String, teamId: String)
+
+  private val deleteForm = Form(
+    mapping(
+      "id" -> nonEmptyText,
+      "teamId" -> nonEmptyText
+    )(DeleteInfo.apply)(DeleteInfo.unapply)
+  )
+
+  def delete = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    deleteForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
+      info => {
+        for {
+          maybeTeam <- dataService.teams.find(info.teamId, user)
+          result <- maybeTeam.map { team =>
+            deleteApplicationForTeam(info.id, team)
+          }.getOrElse {
+            Future.successful(NotFound("Team not found"))
+          }
+        } yield result
+      }
+    )
+  }
+
+  private def deleteApplicationForTeam(applicationId: String, team: Team): Future[Result] = {
+    for {
+      maybeOAuth1Application <- dataService.oauth1Applications.find(applicationId).map(_.filter(_.teamId == team.id))
+      maybeOAuth2Application <- if (maybeOAuth1Application.isDefined) {
+        Future.successful(None)
+      } else {
+        dataService.oauth2Applications.find(applicationId).map(_.filter(_.teamId == team.id))
+      }
+      maybeDeleted <- {
+        maybeOAuth1Application.map { oauth1App =>
+          dataService.oauth1Applications.delete(oauth1App).map(Some(_))
+        }.orElse {
+          maybeOAuth2Application.map { oauth2App =>
+            dataService.oauth2Applications.delete(oauth2App).map(Some(_))
+          }
+        }.getOrElse {
+          Future.successful(None)
+        }
+      }
+    } yield {
+      maybeDeleted.map { isDeleted =>
+        if (isDeleted) {
+          Redirect(routes.IntegrationsController.list(Some(team.id)))
+        } else {
+          BadGateway("Error deleting integration")
+        }
+      }.getOrElse {
+        NotFound("Integration not found")
+      }
+    }
+  }
 }
