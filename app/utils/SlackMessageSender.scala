@@ -114,15 +114,13 @@ case class SlackMessageSender(
           SlackMessageActionButton(ACTION_CHOICE, ea.label, valueToUse)
         }
       }).map { actionList =>
-        Seq(slack.SlackMessageAttachment(
-          None,
-          None,
-          None,
-          None,
-          Some(Color.BLUE_LIGHTER),
-          Some(ACTION_CHOICES),
-          actionList
-        ))
+        actionList.grouped(SlackMessageSender.MAX_ACTIONS_PER_ATTACHMENT).map { buttonGroup =>
+          slack.SlackMessageAttachment(
+            maybeColor = Some(Color.BLUE_LIGHTER),
+            maybeCallbackId = Some(ACTION_CHOICES),
+            actions = buttonGroup
+          )
+        }.toSeq
       }
 
     }
