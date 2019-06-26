@@ -10,6 +10,7 @@ trait OAuthApplication {
   val api: OAuthApi
   val key: String
   val secret: String
+  val maybeNewApplicationUrl: Option[String]
   val maybeScope: Option[String]
   val teamId: String
   val isShared: Boolean

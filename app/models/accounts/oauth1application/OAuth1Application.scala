@@ -20,6 +20,7 @@ case class OAuth1Application(
                             ) extends OAuthApplication {
 
   val maybeCustomHost: Option[String] = None
+  val maybeNewApplicationUrl: Option[String] = api.maybeNewApplicationUrl
 
   val key: String = consumerKey
   val secret: String = consumerSecret

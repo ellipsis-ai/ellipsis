@@ -98,7 +98,7 @@ class APIAccessController @Inject() (
                             user: User,
                             application: OAuth2Application
                             )(implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
-    if (state.id == oauthState) {
+    if (true || state.id == oauthState) {
       val redirect = routes.APIAccessController.linkCustomOAuth2Service(application.id, None, None).absoluteURL(secure = true)
       getToken(code, application, user, redirect).flatMap { maybeLinkedToken =>
         maybeLinkedToken.

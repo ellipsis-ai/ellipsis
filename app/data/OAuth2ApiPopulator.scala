@@ -67,6 +67,17 @@ class OAuth2ApiPopulator @Inject() (
       Some("https://developer.atlassian.com/cloud/jira/platform/scopes/"),
       None,
       Some("api.atlassian.com")
+    ),
+    OAuth2Api(
+      "mCbNGbi4SLGx7FeSn7XOOg",
+      "Khoros",
+      AuthorizationCode,
+      Some("/auth/oauth2/authorize"),
+      "/auth/accessToken",
+      Some("/t5/bizapps/bizappspage/tab/community%3Aadmin%3Asystem%3Aapi-apps"),
+      None,
+      None,
+      None
     )
   )
 

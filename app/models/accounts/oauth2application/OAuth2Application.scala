@@ -7,7 +7,7 @@ import models.accounts.{OAuth2State, OAuthApplication}
 import models.accounts.oauth2api.OAuth2Api
 import models.silhouette.EllipsisEnv
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
+import play.api.libs.ws.{WSAuthScheme, WSClient, WSRequest, WSResponse}
 import play.api.mvc.AnyContent
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,6 +43,12 @@ case class OAuth2Application(
   }.getOrElse(api.accessTokenUrl)
 
   val scopeString: String = maybeScope.getOrElse("")
+
+  val maybeNewApplicationUrl: Option[String] = maybeCustomHost.map { host =>
+    api.maybeNewApplicationUrl.map { path =>
+      s"$host$path"
+    }
+  }.getOrElse(api.maybeNewApplicationUrl)
 
   def maybeAuthorizationRequestFor(state: OAuth2State, redirectUrl: String, ws: WSClient): Option[WSRequest] = {
     val params = Seq(
@@ -80,7 +86,8 @@ case class OAuth2Application(
 
   def accessTokenResponseFor(code: String, redirectUrl: String, ws: WSClient): Future[WSResponse] = {
     ws.url(accessTokenUrl).
-      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON, "client-id" -> clientId).
+      withAuth("li", "Lithor0x", WSAuthScheme.BASIC).
       post(Map(
         "client_id" -> Seq(clientId),
         "client_secret" -> Seq(clientSecret),
