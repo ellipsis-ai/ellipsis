@@ -70,8 +70,6 @@ interface State {
 }
 
 class SchedulingDataLayer extends React.Component<Props, State> {
-  triggerValidationTimer: number | undefined;
-
   constructor(props: Props) {
     super(props);
     autobind(this);
@@ -90,31 +88,22 @@ class SchedulingDataLayer extends React.Component<Props, State> {
   }
 
   componentDidMount(): void {
-    this.startTriggerValidationTimer();
-    window.addEventListener('blur', this.clearTriggerValidationTimer);
-    window.addEventListener('focus', this.startTriggerValidationTimer);
+    this.resetTriggerValidation();
+    window.addEventListener('focus', this.resetTriggerValidation);
   }
 
   componentWillUnmount(): void {
-    this.clearTriggerValidationTimer();
-    window.removeEventListener('blur', this.clearTriggerValidationTimer);
-    window.removeEventListener('focus', this.startTriggerValidationTimer);
-  }
-
-  startTriggerValidationTimer(): void {
-    this.resetTriggerValidation();
-    this.triggerValidationTimer = setInterval(this.resetTriggerValidation, 30000);
-  }
-
-  clearTriggerValidationTimer(): void {
-    clearInterval(this.triggerValidationTimer);
+    window.removeEventListener('focus', this.resetTriggerValidation);
   }
 
   resetTriggerValidation(): void {
     const possibleTriggers = this.state.scheduledActions.map((ea) => ea.trigger).filter((ea): ea is string => Boolean(ea));
     const uniqueTriggers = Array.from(new Set(possibleTriggers));
     if (uniqueTriggers.length > 0) {
-      this.setState({ isValidatingTriggers: true });
+      this.setState({
+        triggerValidationError: null,
+        isValidatingTriggers: true
+      });
       DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.validateTriggers().url, {
         triggerMessages: uniqueTriggers,
         teamId: this.props.teamId
