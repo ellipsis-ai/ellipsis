@@ -1,5 +1,7 @@
 package services.slack.apiModels
 
+import utils.JsonEnumValue
+
 case class Attachment (
                         fallback: Option[String] = None,
                         callback_id: Option[String] = None,
@@ -30,6 +32,101 @@ case class ActionField(name: String,
                        confirm: Option[ConfirmField] = None,
                        options: Option[Seq[ActionSelectOption]] = None
                       )
+
+object BlockType extends utils.JsonEnum[BlockType] {
+  val values = List(SectionBlockType, DividerBlockType, ImageBlockType, ActionsBlockType, ContextBlockType)
+}
+
+sealed trait BlockType extends BlockType.Value with JsonEnumValue
+
+case object SectionBlockType extends BlockType { val value = "section" }
+case object DividerBlockType extends BlockType { val value = "divider" }
+case object ImageBlockType extends BlockType { val value = "image" }
+case object ActionsBlockType extends BlockType { val value = "actions" }
+case object ContextBlockType extends BlockType { val value = "context" }
+
+object BlockElementType extends utils.JsonEnum[BlockElementType] {
+  val values = List(
+    ImageElementType,
+    ButtonElementType,
+    StaticSelectElementType,
+    DynamicSelectElementType,
+    UserSelectElementType,
+    ConversationSelectElementType,
+    ChannelSelectElementType,
+    OverflowElementType,
+    DatePickerElementType
+  )
+}
+
+sealed trait BlockElementType extends BlockElementType.Value with JsonEnumValue
+
+case object ImageElementType extends BlockElementType { val value = "image" }
+case object ButtonElementType extends BlockElementType { val value = "button" }
+case object StaticSelectElementType extends BlockElementType { val value = "static_select" }
+case object DynamicSelectElementType extends BlockElementType { val value = "external_select" }
+case object UserSelectElementType extends BlockElementType { val value = "users_select" }
+case object ConversationSelectElementType extends BlockElementType { val value = "conversations_select" }
+case object ChannelSelectElementType extends BlockElementType { val value = "channels_select" }
+case object OverflowElementType extends BlockElementType { val value = "overflow" }
+case object DatePickerElementType extends BlockElementType { val value = "datepicker" }
+
+object ButtonStyle extends utils.JsonEnum[ButtonStyle] {
+  val values = List(PrimaryButtonStyle, DangerButtonStyle)
+}
+
+sealed trait ButtonStyle extends ButtonStyle.Value with JsonEnumValue
+
+case object PrimaryButtonStyle extends ButtonStyle { val value = "primary" }
+case object DangerButtonStyle extends ButtonStyle { val value = "danger" }
+
+sealed trait BlockElement {
+  val `type`: BlockElementType
+}
+
+case class ButtonElement(
+                          text: String,
+                          action_id: String,
+                          url: Option[String],
+                          value: Option[String],
+                          style: Option[ButtonStyle],
+                          confirm: Option[ConfirmDialog]
+                        ) extends BlockElement {
+  val `type`: BlockElementType = ButtonElementType
+}
+
+case class ConfirmDialog(title: PlainTextObject, text: TextObject, confirm: PlainTextObject, deny: PlainTextObject)
+
+object TextObjectType extends utils.JsonEnum[TextObjectType] {
+  val values = List(PlainTextType, MarkdownType)
+}
+
+sealed trait TextObjectType extends TextObjectType.Value with JsonEnumValue
+case object PlainTextType extends TextObjectType { val value = "plain_text" }
+case object MarkdownType extends TextObjectType { val value = "mrkdwn" }
+
+trait TextObject {
+  val `type`: TextObjectType
+  val text: String
+  val emoji: Option[Boolean]
+  val verbatim: Option[Boolean]
+}
+
+case class PlainTextObject(text: String, emoji: Option[Boolean]) extends TextObject {
+  val `type`: TextObjectType = PlainTextType
+  val verbatim: Option[Boolean] = None
+}
+
+case class MarkdownTextObject(text: String, verbatim: Option[Boolean]) extends TextObject {
+  val `type`: TextObjectType = MarkdownType
+  val emoji: Option[Boolean] = None
+}
+
+sealed trait Block { val `type`: BlockType }
+
+case class ActionsBlock(elements: Seq[BlockElement], block_id: String) extends Block {
+  val `type`: BlockType = ActionsBlockType
+}
 
 case class ConfirmField(
                          text: String,
