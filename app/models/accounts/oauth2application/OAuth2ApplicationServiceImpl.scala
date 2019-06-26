@@ -16,8 +16,7 @@ case class RawOAuth2Application(
                                  clientSecret: String,
                                  maybeScope: Option[String],
                                  teamId: String,
-                                 isShared: Boolean,
-                                 maybeSharedTokenUserId: Option[String]
+                                 isShared: Boolean
                                )
 
 class OAuth2ApplicationsTable(tag: Tag) extends Table[RawOAuth2Application](tag, "oauth2_applications") {
@@ -29,9 +28,8 @@ class OAuth2ApplicationsTable(tag: Tag) extends Table[RawOAuth2Application](tag,
   def maybeScope = column[Option[String]]("scope")
   def teamId = column[String]("team_id")
   def isShared = column[Boolean]("is_shared")
-  def maybeSharedTokenUserId = column[Option[String]]("shared_token_user_id")
 
-  def * = (id, name, apiId, clientId, clientSecret, maybeScope, teamId, isShared, maybeSharedTokenUserId) <>
+  def * = (id, name, apiId, clientId, clientSecret, maybeScope, teamId, isShared) <>
     ((RawOAuth2Application.apply _).tupled, RawOAuth2Application.unapply _)
 
 }

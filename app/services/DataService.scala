@@ -10,9 +10,11 @@ import models.accounts.ms_teams.botprofile.MSTeamsBotProfileService
 import models.accounts.oauth1api.OAuth1ApiService
 import models.accounts.oauth1application.OAuth1ApplicationService
 import models.accounts.oauth1token.OAuth1TokenService
+import models.accounts.oauth1tokenshare.OAuth1TokenShareService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
+import models.accounts.oauth2tokenshare.OAuth2TokenShareService
 import models.accounts.simpletokenapi.SimpleTokenApiService
 import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.slack.slackmemberstatus.SlackMemberStatusService
@@ -78,6 +80,8 @@ trait DataService {
   val linkedOAuth1Tokens: LinkedOAuth1TokenService
   val linkedOAuth2Tokens: LinkedOAuth2TokenService
   val linkedSimpleTokens: LinkedSimpleTokenService
+  val oauth1TokenShares: OAuth1TokenShareService
+  val oauth2TokenShares: OAuth2TokenShareService
   val oauth1Apis: OAuth1ApiService
   val oauth1Applications: OAuth1ApplicationService
   val oauth2Apis: OAuth2ApiService

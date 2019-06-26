@@ -12,9 +12,11 @@ import models.accounts.ms_teams.botprofile.{MSTeamsBotProfileService, MSTeamsBot
 import models.accounts.oauth1api.{OAuth1ApiService, OAuth1ApiServiceImpl}
 import models.accounts.oauth1application.{OAuth1ApplicationService, OAuth1ApplicationServiceImpl}
 import models.accounts.oauth1token.{OAuth1TokenService, OAuth1TokenServiceImpl}
+import models.accounts.oauth1tokenshare.{OAuth1TokenShareService, OAuth1TokenShareServiceImpl}
 import models.accounts.oauth2api.{OAuth2ApiService, OAuth2ApiServiceImpl}
 import models.accounts.oauth2application.{OAuth2ApplicationService, OAuth2ApplicationServiceImpl}
 import models.accounts.oauth2token.{OAuth2TokenService, OAuth2TokenServiceImpl}
+import models.accounts.oauth2tokenshare.{OAuth2TokenShareService, OAuth2TokenShareServiceImpl}
 import models.accounts.registration.{RegistrationService, RegistrationServiceImpl}
 import models.accounts.simpletokenapi.{SimpleTokenApiService, SimpleTokenApiServiceImpl}
 import models.accounts.slack.botprofile.{SlackBotProfileService, SlackBotProfileServiceImpl}
@@ -91,6 +93,8 @@ class ServiceModule extends AbstractModule with ScalaModule {
     bind[LinkedOAuth1TokenService].to[LinkedOAuth1TokenServiceImpl]
     bind[LinkedOAuth2TokenService].to[LinkedOAuth2TokenServiceImpl]
     bind[LinkedSimpleTokenService].to[LinkedSimpleTokenServiceImpl]
+    bind[OAuth1TokenShareService].to[OAuth1TokenShareServiceImpl]
+    bind[OAuth2TokenShareService].to[OAuth2TokenShareServiceImpl]
     bind[OAuth1ApiService].to[OAuth1ApiServiceImpl]
     bind[OAuth1ApplicationService].to[OAuth1ApplicationServiceImpl]
     bind[OAuth2ApiService].to[OAuth2ApiServiceImpl]
