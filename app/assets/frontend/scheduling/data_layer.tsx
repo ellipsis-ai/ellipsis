@@ -100,7 +100,10 @@ class SchedulingDataLayer extends React.Component<Props, State> {
     const possibleTriggers = this.state.scheduledActions.map((ea) => ea.trigger).filter((ea): ea is string => Boolean(ea));
     const uniqueTriggers = Array.from(new Set(possibleTriggers));
     if (uniqueTriggers.length > 0) {
-      this.setState({ isValidatingTriggers: true });
+      this.setState({
+        triggerValidationError: null,
+        isValidatingTriggers: true
+      });
       DataRequest.jsonPost(jsRoutes.controllers.ScheduledActionsController.validateTriggers().url, {
         triggerMessages: uniqueTriggers,
         teamId: this.props.teamId
