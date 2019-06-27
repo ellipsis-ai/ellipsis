@@ -185,8 +185,7 @@ class IntegrationsController @Inject() (
                                     maybeBehaviorId: Option[String],
                                     maybeIsShared: Option[String],
                                     maybeRequiredNameInCode: Option[String],
-                                    isForOAuth1: Boolean,
-                                    maybeSharedTokenUserId: Option[String]
+                                    isForOAuth1: Boolean
                                   ) {
     val isShared: Boolean = maybeIsShared.contains("on")
   }
@@ -204,8 +203,7 @@ class IntegrationsController @Inject() (
       "behaviorId" -> optional(nonEmptyText),
       "isShared" -> optional(nonEmptyText),
       "requiredNameInCode" -> optional(nonEmptyText),
-      "isForOAuth1" -> boolean,
-      "sharedTokenUserId" -> optional(nonEmptyText)
+      "isForOAuth1" -> boolean
     )(OAuthApplicationInfo.apply)(OAuthApplicationInfo.unapply)
   )
 
@@ -224,7 +222,7 @@ class IntegrationsController @Inject() (
         team <- maybeTeam
       } yield {
         val isShared = isAdmin && info.isShared
-        val instance = OAuth1Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared, info.maybeSharedTokenUserId)
+        val instance = OAuth1Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared)
         dataService.oauth1Applications.save(instance).map(Some(_))
       }).getOrElse(Future.successful(None))
       _ <- (for {
@@ -271,7 +269,7 @@ class IntegrationsController @Inject() (
         team <- maybeTeam
       } yield {
         val isShared = isAdmin && info.isShared
-        val instance = OAuth2Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared, info.maybeSharedTokenUserId)
+        val instance = OAuth2Application(info.id, info.name, api, info.key, info.secret, info.maybeScope, team.id, isShared)
         dataService.oauth2Applications.save(instance).map(Some(_))
       }).getOrElse(Future.successful(None))
       _ <- (for {
@@ -334,7 +332,7 @@ class IntegrationsController @Inject() (
     for {
       maybeApplication <- dataService.oauth1Applications.find(applicationId)
       _ <- maybeApplication.map { app =>
-        dataService.oauth1Applications.save(app.copy(maybeSharedTokenUserId = Some(user.id)))
+        dataService.oauth1TokenShares.ensureFor(user, app)
       }.getOrElse(Future.successful({}))
     } yield {
       Redirect(routes.IntegrationsController.edit(applicationId).absoluteURL(secure = true))
@@ -358,7 +356,7 @@ class IntegrationsController @Inject() (
     for {
       maybeApplication <- dataService.oauth2Applications.find(applicationId)
       _ <- maybeApplication.map { app =>
-        dataService.oauth2Applications.save(app.copy(maybeSharedTokenUserId = Some(user.id)))
+        dataService.oauth2TokenShares.ensureFor(user, app)
       }.getOrElse(Future.successful({}))
     } yield {
       Redirect(routes.IntegrationsController.edit(applicationId).absoluteURL(secure = true))
@@ -421,8 +419,12 @@ class IntegrationsController @Inject() (
         }
       }.getOrElse(Future.successful(None))
       maybeSharedOAuth1TokenUser <- maybeOAuth1Application.flatMap { oauth1Application =>
-        oauth1Application.maybeSharedTokenUserId.map { userId =>
-          dataService.users.find(userId)
+        teamAccess.maybeTargetTeam.map { team =>
+          dataService.oauth1TokenShares.findFor(team, oauth1Application).flatMap { maybeShare =>
+            maybeShare.map { share =>
+              dataService.users.find(share.userId)
+            }.getOrElse(Future.successful(None))
+          }
         }
       }.getOrElse(Future.successful(None))
       maybeSharedOAuth1TokenUserData <- maybeSharedOAuth1TokenUser.map { user =>
@@ -434,8 +436,12 @@ class IntegrationsController @Inject() (
         }
       }.getOrElse(Future.successful(None))
       maybeSharedOAuth2TokenUser <- maybeOAuth2Application.flatMap { oauth2Application =>
-        oauth2Application.maybeSharedTokenUserId.map { userId =>
-          dataService.users.find(userId)
+        teamAccess.maybeTargetTeam.map { team =>
+          dataService.oauth2TokenShares.findFor(team, oauth2Application).flatMap { maybeShare =>
+            maybeShare.map { share =>
+              dataService.users.find(share.userId)
+            }.getOrElse(Future.successful(None))
+          }
         }
       }.getOrElse(Future.successful(None))
       maybeSharedOAuth2TokenUserData <- maybeSharedOAuth2TokenUser.map { user =>

@@ -11,9 +11,11 @@ import models.accounts.ms_teams.botprofile.MSTeamsBotProfileService
 import models.accounts.oauth1api.OAuth1ApiService
 import models.accounts.oauth1application.OAuth1ApplicationService
 import models.accounts.oauth1token.OAuth1TokenService
+import models.accounts.oauth1tokenshare.OAuth1TokenShareService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
+import models.accounts.oauth2tokenshare.OAuth2TokenShareService
 import models.accounts.simpletokenapi.SimpleTokenApiService
 import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.slack.slackmemberstatus.SlackMemberStatusService
@@ -82,6 +84,8 @@ class MockDataService extends DataService with MockitoSugar {
   val linkedOAuth1Tokens = mock[LinkedOAuth1TokenService]
   val linkedOAuth2Tokens = mock[LinkedOAuth2TokenService]
   val linkedSimpleTokens = mock[LinkedSimpleTokenService]
+  val oauth1TokenShares = mock[OAuth1TokenShareService]
+  val oauth2TokenShares = mock[OAuth2TokenShareService]
   val oauth1Apis = mock[OAuth1ApiService]
   val oauth1Applications = mock[OAuth1ApplicationService]
   val oauth2Apis = mock[OAuth2ApiService]

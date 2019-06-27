@@ -12,7 +12,7 @@ object OAuth1ApplicationQueries {
 
   def tuple2Application(tuple: TupleType): OAuth1Application = {
     val raw = tuple._1
-    OAuth1Application(raw.id, raw.name, tuple._2, raw.consumerKey, raw.consumerSecret, raw.maybeScope, raw.teamId, raw.isShared, raw.maybeSharedTokenUserId)
+    OAuth1Application(raw.id, raw.name, tuple._2, raw.consumerKey, raw.consumerSecret, raw.maybeScope, raw.teamId, raw.isShared)
   }
 
   def uncompiledFindQuery(id: Rep[String]) = {

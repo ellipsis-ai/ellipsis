@@ -20,8 +20,7 @@ case class OAuth2Application(
                               clientSecret: String,
                               maybeScope: Option[String],
                               teamId: String,
-                              isShared: Boolean,
-                              maybeSharedTokenUserId: Option[String]
+                              isShared: Boolean
                             ) extends OAuthApplication {
 
   val key: String = clientId
@@ -100,7 +99,6 @@ case class OAuth2Application(
     clientSecret,
     maybeScope,
     teamId,
-    isShared,
-    maybeSharedTokenUserId
+    isShared
   )
 }

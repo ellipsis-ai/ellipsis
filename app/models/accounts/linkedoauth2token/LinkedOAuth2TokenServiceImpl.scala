@@ -61,17 +61,18 @@ class LinkedOAuth2TokenServiceImpl @Inject() (
     )
   }
 
-  def uncompiledAllSharedForTeamIdQuery(teamId: Rep[String]) = {
+  def uncompiledFindForQuery(userId: Rep[String], applicationId: Rep[String]) = {
     allWithApplication.
-      filter(_._2._1.maybeSharedTokenUserId.isDefined).
-      filter { case(_, (app, _)) => app.teamId === teamId || app.isShared }
+      filter { case(_, (app, _)) => app.id === applicationId }.
+      filter { case(link, _) => link.userId === userId }
   }
-  val allSharedForTeamIdQuery = Compiled(uncompiledAllSharedForTeamIdQuery _)
+  val findForQuery = Compiled(uncompiledFindForQuery _)
 
   def sharedForUserAction(user: User, ws: WSClient): DBIO[Seq[LinkedOAuth2Token]] = {
-    allSharedForTeamIdQuery(user.teamId).result.flatMap { r =>
-      DBIO.sequence(r.map(tuple2Token).map(refreshIfNecessaryAction))
-    }
+    for {
+      shares <- dataService.oauth2TokenShares.allForAction(user.teamId)
+      links <- DBIO.sequence(shares.map(ea => findForQuery(ea.userId, ea.oauth2ApplicationId).result))
+    } yield links.flatten.map(tuple2Token)
   }
 
   def uncompiledAllForUserIdQuery(userId: Rep[String]) = {

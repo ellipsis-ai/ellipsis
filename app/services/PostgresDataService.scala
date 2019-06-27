@@ -12,9 +12,11 @@ import models.accounts.ms_teams.botprofile.MSTeamsBotProfileService
 import models.accounts.oauth1api.OAuth1ApiService
 import models.accounts.oauth1application.OAuth1ApplicationService
 import models.accounts.oauth1token.OAuth1TokenService
+import models.accounts.oauth1tokenshare.OAuth1TokenShareService
 import models.accounts.oauth2api.OAuth2ApiService
 import models.accounts.oauth2application.OAuth2ApplicationService
 import models.accounts.oauth2token.OAuth2TokenService
+import models.accounts.oauth2tokenshare.OAuth2TokenShareService
 import models.accounts.simpletokenapi.SimpleTokenApiService
 import models.accounts.slack.botprofile.SlackBotProfileService
 import models.accounts.slack.slackmemberstatus.SlackMemberStatusService
@@ -82,6 +84,8 @@ class PostgresDataService @Inject() (
                                       val linkedOAuth1TokensProvider: Provider[LinkedOAuth1TokenService],
                                       val linkedOAuth2TokensProvider: Provider[LinkedOAuth2TokenService],
                                       val linkedSimpleTokensProvider: Provider[LinkedSimpleTokenService],
+                                      val oauth1TokenSharesProvider: Provider[OAuth1TokenShareService],
+                                      val oauth2TokenSharesProvider: Provider[OAuth2TokenShareService],
                                       val oauth1ApisProvider: Provider[OAuth1ApiService],
                                       val oauth1ApplicationsProvider: Provider[OAuth1ApplicationService],
                                       val oauth2ApisProvider: Provider[OAuth2ApiService],
@@ -147,6 +151,8 @@ class PostgresDataService @Inject() (
   val linkedOAuth1Tokens = linkedOAuth1TokensProvider.get
   val linkedOAuth2Tokens = linkedOAuth2TokensProvider.get
   val linkedSimpleTokens = linkedSimpleTokensProvider.get
+  val oauth1TokenShares = oauth1TokenSharesProvider.get
+  val oauth2TokenShares = oauth2TokenSharesProvider.get
   val oauth1Apis = oauth1ApisProvider.get
   val oauth1Applications = oauth1ApplicationsProvider.get
   val oauth2Apis = oauth2ApisProvider.get
