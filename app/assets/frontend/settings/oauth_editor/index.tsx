@@ -647,13 +647,14 @@ class IntegrationEditor extends React.Component<Props, State> {
     }
 
     resetSharedTokenUserId() {
-      const url = jsRoutes.controllers.web.settings.IntegrationsController.resetSharedOAuthToken(this.props.applicationId || "", this.props.teamId).url;
-      DataRequest.jsonPost(url, {}, this.props.csrfToken).then((res) => {
-        console.log(res);
-        this.setState({
-          sharedTokenUserId: ""
+      if (this.props.applicationId) {
+        const url = jsRoutes.controllers.web.settings.IntegrationsController.resetSharedOAuthToken(this.props.applicationId, this.props.teamId).url;
+        DataRequest.jsonPost(url, {}, this.props.csrfToken).then((res) => {
+          this.setState({
+            sharedTokenUserId: ""
+          });
         });
-      });
+      }
     }
 
     renderSharedTokenUser() {
