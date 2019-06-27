@@ -13,6 +13,7 @@ import Button from "../../form/button";
 import DynamicLabelButton from "../../form/dynamic_label_button";
 import SVGCheckmark from "../../svg/checkmark";
 import ConfirmActionPanel from "../../panels/confirm_action";
+import {DataRequest} from "../../lib/data_request";
 
 export interface OAuthEditorProps {
   isAdmin: boolean,
@@ -646,13 +647,12 @@ class IntegrationEditor extends React.Component<Props, State> {
     }
 
     resetSharedTokenUserId() {
-      this.setState({
-        sharedTokenUserId: "",
-        isSaving: true
-      }, () => {
-        if (this.editForm) {
-          this.editForm.submit();
-        }
+      const url = jsRoutes.controllers.web.settings.IntegrationsController.resetSharedOAuthToken(this.props.applicationId || "", this.props.teamId).url;
+      DataRequest.jsonPost(url, {}, this.props.csrfToken).then((res) => {
+        console.log(res);
+        this.setState({
+          sharedTokenUserId: ""
+        });
       });
     }
 

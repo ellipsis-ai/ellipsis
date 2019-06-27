@@ -108,7 +108,8 @@ declare var jsRoutes: {
           delete: () => JsRoute,
           edit: (id: string, teamId: Option<string>) => JsRoute,
           list: (teamId?: Option<string>) => JsRoute,
-          save: () => JsRoute
+          save: () => JsRoute,
+          resetSharedOAuthToken: (id: string, teamId: Option<string>) => JsRoute
         },
         RegionalSettingsController: {
           index: (teamId?: Option<string>) => JsRoute

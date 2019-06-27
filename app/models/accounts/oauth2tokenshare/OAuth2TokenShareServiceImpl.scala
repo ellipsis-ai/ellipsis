@@ -51,6 +51,11 @@ class OAuth2TokenShareServiceImpl @Inject() (
     dataService.run(action)
   }
 
+  def removeFor(user: User, application: OAuth2Application, maybeTeam: Option[Team]): Future[Unit] = {
+    val action = findForQuery(maybeTeam.map(_.id).getOrElse(user.teamId), application.id).delete
+    dataService.run(action).map(_ => {})
+  }
+
   def findFor(team: Team, application: OAuth2Application): Future[Option[OAuth2TokenShare]] = {
     val action = findForQuery(team.id, application.id).result.map(_.headOption)
     dataService.run(action)
