@@ -67,6 +67,7 @@
   web.settings.routes.javascript.IntegrationsController.delete,
   web.settings.routes.javascript.IntegrationsController.edit,
   web.settings.routes.javascript.IntegrationsController.save,
+  web.settings.routes.javascript.IntegrationsController.resetSharedOAuthToken,
   web.settings.routes.javascript.AWSConfigController.add,
   web.settings.routes.javascript.AWSConfigController.edit,
   web.settings.routes.javascript.AWSConfigController.save,

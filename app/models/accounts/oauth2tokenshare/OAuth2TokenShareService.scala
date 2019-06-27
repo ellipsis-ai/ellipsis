@@ -13,6 +13,8 @@ trait OAuth2TokenShareService {
 
   def ensureFor(user: User, application: OAuth2Application): Future[OAuth2TokenShare]
 
+  def removeFor(user: User, application: OAuth2Application, maybeTeam: Option[Team]): Future[Unit]
+
   def findFor(team: Team, application: OAuth2Application): Future[Option[OAuth2TokenShare]]
 
 

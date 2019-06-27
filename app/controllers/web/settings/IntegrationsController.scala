@@ -363,6 +363,23 @@ class IntegrationsController @Inject() (
     }
   }
 
+  def resetSharedOAuthToken(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
+      maybeOAuth1Application <- dataService.oauth1Applications.find(applicationId)
+      maybeOAuth2Application <- dataService.oauth2Applications.find(applicationId)
+      _ <- maybeOAuth1Application.map { app =>
+        dataService.oauth1TokenShares.removeFor(user, app, teamAccess.maybeTargetTeam)
+      }.getOrElse(Future.successful({}))
+      _ <- maybeOAuth2Application.map { app =>
+        dataService.oauth2TokenShares.removeFor(user, app, teamAccess.maybeTargetTeam)
+      }.getOrElse(Future.successful({}))
+    } yield {
+      Ok(Json.obj())
+    }
+  }
+
   def shareMyOAuth2Token(applicationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
