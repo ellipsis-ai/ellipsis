@@ -9,7 +9,7 @@ import models.behaviors.events.slack.SlackMessage
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
-import services.slack.apiModels.{Attachment, SlackUser}
+import services.slack.apiModels.{Attachment, Block, SlackUser}
 import services.slack.{SlackApiClient, SlackApiError, SlackEventService}
 import slick.dbio.DBIO
 
@@ -29,6 +29,7 @@ class MockSlackEventService extends SlackEventService with MockitoSugar {
       any[Option[String]],
       any[Option[String]],
       any[Option[Seq[Attachment]]],
+      any[Option[Seq[Block]]],
       any[Option[Boolean]],
       any[Option[Boolean]],
       any[Option[String]],

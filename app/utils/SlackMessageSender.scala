@@ -13,7 +13,7 @@ import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.{slack, _}
 import models.behaviors.events.slack._
 import models.behaviors.{ActionChoice, DeveloperContext}
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.libs.json.Json
 import services.DefaultServices
 import services.slack.{SlackApiClient, SlackApiError}
@@ -126,7 +126,7 @@ case class SlackMessageSender(
     }
   }
 
-  def attachmentsToUse(implicit ec: ExecutionContext): Future[Seq[MessageAttachment]] = {
+  def blocksToUse(implicit ec: ExecutionContext): Future[Seq[MessageAttachment]] = {
     choicesAttachments.map { choices =>
       val groups = attachments ++ choices
       developerContext.maybeDevModeNoteText(configuration, slackTeamId, botName).map { text =>
@@ -191,6 +191,7 @@ case class SlackMessageSender(
   private def postChatMessage(
                                text: String,
                                maybeAttachments: Option[Seq[Attachment]] = None,
+                               maybeBlocks: Option[Seq[Block]] = None,
                                maybeChannelToForce: Option[String] = None
                              )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[SlackMessage]] = {
     val responseChannel = channelToUse(maybeChannelToForce)
@@ -209,6 +210,7 @@ case class SlackMessageSender(
           parse = None,
           linkNames = None,
           attachments = maybeAttachments,
+          blocks = maybeBlocks,
           unfurlLinks = Some(maybeShouldUnfurl.getOrElse(false)),
           unfurlMedia = Some(true),
           iconUrl = None,
@@ -219,7 +221,13 @@ case class SlackMessageSender(
           replyBroadcast = None
         ).
           recover(postErrorRecovery(responseChannel, text)).
-          flatMap(msg => logInvolvedFor(responseChannel).map(_ => Some(msg)))
+          flatMap(msg => logInvolvedFor(responseChannel).map(_ => Some(msg))).
+          recover {
+            case t: Throwable => {
+              Logger.error(t.getMessage)
+              throw t
+            }
+          }
       }
     }
   }
@@ -254,7 +262,7 @@ case class SlackMessageSender(
         if (beQuiet) {
           postEphemeralMessage(preambleMessage, None, originatingChannel, maybeExistingThreadId)
         } else {
-          postChatMessage(preambleMessage, None, Some(originatingChannel))
+          postChatMessage(preambleMessage, None, None, Some(originatingChannel))
         }
       }.getOrElse(Future.successful(None)).map(_ => ())
     } else {
@@ -267,6 +275,7 @@ case class SlackMessageSender(
                                   channelToUse: String,
                                   maybeShouldUnfurl: Option[Boolean],
                                   attachments: Seq[Attachment],
+                                  blocks: Seq[Block],
                                   maybeConversation: Option[Conversation],
                                   maybePreviousMessage: Option[SlackMessage]
                                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[SlackMessage]] = {
@@ -284,12 +293,19 @@ case class SlackMessageSender(
           None
         }
 
+        val maybeBlocksForSegment = if (segments.tail.isEmpty) {
+          Some(blocks).filter(_.nonEmpty)
+        } else {
+          None
+        }
+
         postChatMessage(
           segment,
-          maybeAttachmentsForSegment
+          maybeAttachmentsForSegment,
+          maybeBlocksForSegment
         )
       }.flatMap { maybeMessage =>
-        sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, maybeConversation, maybeMessage)
+        sendMessageSegmentsInOrder(segments.tail, channelToUse, maybeShouldUnfurl, attachments, blocks, maybeConversation, maybeMessage)
       }
     }
   }
@@ -318,14 +334,14 @@ case class SlackMessageSender(
   def send(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[SlackMessage]] = {
     val formattedText = SlackMessageFormatter.bodyTextFor(unformattedText, userDataList)
     for {
-      attachments <- attachmentsToUse.map { att =>
+      blocks <- blocksToUse.map { att =>
         att.flatMap {
           case a: SlackMessageAttachment => Some(a.underlying)
           case _ => None
-        }
+        }.flatten
       }
       _ <- sendPreamble(formattedText)
-      maybeLastMsg <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments, maybeConversation, None)
+      maybeLastMsg <- sendMessageSegmentsInOrder(messageSegmentsFor(formattedText), originatingChannel, maybeShouldUnfurl, attachments = Seq.empty, blocks, maybeConversation, None)
       _ <- sendFiles
     } yield maybeLastMsg
   }
@@ -335,6 +351,7 @@ case class SlackMessageSender(
     case SlackApiError("channel_not_found") => throw ChannelNotFoundException(channel, slackTeamId, user, text)
     case SlackApiError("not_in_channel") => throw NotInvitedToChannelException(channel, slackTeamId, user, text)
     case SlackApiError("restricted_action") => throw RestrictedFromChannel(channel, slackTeamId, user, text)
+    case s: SlackApiError => throw SlackMessageSenderException(s, channel, slackTeamId, user, text)
     case t: Throwable => throw SlackMessageSenderException(t, channel, slackTeamId, user, text)
   }
 }

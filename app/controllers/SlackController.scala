@@ -567,6 +567,7 @@ class SlackController @Inject() (
   case class OriginalMessageInfo(
                                   text: String,
                                   attachments: Seq[AttachmentInfo],
+                                  blocks: Seq[BlockInfo],
                                   ts: String,
                                   response_type: Option[String],
                                   replace_original: Option[Boolean],
@@ -593,6 +594,23 @@ class SlackController @Inject() (
                              footer_icon: Option[String] = None,
                              ts: Option[String] = None
                            )
+  case class BlockInfo(
+                        `type`: String,
+                        block_id: Option[String],
+                        elements: Option[Seq[BlockElementInfo]],
+                        text: Option[TextInfo]
+                      )
+
+  case class BlockElementInfo(
+                               `type`: String,
+                               action_id: Option[String],
+                               text: Option[String],
+                               value: Option[String],
+                               options: Option[Seq[BlockActionSelectOptionInfo]]
+                             )
+
+  case class BlockActionSelectOptionInfo(text: TextInfo, value: String)
+  case class TextInfo(text: String)
   case class FieldInfo(title: Option[String], value: Option[String], short: Option[Boolean] = None)
   case class SlackActionsTriggeredInfo(
                                    callback_id: String,
@@ -706,6 +724,7 @@ class SlackController @Inject() (
                 "channel" -> Seq(channel.id),
                 "text" -> Seq(updated.text),
                 "attachments" -> Seq(Json.prettyPrint(Json.toJson(updated.attachments))),
+                "blocks" -> Seq(Json.prettyPrint(Json.toJson(updated.blocks))),
                 "as_user" -> Seq("true"),
                 "ts" -> Seq(message_ts),
                 "user" -> Seq(user.id)
@@ -1109,6 +1128,54 @@ class SlackController @Inject() (
 
   }
 
+  case class SlackBlockActionsTriggersInfo(
+                                            team: TeamInfo,
+                                            user: UserInfo,
+                                            api_app_id: String,
+                                            token: String,
+                                            channel: ChannelInfo,
+                                            message: OriginalMessageInfo,
+                                            response_url: String,
+                                            actions: Seq[ActionsBlockActionInfo]
+                                          ) extends RequestInfo with ActionsTriggeredInfo {
+
+    val maybeActionId: Option[String] = actions.headOption.map(_.action_id)
+
+    def findButtonLabelForNameAndValue(name: String, value: String): Option[String] = {
+      val maybeAction = actions.find { action =>
+        (action.`type` == "button") &&
+          (action.action_id == name) &&
+          (action.value == value || HelpGroupSearchValue.fromString(action.value).helpGroupId == value)
+      }
+      maybeAction.map(_.text.text)
+    }
+
+    def isForYesNoForDoneConversation: Future[Boolean] = {
+      (for {
+        actionId <- maybeActionId
+        convoId <- maybeConversationIdForCallbackId(YES_NO_CHOICE, actionId)
+      } yield {
+        dataService.conversations.find(convoId).map { maybeConvo =>
+          maybeConvo.exists(_.isDone)
+        }
+      }).getOrElse(Future.successful(false))
+    }
+
+    def maybeDataTypeChoice: Future[Option[String]] = {
+      val maybeSlackUserId = maybeActionId.flatMap(actionId => maybeUserIdForCallbackId(DATA_TYPE_CHOICE, actionId))
+      val maybeAction = maybeSlackUserId.flatMap { slackUserId =>
+        if (user.id == slackUserId) {
+          actions.headOption
+        } else {
+          None
+        }
+      }
+      maybeAction.map(_.value).getOrElse(Future.successful(None))
+    }
+  }
+
+  case class ActionsBlockActionInfo(action_id: String, block_id: String, text: TextInfo, value: String, `type`: String, action_ts: String)
+
   private val actionForm = Form(
     "payload" -> nonEmptyText
   )
@@ -1130,6 +1197,11 @@ class SlackController @Inject() (
 
   implicit val attachmentReads = Json.reads[AttachmentInfo]
   implicit val attachmentWrites = Json.writes[AttachmentInfo]
+
+  implicit val textFormat = Json.format[TextInfo]
+  implicit val blockActionSelectOptionFormat = Json.format[BlockActionSelectOptionInfo]
+  implicit val blockElementFormat = Json.format[BlockElementInfo]
+  implicit val blockFormat = Json.format[BlockInfo]
 
   implicit val messageReads = Json.reads[OriginalMessageInfo]
   implicit val messageWrites = Json.writes[OriginalMessageInfo]

@@ -36,7 +36,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.DataService
 import services.caching.CacheService
-import services.slack.apiModels.Attachment
+import services.slack.apiModels.{Attachment, Block}
 import services.slack.{SlackApiClient, SlackEventService}
 import support.ControllerTestContext
 import utils.{SlackChannels, SlackTimestamp}
@@ -84,7 +84,7 @@ class APIControllerSpec extends PlaySpec with MockitoSugar {
     val mockSlackClient = mock[SlackApiClient]
     when(slackEventService.clientFor(botProfile)).thenReturn(mockSlackClient)
     when(mockSlackClient.postChatMessage(anyString, anyString, any[Option[String]], any[Option[Boolean]], any[Option[String]],
-      any[Option[String]], any[Option[Seq[Attachment]]], any[Option[Boolean]], any[Option[Boolean]],
+      any[Option[String]], any[Option[Seq[Attachment]]], any[Option[Seq[Block]]], any[Option[Boolean]], any[Option[Boolean]],
       any[Option[String]], any[Option[String]], any[Option[Boolean]], any[Option[Boolean]],
       any[Option[String]], any[Option[Boolean]])).thenReturn(Future.successful(SlackMessage.blank))
 

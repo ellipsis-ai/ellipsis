@@ -299,7 +299,8 @@ case class SlackApiClient(
   }
 
   def postChatMessage(channelId: String, text: String, username: Option[String] = None, asUser: Option[Boolean] = None,
-                      parse: Option[String] = None, linkNames: Option[String] = None, attachments: Option[Seq[Attachment]] = None,
+                      parse: Option[String] = None, linkNames: Option[String] = None,
+                      attachments: Option[Seq[Attachment]] = None, blocks: Option[Seq[Block]],
                       unfurlLinks: Option[Boolean] = None, unfurlMedia: Option[Boolean] = None, iconUrl: Option[String] = None,
                       iconEmoji: Option[String] = None, replaceOriginal: Option[Boolean]= None,
                       deleteOriginal: Option[Boolean] = None, threadTs: Option[String] = None, replyBroadcast: Option[Boolean] = None): Future[SlackMessage] = {
@@ -312,6 +313,10 @@ case class SlackApiClient(
       "parse" -> parse,
       "link_names" -> linkNames,
       "attachments" -> attachments.map(a => Json.stringify(Json.toJson(a))),
+      "blocks" -> blocks.map(a => {
+        val json = Json.stringify(Json.toJson(a))
+        json
+      }),
       "unfurl_links" -> unfurlLinks,
       "unfurl_media" -> unfurlMedia,
       "icon_url" -> iconUrl,

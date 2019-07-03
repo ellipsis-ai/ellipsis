@@ -11,9 +11,13 @@ trait Enum[A] {
 trait JsonEnumValue {
   val value: String
   override def toString: String = value
+}
+
+object JsonEnumValue {
   implicit val jsonEnumValueWrites: Writes[JsonEnumValue] = new Writes[JsonEnumValue] {
-    override def writes(o: JsonEnumValue) = JsString(value)
+    override def writes(o: JsonEnumValue) = JsString(o.value)
   }
 }
 
 trait JsonEnum[A <: JsonEnumValue] extends Enum[A]
+

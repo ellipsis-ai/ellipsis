@@ -75,6 +75,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
       parse = None,
       linkNames = None,
       attachments = None,
+      blocks = None,
       unfurlLinks = Some(false),
       unfurlMedia = Some(true),
       iconUrl = None,
