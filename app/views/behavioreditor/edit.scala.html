@@ -5,8 +5,7 @@
 )(implicit messages: Messages, r: RequestHeader)
 
 @page.main(s"Edit skill · $skillName", config, Seq(
-  NavItem.skills(link = true, config.maybeAdminAccessTeamId, None),
-  NavItem(skillName, None)
+  NavItem.skills(link = true, config.maybeAdminAccessTeamId, None)
 )) {
   <div id="content" class="flex-row-cascade">
     <div id="editorContainer" class="flex-row-cascade"></div>
