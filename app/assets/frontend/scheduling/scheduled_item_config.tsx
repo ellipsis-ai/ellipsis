@@ -353,12 +353,18 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         });
     }
 
-    getActionsWithTriggers(): Array<BehaviorVersion> {
-      if (this.props.isForSingleGroup && this.props.behaviorGroups[0]) {
-        return this.props.behaviorGroups[0].getActions().filter((ea) => ea.getRegularMessageTriggers().length > 0);
+    getSelectedGroup(): Option<BehaviorGroup> {
+      if (this.props.isForSingleGroup) {
+        return this.props.behaviorGroups[0];
+      } else if (this.props.scheduledAction.behaviorGroupId) {
+        return this.props.behaviorGroups.find((ea) => ea.id === this.props.scheduledAction.behaviorGroupId);
       } else {
-        return [];
+        return null;
       }
+    }
+
+    getActionsWithTriggersForGroup(group: BehaviorGroup): Array<BehaviorVersion> {
+      return group.getActions().filter((ea) => ea.getRegularMessageTriggers().length > 0);
     }
 
     renderEditLink(groupId: Option<string>, behaviorId: Option<string>) {
@@ -369,8 +375,9 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     }
 
     renderTriggerConfig() {
+      const selectedGroup = this.getSelectedGroup();
       return (
-        <div>
+        <div className="mtm">
           <div className="type-s mbxs">Run any action triggered by the message:</div>
           <div>
             <FormInput
@@ -380,32 +387,32 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
               onChange={this.onChangeTriggerText}
             />
           </div>
-          <div className="type-s">
-            {this.props.isForSingleGroup ? (
+          {selectedGroup ? (
+            <div className="type-s">
               <div className="link mts" onClick={this.toggleShowPossibleTriggers}>
                 <span className="display-inline-block height-l align-m mrxs"><SVGExpand expanded={this.state.showPossibleTriggers} /></span>
                 <span>Show all possible triggers</span>
               </div>
-            ) : null}
-            <Collapsible revealWhen={this.state.showPossibleTriggers}>
-              {this.getActionsWithTriggers().map((action) => (
-                <div key={`possibleBehavior${action.behaviorId}`}>
-                  {action.getRegularMessageTriggers().map((trigger) => (
-                    <button
-                      type="button"
-                      key={`trigger${trigger.getIdForDiff()}`}
-                      className="button-raw mvs mrxs"
-                      onClick={this.onChangeTriggerText.bind(this, trigger.getText())}
-                    >
-                      <span className={`box-chat ${
-                        this.possibleTriggerMatches(action, trigger) ? "box-chat-selected" : "box-chat-dark type-black"
-                      }`}>{trigger.getText()}</span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </Collapsible>
-          </div>
+              <Collapsible revealWhen={this.state.showPossibleTriggers}>
+                {this.getActionsWithTriggersForGroup(selectedGroup).map((action) => (
+                  <div key={`possibleBehavior${action.behaviorId}`}>
+                    {action.getRegularMessageTriggers().map((trigger) => (
+                      <button
+                        type="button"
+                        key={`trigger${trigger.getIdForDiff()}`}
+                        className="button-raw mvs mrxs"
+                        onClick={this.onChangeTriggerText.bind(this, trigger.getText())}
+                      >
+                        <span className={`box-chat ${
+                          this.possibleTriggerMatches(action, trigger) ? "box-chat-selected" : "box-chat-dark type-black"
+                        }`}>{trigger.getText()}</span>
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </Collapsible>
+            </div>
+          ) : null}
           <div>
             <h5>{this.state.matchingBehaviorTriggers.length <= 1 ? "Matching action" : "Matching actions"}</h5>
             {this.state.matchingBehaviorTriggers.length > 1 ? (
@@ -445,29 +452,43 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       }
     }
 
+    canModifyGroup(): boolean {
+      return !this.props.isForSingleGroup && this.props.scheduledAction.isNew();
+    }
+
+    renderSkillSelector() {
+      const selectedGroup = this.getSelectedGroup();
+      const skills = this.getSkillOptions();
+      if (this.hasTriggerText() && !this.props.scheduledAction.isNew()) {
+        return null;
+      } else {
+        return (
+          <div>
+            <span className="type-s mrm align-m display-inline-block">From the skill</span>
+            {this.canModifyGroup() ? (
+              <Select
+                className="form-select-s width-10 align-b"
+                value={this.props.scheduledAction.behaviorGroupId || ""}
+                onChange={this.onChangeSkill}
+              >
+                {skills.map((ea) => (
+                  <option key={ea.value} value={ea.value}>{ea.name}</option>
+                ))}
+              </Select>
+            ) : (
+              <span className="bg-white border phxs">{this.getSkillName()}</span>
+            )}
+          </div>
+        )
+      }
+    }
+
     renderActionConfig() {
       const actions = this.getActionOptions();
-      const skills = this.getSkillOptions();
       return (
-        <div>
+        <div className="mtxs">
           <div className="mbl">
-            <span className="align-button mrm type-s">Run action from skill</span>
-            <span className="align-button mrm height-xl">
-              {this.props.isForSingleGroup ? (
-                <span className="bg-white border phxs">{this.getSkillName()}</span>
-              ) : (
-                <Select
-                  className="form-select-s width-10"
-                  value={this.props.scheduledAction.behaviorGroupId || ""}
-                  onChange={this.onChangeSkill}
-                >
-                  {skills.map((ea) => (
-                    <option key={ea.value} value={ea.value}>{ea.name}</option>
-                  ))}
-                </Select>
-              )}
-            </span>
-            <span className="align-button mrm type-s">named</span>
+            <span className="align-button mrm type-s">Run action named</span>
             <span className="align-button mrm height-xl">
               <Select
                 className="form-select-s width-10"
@@ -566,6 +587,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       return (
         <div>
           {this.renderScheduleTypeToggle()}
+          {this.renderSkillSelector()}
           {this.renderforScheduleType()}
         </div>
       );
