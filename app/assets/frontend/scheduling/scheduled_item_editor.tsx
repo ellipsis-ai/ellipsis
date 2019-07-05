@@ -72,7 +72,7 @@ class ScheduledItemEditor extends React.Component<Props> {
     if (this.props.scheduledAction) {
       this.props.onChange(this.props.scheduledAction.clone({
         trigger: byTrigger ? "" : null,
-        behaviorGroupId: byTrigger ? null : this.props.groupId,
+        behaviorGroupId: this.props.groupId || this.props.scheduledAction.behaviorGroupId,
         behaviorId: null,
         arguments: [],
         scheduleType: byTrigger ? ScheduleType.Message : ScheduleType.Behavior
