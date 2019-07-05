@@ -1,7 +1,7 @@
 import * as React from 'react';
 import DeleteButton from '../shared_ui/delete_button';
 import Select from '../form/select';
-import FormInput from '../form/input';
+import FormInput, {FocusableTextInputInterface} from '../form/input';
 import ImmutableObjectUtils from '../lib/immutable_object_utils';
 import BehaviorGroup from '../models/behavior_group';
 import ScheduledAction, {ScheduledActionArgument} from '../models/scheduled_action';
@@ -20,6 +20,7 @@ import Collapsible from "../shared_ui/collapsible";
 import SVGExpand from "../svg/expand";
 import {maybeDiffFor} from "../models/diffs";
 import Trigger from "../models/trigger";
+import Input from "../models/input";
 
 interface Props {
   teamId: string,
@@ -47,7 +48,7 @@ interface State {
 }
 
 class ScheduledItemTitle extends React.PureComponent<Props, State> {
-    nameInputs: Array<Option<FormInput>>;
+    nameInputs: Array<Option<FocusableTextInputInterface>>;
     triggerInput: Option<FormInput>;
     validateTrigger: (text: string) => void;
 
@@ -363,6 +364,11 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       }
     }
 
+    getSelectedBehaviorFor(group: BehaviorGroup): Option<BehaviorVersion> {
+      const behaviorId = this.props.scheduledAction.behaviorId;
+      return behaviorId ? group.getActions().find((bv) => bv.behaviorId === behaviorId) : null;
+    }
+
     getActionsWithTriggersForGroup(group: BehaviorGroup): Array<BehaviorVersion> {
       return group.getActions().filter((ea) => ea.getRegularMessageTriggers().length > 0);
     }
@@ -512,50 +518,95 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       );
     }
 
-    renderArguments() {
-      const args = this.getArguments();
-      if (args.length > 0) {
+    getInputIntroFor(inputs: Array<Input>) {
+      if (inputs.length === 1) {
         return (
-          <div>
-            <div className="type-s mbm">Include pre-filled input:</div>
-            <div className="columns">
-              <div className="column column-one-third type-label">Name of input</div>
-              <div className="column column-two-thirds type-label">Answer to include</div>
-            </div>
-            {args.map((arg, index) => (
-              <div className="columns" key={`argument${index}`}>
-                <div className="column column-one-third">
-                  <FormInput ref={(el) => this.nameInputs[index] = el} className="form-input-borderless" value={arg.name}
-                    onChange={this.onChangeArgumentName.bind(this, index)}/>
-                </div>
-                <div className="column column-two-thirds">
-                  <div className="columns columns-elastic">
-                    <div className="column column-expand">
-                      <FormInput className="form-input-borderless" value={arg.value}
-                        onChange={this.onChangeArgumentValue.bind(this, index)}/>
-                    </div>
-                    <div className="column column-shrink">
-                      <DeleteButton
-                        onClick={this.onDeleteArgument.bind(this, index)}
-                        title="Delete input value"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div className="mtm">
-              <Button className="button-s" onClick={this.addArgument}>Add another input</Button>
-            </div>
-          </div>
+          <div className="type-s type-bold mbs">This action has 1 input.</div>
+        );
+      } else if (inputs.length > 1) {
+        return (
+          <div className="type-s type-bold mbs">This action has {inputs.length} inputs.</div>
         );
       } else {
-        return (
-          <div className="mtm">
-            <Button className="button-s" onClick={this.addArgument}>Provide input answers</Button>
-          </div>
-        );
+        return null;
       }
+    }
+
+    renderArguments() {
+      const args = this.getArguments();
+      const group = this.getSelectedGroup();
+      const behavior = group ? this.getSelectedBehaviorFor(group) : null;
+      const inputs = behavior && group ? group.getInputs().filter((input) => input.inputId && behavior.inputIds.includes(input.inputId)) : [];
+      return (
+        <div>
+          {this.getInputIntroFor(inputs)}
+          {args.length > 0 ? (
+            <div>
+              <div className="type-s mbm">Include pre-filled answers:</div>
+              {args.map((ea, index) => this.renderArgument(ea, index, inputs))}
+              <div className="mtm">
+                <Button className="button-s" onClick={this.addArgument}>Add another answer</Button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <Button className="button-s" onClick={this.addArgument}>Provide pre-filled answers</Button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    renderArgument(arg: ScheduledActionArgument, index: number, inputs: Array<Input>) {
+      const key = `argument-${index}`;
+      const selectedInput = inputs.find((input) => input.name === arg.name);
+      const selectedInputName = selectedInput && selectedInput.name || "";
+      return (
+        <div className="max-width-80 border mvm pam bg-white" key={key}>
+          <div>
+            {inputs.length > 0 ? (
+              <Select
+                value={selectedInputName}
+                onChange={this.onChangeArgumentName.bind(this, index)}
+                className="form-select-s align-b"
+              >
+                <option value="">Select question…</option>
+                {inputs.map((input, index) => (
+                  <option key={`input-${input.inputId || index}`} value={input.name}>{input.question}</option>
+                ))}
+              </Select>
+            ) : null}
+          </div>
+          <div className="columns columns-elastic">
+            <div className="column column-shrink">
+              <div className="width-10">
+                <FormInput ref={(el) => this.nameInputs[index] = el}
+                  placeholder="Input name"
+                  className="form-input-borderless type-monospace"
+                  value={arg.name}
+                  onChange={this.onChangeArgumentName.bind(this, index)}
+                />
+              </div>
+            </div>
+            <div className="column column-expand">
+              <div className="columns columns-elastic">
+                <div className="column column-expand">
+                  <FormInput
+                    placeholder="Answer text"
+                    className="form-input-borderless" value={arg.value}
+                    onChange={this.onChangeArgumentValue.bind(this, index)}/>
+                </div>
+                <div className="column column-shrink">
+                  <DeleteButton
+                    onClick={this.onDeleteArgument.bind(this, index)}
+                    title="Delete input value"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
     }
 
     renderforScheduleType() {
