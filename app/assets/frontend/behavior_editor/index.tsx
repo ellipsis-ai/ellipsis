@@ -2895,7 +2895,12 @@ class BehaviorEditor extends React.Component<Props, State> {
 
   renderNavItems() {
     const versionBrowserOpen = this.props.activePanelName === 'versionBrowser';
-    const items: Array<NavItemContent> = [];
+    const group = this.getBehaviorGroup();
+    const icon = group.icon;
+    const name = group.getName();
+    const items: Array<NavItemContent> = [{
+      title: `${icon ? `${icon} ` : ""}${name}`
+    }];
     if (versionBrowserOpen) {
       items.push({
         title: "Review changes"
