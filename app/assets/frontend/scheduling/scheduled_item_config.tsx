@@ -45,7 +45,7 @@ interface State {
   loadingValidation: boolean
   validationError: Option<string>
   showPossibleTriggers: boolean
-  selectArgumentNameValue: Array<Option<string>>
+  selectArgumentNameValues: Array<Option<string>>
 }
 
 const SELECT_OTHER_INPUT = "--other--";
@@ -67,7 +67,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         loadingValidation: Boolean(this.props.scheduledAction.trigger),
         validationError: null,
         showPossibleTriggers: false,
-        selectArgumentNameValue: []
+        selectArgumentNameValues: []
       };
     }
 
@@ -94,7 +94,28 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         });
       } else if (nextProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
         this.beginValidatingTrigger(nextProps);
+      } else if (nextProps.scheduledAction.behaviorId !== this.props.scheduledAction.behaviorId) {
+        this.resetInputSelectors();
       }
+    }
+
+    resetInputSelectors(): void {
+      const args = this.getArguments();
+      const inputs = this.getSelectedBehaviorInputs();
+      const selectArgumentNameValues: Array<string> = [];
+      args.forEach((arg, index) => {
+        const input = inputs.find((input) => input.name === arg.name);
+        if (arg.name && input) {
+          selectArgumentNameValues[index] = arg.name;
+        } else if (arg.name && !input) {
+          selectArgumentNameValues[index] = SELECT_OTHER_INPUT;
+        } else {
+          selectArgumentNameValues[index] = "";
+        }
+      });
+      this.setState({
+        selectArgumentNameValues: selectArgumentNameValues
+      });
     }
 
     componentDidUpdate(prevProps: Readonly<Props>): void {
@@ -190,12 +211,12 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     }
 
     showFreeFormArgumentInputFor(index: number, numInputs: number): boolean {
-      return numInputs === 0 || this.state.selectArgumentNameValue[index] === SELECT_OTHER_INPUT;
+      return numInputs === 0 || this.state.selectArgumentNameValues[index] === SELECT_OTHER_INPUT;
     }
 
     onSelectInput(index: number, value: string): void {
       this.setState({
-        selectArgumentNameValue: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.selectArgumentNameValue, value, index)
+        selectArgumentNameValues: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.selectArgumentNameValues, value, index)
       });
       this.onChangeArgumentName(index, value === SELECT_OTHER_INPUT ? "" : value);
       const nameInput = this.nameInputs[index];
@@ -553,11 +574,15 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       }
     }
 
-    renderArguments() {
-      const args = this.getArguments();
+    getSelectedBehaviorInputs(): Array<Input> {
       const group = this.getSelectedGroup();
       const behavior = group ? this.getSelectedBehaviorFor(group) : null;
-      const inputs = behavior && group ? group.getInputs().filter((input) => input.inputId && behavior.inputIds.includes(input.inputId)) : [];
+      return behavior && group ? group.getInputs().filter((input) => input.inputId && behavior.inputIds.includes(input.inputId)) : [];
+    }
+
+    renderArguments() {
+      const args = this.getArguments();
+      const inputs = this.getSelectedBehaviorInputs();
       return (
         <div className="mtl">
           {this.getInputIntroFor(inputs)}
@@ -586,7 +611,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
           <div>
             {inputs.length > 0 ? (
               <Select
-                value={this.state.selectArgumentNameValue[index] || ""}
+                value={this.state.selectArgumentNameValues[index] || ""}
                 onChange={this.onSelectInput.bind(this, index)}
                 className="mbs form-select-s align-b"
               >
