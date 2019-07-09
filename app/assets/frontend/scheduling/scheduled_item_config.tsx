@@ -45,10 +45,14 @@ interface State {
   loadingValidation: boolean
   validationError: Option<string>
   showPossibleTriggers: boolean
+  selectArgumentNameValues: Array<Option<string>>
 }
+
+const SELECT_OTHER_INPUT = "--other--";
 
 class ScheduledItemTitle extends React.PureComponent<Props, State> {
     nameInputs: Array<Option<FocusableTextInputInterface>>;
+    valueInputs: Array<Option<FocusableTextInputInterface>>;
     triggerInput: Option<FormInput>;
     validateTrigger: (text: string) => void;
 
@@ -56,12 +60,14 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       super(props);
       autobind(this);
       this.nameInputs = [];
+      this.valueInputs = [];
       this.validateTrigger = debounce(this._validateTrigger, 500);
       this.state = {
         matchingBehaviorTriggers: [],
         loadingValidation: Boolean(this.props.scheduledAction.trigger),
         validationError: null,
-        showPossibleTriggers: false
+        showPossibleTriggers: false,
+        selectArgumentNameValues: []
       };
     }
 
@@ -88,7 +94,29 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         });
       } else if (nextProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
         this.beginValidatingTrigger(nextProps);
+      } else if (nextProps.scheduledAction.behaviorId !== this.props.scheduledAction.behaviorId ||
+        nextProps.scheduledAction.arguments.length !== this.props.scheduledAction.arguments.length) {
+        this.resetInputSelectors(nextProps);
       }
+    }
+
+    resetInputSelectors(props: Props): void {
+      const args = this.getArguments(props);
+      const inputs = this.getSelectedBehaviorInputs(props);
+      const selectArgumentNameValues: Array<string> = [];
+      args.forEach((arg, index) => {
+        const input = inputs.find((input) => input.name === arg.name);
+        if (arg.name && input) {
+          selectArgumentNameValues[index] = arg.name;
+        } else if (arg.name && !input) {
+          selectArgumentNameValues[index] = SELECT_OTHER_INPUT;
+        } else {
+          selectArgumentNameValues[index] = "";
+        }
+      });
+      this.setState({
+        selectArgumentNameValues: selectArgumentNameValues
+      });
     }
 
     componentDidUpdate(prevProps: Readonly<Props>): void {
@@ -143,8 +171,8 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       return this.props.scheduledAction.behaviorId;
     }
 
-    getArguments(): Array<ScheduledActionArgument> {
-      return this.props.scheduledAction.arguments;
+    getArguments(props?: Props): Array<ScheduledActionArgument> {
+      return (props || this.props).scheduledAction.arguments;
     }
 
     getTriggerText(): string {
@@ -160,7 +188,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     }
 
     onChangeAction(newBehaviorId: string): void {
-      this.props.onChangeAction(newBehaviorId, this.getArguments());
+      this.props.onChangeAction(newBehaviorId, this.getArguments(this.props));
     }
 
     onChangeSkill(newGroupId: string): void {
@@ -180,6 +208,24 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       const id = this.getActionId();
       if (id) {
         this.props.onChangeAction(id, newArgs);
+      }
+    }
+
+    showFreeFormArgumentInputFor(index: number, numInputs: number): boolean {
+      return numInputs === 0 || this.state.selectArgumentNameValues[index] === SELECT_OTHER_INPUT;
+    }
+
+    onSelectInput(index: number, value: string): void {
+      this.setState({
+        selectArgumentNameValues: ImmutableObjectUtils.arrayWithNewElementAtIndex(this.state.selectArgumentNameValues, value, index)
+      });
+      this.onChangeArgumentName(index, value === SELECT_OTHER_INPUT ? "" : value);
+      const nameInput = this.nameInputs[index];
+      const valueInput = this.valueInputs[index];
+      if (value === SELECT_OTHER_INPUT && nameInput) {
+        nameInput.focus();
+      } else if (value && valueInput) {
+        valueInput.focus();
       }
     }
 
@@ -354,18 +400,19 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         });
     }
 
-    getSelectedGroup(): Option<BehaviorGroup> {
-      if (this.props.isForSingleGroup) {
-        return this.props.behaviorGroups[0];
-      } else if (this.props.scheduledAction.behaviorGroupId) {
-        return this.props.behaviorGroups.find((ea) => ea.id === this.props.scheduledAction.behaviorGroupId);
+    getSelectedGroup(optionalProps?: Props): Option<BehaviorGroup> {
+      const props = optionalProps || this.props;
+      if (props.isForSingleGroup) {
+        return props.behaviorGroups[0];
+      } else if (props.scheduledAction.behaviorGroupId) {
+        return props.behaviorGroups.find((ea) => ea.id === props.scheduledAction.behaviorGroupId);
       } else {
         return null;
       }
     }
 
-    getSelectedBehaviorFor(group: BehaviorGroup): Option<BehaviorVersion> {
-      const behaviorId = this.props.scheduledAction.behaviorId;
+    getSelectedBehaviorFor(group: BehaviorGroup, props?: Props): Option<BehaviorVersion> {
+      const behaviorId = (props || this.props).scheduledAction.behaviorId;
       return behaviorId ? group.getActions().find((bv) => bv.behaviorId === behaviorId) : null;
     }
 
@@ -463,7 +510,6 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     }
 
     renderSkillSelector() {
-      const selectedGroup = this.getSelectedGroup();
       const skills = this.getSkillOptions();
       if (this.hasTriggerText() && !this.props.scheduledAction.isNew()) {
         return null;
@@ -511,9 +557,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
               {this.renderEditLink(this.props.scheduledAction.behaviorGroupId, this.props.scheduledAction.behaviorId)}
             </span>
           </div>
-          <div className="mtl">
-            {this.renderArguments()}
-          </div>
+          {this.renderArguments()}
         </div>
       );
     }
@@ -532,13 +576,17 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       }
     }
 
+    getSelectedBehaviorInputs(props?: Props): Array<Input> {
+      const group = this.getSelectedGroup(props);
+      const behavior = group ? this.getSelectedBehaviorFor(group, props) : null;
+      return behavior && group ? group.getInputs().filter((input) => input.inputId && behavior.inputIds.includes(input.inputId)) : [];
+    }
+
     renderArguments() {
       const args = this.getArguments();
-      const group = this.getSelectedGroup();
-      const behavior = group ? this.getSelectedBehaviorFor(group) : null;
-      const inputs = behavior && group ? group.getInputs().filter((input) => input.inputId && behavior.inputIds.includes(input.inputId)) : [];
+      const inputs = this.getSelectedBehaviorInputs();
       return (
-        <div>
+        <div className="mtl">
           {this.getInputIntroFor(inputs)}
           {args.length > 0 ? (
             <div>
@@ -557,52 +605,65 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       );
     }
 
+    getArgumentSelectorValueFor(index: number): string {
+      return this.state.selectArgumentNameValues[index] || "";
+    }
+
     renderArgument(arg: ScheduledActionArgument, index: number, inputs: Array<Input>) {
       const key = `argument-${index}`;
-      const selectedInput = inputs.find((input) => input.name === arg.name);
-      const selectedInputName = selectedInput && selectedInput.name || "";
+      const readOnly = !this.showFreeFormArgumentInputFor(index, inputs.length);
+      const selectValue = this.getArgumentSelectorValueFor(index);
+      const showFormInputs = Boolean(!inputs.length || selectValue);
       return (
-        <div className="max-width-80 border mvm pam bg-white" key={key}>
-          <div>
-            {inputs.length > 0 ? (
-              <Select
-                value={selectedInputName}
-                onChange={this.onChangeArgumentName.bind(this, index)}
-                className="form-select-s align-b"
-              >
-                <option value="">Select question…</option>
-                {inputs.map((input, index) => (
-                  <option key={`input-${input.inputId || index}`} value={input.name}>{input.question}</option>
-                ))}
-              </Select>
-            ) : null}
-          </div>
+        <div className="max-width-80 border mvm plm bg-white" key={key}>
           <div className="columns columns-elastic">
-            <div className="column column-shrink">
-              <div className="width-10">
-                <FormInput ref={(el) => this.nameInputs[index] = el}
-                  placeholder="Input name"
-                  className="form-input-borderless type-monospace"
-                  value={arg.name}
-                  onChange={this.onChangeArgumentName.bind(this, index)}
-                />
+            <div className="column column-expand prm">
+              <div className={`ptm`}>
+                {inputs.length > 0 ? (
+                  <Select
+                    value={selectValue}
+                    onChange={this.onSelectInput.bind(this, index)}
+                    className="mbm form-select-s align-b"
+                  >
+                    <option value="">Select question…</option>
+                    {inputs.map((input, index) => (
+                      <option key={`input-${input.inputId || index}`} value={input.name}>{input.question}</option>
+                    ))}
+                    <option value={SELECT_OTHER_INPUT}>Other…</option>
+                  </Select>
+                ) : null}
               </div>
+              <Collapsible revealWhen={showFormInputs}>
+                <div className="columns columns-elastic mbm">
+                  <div className="column column-shrink prm">
+                    <div className="width-10">
+                      <FormInput ref={(el) => this.nameInputs[index] = el}
+                        placeholder="Input name"
+                        className={`form-input-borderless type-monospace ${
+                          readOnly ? "type-bold border-transparent" : ""
+                        }`}
+                        value={arg.name}
+                        onChange={this.onChangeArgumentName.bind(this, index)}
+                        readOnly={readOnly}
+                      />
+                    </div>
+                  </div>
+                  <div className="column column-expand">
+                    <FormInput
+                      ref={(el) => this.valueInputs[index] = el}
+                      placeholder="Answer text"
+                      className="form-input-borderless" value={arg.value}
+                      onChange={this.onChangeArgumentValue.bind(this, index)}
+                    />
+                  </div>
+                </div>
+              </Collapsible>
             </div>
-            <div className="column column-expand">
-              <div className="columns columns-elastic">
-                <div className="column column-expand">
-                  <FormInput
-                    placeholder="Answer text"
-                    className="form-input-borderless" value={arg.value}
-                    onChange={this.onChangeArgumentValue.bind(this, index)}/>
-                </div>
-                <div className="column column-shrink">
-                  <DeleteButton
-                    onClick={this.onDeleteArgument.bind(this, index)}
-                    title="Delete input value"
-                  />
-                </div>
-              </div>
+            <div className="column column-shrink">
+              <DeleteButton
+                onClick={this.onDeleteArgument.bind(this, index)}
+                title="Delete answer"
+              />
             </div>
           </div>
         </div>
