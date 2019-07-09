@@ -94,14 +94,15 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         });
       } else if (nextProps.scheduledAction.trigger !== this.props.scheduledAction.trigger) {
         this.beginValidatingTrigger(nextProps);
-      } else if (nextProps.scheduledAction.behaviorId !== this.props.scheduledAction.behaviorId) {
-        this.resetInputSelectors();
+      } else if (nextProps.scheduledAction.behaviorId !== this.props.scheduledAction.behaviorId ||
+        nextProps.scheduledAction.arguments.length !== this.props.scheduledAction.arguments.length) {
+        this.resetInputSelectors(nextProps);
       }
     }
 
-    resetInputSelectors(): void {
-      const args = this.getArguments();
-      const inputs = this.getSelectedBehaviorInputs();
+    resetInputSelectors(props: Props): void {
+      const args = this.getArguments(props);
+      const inputs = this.getSelectedBehaviorInputs(props);
       const selectArgumentNameValues: Array<string> = [];
       args.forEach((arg, index) => {
         const input = inputs.find((input) => input.name === arg.name);
@@ -170,8 +171,8 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       return this.props.scheduledAction.behaviorId;
     }
 
-    getArguments(): Array<ScheduledActionArgument> {
-      return this.props.scheduledAction.arguments;
+    getArguments(props?: Props): Array<ScheduledActionArgument> {
+      return (props || this.props).scheduledAction.arguments;
     }
 
     getTriggerText(): string {
@@ -187,7 +188,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
     }
 
     onChangeAction(newBehaviorId: string): void {
-      this.props.onChangeAction(newBehaviorId, this.getArguments());
+      this.props.onChangeAction(newBehaviorId, this.getArguments(this.props));
     }
 
     onChangeSkill(newGroupId: string): void {
@@ -399,18 +400,19 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         });
     }
 
-    getSelectedGroup(): Option<BehaviorGroup> {
-      if (this.props.isForSingleGroup) {
-        return this.props.behaviorGroups[0];
-      } else if (this.props.scheduledAction.behaviorGroupId) {
-        return this.props.behaviorGroups.find((ea) => ea.id === this.props.scheduledAction.behaviorGroupId);
+    getSelectedGroup(optionalProps?: Props): Option<BehaviorGroup> {
+      const props = optionalProps || this.props;
+      if (props.isForSingleGroup) {
+        return props.behaviorGroups[0];
+      } else if (props.scheduledAction.behaviorGroupId) {
+        return props.behaviorGroups.find((ea) => ea.id === props.scheduledAction.behaviorGroupId);
       } else {
         return null;
       }
     }
 
-    getSelectedBehaviorFor(group: BehaviorGroup): Option<BehaviorVersion> {
-      const behaviorId = this.props.scheduledAction.behaviorId;
+    getSelectedBehaviorFor(group: BehaviorGroup, props?: Props): Option<BehaviorVersion> {
+      const behaviorId = (props || this.props).scheduledAction.behaviorId;
       return behaviorId ? group.getActions().find((bv) => bv.behaviorId === behaviorId) : null;
     }
 
@@ -574,9 +576,9 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       }
     }
 
-    getSelectedBehaviorInputs(): Array<Input> {
-      const group = this.getSelectedGroup();
-      const behavior = group ? this.getSelectedBehaviorFor(group) : null;
+    getSelectedBehaviorInputs(props?: Props): Array<Input> {
+      const group = this.getSelectedGroup(props);
+      const behavior = group ? this.getSelectedBehaviorFor(group, props) : null;
       return behavior && group ? group.getInputs().filter((input) => input.inputId && behavior.inputIds.includes(input.inputId)) : [];
     }
 
@@ -603,51 +605,64 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
       );
     }
 
+    getArgumentSelectorValueFor(index: number): string {
+      return this.state.selectArgumentNameValues[index] || "";
+    }
+
     renderArgument(arg: ScheduledActionArgument, index: number, inputs: Array<Input>) {
       const key = `argument-${index}`;
       const readOnly = !this.showFreeFormArgumentInputFor(index, inputs.length);
+      const selectValue = this.getArgumentSelectorValueFor(index);
+      const showFormInputs = Boolean(!inputs.length || selectValue);
       return (
-        <div className="max-width-80 border mvm pam bg-white" key={key}>
-          <div>
-            {inputs.length > 0 ? (
-              <Select
-                value={this.state.selectArgumentNameValues[index] || ""}
-                onChange={this.onSelectInput.bind(this, index)}
-                className="mbs form-select-s align-b"
-              >
-                <option value="">Select question…</option>
-                {inputs.map((input, index) => (
-                  <option key={`input-${input.inputId || index}`} value={input.name}>{input.question}</option>
-                ))}
-                <option value={SELECT_OTHER_INPUT}>Other…</option>
-              </Select>
-            ) : null}
-          </div>
+        <div className="max-width-80 border mvm plm bg-white" key={key}>
           <div className="columns columns-elastic">
-            <div className="column column-shrink prm">
-              <div className="width-10">
-                <FormInput ref={(el) => this.nameInputs[index] = el}
-                  placeholder="Input name"
-                  className={`form-input-borderless type-monospace ${
-                    readOnly ? "type-bold border-transparent" : ""
-                  }`}
-                  value={arg.name}
-                  onChange={this.onChangeArgumentName.bind(this, index)}
-                  readOnly={readOnly}
-                />
-              </div>
-            </div>
             <div className="column column-expand prm">
-              <FormInput
-                ref={(el) => this.valueInputs[index] = el}
-                placeholder="Answer text"
-                className="form-input-borderless" value={arg.value}
-                onChange={this.onChangeArgumentValue.bind(this, index)}/>
+              <div className={`ptm`}>
+                {inputs.length > 0 ? (
+                  <Select
+                    value={selectValue}
+                    onChange={this.onSelectInput.bind(this, index)}
+                    className="mbm form-select-s align-b"
+                  >
+                    <option value="">Select question…</option>
+                    {inputs.map((input, index) => (
+                      <option key={`input-${input.inputId || index}`} value={input.name}>{input.question}</option>
+                    ))}
+                    <option value={SELECT_OTHER_INPUT}>Other…</option>
+                  </Select>
+                ) : null}
+              </div>
+              <Collapsible revealWhen={showFormInputs}>
+                <div className="columns columns-elastic mbm">
+                  <div className="column column-shrink prm">
+                    <div className="width-10">
+                      <FormInput ref={(el) => this.nameInputs[index] = el}
+                        placeholder="Input name"
+                        className={`form-input-borderless type-monospace ${
+                          readOnly ? "type-bold border-transparent" : ""
+                        }`}
+                        value={arg.name}
+                        onChange={this.onChangeArgumentName.bind(this, index)}
+                        readOnly={readOnly}
+                      />
+                    </div>
+                  </div>
+                  <div className="column column-expand">
+                    <FormInput
+                      ref={(el) => this.valueInputs[index] = el}
+                      placeholder="Answer text"
+                      className="form-input-borderless" value={arg.value}
+                      onChange={this.onChangeArgumentValue.bind(this, index)}
+                    />
+                  </div>
+                </div>
+              </Collapsible>
             </div>
             <div className="column column-shrink">
               <DeleteButton
                 onClick={this.onDeleteArgument.bind(this, index)}
-                title="Delete input value"
+                title="Delete answer"
               />
             </div>
           </div>
