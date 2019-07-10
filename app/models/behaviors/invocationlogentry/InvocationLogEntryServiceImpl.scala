@@ -1,8 +1,8 @@
 package models.behaviors.invocationlogentry
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.google.inject.Provider
 import models.IDs
 import models.behaviors.{BotResult, ParameterWithValue}
@@ -12,6 +12,7 @@ import services.DataService
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.events.{Event, EventType}
 import play.api.libs.json.{JsValue, Json}
 
@@ -107,6 +108,15 @@ class InvocationLogEntryServiceImpl @Inject() (
     }
     dataService.run(action)
   }
+
+  def lastForGroupAction(group: BehaviorGroup): DBIO[Option[OffsetDateTime]] = {
+    lastForGroupQuery(group.id).result.headOption
+  }
+
+  def lastForGroup(group: BehaviorGroup): Future[Option[OffsetDateTime]] = {
+    dataService.run(lastForGroupAction(group))
+  }
+
 
   def createForAction(
                        behaviorVersion: BehaviorVersion,

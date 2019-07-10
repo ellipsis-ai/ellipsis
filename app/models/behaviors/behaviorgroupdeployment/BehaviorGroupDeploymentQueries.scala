@@ -14,6 +14,11 @@ object BehaviorGroupDeploymentQueries {
   }
   val allForBehaviorGroupQuery = Compiled(uncompiledAllForBehaviorGroupQuery _)
 
+  private def uncompiledFirstForBehaviorGroupQuery(groupId: Rep[String]) = {
+    uncompiledAllForBehaviorGroupQuery(groupId).sortBy(_.createdAt.asc).take(1)
+  }
+  val firstForBehaviorGroupQuery = Compiled(uncompiledMostRecentForBehaviorGroupQuery _)
+
   private def uncompiledMostRecentForBehaviorGroupQuery(groupId: Rep[String]) = {
     uncompiledAllForBehaviorGroupQuery(groupId).sortBy(_.createdAt.desc).take(1)
   }

@@ -8,6 +8,7 @@ import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.team.Team
 import services.DataService
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -55,8 +56,12 @@ class ManagedBehaviorGroupServiceImpl @Inject() (
     dataService.run(infoForAction(group, team))
   }
 
+  def allForAction(team: Team): DBIO[Seq[ManagedBehaviorGroup]] = {
+    allForTeamQuery(team.id).result
+  }
+
   def allFor(team: Team): Future[Seq[ManagedBehaviorGroup]] = {
-    dataService.run(allForTeamQuery(team.id).result)
+    dataService.run(allForAction(team))
   }
 
   def ensureFor(group: BehaviorGroup, maybeContact: Option[User]): Future[ManagedBehaviorGroup] = {

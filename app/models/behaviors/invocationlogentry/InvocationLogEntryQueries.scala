@@ -100,6 +100,18 @@ object InvocationLogEntryQueries {
   }
   val allForBehaviorQuery = Compiled(uncompiledAllForBehaviorQuery _)
 
+  private def uncompiledLastForGroupQuery(
+                                   groupId: Rep[String]
+                                 ) = {
+    allWithVersion.
+      filter { case(_, (_, ((_, (group, _)), _))) => group.id === groupId }.
+      sortBy { case((entry, _), _) => entry.createdAt.desc }.
+      take(1).
+      map { case((entry, _), _) => entry.createdAt }
+  }
+
+  val lastForGroupQuery = Compiled(uncompiledLastForGroupQuery _)
+
   def uncompiledLastInvocationForTeamQuery(teamId: Rep[String]) = {
     allWithVersion.
       filter { case(_, (_, ((_, (_, team)), _))) => teamId === team.id}.

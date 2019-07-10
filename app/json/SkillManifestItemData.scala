@@ -1,12 +1,30 @@
 package json
 
+import java.time.OffsetDateTime
+
 case class SkillManifestItemData(
                                   name: String,
                                   id: Option[String],
-                                  editor: String,
+                                  editor: Option[UserData],
                                   description: String,
-                                  active: Boolean,
-                                  developmentStatus: String,
                                   managed: Boolean,
-                                  lastUsed: String
-                                )
+                                  created: OffsetDateTime,
+                                  firstDeployed: Option[OffsetDateTime],
+                                  lastUsed: Option[OffsetDateTime]
+                                ) extends Ordered[SkillManifestItemData] {
+  def compare(that: SkillManifestItemData): Int = {
+    this.lastUsed.map { thisLastUsed =>
+      that.lastUsed.map { thatLastUsed =>
+        thisLastUsed.compareTo(thatLastUsed)
+      }.getOrElse {
+        1
+      }
+    }.getOrElse {
+      if (that.lastUsed.isDefined) {
+        -1
+      } else {
+        0
+      }
+    }
+  }
+}

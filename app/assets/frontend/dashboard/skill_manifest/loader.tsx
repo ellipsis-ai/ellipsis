@@ -3,28 +3,34 @@ import * as ReactDOM from "react-dom";
 import autobind from '../../lib/autobind';
 import SkillManifest from "./index";
 import Page from "../../shared_ui/page";
+import {Timestamp} from "../../lib/formatter";
+import User, {UserJson} from "../../models/user";
 
 interface Props {
   containerId: string
   csrfToken: string
   isAdmin: boolean
   teamId: string
-  items: Array<SkillManifestItem>
+  items: Array<SkillManifestItemJson>
 }
 
 declare var SkillManifestConfig: Props;
 
 export type SkillManifestDevelopmentStatus = "Production" | "Development" | "Requested"
 
-export interface SkillManifestItem {
+export interface SkillManifestItemJson {
   name: string
   id: Option<string>
-  editor: string
+  editor: Option<UserJson>
   description: string
-  active: boolean
-  developmentStatus: SkillManifestDevelopmentStatus
   managed: boolean
-  lastUsed: string
+  created: Timestamp
+  firstDeployed: Option<Timestamp>
+  lastUsed: Option<Timestamp>
+}
+
+export interface SkillManifestItem extends SkillManifestItemJson {
+  editor: Option<User>
 }
 
 class SkillManifestLoader extends React.Component<Props> {
@@ -40,7 +46,9 @@ class SkillManifestLoader extends React.Component<Props> {
           csrfToken={this.props.csrfToken}
           isAdmin={this.props.isAdmin}
           teamId={this.props.teamId}
-          items={this.props.items}
+          items={this.props.items.map((ea) => Object.assign({}, ea, {
+            editor: ea.editor ? User.fromJson(ea.editor) : null
+          }))}
           {...pageProps}
         />
       )} />

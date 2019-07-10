@@ -16,6 +16,8 @@ trait ManagedBehaviorGroupService {
   def infoForAction(group: BehaviorGroup, team: Team): DBIO[ManagedBehaviorGroupInfo]
   def infoFor(group: BehaviorGroup, team: Team): Future[ManagedBehaviorGroupInfo]
 
+  def allForAction(team: Team): DBIO[Seq[ManagedBehaviorGroup]]
+
   def allFor(team: Team): Future[Seq[ManagedBehaviorGroup]]
 
   def ensureFor(group: BehaviorGroup, maybeContact: Option[User]): Future[ManagedBehaviorGroup]

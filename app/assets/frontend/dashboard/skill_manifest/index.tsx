@@ -5,7 +5,9 @@ import SVGCheckmark from "../../svg/checkmark";
 import HelpButton from "../../help/help_button";
 import Collapsible from "../../shared_ui/collapsible";
 import HelpPanel from "../../help/panel";
-import {SkillManifestDevelopmentStatus, SkillManifestItem} from "./loader";
+import {SkillManifestDevelopmentStatus, SkillManifestItem, SkillManifestItemJson} from "./loader";
+import Formatter, {Timestamp} from "../../lib/formatter";
+import * as moment from "moment";
 
 type Props = PageRequiredProps & {
   csrfToken: string
@@ -28,6 +30,24 @@ class SkillManifest extends React.Component<Props> {
 
   toggleStatusHelp(): void {
     this.props.onToggleActivePanel("statusHelp");
+  }
+
+  getActiveCount(): number {
+    return this.props.items.filter((ea) => this.itemIsActive(ea)).length;
+  }
+
+  getManagedCount(): number {
+    return this.props.items.filter((ea) => ea.managed).length;
+  }
+
+  getChargedCount(): number {
+    return this.props.items.filter((ea) => this.itemIsActive(ea) && ea.managed).length;
+  }
+
+  itemIsActive(item: SkillManifestItem): boolean {
+    const aMonthAgo = moment().subtract(31, 'days');
+    const lastUsed = item.lastUsed ? moment(item.lastUsed) : null;
+    return Boolean(lastUsed && lastUsed.isAfter(aMonthAgo));
   }
 
   renderActive() {
@@ -70,16 +90,17 @@ class SkillManifest extends React.Component<Props> {
     );
   }
 
-  renderDevelopmentStatus(status: SkillManifestDevelopmentStatus) {
-    if (status === "Production") {
+  renderDevelopmentStatus(firstDeployed: Option<Timestamp>) {
+    if (firstDeployed) {
       return this.renderProduction();
-    } else if (status === "Development") {
-      return this.renderDevelopment();
-    } else if (status === "Requested") {
-      return this.renderRequested();
     } else {
-      return null;
+      return this.renderDevelopment();
     }
+    // else if (status === "Requested") {
+    //   return this.renderRequested();
+    // } else {
+    //   return null;
+    // }
   }
 
   renderItem(item: SkillManifestItem, index: number) {
@@ -92,12 +113,6 @@ class SkillManifest extends React.Component<Props> {
             <b>{item.name}</b>
           )}
         </td>
-        <td>{item.editor}</td>
-        <td>{item.description}</td>
-        <td>
-          {item.active ? this.renderActive() : this.renderInactive()}
-          {this.renderDevelopmentStatus(item.developmentStatus)}
-        </td>
         <td className="align-c">
           {item.managed ? (
             <span className="type-green display-inline-block height-l">
@@ -107,7 +122,13 @@ class SkillManifest extends React.Component<Props> {
             <span>—</span>
           )}
         </td>
-        <td className="align-r">{item.lastUsed}</td>
+        <td>{item.editor ? item.editor.formattedFullNameOrUserName() : "—"}</td>
+        <td>{item.description}</td>
+        <td>
+          {this.itemIsActive(item) ? this.renderActive() : this.renderInactive()}
+          {this.renderDevelopmentStatus(item.firstDeployed)}
+        </td>
+        <td className="align-r display-nowrap">{item.lastUsed ? Formatter.formatTimestampRelativeIfRecent(item.lastUsed) : "—"}</td>
       </tr>
     )
   }
@@ -127,9 +148,9 @@ class SkillManifest extends React.Component<Props> {
                     </ul>
 
                     <div className="type-s">
-                      <div>13 active</div>
-                      <div>22 managed</div>
-                      <div>11 charged (active/managed)</div>
+                      <div>{this.getActiveCount()} active</div>
+                      <div>{this.getManagedCount()} managed</div>
+                      <div>{this.getChargedCount()} charged (active/managed)</div>
                     </div>
 
                   </nav>
@@ -144,13 +165,13 @@ class SkillManifest extends React.Component<Props> {
                       <thead>
                         <tr>
                           <th className="width-10">Skill name</th>
+                          <th className="align-c">Managed</th>
                           <th className="width-10">Contact</th>
                           <th>Description</th>
                           <th className="align-c">
                             <span className="mrm">Status</span>
                             <HelpButton onClick={this.toggleStatusHelp} toggled={this.props.activePanelName === "statusHelp"} />
                           </th>
-                          <th className="align-c">Managed</th>
                           <th className="width-5 align-r">Last&nbsp;Used</th>
                         </tr>
                       </thead>

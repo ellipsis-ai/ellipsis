@@ -13,6 +13,7 @@ import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.team.Team
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import services.DefaultServices
+import slick.dbio
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -52,11 +53,14 @@ class BehaviorGroupServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def allFor(team: Team): Future[Seq[BehaviorGroup]] = {
-    val action = allForTeamQuery(team.id).result.map { r =>
+  def allForAction(team: Team): dbio.DBIO[Seq[BehaviorGroup]] = {
+    allForTeamQuery(team.id).result.map { r =>
       r.map(tuple2Group)
     }
-    dataService.run(action)
+  }
+
+  def allFor(team: Team): Future[Seq[BehaviorGroup]] = {
+    dataService.run(allForAction(team))
   }
 
   def allWithNoNameFor(team: Team): Future[Seq[BehaviorGroup]] = {

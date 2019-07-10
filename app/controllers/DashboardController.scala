@@ -10,6 +10,7 @@ import json.{SkillManifestConfig, UsageReportConfig}
 import json.Formatting._
 import models.accounts.user.UserTeamAccess
 import models.silhouette.EllipsisEnv
+import models.team.Team
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, Result}
@@ -30,14 +31,14 @@ class DashboardController @Inject()(
   val PLENTY_TEAM_ID = "SZ4Mq9D_ROSPLVoxoinrhQ"
 
   // Hard-coded to allow admins and Plenty for now
-  private def withValidTeamCheck(maybeTargetTeam: Option[String], fn: (UserTeamAccess) => Future[Result])
+  private def withValidTeamCheck(maybeTargetTeam: Option[String], fn: (UserTeamAccess, Team) => Future[Result])
                               (implicit request: SecuredRequest[EllipsisEnv, AnyContent]): Future[Result] = {
     val user = request.identity
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTargetTeam)
-      result <- if (teamAccess.isAdminUser || teamAccess.maybeTargetTeam.exists(_.id == PLENTY_TEAM_ID)) {
-        fn(teamAccess)
-      } else {
+      result <- teamAccess.maybeTargetTeam.filter(_.id == PLENTY_TEAM_ID || teamAccess.isAdminUser).map { team =>
+        fn(teamAccess, team)
+      }.getOrElse {
         Future.successful(NotFound(views.html.error.notFound(viewConfig(None), None, None)))
       }
     } yield result
@@ -46,24 +47,20 @@ class DashboardController @Inject()(
   def usage(
              maybeTeamId: Option[String]
            ): Action[AnyContent] = silhouette.SecuredAction.async { implicit request =>
-    withValidTeamCheck(maybeTeamId, (teamAccess) => {
+    withValidTeamCheck(maybeTeamId, (teamAccess, team) => {
       render.async {
         case Accepts.JavaScript() => Future.successful {
-          teamAccess.maybeTargetTeam.map { team =>
-            Ok(views.js.shared.webpackLoader(
-              viewConfig(Some(teamAccess)),
-              "UsageReportConfig",
-              "dashboardUsage",
-              Json.toJson(UsageReportConfig.buildForDemoData(
-                "usageReportContainer",
-                CSRF.getToken(request).value,
-                teamAccess.isAdminAccess,
-                team.id
-              ))
+          Ok(views.js.shared.webpackLoader(
+            viewConfig(Some(teamAccess)),
+            "UsageReportConfig",
+            "dashboardUsage",
+            Json.toJson(UsageReportConfig.buildForDemoData(
+              "usageReportContainer",
+              CSRF.getToken(request).value,
+              teamAccess.isAdminAccess,
+              team.id
             ))
-          }.getOrElse {
-            NotFound("Team not found")
-          }
+          ))
         }
         case Accepts.Html() => Future.successful {
           val myViewConfig = viewConfig(Some(teamAccess))
@@ -79,23 +76,24 @@ class DashboardController @Inject()(
   def skillManifest(
                      maybeTeamId: Option[String]
                    ): Action[AnyContent] = silhouette.SecuredAction.async { implicit request =>
-    withValidTeamCheck(maybeTeamId, (teamAccess) => {
+    withValidTeamCheck(maybeTeamId, (teamAccess, team) => {
       render.async {
-        case Accepts.JavaScript() => Future.successful {
-          teamAccess.maybeTargetTeam.map { team =>
+        case Accepts.JavaScript() => {
+          for {
+            config <- SkillManifestConfig.buildFor(
+              "skillManifestContainer",
+              CSRF.getToken(request).value,
+              teamAccess.isAdminAccess,
+              team,
+              dataService
+            )
+          } yield {
             Ok(views.js.shared.webpackLoader(
               viewConfig(Some(teamAccess)),
               "SkillManifestConfig",
               "dashboardSkillManifest",
-              Json.toJson(SkillManifestConfig.buildForDemoData(
-                "skillManifestContainer",
-                CSRF.getToken(request).value,
-                teamAccess.isAdminAccess,
-                team.id
-              ))
+              Json.toJson(config)
             ))
-          }.getOrElse {
-            NotFound("Team not found")
           }
         }
         case Accepts.Html() => Future.successful {
