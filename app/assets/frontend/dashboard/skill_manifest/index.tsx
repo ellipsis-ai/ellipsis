@@ -115,7 +115,7 @@ class SkillManifest extends React.Component<Props> {
         </td>
         <td className="align-c">
           {item.managed ? (
-            <span className="type-green display-inline-block height-l">
+            <span className="type-green display-inline-block height-xl">
               <SVGCheckmark label="Managed" />
             </span>
           ) : (

@@ -15,15 +15,31 @@ object SkillManifestConfig {
                     (implicit ec: ExecutionContext): DBIO[SkillManifestConfig] = {
     for {
       behaviorGroups <- dataService.behaviorGroups.allForAction(team)
+      firstAuthors <- DBIO.sequence(behaviorGroups.map { group =>
+        dataService.behaviorGroupVersions.maybeFirstForAction(group).map { maybeVersion =>
+          maybeVersion.map { version =>
+            (group, version.maybeAuthor)
+          }
+        }
+      }).map(_.flatten)
       behaviorGroupVersions <- DBIO.sequence(behaviorGroups.map { group =>
         dataService.behaviorGroupVersions.maybeCurrentForAction(group)
       }).map(_.flatten)
+      firstDeployments <- DBIO.sequence(behaviorGroups.map { group =>
+        dataService.behaviorGroupDeployments.maybeFirstForAction(group).map { maybeDeployment =>
+          (group, maybeDeployment)
+        }
+      })
       managedBehaviorGroups <- dataService.managedBehaviorGroups.allForAction(team)
-      groupContactUsers <- DBIO.sequence(managedBehaviorGroups.map { managedGroup =>
-        managedGroup.maybeContactId.map { userId =>
+      groupContactUsers <- DBIO.sequence(behaviorGroups.map { group =>
+        val maybeManagedContactId = managedBehaviorGroups.find(_.groupId == group.id).flatMap(_.maybeContactId)
+        val maybeFirstAuthor = firstAuthors.find(_._1 == group).flatMap(_._2)
+        maybeManagedContactId.map { userId =>
           dataService.users.findAction(userId)
-        }.getOrElse(DBIO.successful(None)).map { maybeUser =>
-          (managedGroup, maybeUser)
+        }.getOrElse {
+          DBIO.successful(maybeFirstAuthor)
+        }.map { maybeUser =>
+          (group, maybeUser)
         }
       })
       groupContactUserData <- DBIO.sequence(groupContactUsers.map { case(group, maybeUser) =>
@@ -32,11 +48,6 @@ object SkillManifestConfig {
             (group, Some(userData))
           }
         }.getOrElse(DBIO.successful((group, None)))
-      })
-      firstDeployments <- DBIO.sequence(behaviorGroups.map { group =>
-        dataService.behaviorGroupDeployments.maybeFirstForAction(group).map { maybeDeployment =>
-          (group, maybeDeployment.map(_.createdAt))
-        }
       })
       lastGroupInvocations <- DBIO.sequence(behaviorGroups.map { group =>
         dataService.invocationLogEntries.lastForGroupAction(group).map { maybeOffsetDateTime =>
@@ -47,7 +58,7 @@ object SkillManifestConfig {
       SkillManifestConfig(containerId, csrfToken, isAdmin, team.id, behaviorGroupVersions.map { groupVersion =>
         val group = groupVersion.group
         val maybeManagedGroup = managedBehaviorGroups.find(_.groupId == group.id)
-        val maybeManagedContact = groupContactUserData.find(_._1.groupId == group.id).flatMap(_._2)
+        val maybeManagedContact = groupContactUserData.find(_._1 == group).flatMap(_._2)
         val maybeFirstDeployed = firstDeployments.find(_._1 == group).flatMap(_._2)
         val maybeLastInvoked = lastGroupInvocations.find(_._1 == group).flatMap(_._2)
         SkillManifestItemData(
@@ -57,7 +68,7 @@ object SkillManifestConfig {
           groupVersion.maybeDescription.getOrElse(""),
           managed = maybeManagedGroup.isDefined,
           group.createdAt,
-          maybeFirstDeployed,
+          maybeFirstDeployed.map(_.createdAt),
           maybeLastInvoked
         )
       }.sorted.reverse)
