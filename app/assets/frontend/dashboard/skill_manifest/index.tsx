@@ -176,7 +176,11 @@ class SkillManifest extends React.Component<Props> {
                         </tr>
                       </thead>
                       <tbody>
-                        {this.props.items.map(this.renderItem)}
+                        {this.props.items.length > 0 ? this.props.items.map(this.renderItem) : (
+                          <td colSpan={7}>
+                            <b>There are no skills installed.</b>
+                          </td>
+                        )}
                       </tbody>
                     </table>
                   </div>
