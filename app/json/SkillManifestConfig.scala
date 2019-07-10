@@ -1,6 +1,6 @@
 package json
 
-import java.time.{OffsetDateTime, ZoneOffset}
+import java.time.OffsetDateTime
 
 import models.team.Team
 import services.DataService

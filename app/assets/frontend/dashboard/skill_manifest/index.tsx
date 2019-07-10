@@ -5,7 +5,7 @@ import SVGCheckmark from "../../svg/checkmark";
 import HelpButton from "../../help/help_button";
 import Collapsible from "../../shared_ui/collapsible";
 import HelpPanel from "../../help/panel";
-import {SkillManifestDevelopmentStatus, SkillManifestItem, SkillManifestItemJson} from "./loader";
+import {SkillManifestItem} from "./loader";
 import Formatter, {Timestamp} from "../../lib/formatter";
 import * as moment from "moment";
 

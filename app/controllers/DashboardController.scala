@@ -4,10 +4,9 @@ import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import controllers.admin.AdminAuth
 import javax.inject.Inject
-import json.{SkillManifestConfig, UsageReportConfig}
 import json.Formatting._
+import json.{SkillManifestConfig, UsageReportConfig}
 import models.accounts.user.UserTeamAccess
 import models.silhouette.EllipsisEnv
 import models.team.Team

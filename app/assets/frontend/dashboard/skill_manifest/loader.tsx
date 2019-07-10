@@ -16,8 +16,6 @@ interface Props {
 
 declare var SkillManifestConfig: Props;
 
-export type SkillManifestDevelopmentStatus = "Production" | "Development" | "Requested"
-
 export interface SkillManifestItemJson {
   name: string
   id: Option<string>
