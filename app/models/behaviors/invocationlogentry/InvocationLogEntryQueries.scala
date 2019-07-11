@@ -121,4 +121,15 @@ object InvocationLogEntryQueries {
   }
 
   val lastInvocationForTeamQuery = Compiled(uncompiledLastInvocationForTeamQuery _)
+
+  def uncompiledLastForEachGroupForTeamQuery(teamId: Rep[String]) = {
+    allWithVersion.filter { case((outerVersion, _), ((_, ((_, outerTeam), _)), ((outerGroupVersion, _), _))) =>
+      outerTeam.id === teamId &&
+        !allWithVersion.filter { case((innerVersion, _), (_, ((innerGroupVersion, _), _))) =>
+          innerGroupVersion.groupId === outerGroupVersion.groupId && innerVersion.createdAt > outerVersion.createdAt
+        }.exists
+    }
+  }
+
+  val lastForEachGroupForTeamQuery = Compiled(uncompiledLastForEachGroupForTeamQuery _)
 }

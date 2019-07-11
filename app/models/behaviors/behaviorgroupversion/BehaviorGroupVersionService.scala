@@ -3,6 +3,7 @@ package models.behaviors.behaviorgroupversion
 import json.BehaviorGroupData
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.team.Team
 import slick.dbio.DBIO
 
 import scala.concurrent.Future
@@ -18,6 +19,9 @@ trait BehaviorGroupVersionService {
   def maybeCurrentForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupVersion]]
 
   def maybeCurrentFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]]
+
+  def allCurrentForTeamAction(team: Team): DBIO[Seq[BehaviorGroupVersion]]
+  def allFirstForTeamAction(team: Team): DBIO[Seq[BehaviorGroupVersion]]
 
   def allCurrentIds: Future[Seq[String]]
 

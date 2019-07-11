@@ -9,6 +9,7 @@ import json.{BehaviorGroupData, LinkedGithubRepoData}
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.team.Team
 import play.api.Logger
 import services.{AWSLambdaService, ApiConfigInfo, DataService, DefaultServices}
 import slick.dbio.DBIO
@@ -79,6 +80,18 @@ class BehaviorGroupVersionServiceImpl @Inject() (
 
   def maybeCurrentFor(group: BehaviorGroup): Future[Option[BehaviorGroupVersion]] = {
     dataService.run(maybeCurrentForAction(group))
+  }
+
+  def allCurrentForTeamAction(team: Team): DBIO[Seq[BehaviorGroupVersion]] = {
+    allCurrentForTeam(team.id).result.map { r =>
+      r.map(tuple2BehaviorGroupVersion)
+    }
+  }
+
+  def allFirstForTeamAction(team: Team): DBIO[Seq[BehaviorGroupVersion]] = {
+    allFirstForTeam(team.id).result.map { r =>
+      r.map(tuple2BehaviorGroupVersion)
+    }
   }
 
   def allCurrentIds: Future[Seq[String]] = {

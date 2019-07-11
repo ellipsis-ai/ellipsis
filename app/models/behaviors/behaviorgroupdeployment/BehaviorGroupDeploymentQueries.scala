@@ -38,6 +38,14 @@ object BehaviorGroupDeploymentQueries {
     }
   }
 
+  private def uncompiledAllFirstQuery() = {
+    all.filter { outer =>
+      !all.filter { inner =>
+        inner.groupId === outer.groupId && inner.createdAt < outer.createdAt
+      }.exists
+    }
+  }
+
   private def uncompiledMostRecentBehaviorGroupVersionIdsQuery() = {
     uncompiledAllMostRecentQuery().map(_.groupVersionId)
   }
@@ -50,4 +58,10 @@ object BehaviorGroupDeploymentQueries {
   }
   val mostRecentForTeamQuery = Compiled(uncompiledMostRecentForTeamQuery _)
 
+  private def uncompiledFirstForTeamQuery(teamId: Rep[String]) = {
+    uncompiledAllFirstQuery.join(BehaviorGroupQueries.all).on(_.groupId === _.id).
+      filter { case(_, group) => group.teamId === teamId }.
+      map { case(dep, _) => dep }
+  }
+  val firstForTeamQuery = Compiled(uncompiledFirstForTeamQuery _)
 }
