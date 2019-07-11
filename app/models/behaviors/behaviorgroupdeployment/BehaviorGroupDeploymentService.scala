@@ -26,6 +26,12 @@ trait BehaviorGroupDeploymentService {
                              maybeLimitToBehavior: Option[Behavior]
                            ): Future[Seq[Trigger]]
 
+  def maybeFirstForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupDeployment]]
+
+  def maybeFirstFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]]
+
+  def maybeMostRecentForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupDeployment]]
+
   def maybeMostRecentFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]]
 
   def findForBehaviorGroupVersionAction(version: BehaviorGroupVersion): DBIO[Option[BehaviorGroupDeployment]]

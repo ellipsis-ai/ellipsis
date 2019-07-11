@@ -4,6 +4,7 @@ import java.time.OffsetDateTime
 
 import models.accounts.user.User
 import models.behaviors.behavior.Behavior
+import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventType}
@@ -25,6 +26,10 @@ trait InvocationLogEntryService {
   def forTeamSinceDate(team: Team, date: OffsetDateTime): Future[Seq[InvocationLogEntry]]
 
   def allForBehavior(behavior: Behavior, from: OffsetDateTime, to: OffsetDateTime, maybeUserId: Option[String], maybeOriginalEventType: Option[EventType]): Future[Seq[InvocationLogEntry]]
+
+  def lastForGroupAction(group: BehaviorGroup): DBIO[Option[OffsetDateTime]]
+
+  def lastForGroup(group: BehaviorGroup): Future[Option[OffsetDateTime]]
 
   def createForAction(
                        behaviorVersion: BehaviorVersion,

@@ -5,7 +5,10 @@ import SVGCheckmark from "../../svg/checkmark";
 import HelpButton from "../../help/help_button";
 import Collapsible from "../../shared_ui/collapsible";
 import HelpPanel from "../../help/panel";
-import {SkillManifestDevelopmentStatus, SkillManifestItem} from "./loader";
+import {SkillManifestItem} from "./loader";
+import Formatter, {Timestamp} from "../../lib/formatter";
+import * as moment from "moment";
+import Sticky, {Coords} from "../../shared_ui/sticky";
 
 type Props = PageRequiredProps & {
   csrfToken: string
@@ -28,6 +31,24 @@ class SkillManifest extends React.Component<Props> {
 
   toggleStatusHelp(): void {
     this.props.onToggleActivePanel("statusHelp");
+  }
+
+  getActiveCount(): number {
+    return this.props.items.filter((ea) => this.itemIsActive(ea)).length;
+  }
+
+  getManagedCount(): number {
+    return this.props.items.filter((ea) => ea.managed).length;
+  }
+
+  getChargedCount(): number {
+    return this.props.items.filter((ea) => this.itemIsActive(ea) && ea.managed).length;
+  }
+
+  itemIsActive(item: SkillManifestItem): boolean {
+    const aMonthAgo = moment().subtract(31, 'days');
+    const lastUsed = item.lastUsed ? moment(item.lastUsed) : null;
+    return Boolean(lastUsed && lastUsed.isAfter(aMonthAgo));
   }
 
   renderActive() {
@@ -70,16 +91,17 @@ class SkillManifest extends React.Component<Props> {
     );
   }
 
-  renderDevelopmentStatus(status: SkillManifestDevelopmentStatus) {
-    if (status === "Production") {
+  renderDevelopmentStatus(firstDeployed: Option<Timestamp>) {
+    if (firstDeployed) {
       return this.renderProduction();
-    } else if (status === "Development") {
-      return this.renderDevelopment();
-    } else if (status === "Requested") {
-      return this.renderRequested();
     } else {
-      return null;
+      return this.renderDevelopment();
     }
+    // else if (status === "Requested") {
+    //   return this.renderRequested();
+    // } else {
+    //   return null;
+    // }
   }
 
   renderItem(item: SkillManifestItem, index: number) {
@@ -92,24 +114,32 @@ class SkillManifest extends React.Component<Props> {
             <b>{item.name}</b>
           )}
         </td>
-        <td>{item.editor}</td>
-        <td>{item.description}</td>
-        <td>
-          {item.active ? this.renderActive() : this.renderInactive()}
-          {this.renderDevelopmentStatus(item.developmentStatus)}
-        </td>
         <td className="align-c">
           {item.managed ? (
-            <span className="type-green display-inline-block height-l">
+            <span className="type-green display-inline-block height-xl">
               <SVGCheckmark label="Managed" />
             </span>
           ) : (
             <span>—</span>
           )}
         </td>
-        <td className="align-r">{item.lastUsed}</td>
+        <td>{item.editor ? item.editor.formattedFullNameOrUserName() : "—"}</td>
+        <td>{item.description}</td>
+        <td>
+          {this.itemIsActive(item) ? this.renderActive() : this.renderInactive()}
+          {this.renderDevelopmentStatus(item.firstDeployed)}
+        </td>
+        <td className="align-r display-nowrap">{item.lastUsed ? Formatter.formatTimestampRelativeIfRecent(item.lastUsed) : "—"}</td>
       </tr>
     )
+  }
+
+  getCoordsForSidebar(): Coords {
+    return {
+      top: this.props.headerHeight,
+      left: 0,
+      bottom: window.innerHeight - this.props.headerHeight - this.props.footerHeight
+    }
   }
 
   render() {
@@ -117,22 +147,25 @@ class SkillManifest extends React.Component<Props> {
       <div className="flex-row-cascade">
         <div className="flex-columns flex-row-expand">
           <div className="flex-columns flex-row-expand">
-            <div className="flex-column flex-column-left flex-rows container container-wide phn">
+            <div className="flex-column flex-column-left flex-rows">
               <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
                 <div className="column column-page-sidebar flex-column flex-column-left bg-lightest mobile-border-bottom prn">
-                  <nav className="mvxxl phxl">
-                    <ul className="list-nav">
-                      <li><a href={jsRoutes.controllers.DashboardController.usage(this.props.isAdmin ? this.props.teamId : null).url}>Usage report</a></li>
-                      <li className="list-nav-active-item">Skill manifest</li>
-                    </ul>
-
-                    <div className="type-s">
-                      <div>13 active</div>
-                      <div>22 managed</div>
-                      <div>11 charged (active/managed)</div>
-                    </div>
-
-                  </nav>
+                  <Sticky onGetCoordinates={this.getCoordsForSidebar} disabledWhen={this.props.isMobile}>
+                    <nav className="mvxxl phxl">
+                      <ul className="list-nav">
+                        <li><a href={jsRoutes.controllers.DashboardController.usage(this.props.isAdmin ? this.props.teamId : null).url}>Usage report</a></li>
+                        <li className="list-nav-active-item">
+                          <div>Skill manifest</div>
+                          <ul className="type-s">
+                            <li>{this.props.items.length} total</li>
+                            <li>{this.getActiveCount()} active</li>
+                            <li>{this.getManagedCount()} managed</li>
+                            <li>{this.getChargedCount()} charged (active/managed)</li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </nav>
+                  </Sticky>
                 </div>
                 <div
                   className="column column-page-main column-page-main-wide flex-column flex-column-main position-relative bg-white"
@@ -144,18 +177,22 @@ class SkillManifest extends React.Component<Props> {
                       <thead>
                         <tr>
                           <th className="width-10">Skill name</th>
+                          <th className="align-c">Managed</th>
                           <th className="width-10">Contact</th>
                           <th>Description</th>
                           <th className="align-c">
                             <span className="mrm">Status</span>
                             <HelpButton onClick={this.toggleStatusHelp} toggled={this.props.activePanelName === "statusHelp"} />
                           </th>
-                          <th className="align-c">Managed</th>
                           <th className="width-5 align-r">Last&nbsp;Used</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {this.props.items.map(this.renderItem)}
+                        {this.props.items.length > 0 ? this.props.items.map(this.renderItem) : (
+                          <td colSpan={7}>
+                            <b>There are no skills installed.</b>
+                          </td>
+                        )}
                       </tbody>
                     </table>
                   </div>

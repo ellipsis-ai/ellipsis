@@ -14,6 +14,8 @@ trait BehaviorGroupService {
 
   def createFor(maybeExportId: Option[String], team: Team): Future[BehaviorGroup]
 
+  def allForAction(team: Team): DBIO[Seq[BehaviorGroup]]
+
   def allFor(team: Team): Future[Seq[BehaviorGroup]]
 
   def allWithNoNameFor(team: Team): Future[Seq[BehaviorGroup]]

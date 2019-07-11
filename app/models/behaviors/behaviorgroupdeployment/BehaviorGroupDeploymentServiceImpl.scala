@@ -117,11 +117,22 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
     } yield triggers
   }
 
-  def maybeMostRecentFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]] = {
-    val action = mostRecentForBehaviorGroupQuery(group.id).result.map { r =>
+  def maybeFirstForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupDeployment]] = {
+    firstForBehaviorGroupQuery(group.id).result.map { r => r.headOption }
+  }
+
+  def maybeFirstFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]] = {
+    dataService.run(maybeFirstForAction((group)))
+  }
+
+  def maybeMostRecentForAction(group: BehaviorGroup): DBIO[Option[BehaviorGroupDeployment]] = {
+    mostRecentForBehaviorGroupQuery(group.id).result.map { r =>
       r.headOption
     }
-    dataService.run(action)
+  }
+
+  def maybeMostRecentFor(group: BehaviorGroup): Future[Option[BehaviorGroupDeployment]] = {
+    dataService.run(maybeMostRecentForAction(group))
   }
 
   def findForBehaviorGroupVersionIdAction(groupVersionId: String): DBIO[Option[BehaviorGroupDeployment]] = {
