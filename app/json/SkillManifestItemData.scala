@@ -13,18 +13,11 @@ case class SkillManifestItemData(
                                   lastUsed: Option[OffsetDateTime]
                                 ) extends Ordered[SkillManifestItemData] {
   def compare(that: SkillManifestItemData): Int = {
-    this.lastUsed.map { thisLastUsed =>
-      that.lastUsed.map { thatLastUsed =>
-        thisLastUsed.compareTo(thatLastUsed)
-      }.getOrElse {
-        1
-      }
-    }.getOrElse {
-      if (that.lastUsed.isDefined) {
-        -1
-      } else {
-        this.created.compareTo(that.created)
-      }
+    (this.lastUsed, that.lastUsed) match {
+      case (Some(a), Some(b)) => a.compareTo(b)
+      case (Some(_), None) => 1
+      case (None, Some(_)) => -1
+      case (None, None) => this.created.compareTo(that.created)
     }
   }
 }
