@@ -6,6 +6,7 @@ import drivers.SlickPostgresDriver.api._
 import models.accounts.user.{User, UserQueries}
 import models.behaviors.behaviorversion.BehaviorVersionQueries
 import models.behaviors.events.EventType
+import play.api.libs.json.JsNull
 
 object InvocationLogEntryQueries {
 
@@ -25,7 +26,7 @@ object InvocationLogEntryQueries {
       EventType.maybeFrom(raw.maybeEventType),
       EventType.maybeFrom(raw.maybeOriginalEventType),
       raw.messageText,
-      raw.paramValues,
+      raw.paramValues.getOrElse(JsNull),
       raw.resultText,
       raw.context,
       raw.maybeChannel,
@@ -123,10 +124,10 @@ object InvocationLogEntryQueries {
   val lastInvocationForTeamQuery = Compiled(uncompiledLastInvocationForTeamQuery _)
 
   def uncompiledLastForEachGroupForTeamQuery(teamId: Rep[String]) = {
-    allWithVersion.filter { case((outerVersion, _), ((_, ((_, outerTeam), _)), ((outerGroupVersion, _), _))) =>
+    allWithVersion.filter { case((outerEntry, _), ((_, ((_, outerTeam), _)), ((outerGroupVersion, _), _))) =>
       outerTeam.id === teamId &&
-        !allWithVersion.filter { case((innerVersion, _), (_, ((innerGroupVersion, _), _))) =>
-          innerGroupVersion.groupId === outerGroupVersion.groupId && innerVersion.createdAt > outerVersion.createdAt
+        !allWithVersion.filter { case((innerEntry, _), (_, ((innerGroupVersion, _), _))) =>
+          innerGroupVersion.groupId === outerGroupVersion.groupId && innerEntry.createdAt > outerEntry.createdAt
         }.exists
     }
   }
