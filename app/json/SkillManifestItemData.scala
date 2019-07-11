@@ -23,7 +23,7 @@ case class SkillManifestItemData(
       if (that.lastUsed.isDefined) {
         -1
       } else {
-        0
+        this.created.compareTo(that.created)
       }
     }
   }
