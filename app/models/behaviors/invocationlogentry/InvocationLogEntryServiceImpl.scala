@@ -14,7 +14,7 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.events.{Event, EventType}
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsNull, JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,7 +25,7 @@ case class RawInvocationLogEntry(
                                   maybeEventType: Option[String],
                                   maybeOriginalEventType: Option[String],
                                   messageText: String,
-                                  paramValues: JsValue,
+                                  paramValues: Option[JsValue],
                                   resultText: String,
                                   context: String,
                                   maybeChannel: Option[String],
@@ -43,7 +43,7 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def maybeEventType = column[Option[String]]("event_type")
   def maybeOriginalEventType = column[Option[String]]("original_event_type")
   def messageText = column[String]("message_text")
-  def paramValues = column[JsValue]("param_values")
+  def paramValues = column[Option[JsValue]]("param_values")
   def resultText = column[String]("result_text")
   def context = column[String]("context")
   def maybeChannel = column[Option[String]]("channel")
@@ -138,9 +138,9 @@ class InvocationLogEntryServiceImpl @Inject() (
         Some(event.eventType.toString),
         Some(event.originalEventType.toString),
         event.invocationLogText,
-        Json.toJson(parametersWithValues.map { ea =>
+        Some(Json.toJson(parametersWithValues.map { ea =>
           ea.parameter.name -> ea.preparedValue
-        }.toMap),
+        }.toMap)),
         result.fullText,
         event.eventContext.name,
         event.maybeChannel,
@@ -158,7 +158,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         Some(event.eventType),
         Some(event.originalEventType),
         raw.messageText,
-        raw.paramValues,
+        raw.paramValues.getOrElse(JsNull),
         raw.resultText,
         raw.context,
         raw.maybeChannel,
