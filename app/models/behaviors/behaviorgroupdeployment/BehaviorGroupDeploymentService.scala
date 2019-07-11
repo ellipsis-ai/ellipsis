@@ -13,6 +13,8 @@ import scala.concurrent.Future
 
 trait BehaviorGroupDeploymentService {
 
+  def firstForTeamAction(team: Team): DBIO[Seq[BehaviorGroupDeployment]]
+
   def mostRecentForTeam(team: Team): Future[Seq[BehaviorGroupDeployment]]
 
   def maybeActiveBehaviorGroupVersionFor(group: BehaviorGroup, context: String, channel: String): Future[Option[BehaviorGroupVersion]]

@@ -65,6 +65,26 @@ object BehaviorGroupVersionQueries {
   }
   val allCurrentQuery = Compiled(uncompiledAllCurrentQuery)
 
+  def uncompiledAllCurrentForTeam(teamId: Rep[String]) = {
+    allWithUser.filter { case((outerVersion, (_, team)), _) =>
+      team.id === teamId &&
+      !all.filter { innerVersion =>
+        innerVersion.groupId === outerVersion.groupId && innerVersion.createdAt > outerVersion.createdAt
+      }.exists
+    }
+  }
+  val allCurrentForTeam = Compiled(uncompiledAllCurrentForTeam _)
+
+  def uncompiledAllFirstForTeam(teamId: Rep[String]) = {
+    allWithUser.filter { case((outerVersion, (_, team)), _) =>
+      team.id === teamId &&
+        !all.filter { innerVersion =>
+          innerVersion.groupId === outerVersion.groupId && innerVersion.createdAt < outerVersion.createdAt
+        }.exists
+    }
+  }
+  val allFirstForTeam = Compiled(uncompiledAllFirstForTeam _)
+
   private def uncompiledAllCurrentIdsQuery = {
     uncompiledAllCurrentQuery.map { case((version, _), _) => version.id }
   }

@@ -117,6 +117,9 @@ class InvocationLogEntryServiceImpl @Inject() (
     dataService.run(lastForGroupAction(group))
   }
 
+  def lastForEachGroupForTeamAction(team: Team): DBIO[Seq[InvocationLogEntry]] = {
+    lastForEachGroupForTeamQuery(team.id).result.map(r => r.map(tuple2Entry))
+  }
 
   def createForAction(
                        behaviorVersion: BehaviorVersion,

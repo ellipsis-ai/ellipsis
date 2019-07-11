@@ -31,6 +31,8 @@ trait InvocationLogEntryService {
 
   def lastForGroup(group: BehaviorGroup): Future[Option[OffsetDateTime]]
 
+  def lastForEachGroupForTeamAction(team: Team): DBIO[Seq[InvocationLogEntry]]
+
   def createForAction(
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],

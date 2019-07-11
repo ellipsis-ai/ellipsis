@@ -14,6 +14,7 @@ import models.behaviors.events.Event
 import models.behaviors.triggers.Trigger
 import models.team.Team
 import services.{AWSLambdaService, DataService}
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -50,6 +51,10 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
   def lambdaService = lambdaServiceProvider.get
 
   import BehaviorGroupDeploymentQueries._
+
+  def firstForTeamAction(team: Team): DBIO[Seq[BehaviorGroupDeployment]] = {
+    firstForTeamQuery(team.id).result
+  }
 
   def mostRecentForTeam(team: Team): Future[Seq[BehaviorGroupDeployment]] = {
     dataService.run(mostRecentForTeamQuery(team.id).result)
