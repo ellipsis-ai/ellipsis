@@ -67,7 +67,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         loadingValidation: Boolean(this.props.scheduledAction.trigger),
         validationError: null,
         showPossibleTriggers: false,
-        selectArgumentNameValues: []
+        selectArgumentNameValues: this.getSelectArgumentNameValues(props)
       };
     }
 
@@ -96,11 +96,13 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
         this.beginValidatingTrigger(nextProps);
       } else if (nextProps.scheduledAction.behaviorId !== this.props.scheduledAction.behaviorId ||
         nextProps.scheduledAction.arguments.length !== this.props.scheduledAction.arguments.length) {
-        this.resetInputSelectors(nextProps);
+        this.setState({
+          selectArgumentNameValues: this.getSelectArgumentNameValues(nextProps)
+        });
       }
     }
 
-    resetInputSelectors(props: Props): void {
+    getSelectArgumentNameValues(props: Props): Array<string> {
       const args = this.getArguments(props);
       const inputs = this.getSelectedBehaviorInputs(props);
       const selectArgumentNameValues: Array<string> = [];
@@ -114,9 +116,7 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
           selectArgumentNameValues[index] = "";
         }
       });
-      this.setState({
-        selectArgumentNameValues: selectArgumentNameValues
-      });
+      return selectArgumentNameValues;
     }
 
     componentDidUpdate(prevProps: Readonly<Props>): void {
@@ -620,17 +620,20 @@ class ScheduledItemTitle extends React.PureComponent<Props, State> {
             <div className="column column-expand prm">
               <div className={`ptm`}>
                 {inputs.length > 0 ? (
-                  <Select
-                    value={selectValue}
-                    onChange={this.onSelectInput.bind(this, index)}
-                    className="mbm form-select-s align-b"
-                  >
-                    <option value="">Select question…</option>
-                    {inputs.map((input, index) => (
-                      <option key={`input-${input.inputId || index}`} value={input.name}>{input.question}</option>
-                    ))}
-                    <option value={SELECT_OTHER_INPUT}>Other…</option>
-                  </Select>
+                  <div>
+                    <span className="align-button align-button-s align-t mrxs">Input:</span>
+                    <Select
+                      value={selectValue}
+                      onChange={this.onSelectInput.bind(this, index)}
+                      className="mbm form-select-s align-b"
+                    >
+                      <option value="">Select question…</option>
+                      {inputs.map((input, index) => (
+                        <option key={`input-${input.inputId || index}`} value={input.name}>{input.question}</option>
+                      ))}
+                      <option value={SELECT_OTHER_INPUT}>Other…</option>
+                    </Select>
+                  </div>
                 ) : null}
               </div>
               <Collapsible revealWhen={showFormInputs}>
