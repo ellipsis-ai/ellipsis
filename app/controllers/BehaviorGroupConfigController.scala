@@ -29,8 +29,8 @@ class BehaviorGroupConfigController @Inject()(
     render.async {
       case Accepts.JavaScript() => {
         for {
-          teamAccess <- dataService.users.teamAccessFor(user, None)
           maybeGroup <- dataService.behaviorGroups.find(groupId, user)
+          teamAccess <- dataService.users.teamAccessFor(user, maybeGroup.map(_.team.id))
           maybeConfig <- maybeGroup.map { group =>
             ScheduledActionsConfig.buildConfigFor(user, teamAccess, services, group, CSRF.getToken(request).value)
           }.getOrElse(Future.successful(None))
@@ -49,8 +49,8 @@ class BehaviorGroupConfigController @Inject()(
       }
       case Accepts.Html() => {
         for {
-          teamAccess <- dataService.users.teamAccessFor(user, None)
           maybeGroup <- dataService.behaviorGroups.find(groupId, user)
+          teamAccess <- dataService.users.teamAccessFor(user, maybeGroup.map(_.team.id))
           maybeGroupVersion <- maybeGroup.map {
             group => dataService.behaviorGroupVersions.maybeCurrentFor(group)
           }.getOrElse(Future.successful(None))
