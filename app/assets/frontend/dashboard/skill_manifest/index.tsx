@@ -8,6 +8,7 @@ import HelpPanel from "../../help/panel";
 import {SkillManifestItem} from "./loader";
 import Formatter, {Timestamp} from "../../lib/formatter";
 import * as moment from "moment";
+import Sticky, {Coords} from "../../shared_ui/sticky";
 
 type Props = PageRequiredProps & {
   csrfToken: string
@@ -133,27 +134,38 @@ class SkillManifest extends React.Component<Props> {
     )
   }
 
+  getCoordsForSidebar(): Coords {
+    return {
+      top: this.props.headerHeight,
+      left: 0,
+      bottom: window.innerHeight - this.props.headerHeight - this.props.footerHeight
+    }
+  }
+
   render() {
     return (
       <div className="flex-row-cascade">
         <div className="flex-columns flex-row-expand">
           <div className="flex-columns flex-row-expand">
-            <div className="flex-column flex-column-left flex-rows container container-wide phn">
+            <div className="flex-column flex-column-left flex-rows">
               <div className="columns flex-columns flex-row-expand mobile-flex-no-columns">
                 <div className="column column-page-sidebar flex-column flex-column-left bg-lightest mobile-border-bottom prn">
-                  <nav className="mvxxl phxl">
-                    <ul className="list-nav">
-                      <li><a href={jsRoutes.controllers.DashboardController.usage(this.props.isAdmin ? this.props.teamId : null).url}>Usage report</a></li>
-                      <li className="list-nav-active-item">Skill manifest</li>
-                    </ul>
-
-                    <div className="type-s">
-                      <div>{this.getActiveCount()} active</div>
-                      <div>{this.getManagedCount()} managed</div>
-                      <div>{this.getChargedCount()} charged (active/managed)</div>
-                    </div>
-
-                  </nav>
+                  <Sticky onGetCoordinates={this.getCoordsForSidebar} disabledWhen={this.props.isMobile}>
+                    <nav className="mvxxl phxl">
+                      <ul className="list-nav">
+                        <li><a href={jsRoutes.controllers.DashboardController.usage(this.props.isAdmin ? this.props.teamId : null).url}>Usage report</a></li>
+                        <li className="list-nav-active-item">
+                          <div>Skill manifest</div>
+                          <ul className="type-s">
+                            <li>{this.props.items.length} total</li>
+                            <li>{this.getActiveCount()} active</li>
+                            <li>{this.getManagedCount()} managed</li>
+                            <li>{this.getChargedCount()} charged (active/managed)</li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </nav>
+                  </Sticky>
                 </div>
                 <div
                   className="column column-page-main column-page-main-wide flex-column flex-column-main position-relative bg-white"
