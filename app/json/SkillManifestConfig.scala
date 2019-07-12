@@ -44,7 +44,7 @@ object SkillManifestConfig {
             firstGroupVersions.find(_.group == group).flatMap(_.maybeAuthor.map(_.id)).contains(gcud.ellipsisUserId)
         }
         val maybeFirstDeployed = firstDeployments.find(_.groupId == group.id)
-        val maybeLastInvoked = lastGroupInvocations.find(_.behaviorVersion.group == groupVersion.group).map(_.createdAt)
+        val maybeLastInvoked = lastGroupInvocations.find(_.groupId == groupVersion.group.id).flatMap(_.maybeTimestamp)
         SkillManifestItemData(
           groupVersion.name,
           Some(group.id),

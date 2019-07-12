@@ -123,12 +123,14 @@ object InvocationLogEntryQueries {
 
   val lastInvocationForTeamQuery = Compiled(uncompiledLastInvocationForTeamQuery _)
 
-  def uncompiledLastForEachGroupForTeamQuery(teamId: Rep[String]) = {
-    allWithVersion.filter { case((outerEntry, _), ((_, ((_, outerTeam), _)), ((outerGroupVersion, _), _))) =>
-      outerTeam.id === teamId &&
-        !allWithVersion.filter { case((innerEntry, _), (_, ((innerGroupVersion, _), _))) =>
-          innerGroupVersion.groupId === outerGroupVersion.groupId && innerEntry.createdAt > outerEntry.createdAt
-        }.exists
+  private def uncompiledLastForEachGroupForTeamQuery(teamId: Rep[String]) = {
+    allWithVersion.filter {  case (_, ((_, ((_, team), _)), _)) =>
+      team.id === teamId
+    }.groupBy { case (_, (_, ((groupVersion, _), _))) =>
+      groupVersion.groupId
+    }.map { case (groupId, entries) =>
+      val maybeMostRecent = entries.map { case ((entry, _), _) => entry.createdAt }.max
+      (groupId, maybeMostRecent)
     }
   }
 
