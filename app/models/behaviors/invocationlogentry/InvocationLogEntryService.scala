@@ -31,7 +31,9 @@ trait InvocationLogEntryService {
 
   def lastForGroup(group: BehaviorGroup): Future[Option[OffsetDateTime]]
 
-  def lastForEachGroupForTeamAction(team: Team): DBIO[Seq[InvocationLogEntry]]
+  case class BehaviorGroupInvocationTimestamp(groupId: String, maybeTimestamp: Option[OffsetDateTime])
+
+  def lastForEachGroupForTeamAction(team: Team): DBIO[Seq[BehaviorGroupInvocationTimestamp]]
 
   def createForAction(
                        behaviorVersion: BehaviorVersion,
