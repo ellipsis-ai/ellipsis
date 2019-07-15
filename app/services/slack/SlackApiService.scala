@@ -141,6 +141,7 @@ case class SlackApiClient(
       map(r => Some(extract[String](r, "permalink"))).
       recover {
         case SlackApiError("message_not_found") => None // happens for simulated timestamps in RunEvents
+        case SlackApiError("channel_not_found") => None // can happen when messages posted to user IDs
         case SlackApiError(err) => {
           Logger.error(
             s"""
