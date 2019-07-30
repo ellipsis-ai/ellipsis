@@ -11,6 +11,7 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.dialogs.Dialog
 import models.behaviors.ellipsisobject.{BotInfo, Channel}
 import models.behaviors.events.ms_teams._
 import models.behaviors.events.slack._
@@ -96,6 +97,13 @@ sealed trait EventContext {
                    developerContext: DeveloperContext,
                    services: DefaultServices
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]]
+
+  def maybeOpenDialog(
+                  event: Event,
+                  dialog: Dialog,
+                  developerContext: DeveloperContext,
+                  services: DefaultServices
+                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]]
 
   def newRunEventFor(
                    botResult: BotResult,
@@ -344,6 +352,16 @@ case class SlackEventContext(
     services.cacheService.getSlackPermalinkForMessage(key, maybePermalinkFunctionFor(key, services))
   }
 
+  def maybeOpenDialog(
+                  event: Event,
+                  dialog: Dialog,
+                  developerContext: DeveloperContext,
+                  services: DefaultServices
+                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]] = {
+    val client = services.slackApiService.clientFor(profile)
+    client.openDialog(dialog).map(Some(_))
+  }
+
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
                      (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
     maybeMessageTs.map { messageTs =>
@@ -586,6 +604,16 @@ case class MSTeamsEventContext(
     )
   }
 
+  def maybeOpenDialog(
+                  event: Event,
+                  dialog: Dialog,
+                  developerContext: DeveloperContext,
+                  services: DefaultServices
+                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]] = {
+    // TODO: Can MS Teams support dialogs?
+    Future.successful(None)
+  }
+
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
                      (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
     MSTeamsMessageReactionHandler.handle(services.msTeamsApiService.profileClientFor(profile), eventualResults, info)
@@ -726,6 +754,15 @@ case class TestEventContext(
       nextAction.argumentsMap,
       maybeScheduled = None
     )
+  }
+
+  def maybeOpenDialog(
+                       event: Event,
+                       dialog: Dialog,
+                       developerContext: DeveloperContext,
+                       services: DefaultServices
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]] = {
+    Future.successful(None)
   }
 
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)

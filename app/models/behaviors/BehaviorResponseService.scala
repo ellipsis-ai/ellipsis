@@ -27,6 +27,7 @@ trait BehaviorResponseService {
                       maybeActivatedTrigger: Option[Trigger],
                       maybeConversation: Option[Conversation],
                       maybeNewParent: Option[NewParentConversation],
+                      maybeDialog: Option[DialogInfo],
                       userExpectsResponse: Boolean
                     ): DBIO[BehaviorResponse]
 
@@ -37,6 +38,7 @@ trait BehaviorResponseService {
                 maybeActivatedTrigger: Option[Trigger],
                 maybeConversation: Option[Conversation],
                 maybeNewParent: Option[NewParentConversation],
+                maybeDialog: Option[DialogInfo],
                 userExpectsResponse: Boolean
               ): Future[BehaviorResponse]
 

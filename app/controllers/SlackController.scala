@@ -11,7 +11,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events._
 import models.behaviors.events.slack._
-import models.behaviors.{ActionChoice, BotResult, SimpleTextResult}
+import models.behaviors.{ActionChoice, BotResult, DialogInfo, SimpleTextResult}
 import models.help.HelpGroupSearchValue
 import models.silhouette.EllipsisEnv
 import play.api.data.Form
@@ -605,12 +605,14 @@ class SlackController @Inject() (
                                    attachment_id: String,
                                    token: String,
                                    original_message: Option[OriginalMessageInfo],
-                                   response_url: String
+                                   response_url: String,
+                                   trigger_id: String
                                  ) extends RequestInfo with ActionsTriggeredInfo {
 
     val channelId: String = channel.id
     val teamIdForContext: String = slackTeamIdForBot
     val teamIdForUserForContext: String = slackTeamIdForUser
+    val maybeDialogTriggerId: Option[String] = Some(trigger_id)
 
     val contextName: String = Conversation.SLACK_CONTEXT
 
@@ -627,7 +629,7 @@ class SlackController @Inject() (
                                 beQuiet: Boolean
                               ): Future[Option[String]] = {
       dataService.slackBotProfiles.sendResultWithNewEvent(
-        "help index",
+        description,
         getEventualMaybeResult,
         botProfile,
         channel.id,
@@ -747,6 +749,14 @@ class SlackController @Inject() (
       } yield {}
     }
 
+    def maybeDialogFor(actionChoice: ActionChoice): Option[DialogInfo] = {
+      if (actionChoice.useDialog.contains(true)) {
+        maybeDialogTriggerId.map(id => DialogInfo(id))
+      } else {
+        None
+      }
+    }
+
     def processTriggerableAndActiveActionChoice(
                                                  actionChoice: ActionChoice,
                                                  maybeGroupVersion: Option[BehaviorGroupVersion],
@@ -763,46 +773,60 @@ class SlackController @Inject() (
             }
           }
         }
-        _ <- dataService.slackBotProfiles.sendResultWithNewEvent(
-          s"run action named ${actionChoice.actionName}",
-          event => for {
-            maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
-              dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
-            }.getOrElse(Future.successful(None))
-            params <- maybeBehaviorVersion.map { behaviorVersion =>
-              dataService.behaviorParameters.allFor(behaviorVersion)
-            }.getOrElse(Future.successful(Seq()))
-            invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
-              params.find(_.name == name).map { param =>
-                (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
-              }
-            })
-            maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-              dataService.behaviorResponses.buildFor(
-                event,
-                behaviorVersion,
-                invocationParams,
-                None,
-                None,
-                None,
-                userExpectsResponse = true
-              ).map(Some(_))
-            }.getOrElse(Future.successful(None))
-            maybeResult <- maybeResponse.map { response =>
-              response.result.map(Some(_))
-            }.getOrElse(Future.successful(None))
-          } yield maybeResult,
-          botProfile,
-          channel.id,
-          user.id,
-          message_ts,
-          Some(EventType.actionChoice),
-          maybeThreadIdToUse,
-          isEphemeral,
-          Some(response_url),
-          actionChoice.shouldBeQuiet
-        )
-      } yield {}
+        _ <- {
+          val description = s"run action named ${actionChoice.actionName}"
+          dataService.slackBotProfiles.sendResultWithNewEvent(
+            description,
+            (event: SlackMessageEvent) => resultForEvent(event, maybeGroupVersion, actionChoice),
+            botProfile,
+            channel.id,
+            user.id,
+            message_ts,
+            Some(EventType.actionChoice),
+            maybeThreadIdToUse,
+            isEphemeral,
+            Some(response_url),
+            actionChoice.shouldBeQuiet
+          )
+        }
+      } yield ()
+    }
+
+    def resultForEvent(
+                        event: SlackMessageEvent,
+                        maybeGroupVersion: Option[BehaviorGroupVersion],
+                        actionChoice: ActionChoice
+                      )(implicit ec: ExecutionContext): Future[Option[BotResult]] = {
+      for {
+        maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
+          dataService.behaviorVersions.findByName(actionChoice.actionName, groupVersion)
+        }.getOrElse(Future.successful(None))
+        params <- maybeBehaviorVersion.map { behaviorVersion =>
+          dataService.behaviorParameters.allFor(behaviorVersion)
+        }.getOrElse(Future.successful(Seq()))
+        invocationParams <- Future.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
+          params.find(_.name == name).map { param =>
+            (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+          }
+        })
+        maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+          dataService.behaviorResponses.buildFor(
+            event,
+            behaviorVersion,
+            invocationParams,
+            None,
+            None,
+            None,
+            userExpectsResponse = true,
+            maybeDialog = maybeDialogFor(actionChoice)
+          ).map(Some(_))
+        }.getOrElse(Future.successful(None))
+        maybeResult <- maybeResponse.map { response =>
+          response.result.map(Some(_))
+        }.getOrElse {
+          Future.successful(None)
+        }
+      } yield maybeResult
     }
 
     def instantBackgroundResponse(responseText: String, permission: ActionPermission): Future[Option[String]] = {

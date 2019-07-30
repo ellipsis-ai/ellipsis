@@ -63,6 +63,9 @@ declare namespace ellipsis {
     /** ID of another skill on the same team */
     skillId?: string
     
+    /** Whether to start this action in a dialog */
+    useDialog?: boolean
+    
   }
 
   export interface InlineFileAttachment {

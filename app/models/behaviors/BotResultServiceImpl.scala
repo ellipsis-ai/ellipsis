@@ -77,7 +77,14 @@ class BotResultServiceImpl @Inject() (
                     maybeShouldUnfurl: Option[Boolean]
                   )(implicit actorSystem: ActorSystem): DBIO[Option[String]] = {
     if (!botResult.shouldSend) {
-      return DBIO.successful(None)
+      return botResult match {
+        case d: DialogResult => DBIO.from {
+          d.event.eventContext.maybeOpenDialog(d.event, d.dialog, d.developerContext, services)
+        }.map { _ =>
+          None
+        }
+        case _ => DBIO.successful(None)
+      }
     }
     botResult.beforeSend
     val event = botResult.event

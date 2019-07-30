@@ -63,6 +63,7 @@ case class SlashCommandEvent(
             Some(trigger),
             None,
             None,
+            None,
             userExpectsResponse = true
           )
         } yield response

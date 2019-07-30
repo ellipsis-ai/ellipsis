@@ -44,6 +44,7 @@ trait RunEvent extends Event {
         None,
         None,
         None,
+        None,
         userExpectsResponse = true
       )
     } yield Seq(response)

@@ -9,6 +9,7 @@ import models.behaviors.behaviorversion._
 import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
+import models.behaviors.dialogs.Dialog
 import models.behaviors.events.Event
 import models.behaviors.triggers.Trigger
 import play.api.Logger
@@ -42,6 +43,7 @@ case class BehaviorResponse(
                              parametersWithValues: Seq[ParameterWithValue],
                              maybeActivatedTrigger: Option[Trigger],
                              maybeNewParent: Option[NewParentConversation],
+                             maybeDialog: Option[DialogInfo],
                              userExpectsResponse: Boolean,
                              services: DefaultServices
                              ) {
@@ -176,25 +178,31 @@ case class BehaviorResponse(
           if (ready) {
             resultForFilledOut
           } else {
-            for {
-              maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services)
-              maybeThreadId <- maybeThreadIdToUse
-              convo <- InvokeBehaviorConversation.createFor(
-                behaviorVersion,
-                event,
-                maybeChannel,
-                maybeThreadId,
-                maybeActivatedTrigger,
-                maybeNewParent,
-                services
-              )
-              _ <- Future.sequence(parametersWithValues.map { p =>
-                p.maybeValue.map { v =>
-                  dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
-                }.getOrElse(Future.successful(Unit))
-              })
-              result <- dataService.run(convo.resultForAction(event, services))
-            } yield result
+            maybeDialog.map { dialogInfo =>
+              val context = DeveloperContext.default
+              val dialog = Dialog(behaviorVersion, event, dialogInfo, parametersWithValues, context, services)
+              dialog.open
+            }.getOrElse {
+              for {
+                maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services)
+                maybeThreadId <- maybeThreadIdToUse
+                convo <- InvokeBehaviorConversation.createFor(
+                  behaviorVersion,
+                  event,
+                  maybeChannel,
+                  maybeThreadId,
+                  maybeActivatedTrigger,
+                  maybeNewParent,
+                  services
+                )
+                _ <- Future.sequence(parametersWithValues.map { p =>
+                  p.maybeValue.map { v =>
+                    dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
+                  }.getOrElse(Future.successful(Unit))
+                })
+                result <- dataService.run(convo.resultForAction(event, services))
+              } yield result
+            }
           }
         }
       }

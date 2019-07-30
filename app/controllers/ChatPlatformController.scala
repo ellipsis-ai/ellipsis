@@ -28,6 +28,7 @@ trait ChatPlatformController {
     val teamIdForUserForContext: String
     val maybeUserIdForDataTypeChoice: Option[String]
     val contextName: String
+    val maybeDialogTriggerId: Option[String]
     def loginInfo: LoginInfo
     def otherLoginInfos: Seq[LoginInfo]
     def loginInfos: Seq[LoginInfo] = Seq(loginInfo) ++ otherLoginInfos
@@ -698,6 +699,7 @@ trait ChatPlatformController {
               event,
               behaviorVersion,
               Map(),
+              None,
               None,
               None,
               None,

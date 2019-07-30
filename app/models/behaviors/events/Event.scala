@@ -8,6 +8,7 @@ import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion}
 import models.behaviors.builtins.DisplayHelpBehavior
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.dialogs.Dialog
 import models.behaviors.ellipsisobject._
 import models.behaviors.scheduling.Scheduled
 import models.behaviors.triggers.Trigger
@@ -234,6 +235,14 @@ trait Event {
                    services: DefaultServices
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]] = {
     eventContext.sendMessage(this, text, maybeBehaviorVersion, responseType, maybeShouldUnfurl, maybeConversation, attachments, files, choices, developerContext, services)
+  }
+
+  def maybeOpenDialog(
+                       dialog: Dialog,
+                       developerContext: DeveloperContext,
+                       services: DefaultServices
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]] = {
+    eventContext.maybeOpenDialog(this, dialog, developerContext, services)
   }
 
   def botName(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[String] = {

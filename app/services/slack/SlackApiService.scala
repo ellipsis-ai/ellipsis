@@ -8,6 +8,7 @@ import akka.stream.scaladsl.{FileIO, Source}
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
+import models.behaviors.dialogs.Dialog
 import models.behaviors.events.slack.SlackMessage
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
@@ -429,6 +430,30 @@ case class SlackApiClient(
       map { r =>
         extract[JsValue](r, "logins")
       }
+  }
+
+  def openDialog(dialog: Dialog) = {
+    val params = Map(
+      "dialog" -> Map(
+        "title" -> "A Dialog",
+        "callback_id" -> "callback",
+        "elements" -> Seq(
+          Map(
+            "label" -> "An input",
+            "name" -> "input_name",
+            "type" -> "text",
+//            "subtype" -> "email",
+            "placeholder" -> "Text goes here"
+          )
+        ),
+        "submit_label" -> "Continue",
+        "notify_on_cancel" -> true
+      ),
+      "trigger_id" -> dialog.dialogInfo.triggerId
+    )
+    postResponseFor("dialog.open", params).map { r =>
+      extract[Boolean](r, "ok")
+    }
   }
 
 }

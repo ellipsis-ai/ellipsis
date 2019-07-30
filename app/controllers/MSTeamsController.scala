@@ -82,6 +82,8 @@ class MSTeamsController @Inject() (
 
     val maybeTenantId: Option[String] = channelData.tenant.map(_.id)
 
+    val maybeDialogTriggerId: Option[String] = None
+
     def toActivityInfo: ActivityInfo = ActivityInfo(
       id,
       serviceUrl,
@@ -250,6 +252,7 @@ class MSTeamsController @Inject() (
                 event,
                 behaviorVersion,
                 invocationParams,
+                None,
                 None,
                 None,
                 None,
