@@ -172,16 +172,18 @@ case class BehaviorResponse(
   }
 
   def result(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
-    dataService.behaviorVersions.maybeNotReadyResultFor(behaviorVersion, event).flatMap { maybeNotReadyResult =>
-      maybeNotReadyResult.map(Future.successful).getOrElse {
-        isReady.flatMap { ready =>
-          if (ready) {
+    for {
+      maybeNotReadyResult <- dataService.behaviorVersions.maybeNotReadyResultFor(behaviorVersion, event)
+      result <- maybeNotReadyResult.map(Future.successful).getOrElse {
+        for {
+          ready <- isReady
+          readyResult <- if (ready) {
             resultForFilledOut
           } else {
             maybeDialog.map { dialogInfo =>
               val context = DeveloperContext.default
-              val dialog = Dialog(behaviorVersion, event, dialogInfo, parametersWithValues, context, services)
-              dialog.open
+              val dialogResult = Dialog(behaviorVersion, event, dialogInfo, parametersWithValues, context, services).result
+              Future.successful(dialogResult)
             }.getOrElse {
               for {
                 maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services)
@@ -200,12 +202,12 @@ case class BehaviorResponse(
                     dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
                   }.getOrElse(Future.successful(Unit))
                 })
-                result <- dataService.run(convo.resultForAction(event, services))
-              } yield result
+                convoResult <- dataService.run(convo.resultForAction(event, services))
+              } yield convoResult
             }
           }
-        }
+        } yield readyResult
       }
-    }
+    } yield result
   }
 }

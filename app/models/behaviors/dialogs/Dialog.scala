@@ -16,10 +16,6 @@ case class Dialog(
                    developerContext: DeveloperContext,
                    services: DefaultServices
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext) {
-  def open: Future[BotResult] = {
-    Future.successful(
-      DialogResult(event, this, behaviorVersion, parametersWithValues, developerContext)
-    )
-  }
+  def result = DialogResult(event, this, behaviorVersion, parametersWithValues, developerContext)
 }
 
