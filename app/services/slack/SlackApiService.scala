@@ -432,27 +432,49 @@ case class SlackApiClient(
       }
   }
 
+  case class DialogElement(label: String, name: String, `type`: String, placeholder: String)
+  case class DialogParams(title: String, callback_id: String, elements: Seq[DialogElement], submit_label: String, notify_on_cancel: Boolean)
+
+  implicit val dialogElementWrite = Json.writes[DialogElement]
+  implicit val dialogParamsWrite = Json.writes[DialogParams]
+
+  case class ErrorMessages(messages: Seq[String])
+  case class DialogOpenResponse(ok: Boolean, error: Option[String], response_metadata: Option[ErrorMessages])
+  implicit val errorMessagesRead = Json.reads[ErrorMessages]
+  implicit val dialogOpenResponse = Json.reads[DialogOpenResponse]
+
   def openDialog(dialog: Dialog) = {
     val params = Map(
-      "dialog" -> Map(
-        "title" -> "A Dialog",
-        "callback_id" -> "callback",
-        "elements" -> Seq(
-          Map(
-            "label" -> "An input",
-            "name" -> "input_name",
-            "type" -> "text",
-//            "subtype" -> "email",
-            "placeholder" -> "Text goes here"
+      "dialog" -> Json.stringify(Json.toJson(DialogParams(
+        "A Dialog",
+        "callback",
+        Seq(
+          DialogElement(
+            "An input",
+            "input_name",
+            "text",
+            "Text goes here"
           )
         ),
-        "submit_label" -> "Continue",
-        "notify_on_cancel" -> true
-      ),
+        "Continue",
+        notify_on_cancel = true
+      ))),
       "trigger_id" -> dialog.dialogInfo.triggerId
     )
     postResponseFor("dialog.open", params).map { r =>
-      extract[Boolean](r, "ok")
+      val json = responseToJson(r)
+      val dialogResponse = json.as[DialogOpenResponse]
+      if (!dialogResponse.ok) {
+        Logger.error(
+          s"""Error opening new Slack dialog: ${dialogResponse.error.getOrElse("(no error provided)")}
+             |Error messages provided: ${dialogResponse.response_metadata.map(_.messages.mkString("\n- ")).getOrElse("(no messages provided)")}
+             |""".stripMargin
+        )
+        dialogResponse.error.map(error => throw SlackApiError(error)).orElse {
+          throw MalformedResponseException("Expected error message in non-ok response while opening dialog")
+        }
+      }
+      dialogResponse.ok
     }
   }
 

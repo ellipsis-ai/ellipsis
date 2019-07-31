@@ -16,6 +16,14 @@ case class Dialog(
                    developerContext: DeveloperContext,
                    services: DefaultServices
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext) {
-  def result = DialogResult(event, this, behaviorVersion, parametersWithValues, developerContext)
+  def maybeResult: Future[Option[BotResult]] = {
+    event.eventContext.maybeOpenDialog(event, this, developerContext, services).map { maybeDidOpen =>
+      if (maybeDidOpen.contains(true)) {
+        Some(DialogResult(event, this, behaviorVersion, parametersWithValues, developerContext))
+      } else {
+        None
+      }
+    }
+  }
 }
 

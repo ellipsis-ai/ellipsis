@@ -180,31 +180,33 @@ case class BehaviorResponse(
           readyResult <- if (ready) {
             resultForFilledOut
           } else {
-            maybeDialog.map { dialogInfo =>
-              val context = DeveloperContext.default
-              val dialogResult = Dialog(behaviorVersion, event, dialogInfo, parametersWithValues, context, services).result
-              Future.successful(dialogResult)
-            }.getOrElse {
-              for {
-                maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services)
-                maybeThreadId <- maybeThreadIdToUse
-                convo <- InvokeBehaviorConversation.createFor(
-                  behaviorVersion,
-                  event,
-                  maybeChannel,
-                  maybeThreadId,
-                  maybeActivatedTrigger,
-                  maybeNewParent,
-                  services
-                )
-                _ <- Future.sequence(parametersWithValues.map { p =>
-                  p.maybeValue.map { v =>
-                    dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
-                  }.getOrElse(Future.successful(Unit))
-                })
-                convoResult <- dataService.run(convo.resultForAction(event, services))
-              } yield convoResult
-            }
+            for {
+              maybeDialogResult <- maybeDialog.map { dialogInfo =>
+                val context = DeveloperContext.default
+                Dialog(behaviorVersion, event, dialogInfo, parametersWithValues, context, services).maybeResult
+              }.getOrElse(Future.successful(None))
+              notFilledOutResult <- maybeDialogResult.map(Future.successful).getOrElse {
+                for {
+                  maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services)
+                  maybeThreadId <- maybeThreadIdToUse
+                  convo <- InvokeBehaviorConversation.createFor(
+                    behaviorVersion,
+                    event,
+                    maybeChannel,
+                    maybeThreadId,
+                    maybeActivatedTrigger,
+                    maybeNewParent,
+                    services
+                  )
+                  _ <- Future.sequence(parametersWithValues.map { p =>
+                    p.maybeValue.map { v =>
+                      dataService.collectedParameterValues.ensureFor(p.parameter, convo, v.text)
+                    }.getOrElse(Future.successful(Unit))
+                  })
+                  convoResult <- dataService.run(convo.resultForAction(event, services))
+                } yield convoResult
+              }
+            } yield notFilledOutResult
           }
         } yield readyResult
       }
