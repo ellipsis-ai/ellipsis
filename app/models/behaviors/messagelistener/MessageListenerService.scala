@@ -26,4 +26,6 @@ trait MessageListenerService {
               context: String
             ): Future[Seq[MessageListener]]
 
+  def allForUser(user: User): Future[Seq[MessageListener]]
+
 }

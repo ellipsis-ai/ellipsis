@@ -37,6 +37,11 @@ object MessageListenerQueries {
     )
   }
 
+  def uncompiledAllForUserQuery(userId: Rep[String]) = {
+    allWithUser.filter { case(_, user) => user.id === userId }
+  }
+  val allForUserQuery = Compiled(uncompiledAllForUserQuery _)
+
   def uncompiledAllForQuery(
                              teamId: Rep[String],
                              medium: Rep[String],

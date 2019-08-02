@@ -108,4 +108,14 @@ class MessageListenerServiceImpl @Inject() (
             ): Future[Seq[MessageListener]] = {
     dataService.run(allForAction(event, maybeTeam, maybeChannel, context))
   }
+
+  def allForUserAction(user: User): DBIO[Seq[MessageListener]] = {
+    allForUserQuery(user.id).result.map { r =>
+      r.map(tuple2Listener)
+    }
+  }
+
+  def allForUser(user: User): Future[Seq[MessageListener]] = {
+    dataService.run(allForUserAction(user))
+  }
 }

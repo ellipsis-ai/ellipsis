@@ -226,5 +226,7 @@ object Formatting {
   lazy implicit val usageReportConfigFormat = Json.format[UsageReportConfig]
   lazy implicit val skillManifestItemDataFormat = Json.format[SkillManifestItemData]
   lazy implicit val skillManifestConfigFormat = Json.format[SkillManifestConfig]
+
+  lazy implicit val messageListenerDataFormat = Json.format[MessageListenerData]
 }
 
