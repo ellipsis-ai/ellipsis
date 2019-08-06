@@ -441,11 +441,12 @@ case class SlackApiClient(
   def openDialog(dialog: Dialog, inputs: Seq[SlackDialogInput]) = {
     val params = Map(
       "dialog" -> Json.stringify(Json.toJson(SlackDialogParams(
-        "A Dialog",
+        dialog.maybeTitle.getOrElse("ℹ️"),
         dialog.behaviorVersion.id,
         inputs,
         "Continue",
-        notify_on_cancel = true
+        notify_on_cancel = true,
+        Json.stringify(Json.toJson(dialog.state))
       ))),
       "trigger_id" -> dialog.dialogInfo.triggerId
     )

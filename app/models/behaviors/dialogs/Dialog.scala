@@ -1,7 +1,7 @@
 package models.behaviors.dialogs
 
 import akka.actor.ActorSystem
-import json.{DialogInput, SlackDialogInput}
+import json.{DialogInput, DialogState, SlackDialogInput}
 import models.behaviors.{BotResult, DeveloperContext, DialogInfo, DialogResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.Event
@@ -10,6 +10,7 @@ import services.DefaultServices
 import scala.concurrent.{ExecutionContext, Future}
 
 case class Dialog(
+                   maybeTitle: Option[String],
                    behaviorVersion: BehaviorVersion,
                    event: Event,
                    dialogInfo: DialogInfo,
@@ -17,6 +18,11 @@ case class Dialog(
                    developerContext: DeveloperContext,
                    services: DefaultServices
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext) {
+
+  def state: DialogState = {
+    event.eventContext.stateForDialog(event)
+  }
+
   def maybeResult: Future[Option[BotResult]] = {
     event.eventContext.maybeOpenDialog(event, this, developerContext, services).map { maybeDidOpen =>
       if (maybeDidOpen.contains(true)) {

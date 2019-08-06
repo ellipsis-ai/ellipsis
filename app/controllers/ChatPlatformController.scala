@@ -2,6 +2,7 @@ package controllers
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
+import json.DialogState
 import models.accounts.BotProfile
 import models.behaviors.{ActionChoice, BotResult, ParameterWithValue}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -105,6 +106,7 @@ trait ChatPlatformController {
   trait DialogSubmissionInfo extends InteractionInfo {
     val behaviorVersionId: String
     val parameters: Map[String, String]
+    val maybeDialogState: Option[DialogState]
 
     def dialogSubmissionResult(permission: DialogSubmissionPermission)(implicit ec: ExecutionContext): Future[Unit]
 

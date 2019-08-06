@@ -227,6 +227,7 @@ object Formatting {
   lazy implicit val skillManifestItemDataFormat = Json.format[SkillManifestItemData]
   lazy implicit val skillManifestConfigFormat = Json.format[SkillManifestConfig]
 
+  lazy implicit val dialogState = Json.format[DialogState]
   lazy implicit val slackDialogTextInputWrite = Json.writes[SlackDialogTextInput]
   lazy implicit val slackDialogSelectOption = Json.writes[SlackDialogSelectOption]
   lazy implicit val slackDialogSelectInputWrite = Json.writes[SlackDialogSelectInput]

@@ -3,9 +3,11 @@ package controllers
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
+import com.fasterxml.jackson.core.JsonParseException
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import javax.inject.Inject
+import json.DialogState
 import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
@@ -479,10 +481,16 @@ class SlackController @Inject() (
     }
   }
 
-  def event = Action { implicit request =>
+  private def maybeLogRequestBody(endPoint: String, json: JsValue): Unit = {
     if (environment.mode == Mode.Dev) {
-      Logger.info(s"Slack event received:\n${Json.prettyPrint(request.body.asJson.get)}")
+      Logger.info(s"${endPoint} data received from Slack:\n${Json.prettyPrint(json)}")
+    } else {
+      ()
     }
+  }
+
+  def event = Action { implicit request =>
+    maybeLogRequestBody("Event", request.body.asJson.getOrElse(JsString("(unknown)")))
     (maybeChallengeResult orElse maybeEventResult).getOrElse {
       Ok("I don't know what to do with this request but I'm not concerned")
     }
@@ -1167,6 +1175,19 @@ class SlackController @Inject() (
     def loginInfo: LoginInfo = LoginInfo(contextName, user.id)
     def otherLoginInfos: Seq[LoginInfo] = Seq()
 
+    val maybeDialogState: Option[DialogState] = {
+      for {
+        stateString <- state
+        json <- Try(Json.parse(stateString)) match {
+          case Success(json) => Some(json)
+          case Failure(exception) => {
+            Logger.error("Unexpected non-JSON state data received in Slack dialog submission", exception)
+            None
+          }
+        }
+        dialogState <- json.validate[DialogState].asOpt
+      } yield dialogState
+    }
     val behaviorVersionId: String = callback_id
     val parameters: Map[String, String] = submission
 
@@ -1201,9 +1222,9 @@ class SlackController @Inject() (
           permission.botProfile,
           channel.id,
           user.id,
-          OffsetDateTime.now.toString,
+          maybeDialogState.flatMap(_.maybeMessageId).getOrElse(OffsetDateTime.now.toString),
           Some(EventType.dialog),
-          None,
+          maybeDialogState.flatMap(_.maybeThreadId),
           isEphemeral = false,
           Some(response_url),
           beQuiet = false
@@ -1310,6 +1331,7 @@ class SlackController @Inject() (
         // TODO: Investigate whether this is safe and/or desirable
         val unescapedPayload = SlackMessage.unescapeSlackHTMLEntities(payload)
         val json = Json.parse(unescapedPayload)
+        maybeLogRequestBody("Action", json)
         maybeSlackActionsTriggeredInfo(json).map { actionsTriggeredInfo =>
           if (actionsTriggeredInfo.isValid) {
             for {

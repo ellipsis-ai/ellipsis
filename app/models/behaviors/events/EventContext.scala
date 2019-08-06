@@ -3,7 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
-import json.{SlackDialogInput, SlackUserData, UserData}
+import json.{DialogState, SlackDialogInput, SlackUserData, UserData}
 import models.accounts.{MSTeamsContext, SlackContext}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -104,6 +104,10 @@ sealed trait EventContext {
                   developerContext: DeveloperContext,
                   services: DefaultServices
                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]]
+
+  def stateForDialog(event: Event): DialogState = {
+    DialogState(event.maybeMessageId, maybeThreadId)
+  }
 
   def newRunEventFor(
                    botResult: BotResult,

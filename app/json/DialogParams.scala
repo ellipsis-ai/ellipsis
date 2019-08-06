@@ -7,5 +7,6 @@ case class SlackDialogParams(
                               callback_id: String,
                               elements: Seq[SlackDialogInput],
                               submit_label: String,
-                              notify_on_cancel: Boolean
+                              notify_on_cancel: Boolean,
+                              state: String
                             ) extends DialogParams

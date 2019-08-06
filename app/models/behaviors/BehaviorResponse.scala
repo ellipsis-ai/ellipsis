@@ -183,7 +183,7 @@ case class BehaviorResponse(
             for {
               maybeDialogResult <- maybeDialog.map { dialogInfo =>
                 val context = DeveloperContext.default
-                Dialog(behaviorVersion, event, dialogInfo, parametersWithValues, context, services).maybeResult
+                Dialog(behaviorVersion.maybeName, behaviorVersion, event, dialogInfo, parametersWithValues, context, services).maybeResult
               }.getOrElse(Future.successful(None))
               notFilledOutResult <- maybeDialogResult.map(Future.successful).getOrElse {
                 for {
