@@ -16,6 +16,7 @@ case class MessageListener(
                             channel: String,
                             maybeThreadId: Option[String],
                             user: User,
+                            isForCopilot: Boolean,
                             createdAt: OffsetDateTime
                             ) {
   def invocationParamsFor(params: Seq[BehaviorParameter], message: String): Map[String, String] = {
@@ -35,6 +36,7 @@ case class MessageListener(
       channel,
       maybeThreadId,
       user.id,
+      isForCopilot,
       createdAt
     )
   }

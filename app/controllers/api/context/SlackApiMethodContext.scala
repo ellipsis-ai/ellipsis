@@ -362,7 +362,8 @@ case class SlackApiMethodContext(
             team,
             info.medium,
             info.channel,
-            info.threadId
+            info.threadId,
+            isForCopilot = false
           )
         } yield {
           Ok(listener.id)

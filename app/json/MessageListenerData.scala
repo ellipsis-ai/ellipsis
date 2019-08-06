@@ -17,6 +17,7 @@ case class MessageListenerData(
                                 channel: String,
                                 maybeThreadId: Option[String],
                                 user: UserData,
+                                isForCopilot: Boolean,
                                 createdAt: OffsetDateTime
                               )
 
@@ -40,6 +41,7 @@ object MessageListenerData {
         listener.channel,
         listener.maybeThreadId,
         userData,
+        listener.isForCopilot,
         listener.createdAt
       )
     }

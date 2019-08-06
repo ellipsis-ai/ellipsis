@@ -23,6 +23,7 @@ case class RawMessageListener(
                               channel: String,
                               maybeThreadId: Option[String],
                               userId: String,
+                              isForCopilot: Boolean,
                               createdAt: OffsetDateTime
                           )
 
@@ -35,10 +36,11 @@ class MessageListenersTable(tag: Tag) extends Table[RawMessageListener](tag, "me
   def channel = column[String]("channel")
   def maybeThreadId = column[Option[String]]("thread")
   def userId = column[String]("user_id")
+  def isForCopilot = column[Boolean]("is_for_copilot")
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, arguments, medium, channel, maybeThreadId, userId, createdAt) <> ((RawMessageListener.apply _).tupled, RawMessageListener.unapply _)
+    (id, behaviorId, arguments, medium, channel, maybeThreadId, userId, isForCopilot, createdAt) <> ((RawMessageListener.apply _).tupled, RawMessageListener.unapply _)
 }
 
 class MessageListenerServiceImpl @Inject() (
@@ -57,7 +59,8 @@ class MessageListenerServiceImpl @Inject() (
                        team: Team,
                        medium: String,
                        channel: String,
-                       maybeThreadId: Option[String]
+                       maybeThreadId: Option[String],
+                       isForCopilot: Boolean
                      ): DBIO[MessageListener] = {
     val newInstance = MessageListener(
       IDs.next,
@@ -67,6 +70,7 @@ class MessageListenerServiceImpl @Inject() (
       channel,
       maybeThreadId,
       user,
+      isForCopilot,
       OffsetDateTime.now
     )
     (all += newInstance.toRaw).map(_ => newInstance)
@@ -79,9 +83,10 @@ class MessageListenerServiceImpl @Inject() (
                  team: Team,
                  medium: String,
                  channel: String,
-                 maybeThreadId: Option[String]
+                 maybeThreadId: Option[String],
+                 isForCopilot: Boolean
                ): Future[MessageListener] = {
-    dataService.run(createForAction(behavior, arguments, user, team, medium, channel, maybeThreadId))
+    dataService.run(createForAction(behavior, arguments, user, team, medium, channel, maybeThreadId, isForCopilot))
   }
 
   def allForAction(

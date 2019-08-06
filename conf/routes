@@ -53,6 +53,8 @@ POST        /linked_github_repos                      @controllers.BehaviorEdito
 POST        /deploy                                   @controllers.BehaviorEditorController.deploy
 GET         /behavior_test_results/:groupId           @controllers.BehaviorEditorController.testResults(groupId: String)
 
+GET         /copilot                                  @controllers.CopilotController.index(teamId: Option[String] ?= None)
+
 GET         /skill/:groupId/schedules                 @controllers.BehaviorGroupConfigController.schedules(groupId: String)
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser

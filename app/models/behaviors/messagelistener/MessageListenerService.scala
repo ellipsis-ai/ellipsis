@@ -16,7 +16,8 @@ trait MessageListenerService {
                  team: Team,
                  medium: String,
                  channel: String,
-                 maybeThreadId: Option[String]
+                 maybeThreadId: Option[String],
+                 isForCopilot: Boolean
                ): Future[MessageListener]
 
   def allFor(

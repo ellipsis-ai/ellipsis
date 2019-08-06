@@ -33,12 +33,13 @@ object MessageListenerQueries {
       raw.channel,
       raw.maybeThreadId,
       user,
+      raw.isForCopilot,
       raw.createdAt
     )
   }
 
   def uncompiledAllForUserQuery(userId: Rep[String]) = {
-    allWithUser.filter { case(_, user) => user.id === userId }
+    allWithUser.filter { case((listener, _), user) => user.id === userId && listener.isForCopilot }
   }
   val allForUserQuery = Compiled(uncompiledAllForUserQuery _)
 
