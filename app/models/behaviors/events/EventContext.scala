@@ -3,7 +3,7 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
-import json.{SlackUserData, UserData}
+import json.{SlackDialogInput, SlackUserData, UserData}
 import models.accounts.{MSTeamsContext, SlackContext}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -352,14 +352,23 @@ case class SlackEventContext(
     services.cacheService.getSlackPermalinkForMessage(key, maybePermalinkFunctionFor(key, services))
   }
 
+  val DIALOG_INPUT_MAX = 10
+
   def maybeOpenDialog(
-                  event: Event,
-                  dialog: Dialog,
-                  developerContext: DeveloperContext,
-                  services: DefaultServices
-                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]] = {
+                       event: Event,
+                       dialog: Dialog,
+                       developerContext: DeveloperContext,
+                       services: DefaultServices
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]] = {
     val client = services.slackApiService.clientFor(profile)
-    client.openDialog(dialog).map(Some(_))
+    val inputs: Seq[SlackDialogInput] = dialog.parametersWithValues.
+      filter(_.maybeValue.isEmpty).
+      flatMap(ea => SlackDialogInput.maybeFromInput(ea.parameter.input))
+    if (inputs.length > 1) {
+      client.openDialog(dialog, inputs.slice(0, DIALOG_INPUT_MAX)).map(Some(_))
+    } else {
+      Future.successful(None)
+    }
   }
 
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)

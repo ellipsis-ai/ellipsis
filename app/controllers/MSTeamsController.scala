@@ -369,7 +369,7 @@ class MSTeamsController @Inject() (
     for {
       maybeProfile <- info.maybeTenantId.map(id => dataService.msTeamsBotProfiles.find(id)).getOrElse(Future.successful(None))
       _ <- maybeProfile.map { profile =>
-        maybePermissionResultFor(info, profile).flatMap { maybeResult =>
+        maybeActionPermissionResultFor(info, profile).flatMap { maybeResult =>
           maybeResult.map(r => Future.successful({})).getOrElse {
             processMessageEventsFor(info, profile)
           }

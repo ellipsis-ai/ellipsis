@@ -8,6 +8,7 @@ import akka.stream.scaladsl.{FileIO, Source}
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
+import json.{DialogInput, DialogParams, SlackDialogInput, SlackDialogParams}
 import models.behaviors.dialogs.Dialog
 import models.behaviors.events.slack.SlackMessage
 import play.api.Logger
@@ -432,30 +433,17 @@ case class SlackApiClient(
       }
   }
 
-  case class DialogElement(label: String, name: String, `type`: String, placeholder: String)
-  case class DialogParams(title: String, callback_id: String, elements: Seq[DialogElement], submit_label: String, notify_on_cancel: Boolean)
-
-  implicit val dialogElementWrite = Json.writes[DialogElement]
-  implicit val dialogParamsWrite = Json.writes[DialogParams]
-
   case class ErrorMessages(messages: Seq[String])
   case class DialogOpenResponse(ok: Boolean, error: Option[String], response_metadata: Option[ErrorMessages])
   implicit val errorMessagesRead = Json.reads[ErrorMessages]
   implicit val dialogOpenResponse = Json.reads[DialogOpenResponse]
 
-  def openDialog(dialog: Dialog) = {
+  def openDialog(dialog: Dialog, inputs: Seq[SlackDialogInput]) = {
     val params = Map(
-      "dialog" -> Json.stringify(Json.toJson(DialogParams(
+      "dialog" -> Json.stringify(Json.toJson(SlackDialogParams(
         "A Dialog",
-        "callback",
-        Seq(
-          DialogElement(
-            "An input",
-            "input_name",
-            "text",
-            "Text goes here"
-          )
-        ),
+        dialog.behaviorVersion.id,
+        inputs,
         "Continue",
         notify_on_cancel = true
       ))),

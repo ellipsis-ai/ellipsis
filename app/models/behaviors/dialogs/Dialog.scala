@@ -1,6 +1,7 @@
 package models.behaviors.dialogs
 
 import akka.actor.ActorSystem
+import json.{DialogInput, SlackDialogInput}
 import models.behaviors.{BotResult, DeveloperContext, DialogInfo, DialogResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.Event

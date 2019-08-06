@@ -3,7 +3,7 @@ package controllers
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.accounts.BotProfile
-import models.behaviors.{ActionChoice, BotResult}
+import models.behaviors.{ActionChoice, BotResult, ParameterWithValue}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.builtins.DisplayHelpBehavior
@@ -21,17 +21,20 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ChatPlatformController {
 
-  trait ActionsTriggeredInfo {
-
-    val channelId: String
-    val teamIdForContext: String
-    val teamIdForUserForContext: String
-    val maybeUserIdForDataTypeChoice: Option[String]
-    val contextName: String
-    val maybeDialogTriggerId: Option[String]
+  trait InteractionInfo {
     def loginInfo: LoginInfo
     def otherLoginInfos: Seq[LoginInfo]
     def loginInfos: Seq[LoginInfo] = Seq(loginInfo) ++ otherLoginInfos
+    val contextName: String
+    val channelId: String
+    val teamIdForContext: String
+    val teamIdForUserForContext: String
+  }
+
+  trait ActionsTriggeredInfo extends InteractionInfo {
+
+    val maybeUserIdForDataTypeChoice: Option[String]
+    val maybeDialogTriggerId: Option[String]
 
     def isIncorrectTeam(botProfile: BotProfileType): Future[Boolean]
 
@@ -99,6 +102,17 @@ trait ChatPlatformController {
   type BotProfileType <: BotProfile
   type ActionsTriggeredInfoType <: ActionsTriggeredInfo
 
+  trait DialogSubmissionInfo extends InteractionInfo {
+    val behaviorVersionId: String
+    val parameters: Map[String, String]
+
+    def dialogSubmissionResult(permission: DialogSubmissionPermission)(implicit ec: ExecutionContext): Future[Unit]
+
+    def result(maybeResultText: Option[String], permission: DialogSubmissionPermission)(implicit ec: ExecutionContext): Result
+  }
+
+  type DialogSubmissionInfoType <: DialogSubmissionInfo
+
   val services: DefaultServices
   val dataService: DataService = services.dataService
   val cacheService: CacheService = services.cacheService
@@ -106,14 +120,30 @@ trait ChatPlatformController {
   implicit val ec: ExecutionContext
   implicit val actorSystem: ActorSystem
 
-  trait ActionPermission {
+  trait DialogPermissionType[T <: DialogPermission] {
+    def maybeFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[T]]
+
+    def maybeResultFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[Result]] = {
+      maybeFor(info, botProfile).map(_.map(_.result))
+    }
+  }
+
+  trait InteractionPermission {
+    implicit val request: Request[AnyContent]
+    val maybeResultText: Option[String]
+  }
+
+  trait DialogPermission extends InteractionPermission {
+    val info: DialogSubmissionInfoType
+
+    def result: Result
+  }
+
+  trait ActionPermission extends InteractionPermission {
 
     val info: ActionsTriggeredInfoType
     val shouldRemoveActions: Boolean
-    val maybeResultText: Option[String]
     val beQuiet: Boolean = false
-
-    implicit val request: Request[AnyContent]
 
     def instantBackgroundResponse(responseText: String): Future[Option[String]] = {
       info.instantBackgroundResponse(responseText, this)
@@ -343,6 +373,54 @@ trait ChatPlatformController {
       )
     }
 
+  }
+
+  case class DialogSubmissionPermission(
+                                         info: DialogSubmissionInfoType,
+                                         maybeBehaviorVersion: Option[BehaviorVersion],
+                                         maybeGroupVersion: Option[BehaviorGroupVersion],
+                                         isActive: Boolean,
+                                         botProfile: BotProfileType,
+                                         implicit val request: Request[AnyContent]
+                                       ) extends DialogPermission {
+    val maybeResultText: Option[String] = if (isActive) {
+      None
+    } else {
+      Some("The original action is no longer available. Please try opening the dialog again.")
+    }
+
+    override def result: Result = {
+      info.result(maybeResultText, this)
+    }
+  }
+
+  object DialogSubmissionPermission extends DialogPermissionType[DialogSubmissionPermission] {
+    def maybeFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[DialogSubmissionPermission]] = {
+      buildFor(info, botProfile).map(Some(_))
+    }
+
+    def buildFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[DialogSubmissionPermission] = {
+      for {
+        user <- dataService.users.ensureUserFor(info.loginInfo, info.otherLoginInfos, botProfile.teamId)
+        maybeBehaviorVersion <- dataService.behaviorVersions.find(info.behaviorVersionId, user)
+        maybeActiveGroupVersion <- maybeBehaviorVersion.map { behaviorVersion =>
+          dataService.behaviorGroupDeployments.maybeActiveBehaviorGroupVersionFor(behaviorVersion.group, info.contextName, info.channelId)
+        }.getOrElse(Future.successful(None))
+        isActive <- (for {
+          behaviorVersion <- maybeBehaviorVersion
+          behaviorName <- behaviorVersion.maybeName
+          activeVersion <- maybeActiveGroupVersion
+        } yield {
+          if (behaviorVersion.groupVersion == activeVersion) {
+            Future.successful(true)
+          } else {
+            dataService.behaviorGroupVersions.haveActionsWithNameAndSameInterface(behaviorName, behaviorVersion.groupVersion, activeVersion)
+          }
+        }).getOrElse(Future.successful(false))
+      } yield {
+        DialogSubmissionPermission(info, maybeBehaviorVersion, maybeActiveGroupVersion, isActive, botProfile, request)
+      }
+    }
   }
 
   trait HelpPermission extends ActionPermission {
@@ -775,7 +853,11 @@ trait ChatPlatformController {
 
   }
 
-  def maybePermissionResultFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[Result]] = {
+  def maybeDialogPermissionResultFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[Result]] = {
+    DialogSubmissionPermission.maybeResultFor(info, botProfile)
+  }
+
+  def maybeActionPermissionResultFor(info: ActionsTriggeredInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[Result]] = {
     DataTypeChoicePermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
       maybeResult.map(r => Future.successful(Some(r))).getOrElse {
         TextInputPermission.maybeResultFor(info, botProfile).flatMap { maybeResult =>
