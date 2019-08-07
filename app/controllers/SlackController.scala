@@ -2,8 +2,6 @@ package controllers
 
 import java.time.OffsetDateTime
 
-import akka.actor.ActorSystem
-import com.fasterxml.jackson.core.JsonParseException
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import javax.inject.Inject
@@ -75,6 +73,67 @@ class SlackController @Inject() (
   trait RequestInfo {
     val token: String
     def isValid: Boolean = configuration.getOptional[String]("slack.token").contains(token)
+  }
+
+  trait InteractionRequestInfo extends RequestInfo {
+    val team: TeamInfo
+    val user: UserInfo
+    val channel: ChannelInfo
+    val action_ts: String
+    val response_url: String
+    val contextName: String = Conversation.SLACK_CONTEXT
+
+    lazy val channelId: String = channel.id
+    lazy val teamIdForContext: String = slackTeamIdForBot
+    lazy val teamIdForUserForContext: String = slackTeamIdForUser
+
+    def loginInfo: LoginInfo = LoginInfo(contextName, user.id)
+
+    def otherLoginInfos: Seq[LoginInfo] = Seq()
+
+    def slackTeamIdForUser: String = user.team_id.getOrElse(team.id)
+
+    def slackTeamIdForBot: String = team.id
+
+    def maybeBotProfile: Future[Option[SlackBotProfile]] = {
+      dataService.slackBotProfiles.allForSlackTeamId(slackTeamIdForBot).map(_.headOption)
+    }
+
+    def maybeResponseForBehaviorVersionAction(
+                                               event: SlackMessageEvent,
+                                               maybeBehaviorVersion: Option[BehaviorVersion],
+                                               arguments: Map[String, String],
+                                               maybeDialogInfo: Option[DialogInfo]
+                                             ): DBIO[Option[BehaviorResponse]] = {
+      for {
+        params <- maybeBehaviorVersion.map { behaviorVersion =>
+          dataService.behaviorParameters.allForAction(behaviorVersion)
+        }.getOrElse(DBIO.successful(Seq()))
+        maybeResponse <- {
+          maybeBehaviorVersion.map { behaviorVersion =>
+            val invocationParams = arguments.flatMap { case (name, value) =>
+              params.find(_.name == name).map { param =>
+                (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
+              }
+            }
+            dataService.behaviorResponses.buildForAction(
+              event,
+              behaviorVersion,
+              invocationParams,
+              None,
+              None,
+              None,
+              maybeDialogInfo,
+              userExpectsResponse = true
+            ).map { response =>
+              Some(response)
+            }
+          }.getOrElse {
+            DBIO.successful(None)
+          }
+        }
+      } yield maybeResponse
+    }
   }
 
   case class ChallengeRequestInfo(token: String, challenge: String, requestType: String) extends RequestInfo
@@ -620,17 +679,9 @@ class SlackController @Inject() (
                                    original_message: Option[OriginalMessageInfo],
                                    response_url: String,
                                    trigger_id: String
-                                 ) extends RequestInfo with ActionsTriggeredInfo {
+                                 ) extends InteractionRequestInfo with ActionsTriggeredInfo {
 
-    val channelId: String = channel.id
-    val teamIdForContext: String = slackTeamIdForBot
-    val teamIdForUserForContext: String = slackTeamIdForUser
     val maybeDialogTriggerId: Option[String] = Some(trigger_id)
-
-    val contextName: String = Conversation.SLACK_CONTEXT
-
-    def loginInfo: LoginInfo = LoginInfo(contextName, user.id)
-    def otherLoginInfos: Seq[LoginInfo] = Seq()
 
     def onEvent(event: Event): Future[Unit] = slackEventService.onEvent(event)
 
@@ -642,7 +693,7 @@ class SlackController @Inject() (
                                 beQuiet: Boolean
                               ): Future[Option[String]] = {
       dataService.slackBotProfiles.sendResultWithNewEvent(
-        description,
+        "help index",
         getEventualMaybeResult,
         botProfile,
         channel.id,
@@ -818,35 +869,12 @@ class SlackController @Inject() (
                         event: SlackMessageEvent,
                         maybeGroupVersion: Option[BehaviorGroupVersion],
                         actionChoice: ActionChoice
-                      )(implicit ec: ExecutionContext): DBIO[Option[BehaviorResponse]] = {
+                      ): DBIO[Option[BehaviorResponse]] = {
       for {
         maybeBehaviorVersion <- maybeGroupVersion.map { groupVersion =>
           dataService.behaviorVersions.findByNameAction(actionChoice.actionName, groupVersion)
         }.getOrElse(DBIO.successful(None))
-        params <- maybeBehaviorVersion.map { behaviorVersion =>
-          dataService.behaviorParameters.allForAction(behaviorVersion)
-        }.getOrElse(DBIO.successful(Seq()))
-        invocationParams <- DBIO.successful(actionChoice.argumentsMap.flatMap { case(name, value) =>
-          params.find(_.name == name).map { param =>
-            (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
-          }
-        })
-        maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-          dataService.behaviorResponses.buildForAction(
-            event,
-            behaviorVersion,
-            invocationParams,
-            None,
-            None,
-            None,
-            userExpectsResponse = true,
-            maybeDialog = maybeDialogFor(actionChoice)
-          ).map { response =>
-            Some(response)
-          }
-        }.getOrElse {
-          DBIO.successful(None)
-        }
+        maybeResponse <- maybeResponseForBehaviorVersionAction(event, maybeBehaviorVersion, actionChoice.argumentsMap, maybeDialogFor(actionChoice))
       } yield maybeResponse
     }
 
@@ -926,13 +954,6 @@ class SlackController @Inject() (
       }
     }
     val isEphemeral: Boolean = original_message.isEmpty
-
-    def slackTeamIdForUser: String = user.team_id.getOrElse(team.id)
-    def slackTeamIdForBot: String = team.id
-
-    def maybeBotProfile: Future[Option[SlackBotProfile]] = {
-      dataService.slackBotProfiles.allForSlackTeamId(slackTeamIdForBot).map(_.headOption)
-    }
 
     def maybeHelpForSkillIdWithMaybeSearch: Future[Option[HelpGroupSearchValue]] = {
       val maybeAction = actions.find(_.name == SHOW_BEHAVIOR_GROUP_HELP)
@@ -1165,15 +1186,7 @@ class SlackController @Inject() (
                                         action_ts: String,
                                         token: String,
                                         response_url: String
-                                      ) extends RequestInfo with DialogSubmissionInfo {
-    val channelId: String = channel.id
-    val teamIdForContext: String = slackTeamIdForBot
-    val teamIdForUserForContext: String = slackTeamIdForUser
-
-    val contextName: String = Conversation.SLACK_CONTEXT
-
-    def loginInfo: LoginInfo = LoginInfo(contextName, user.id)
-    def otherLoginInfos: Seq[LoginInfo] = Seq()
+                                      ) extends InteractionRequestInfo with DialogSubmissionInfo {
 
     val maybeDialogState: Option[DialogState] = {
       for {
@@ -1188,36 +1201,30 @@ class SlackController @Inject() (
         dialogState <- json.validate[DialogState].asOpt
       } yield dialogState
     }
+
     val behaviorVersionId: String = callback_id
     val parameters: Map[String, String] = submission
-
-    def slackTeamIdForUser: String = user.team_id.getOrElse(team.id)
-    def slackTeamIdForBot: String = team.id
-
-    def maybeBotProfile: Future[Option[SlackBotProfile]] = {
-      dataService.slackBotProfiles.allForSlackTeamId(slackTeamIdForBot).map(_.headOption)
-    }
 
     def result(
                 maybeResultText: Option[String],
                 permission: DialogSubmissionPermission
-              )(implicit ec: ExecutionContext): Result = {
+              ): Result = {
       if (permission.isActive) {
         dialogSubmissionResult(permission)
       }
       Ok("")
     }
 
-    def dialogSubmissionResult(permission: DialogSubmissionPermission)(implicit ec: ExecutionContext): Future[Unit] = {
+    def dialogSubmissionResult(permission: DialogSubmissionPermission): Future[Unit] = {
       permission.maybeBehaviorVersion.map { behaviorVersion =>
         val description = s"run action named ${behaviorVersion.maybeName.getOrElse("(none)")}"
         dataService.slackBotProfiles.sendResultWithNewEvent(
           description,
           (event: SlackMessageEvent) => {
             for {
-              response <- dataService.run(responseForEventAction(event, behaviorVersion))
-              result <- response.result.map(Some(_))
-            } yield result
+              maybeResponse <- dataService.run(responseForEventAction(event, behaviorVersion))
+              maybeResult <- maybeResponse.map(_.result.map(Some(_))).getOrElse(Future.successful(None))
+            } yield maybeResult
           },
           permission.botProfile,
           channel.id,
@@ -1237,27 +1244,8 @@ class SlackController @Inject() (
     def responseForEventAction(
                                 event: SlackMessageEvent,
                                 behaviorVersion: BehaviorVersion
-                              )(implicit ec: ExecutionContext): DBIO[BehaviorResponse] = {
-      for {
-        invocationParams <- dataService.behaviorParameters.allForAction(behaviorVersion).map { behaviorParameters =>
-          parameters.flatMap { case(name, value) =>
-            behaviorParameters.find(_.input.name == name).map { bp =>
-              (AWSLambdaConstants.invocationParamFor(bp.rank - 1), value)
-            }
-          }
-        }
-        response <- dataService.behaviorResponses.buildForAction(
-          event,
-          behaviorVersion,
-          invocationParams,
-          None,
-          None,
-          None,
-          None,
-          userExpectsResponse = true
-        )
-
-      } yield response
+                              ): DBIO[Option[BehaviorResponse]] = {
+      maybeResponseForBehaviorVersionAction(event, Some(behaviorVersion), parameters, None)
     }
   }
 
@@ -1298,24 +1286,34 @@ class SlackController @Inject() (
     }
   }
 
-  def maybeSlackActionsTriggeredInfo(json: JsValue): Option[SlackActionsTriggeredInfo] = {
-    json.validate[SlackActionsTriggeredInfo].fold(
-      _ => None,
-      info => Some(info)
-    )
+  def maybeSlackActionsTriggeredInfoResult(json: JsValue)(implicit request: Request[AnyContent]): Option[Future[Result]] = {
+    json.validate[SlackActionsTriggeredInfo].asOpt.map { info =>
+      validateAction(info, (botProfile) =>  maybeActionPermissionResultFor(info, botProfile))
+    }
   }
 
-  def maybeSlackDialogSubmittedInfo(json: JsValue): Option[SlackDialogSubmissionInfo] = {
-    json.validate[SlackDialogSubmissionInfo].fold(
-      _ => None,
-      info => {
-        if (info.`type` == "dialog_submission") {
-          Some(info)
-        } else {
-          None
-        }
+  def maybeSlackDialogSubmittedInfoResult(json: JsValue)(implicit request: Request[AnyContent]): Option[Future[Result]] = {
+    json.validate[SlackDialogSubmissionInfo].asOpt.filter(_.`type` == "dialog_submission").map { info =>
+      validateAction(info, (botProfile) => maybeDialogPermissionResultFor(info, botProfile))
+    }
+  }
+
+  def validateAction[T <: InteractionRequestInfo](
+                                                   info: T,
+                                                   withBotProfile: SlackBotProfile => Future[Option[Result]]
+                                                 ): Future[Result] = {
+    if (info.isValid) {
+      for {
+        maybeBotProfile <- info.maybeBotProfile
+        maybeResult <- maybeBotProfile.map { botProfile =>
+          withBotProfile(botProfile)
+        }.getOrElse(Future.successful(None))
+      } yield {
+        maybeResult.getOrElse(Ok(""))
       }
-    )
+    } else {
+      Future.successful(Forbidden("Bad token"))
+    }
   }
 
   def action = Action.async { implicit request =>
@@ -1332,30 +1330,9 @@ class SlackController @Inject() (
         val unescapedPayload = SlackMessage.unescapeSlackHTMLEntities(payload)
         val json = Json.parse(unescapedPayload)
         maybeLogRequestBody("Action", json)
-        maybeSlackActionsTriggeredInfo(json).map { actionsTriggeredInfo =>
-          if (actionsTriggeredInfo.isValid) {
-            for {
-              maybeBotProfile <- actionsTriggeredInfo.maybeBotProfile
-              maybeResult <- maybeBotProfile.map { botProfile =>
-                maybeActionPermissionResultFor(actionsTriggeredInfo, botProfile)
-              }.getOrElse(Future.successful(None))
-            } yield {
-              maybeResult.getOrElse(Ok(""))
-            }
-          } else {
-            Future.successful(Forbidden("Bad token"))
-          }
-        }.orElse {
-          maybeSlackDialogSubmittedInfo(json).map { dialogSubmittedInfo =>
-            for {
-              maybeBotProfile <- dialogSubmittedInfo.maybeBotProfile
-              maybeResult <- maybeBotProfile.map { botProfile =>
-                maybeDialogPermissionResultFor(dialogSubmittedInfo, botProfile)
-              }.getOrElse(Future.successful(None))
-            } yield {
-              maybeResult.getOrElse(Ok(""))
-            }
-          }
+
+        maybeSlackActionsTriggeredInfoResult(json).orElse {
+          maybeSlackDialogSubmittedInfoResult(json)
         }.getOrElse {
           Future.successful(BadRequest("Invalid request"))
         }

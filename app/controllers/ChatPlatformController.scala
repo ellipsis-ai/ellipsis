@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.DialogState
 import models.accounts.BotProfile
-import models.behaviors.{ActionChoice, BotResult, ParameterWithValue}
+import models.behaviors.{ActionChoice, BotResult}
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.builtins.DisplayHelpBehavior
@@ -108,9 +108,9 @@ trait ChatPlatformController {
     val parameters: Map[String, String]
     val maybeDialogState: Option[DialogState]
 
-    def dialogSubmissionResult(permission: DialogSubmissionPermission)(implicit ec: ExecutionContext): Future[Unit]
+    def dialogSubmissionResult(permission: DialogSubmissionPermission): Future[Unit]
 
-    def result(maybeResultText: Option[String], permission: DialogSubmissionPermission)(implicit ec: ExecutionContext): Result
+    def result(maybeResultText: Option[String], permission: DialogSubmissionPermission): Result
   }
 
   type DialogSubmissionInfoType <: DialogSubmissionInfo
@@ -122,23 +122,9 @@ trait ChatPlatformController {
   implicit val ec: ExecutionContext
   implicit val actorSystem: ActorSystem
 
-  trait DialogPermissionType[T <: DialogPermission] {
-    def maybeFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[T]]
-
-    def maybeResultFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[Result]] = {
-      maybeFor(info, botProfile).map(_.map(_.result))
-    }
-  }
-
   trait InteractionPermission {
     implicit val request: Request[AnyContent]
     val maybeResultText: Option[String]
-  }
-
-  trait DialogPermission extends InteractionPermission {
-    val info: DialogSubmissionInfoType
-
-    def result: Result
   }
 
   trait ActionPermission extends InteractionPermission {
@@ -384,21 +370,25 @@ trait ChatPlatformController {
                                          isActive: Boolean,
                                          botProfile: BotProfileType,
                                          implicit val request: Request[AnyContent]
-                                       ) extends DialogPermission {
+                                       ) extends InteractionPermission {
     val maybeResultText: Option[String] = if (isActive) {
       None
     } else {
       Some("The original action is no longer available. Please try opening the dialog again.")
     }
 
-    override def result: Result = {
+    def result: Result = {
       info.result(maybeResultText, this)
     }
   }
 
-  object DialogSubmissionPermission extends DialogPermissionType[DialogSubmissionPermission] {
+  object DialogSubmissionPermission {
     def maybeFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[DialogSubmissionPermission]] = {
       buildFor(info, botProfile).map(Some(_))
+    }
+
+    def maybeResultFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[Result]] = {
+      maybeFor(info, botProfile).map(_.map(_.result))
     }
 
     def buildFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[DialogSubmissionPermission] = {
