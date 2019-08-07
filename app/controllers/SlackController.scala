@@ -9,6 +9,7 @@ import json.DialogState
 import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
+import models.behaviors.behaviorparameter.BehaviorParameterContext
 import models.behaviors.behaviorversion.{BehaviorVersion, Normal, Threaded}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
@@ -1206,11 +1207,60 @@ class SlackController @Inject() (
     def result(
                 maybeResultText: Option[String],
                 permission: DialogSubmissionPermission
-              ): Result = {
+              ): Future[Result] = {
       if (permission.isActive) {
-        dialogSubmissionResult(permission)
+        for {
+          maybeErrorResult <- maybeDialogValidationErrorResult(permission)
+        } yield {
+          if (maybeErrorResult.isEmpty) {
+            dialogSubmissionResult(permission)
+          }
+          maybeErrorResult.getOrElse(Ok(""))
+        }
+      } else {
+        Future.successful(Ok(""))
       }
-      Ok("")
+    }
+
+    def maybeDialogValidationErrorResult(permission: DialogSubmissionPermission): Future[Option[Result]] = {
+      dataService.run(
+        permission.maybeBehaviorVersion.map { behaviorVersion =>
+          for {
+            behaviorParameters <- dataService.behaviorParameters.allForAction(behaviorVersion)
+            paramsValid <- DBIO.sequence(parameters.map { case(name, value) =>
+              behaviorParameters.find(_.input.name == name).map { bp =>
+                val event = services.dataService.slackBotProfiles.syntheticMessageEvent(
+                  permission.botProfile,
+                  channelId,
+                  maybeDialogState.flatMap(_.maybeMessageId).getOrElse(OffsetDateTime.now.toString),
+                  maybeDialogState.flatMap(_.maybeThreadId),
+                  user.id,
+                  None,
+                  isEphemeral = false,
+                  Some(response_url),
+                  beQuiet = false
+                )
+                val context = BehaviorParameterContext(event, None, bp, services)
+                bp.paramType.isValidAction(value, context).map { isValid =>
+                  if (isValid) {
+                    None
+                  } else {
+                    Some((name, "Nope"))
+                  }
+                }
+              }.getOrElse(DBIO.successful(None))
+            }).map(_.flatten.toMap)
+          } yield paramsValid
+        }.getOrElse(DBIO.successful(Map.empty))
+      ).map { paramsValid =>
+        if (paramsValid.nonEmpty) {
+          Some(Ok(Json.obj("errors" -> paramsValid.map { case(name, errorMessage) =>
+            Map("name" -> name, "error" -> errorMessage)
+          })))
+        } else {
+          None
+        }
+      }
     }
 
     def dialogSubmissionResult(permission: DialogSubmissionPermission): Future[Unit] = {

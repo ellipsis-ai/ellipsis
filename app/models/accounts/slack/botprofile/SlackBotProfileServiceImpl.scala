@@ -261,23 +261,7 @@ class SlackBotProfileServiceImpl @Inject() (
                               beQuiet: Boolean
   ): Future[Option[String]] = {
     val delayMilliseconds = 1000
-    val event = SlackMessageEvent(
-      SlackEventContext(
-        botProfile,
-        channelId,
-        maybeThreadTs,
-        userId
-      ),
-      SlackMessage.blank,
-      None,
-      maybeThreadTs.orElse(Some(originalMessageTs)),
-      maybeOriginalEventType,
-      maybeScheduled = None,
-      isUninterruptedConversation = false,
-      isEphemeral,
-      maybeResponseUrl,
-      beQuiet
-    )
+    val event = syntheticMessageEvent(botProfile, channelId, originalMessageTs, maybeThreadTs, userId, maybeOriginalEventType, isEphemeral, maybeResponseUrl, beQuiet)
     val eventualResult = sendResult(getEventualMaybeResult(event))
     SlackMessageReactionHandler.handle(
       slackApiService.clientFor(botProfile),

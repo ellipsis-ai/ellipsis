@@ -110,7 +110,7 @@ trait ChatPlatformController {
 
     def dialogSubmissionResult(permission: DialogSubmissionPermission): Future[Unit]
 
-    def result(maybeResultText: Option[String], permission: DialogSubmissionPermission): Result
+    def result(maybeResultText: Option[String], permission: DialogSubmissionPermission): Future[Result]
   }
 
   type DialogSubmissionInfoType <: DialogSubmissionInfo
@@ -377,7 +377,7 @@ trait ChatPlatformController {
       Some("The original action is no longer available. Please try opening the dialog again.")
     }
 
-    def result: Result = {
+    def result: Future[Result] = {
       info.result(maybeResultText, this)
     }
   }
@@ -388,7 +388,10 @@ trait ChatPlatformController {
     }
 
     def maybeResultFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[Option[Result]] = {
-      maybeFor(info, botProfile).map(_.map(_.result))
+      for {
+        maybePermission <- maybeFor(info, botProfile)
+        maybeResult <- maybePermission.map(_.result.map(Some(_))).getOrElse(Future.successful(None))
+      } yield maybeResult
     }
 
     def buildFor(info: DialogSubmissionInfoType, botProfile: BotProfileType)(implicit request: Request[AnyContent]): Future[DialogSubmissionPermission] = {
