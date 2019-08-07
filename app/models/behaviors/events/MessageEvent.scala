@@ -44,7 +44,8 @@ trait MessageEvent extends Event {
                 None,
                 None,
                 None,
-                userExpectsResponse = false
+                userExpectsResponse = false,
+                Some(ea)
               ).map(Some(_))
             } yield maybeResponse
           }.getOrElse(Future.successful(None))
@@ -62,7 +63,8 @@ trait MessageEvent extends Event {
             Some(trigger),
             None,
             None,
-            userExpectsResponse = true
+            userExpectsResponse = true,
+            maybeMessageListener = None
           )
         } yield response
       })

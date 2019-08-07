@@ -10,6 +10,7 @@ import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.Event
+import models.behaviors.messagelistener.MessageListener
 import models.behaviors.triggers.Trigger
 import play.api.Logger
 import play.api.libs.json.{JsString, JsValue}
@@ -43,6 +44,7 @@ case class BehaviorResponse(
                              maybeActivatedTrigger: Option[Trigger],
                              maybeNewParent: Option[NewParentConversation],
                              userExpectsResponse: Boolean,
+                             maybeMessageListener: Option[MessageListener],
                              services: DefaultServices
                              ) {
 
@@ -123,7 +125,8 @@ case class BehaviorResponse(
           event,
           Some(event.eventContext.userIdForContext),
           user,
-          runtimeInMilliseconds
+          runtimeInMilliseconds,
+          maybeMessageListener
         )
       }
       _ <- DBIO.from(notifyAdminsIfNec(result))

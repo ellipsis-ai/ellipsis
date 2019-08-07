@@ -21,5 +21,6 @@ case class InvocationLogEntry(
                                maybeUserIdForContext: Option[String],
                                user: User,
                                runtimeInMilliseconds: Long,
+                               maybeMessageListenerId: Option[String],
                                createdAt: OffsetDateTime
                              )

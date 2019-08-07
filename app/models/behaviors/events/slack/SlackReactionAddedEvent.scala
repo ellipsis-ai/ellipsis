@@ -66,7 +66,8 @@ case class SlackReactionAddedEvent(
             Some(trigger),
             None,
             None,
-            userExpectsResponse = true
+            userExpectsResponse = true,
+            maybeMessageListener = None
           )
         } yield response
       })

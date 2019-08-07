@@ -33,6 +33,7 @@ object InvocationLogEntryQueries {
       raw.maybeUserIdForContext,
       user,
       raw.runtimeInMilliseconds,
+      raw.maybeMessageListenerId,
       raw.createdAt
     )
   }
