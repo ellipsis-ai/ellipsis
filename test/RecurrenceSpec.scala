@@ -528,41 +528,41 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.couldRunAt(date) mustBe true
       recurrence.couldRunAt(date.withDayOfMonth(2)) mustBe false
       recurrence.couldRunAt(date.withHour(13)) mustBe false
-      recurrence.couldRunAt(date.plusYears(5).plusMonths(5)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2024, 9, 1, 12, 0, timeZone)) mustBe true
       recurrence.couldRunAt(dateTimeOf(2019, 4, 1, 13, 30, ZoneId.of("America/St_Johns"))) mustBe true
       recurrence.couldRunAt(dateTimeOf(2019, 4, 2, 1, 0, ZoneId.of("Asia/Tokyo"))) mustBe true
     }
 
     "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
-      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
+      val date = dateTimeOf(2019, 8, 15, 15, 30, timeZone)
       val recurrence = MonthlyByDayOfMonth(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, dayOfMonth = 1, timeOfDay = LocalTime.NOON, timeZone)
 
-      val plus3Months = now.withDayOfMonth(1).plusMonths(3).withHour(12).withMinute(0)
-      recurrence.expectedNextRunFor(now, Some(plus3Months)) mustBe plus3Months
+      val in3Months = dateTimeOf(2019, 11, 1, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(date, Some(in3Months)) mustBe in3Months
 
-      val plus4Months = now.withDayOfMonth(1).plusMonths(4).withHour(12).withMinute(0)
-      recurrence.expectedNextRunFor(now, Some(plus4Months)) mustBe plus4Months
+      val in4Months = dateTimeOf(2019, 12, 1, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(date, Some(in4Months)) mustBe in4Months
     }
 
     "expectedNextRunFor returns the initial timestamp if it is invalid or later than the second possible run" in {
-      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
+      val date = dateTimeOf(2019, 8, 15, 15, 30, timeZone)
       val recurrence = MonthlyByDayOfMonth(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, dayOfMonth = 1, timeOfDay = LocalTime.NOON, timeZone)
 
-      val initial = recurrence.initialAfter(now)
+      val initial = recurrence.initialAfter(date)
 
-      val plus7Months = now.withDayOfMonth(1).plusMonths(7).withHour(12).withMinute(0)
-      recurrence.expectedNextRunFor(now, Some(plus7Months)) mustBe initial
+      val plus7Months = dateTimeOf(2020, 3, 1, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(date, Some(plus7Months)) mustBe initial
 
-      val minus3Months = now.withDayOfMonth(1).minusMonths(3).withHour(12).withMinute(0)
-      recurrence.expectedNextRunFor(now, Some(minus3Months)) mustBe initial
+      val minus3Months = dateTimeOf(2019, 5, 1, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(date, Some(minus3Months)) mustBe initial
 
-      val wrongTime = now.withDayOfMonth(1).plusMonths(1).withHour(23).withMinute(59)
-      recurrence.expectedNextRunFor(now, Some(wrongTime)) mustBe initial
+      val wrongTime = dateTimeOf(2019, 9, 1, 23, 59, timeZone)
+      recurrence.expectedNextRunFor(date, Some(wrongTime)) mustBe initial
 
-      val wrongDay = now.withDayOfMonth(2).plusMonths(1).withHour(12).withMinute(0)
-      recurrence.expectedNextRunFor(now, Some(wrongDay)) mustBe initial
+      val wrongDay = dateTimeOf(2019, 9, 2, 12, 0, timeZone)
+      recurrence.expectedNextRunFor(date, Some(wrongDay)) mustBe initial
 
-      recurrence.expectedNextRunFor(now, None) mustBe initial
+      recurrence.expectedNextRunFor(date, None) mustBe initial
     }
   }
 
