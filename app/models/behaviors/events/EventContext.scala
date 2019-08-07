@@ -105,8 +105,13 @@ sealed trait EventContext {
                   services: DefaultServices
                 )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]]
 
-  def stateForDialog(event: Event): DialogState = {
-    DialogState(event.maybeMessageId, maybeThreadId)
+  def stateForDialog(event: Event, parametersWithValues: Seq[ParameterWithValue]): DialogState = {
+    val arguments = parametersWithValues.flatMap { p =>
+      p.maybeValue.map { value =>
+        (p.parameter.input.name, value.text)
+      }
+    }.toMap
+    DialogState(event.maybeMessageId, maybeThreadId, arguments)
   }
 
   def newRunEventFor(

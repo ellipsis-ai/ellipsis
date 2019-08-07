@@ -109,28 +109,26 @@ class SlackController @Inject() (
         params <- maybeBehaviorVersion.map { behaviorVersion =>
           dataService.behaviorParameters.allForAction(behaviorVersion)
         }.getOrElse(DBIO.successful(Seq()))
-        maybeResponse <- {
-          maybeBehaviorVersion.map { behaviorVersion =>
-            val invocationParams = arguments.flatMap { case (name, value) =>
-              params.find(_.name == name).map { param =>
-                (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
-              }
+        maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
+          val invocationParams = arguments.flatMap { case (name, value) =>
+            params.find(_.name == name).map { param =>
+              (AWSLambdaConstants.invocationParamFor(param.rank - 1), value)
             }
-            dataService.behaviorResponses.buildForAction(
-              event,
-              behaviorVersion,
-              invocationParams,
-              None,
-              None,
-              None,
-              maybeDialogInfo,
-              userExpectsResponse = true
-            ).map { response =>
-              Some(response)
-            }
-          }.getOrElse {
-            DBIO.successful(None)
           }
+          dataService.behaviorResponses.buildForAction(
+            event,
+            behaviorVersion,
+            invocationParams,
+            None,
+            None,
+            None,
+            maybeDialogInfo,
+            userExpectsResponse = true
+          ).map { response =>
+            Some(response)
+          }
+        }.getOrElse {
+          DBIO.successful(None)
         }
       } yield maybeResponse
     }
@@ -1203,7 +1201,7 @@ class SlackController @Inject() (
     }
 
     val behaviorVersionId: String = callback_id
-    val parameters: Map[String, String] = submission
+    val parameters: Map[String, String] = maybeDialogState.map(_.arguments).getOrElse(Map.empty) ++ submission
 
     def result(
                 maybeResultText: Option[String],

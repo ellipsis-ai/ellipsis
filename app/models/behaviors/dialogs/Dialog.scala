@@ -20,7 +20,7 @@ case class Dialog(
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext) {
 
   def state: DialogState = {
-    event.eventContext.stateForDialog(event)
+    event.eventContext.stateForDialog(event, parametersWithValues)
   }
 
   def maybeResult: Future[Option[BotResult]] = {
