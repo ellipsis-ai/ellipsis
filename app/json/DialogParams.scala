@@ -1,5 +1,7 @@
 package json
 
+import json.slack.dialogs.SlackDialogInput
+
 trait DialogParams
 
 case class SlackDialogParams(

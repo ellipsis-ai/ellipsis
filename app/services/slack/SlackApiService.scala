@@ -8,7 +8,8 @@ import akka.stream.scaladsl.{FileIO, Source}
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
-import json.{DialogInput, DialogParams, SlackDialogInput, SlackDialogParams}
+import json.SlackDialogParams
+import json.slack.dialogs.SlackDialogInput
 import models.behaviors.dialogs.Dialog
 import models.behaviors.events.slack.SlackMessage
 import play.api.Logger

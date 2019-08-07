@@ -3,7 +3,8 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
-import json.{DialogState, SlackDialogInput, SlackUserData, UserData}
+import json.slack.dialogs.SlackDialogInput
+import json.{DialogState, SlackUserData, UserData}
 import models.accounts.{MSTeamsContext, SlackContext}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile

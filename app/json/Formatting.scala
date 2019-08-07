@@ -1,6 +1,7 @@
 package json
 
 import ai.x.play.json.Jsonx
+import json.slack.dialogs.{SlackDialogInput, SlackDialogSelectInput, SlackDialogSelectOption, SlackDialogTextInput}
 import json.web.settings.IntegrationListConfig
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
