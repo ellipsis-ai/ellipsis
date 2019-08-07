@@ -124,6 +124,13 @@ class InvocationLogEntryServiceImpl @Inject() (
     lastForEachGroupForTeamQuery(team.id).result.map(r => r.map(ea => BehaviorGroupInvocationTimestamp(ea._1, ea._2)))
   }
 
+  def allForMessageListener(messageListener: MessageListener, since: OffsetDateTime): Future[Seq[InvocationLogEntry]] = {
+    val action = allForMessageListenerQuery(messageListener.id, since: OffsetDateTime).result.map { r =>
+      r.map(tuple2Entry)
+    }
+    dataService.run(action)
+  }
+
   def createForAction(
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],

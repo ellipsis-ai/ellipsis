@@ -1,5 +1,8 @@
 package controllers
 
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
@@ -32,11 +35,15 @@ class CopilotController @Inject()(
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       listeners <- dataService.messageListeners.allForUser(user)
       listenerData <- Future.sequence(listeners.map(ea => MessageListenerData.from(ea, teamAccess, dataService)))
+      logEntries <- Future.sequence(listeners.map { ea => dataService.invocationLogEntries.allForMessageListener(ea, OffsetDateTime.now.minusDays(1))}).map(_.flatten)
     } yield {
-      val listenerStrings = listenerData.map { ea =>
+      val listenersString = listenerData.map { ea =>
         s"Action ${ea.action.flatMap(_.name).get} is triggered for messages in ${ea.channel}"
       }.mkString("\n")
-      Ok(listenerStrings)
+      val resultString = logEntries.map { ea =>
+        s"'${ea.resultText}' -- response to '${ea.messageText}' at ${ea.createdAt.format(DateTimeFormatter.ISO_DATE_TIME)}"
+      }.mkString("\n")
+      Ok(listenersString ++ "\n\n\n" ++ resultString)
     }
   }
 
