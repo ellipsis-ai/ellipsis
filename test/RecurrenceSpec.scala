@@ -528,7 +528,7 @@ class RecurrenceSpec extends PlaySpec {
       recurrence.couldRunAt(date) mustBe true
       recurrence.couldRunAt(date.withDayOfMonth(2)) mustBe false
       recurrence.couldRunAt(date.withHour(13)) mustBe false
-      recurrence.couldRunAt(date.plusYears(5).plusMonths(5)) mustBe true
+      recurrence.couldRunAt(dateTimeOf(2024, 9, 1, 12, 0, timeZone)) mustBe true
       recurrence.couldRunAt(dateTimeOf(2019, 4, 1, 13, 30, ZoneId.of("America/St_Johns"))) mustBe true
       recurrence.couldRunAt(dateTimeOf(2019, 4, 2, 1, 0, ZoneId.of("Asia/Tokyo"))) mustBe true
     }
