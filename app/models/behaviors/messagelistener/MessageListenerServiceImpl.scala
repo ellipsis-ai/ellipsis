@@ -24,6 +24,7 @@ case class RawMessageListener(
                               maybeThreadId: Option[String],
                               userId: String,
                               isForCopilot: Boolean,
+                              isEnabled: Boolean,
                               createdAt: OffsetDateTime
                           )
 
@@ -37,10 +38,11 @@ class MessageListenersTable(tag: Tag) extends Table[RawMessageListener](tag, "me
   def maybeThreadId = column[Option[String]]("thread")
   def userId = column[String]("user_id")
   def isForCopilot = column[Boolean]("is_for_copilot")
+  def isEnabled = column[Boolean]("is_enabled")
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, arguments, medium, channel, maybeThreadId, userId, isForCopilot, createdAt) <> ((RawMessageListener.apply _).tupled, RawMessageListener.unapply _)
+    (id, behaviorId, arguments, medium, channel, maybeThreadId, userId, isForCopilot, isEnabled, createdAt) <> ((RawMessageListener.apply _).tupled, RawMessageListener.unapply _)
 }
 
 class MessageListenerServiceImpl @Inject() (
@@ -71,6 +73,7 @@ class MessageListenerServiceImpl @Inject() (
       maybeThreadId,
       user,
       isForCopilot,
+      isEnabled = true,
       OffsetDateTime.now
     )
     (all += newInstance.toRaw).map(_ => newInstance)

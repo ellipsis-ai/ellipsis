@@ -34,6 +34,7 @@ object MessageListenerQueries {
       raw.maybeThreadId,
       user,
       raw.isForCopilot,
+      raw.isEnabled,
       raw.createdAt
     )
   }
@@ -51,6 +52,7 @@ object MessageListenerQueries {
                            ) = {
     allWithUser.
       filter { case(_, user) => user.teamId === teamId }.
+      filter { case((listener, _), _) => listener.isEnabled }.
       filter { case((listener, _), _) => listener.medium === medium }.
       filter { case((listener, _), _) => listener.channel === channel }.
       filter { case((listener, _), _) => listener.maybeThreadId.isEmpty || listener.maybeThreadId === maybeThreadId }

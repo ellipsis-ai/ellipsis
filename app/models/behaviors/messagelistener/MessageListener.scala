@@ -17,6 +17,7 @@ case class MessageListener(
                             maybeThreadId: Option[String],
                             user: User,
                             isForCopilot: Boolean,
+                            isEnabled: Boolean,
                             createdAt: OffsetDateTime
                             ) {
   def invocationParamsFor(params: Seq[BehaviorParameter], message: String): Map[String, String] = {
@@ -37,6 +38,7 @@ case class MessageListener(
       maybeThreadId,
       user.id,
       isForCopilot,
+      isEnabled,
       createdAt
     )
   }
