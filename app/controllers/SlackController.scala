@@ -1245,7 +1245,7 @@ class SlackController @Inject() (
                   if (isValid) {
                     None
                   } else {
-                    Some((name, "Nope"))
+                    Some((name, bp.paramType.invalidValueText))
                   }
                 }
               }.getOrElse(DBIO.successful(None))

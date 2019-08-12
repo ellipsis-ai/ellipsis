@@ -51,7 +51,9 @@ sealed trait BehaviorParameterType extends FieldTypeForSchema {
 
   def prepareForInvocation(text: String, context: BehaviorParameterContext)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[JsValue]
 
-  def invalidPromptModifier: String
+  val invalidValueText: String
+
+  def invalidPromptModifier: String = s"$invalidValueText $stopInstructions"
 
   def stopText: String = "`...stop`"
 
@@ -215,7 +217,7 @@ object TextType extends BuiltInTextualType {
     }
   }
 
-  val invalidPromptModifier: String = s"I need a valid answer. $stopInstructions"
+  val invalidValueText: String = "I need a valid answer."
 
 }
 
@@ -251,7 +253,7 @@ object NumberType extends BuiltInTextualType {
     }
   }
 
-  val invalidPromptModifier: String = s"I need a number to answer this. $stopInstructions"
+  val invalidValueText: String = "I need a number to answer this."
 }
 
 object DateTimeType extends BuiltInTextualType {
@@ -304,7 +306,7 @@ object DateTimeType extends BuiltInTextualType {
     raw"""if (!isNaN(Date.parse($paramName))) { $paramName = new Date(Date.parse($paramName)); }"""
   }
 
-  val invalidPromptModifier: String = s"I need something I can interpret as a date & time to answer this. $stopInstructions"
+  val invalidValueText: String = "I need something I can interpret as a date & time to answer this."
 
 }
 
@@ -348,7 +350,7 @@ object YesNoType extends BuiltInType {
     }
   }
 
-  val invalidPromptModifier: String = s"I need an answer like “yes” or “no”. $stopInstructions"
+  val invalidValueText: String = "I need an answer like “yes” or “no”."
 
   override def promptResultForAction(
                                      maybePreviousCollectedValue: Option[String],
@@ -436,7 +438,7 @@ object FileType extends BuiltInType {
     raw"""if ($paramName) { $paramName.fetch = require("$FETCH_FUNCTION_FOR_FILE_PARAM_NAME")($paramName, $CONTEXT_PARAM); }"""
   }
 
-  val invalidPromptModifier: String = raw"""I need you to upload a file or type `none` if you don't have one. $stopInstructions"""
+  val invalidValueText: String = raw"""I need you to upload a file or type `none` if you don’t have one."""
 }
 
 case class ValidValue(id: String, label: String, data: JsObject)
@@ -614,7 +616,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
     }
   }
 
-  val invalidPromptModifier: String = s"I need a $name. Choose one of the options below. $stopInstructions"
+  val invalidValueText: String = s"I need a $name. Choose one of the options below."
 
   private def valuesListCacheKeyFor(conversation: Conversation, parameter: BehaviorParameter): String = {
     s"values-list-${conversation.id}-${parameter.id}"
