@@ -83,6 +83,7 @@ class SlackController @Inject() (
     val action_ts: String
     val response_url: String
     val contextName: String = Conversation.SLACK_CONTEXT
+    val isEphemeral: Boolean
 
     lazy val channelId: String = channel.id
     lazy val teamIdForContext: String = slackTeamIdForBot
@@ -132,6 +133,48 @@ class SlackController @Inject() (
           DBIO.successful(None)
         }
       } yield maybeResponse
+    }
+
+    def instantBackgroundResponse(
+                                   responseText: String,
+                                   permission: InteractionPermission,
+                                   originalMessageId: String,
+                                   maybeOriginalMessageThreadId: Option[String]
+                                 ): Future[Option[String]] = {
+      val trimmed = responseText.trim.replaceAll("(^\\u00A0|\\u00A0$)", "")
+      val useEphemeralResponse = isEphemeral || permission.beQuiet
+      if (trimmed.isEmpty) {
+        Future.successful(None)
+      } else {
+        for {
+          maybeBotProfile <- maybeBotProfile
+          maybeTs <- maybeBotProfile.map { botProfile =>
+            dataService.slackBotProfiles.sendResultWithNewEvent(
+              "Message acknowledging response to Slack action",
+              slackMessageEvent => for {
+                maybeConversation <- slackMessageEvent.maybeOngoingConversation(dataService)
+              } yield {
+                Some(SimpleTextResult(
+                  slackMessageEvent,
+                  maybeConversation,
+                  s"_${trimmed}_",
+                  responseType = Normal,
+                  shouldInterrupt = false
+                ))
+              },
+              botProfile,
+              channel.id,
+              user.id,
+              originalMessageId,
+              None,
+              maybeOriginalMessageThreadId,
+              useEphemeralResponse,
+              Some(response_url),
+              beQuiet = false
+            )
+          }.getOrElse(Future.successful(None))
+        } yield maybeTs
+      }
     }
   }
 
@@ -877,47 +920,10 @@ class SlackController @Inject() (
       } yield maybeResponse
     }
 
-    def instantBackgroundResponse(responseText: String, permission: ActionPermission): Future[Option[String]] = {
-      val trimmed = responseText.trim.replaceAll("(^\\u00A0|\\u00A0$)", "")
-      val useEphemeralResponse = isEphemeral || permission.beQuiet
-      if (trimmed.isEmpty) {
-        Future.successful(None)
-      } else {
-        for {
-          maybeBotProfile <- maybeBotProfile
-          maybeTs <- maybeBotProfile.map { botProfile =>
-            dataService.slackBotProfiles.sendResultWithNewEvent(
-              "Message acknowledging response to Slack action",
-              slackMessageEvent => for {
-                maybeConversation <- slackMessageEvent.maybeOngoingConversation(dataService)
-              } yield {
-                Some(SimpleTextResult(
-                  slackMessageEvent,
-                  maybeConversation,
-                  s"_${trimmed}_",
-                  responseType = Normal,
-                  shouldInterrupt = false
-                ))
-              },
-              botProfile,
-              channel.id,
-              user.id,
-              message_ts,
-              None,
-              maybeOriginalMessageThreadId,
-              useEphemeralResponse,
-              Some(response_url),
-              beQuiet = false
-            )
-          }.getOrElse(Future.successful(None))
-        } yield maybeTs
-      }
-    }
-
     def result(maybeResultText: Option[String], permission: ActionPermission): Result = {
 
       // respond immediately by sending a new message
-      val instantResponse = maybeResultText.map(t => instantBackgroundResponse(t, permission)).getOrElse(Future.successful(None))
+      val instantResponse = maybeResultText.map(t => instantBackgroundResponse(t, permission, message_ts, maybeOriginalMessageThreadId)).getOrElse(Future.successful(None))
       permission.runInBackground(instantResponse)
 
       val updated = if (permission.shouldRemoveActions) {
@@ -1186,6 +1192,7 @@ class SlackController @Inject() (
                                         token: String,
                                         response_url: String
                                       ) extends InteractionRequestInfo with DialogSubmissionInfo {
+    val isEphemeral: Boolean = true
 
     val maybeDialogState: Option[DialogState] = {
       for {
@@ -1208,18 +1215,23 @@ class SlackController @Inject() (
                 maybeResultText: Option[String],
                 permission: DialogSubmissionPermission
               ): Future[Result] = {
-      if (permission.isActive) {
-        for {
-          maybeErrorResult <- maybeDialogValidationErrorResult(permission)
-        } yield {
-          if (maybeErrorResult.isEmpty) {
-            dialogSubmissionResult(permission)
+      val originalMessageId = maybeDialogState.flatMap(_.maybeMessageId).getOrElse(OffsetDateTime.now.toString)
+      val maybeOriginalThreadId = maybeDialogState.flatMap(_.maybeThreadId)
+      for {
+        _ <- maybeResultText.map(t => instantBackgroundResponse(t, permission, originalMessageId, maybeOriginalThreadId)).getOrElse(Future.successful(None))
+        result <- if (permission.isActive) {
+          for {
+            maybeErrorResult <- maybeDialogValidationErrorResult(permission)
+          } yield {
+            if (maybeErrorResult.isEmpty) {
+              dialogSubmissionResult(permission)
+            }
+            maybeErrorResult.getOrElse(Ok(""))
           }
-          maybeErrorResult.getOrElse(Ok(""))
+        } else {
+          Future.successful(Ok(""))
         }
-      } else {
-        Future.successful(Ok(""))
-      }
+      } yield result
     }
 
     def maybeDialogValidationErrorResult(permission: DialogSubmissionPermission): Future[Option[Result]] = {

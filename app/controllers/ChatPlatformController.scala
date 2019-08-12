@@ -30,6 +30,13 @@ trait ChatPlatformController {
     val channelId: String
     val teamIdForContext: String
     val teamIdForUserForContext: String
+
+    def instantBackgroundResponse(
+                                   responseText: String,
+                                   permission: InteractionPermission,
+                                   originalMessageId: String,
+                                   maybeOriginalMessageThreadId: Option[String]
+                                 ): Future[Option[String]]
   }
 
   trait ActionsTriggeredInfo extends InteractionInfo {
@@ -40,7 +47,6 @@ trait ChatPlatformController {
     def isIncorrectTeam(botProfile: BotProfileType): Future[Boolean]
 
     def formattedUserFor(permission: ActionPermission): String
-    def instantBackgroundResponse(responseText: String, permission: ActionPermission): Future[Option[String]]
     def result(maybeResultText: Option[String], permission: ActionPermission): Result
     def processTriggerableAndActiveActionChoice(
                                                  actionChoice: ActionChoice,
@@ -125,17 +131,13 @@ trait ChatPlatformController {
   trait InteractionPermission {
     implicit val request: Request[AnyContent]
     val maybeResultText: Option[String]
+    val beQuiet: Boolean = false
   }
 
   trait ActionPermission extends InteractionPermission {
 
     val info: ActionsTriggeredInfoType
     val shouldRemoveActions: Boolean
-    val beQuiet: Boolean = false
-
-    def instantBackgroundResponse(responseText: String): Future[Option[String]] = {
-      info.instantBackgroundResponse(responseText, this)
-    }
 
     def runInBackground(maybeInstantResponseTs: Future[Option[String]]): Unit
 
