@@ -40,6 +40,7 @@ class MockAWSLambdaService @Inject() (
       maybeResponseTemplate = None,
       maybeLogResult = None,
       responseType = Normal,
+      isForCopilot = false,
       DeveloperContext.default,
       dataService
     )

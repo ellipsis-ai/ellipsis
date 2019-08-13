@@ -23,7 +23,7 @@ class BehaviorResponseTypeSpec extends PlaySpec with MockitoSugar {
   def botResultFor(event: Event, maybeConversation: Option[Conversation]): BotResult = {
     val behaviorVersion = mock[BehaviorVersion]
     val mockDataService = mock[DataService]
-    SuccessResult(event, behaviorVersion, maybeConversation, JsString("Success!"), JsObject.empty, Seq.empty, JsObject.empty, None, None, Threaded, DeveloperContext.default, mockDataService)
+    SuccessResult(event, behaviorVersion, maybeConversation, JsString("Success!"), JsObject.empty, Seq.empty, JsObject.empty, None, None, Threaded, isForCopilot = false, DeveloperContext.default, mockDataService)
   }
 
 
