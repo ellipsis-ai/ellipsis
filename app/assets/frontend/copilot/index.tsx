@@ -49,7 +49,7 @@ class Copilot extends React.Component<Props, State> {
   getLastResultTime(): string {
     return (this.state && this.state.lastResultTime) ?
       this.state.lastResultTime :
-      new Date((new Date().getMilliseconds() - 86400)).toISOString();
+      new Date((new Date().getTime() - 1000 * 60 * 60 * 24)).toISOString();
   }
 
   checkForResultsLater(overrideDuration?: number): void {
