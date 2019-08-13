@@ -47,6 +47,9 @@ declare var jsRoutes: {
       updateNodeModules: () => JsRoute,
       versionInfoFor: (groupId: string) => JsRoute
     },
+    CopilotController: {
+      resultsSince: (when: string) => JsRoute
+    },
     BehaviorGroupConfigController: {
       schedules: (groupId: string) => JsRoute
     },

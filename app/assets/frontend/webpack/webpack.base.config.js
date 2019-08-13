@@ -22,6 +22,7 @@ const webpackConfig = {
     behaviorEditor: './app/assets/frontend/behavior_editor/loader',
     behaviorGroupScheduling: './app/assets/frontend/behavior_group_config/scheduling/loader',
     behaviorList: './app/assets/frontend/behavior_list/loader',
+    copilot: './app/assets/frontend/copilot/loader',
     dashboardUsage: './app/assets/frontend/dashboard/usage/loader',
     dashboardSkillManifest: './app/assets/frontend/dashboard/skill_manifest/loader',
     environmentVariables: './app/assets/frontend/settings/environment_variables/loader',
