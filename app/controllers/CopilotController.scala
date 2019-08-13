@@ -1,13 +1,14 @@
 package controllers
 
 import java.time.OffsetDateTime
-import java.time.format.{DateTimeFormatter, DateTimeParseException}
+import java.time.format.DateTimeParseException
 
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import json.{InvocationLogEntryData, MessageListenerData}
+import json.Formatting._
 import models.silhouette.EllipsisEnv
 import play.api.Configuration
 import play.api.libs.json._
