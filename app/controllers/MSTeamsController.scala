@@ -82,6 +82,8 @@ class MSTeamsController @Inject() (
 
     val maybeTenantId: Option[String] = channelData.tenant.map(_.id)
 
+    val maybeDialogTriggerId: Option[String] = None
+
     def toActivityInfo: ActivityInfo = ActivityInfo(
       id,
       serviceUrl,
@@ -151,7 +153,13 @@ class MSTeamsController @Inject() (
         dataService.msTeamsBotProfiles.find(tid)
       }.getOrElse(Future.successful(None))
     }
-    def instantBackgroundResponse(responseText: String, permission: ActionPermission): Future[Option[String]] = {
+
+    def instantBackgroundResponse(
+                                   responseText: String,
+                                   permission: InteractionPermission,
+                                   originalMessageId: String,
+                                   maybeOriginalMessageThreadId: Option[String]
+                                 ): Future[Option[String]] = {
       val trimmed = responseText.trim.replaceAll("(^\\u00A0|\\u00A0$)", "")
       if (trimmed.isEmpty) {
         Future.successful(None)
@@ -253,6 +261,7 @@ class MSTeamsController @Inject() (
                 None,
                 None,
                 None,
+                None,
                 userExpectsResponse = true
               ).map(Some(_))
             }.getOrElse(Future.successful(None))
@@ -266,7 +275,7 @@ class MSTeamsController @Inject() (
       } yield {}
     }
     def result(maybeResultText: Option[String], permission: ActionPermission): Result = {
-      val instantResponse = maybeResultText.map(t => instantBackgroundResponse(t, permission)).getOrElse(Future.successful(None))
+      val instantResponse = maybeResultText.map(t => instantBackgroundResponse(t, permission, conversation.id, None)).getOrElse(Future.successful(None))
       permission.runInBackground(instantResponse)
       Ok("")
     }
@@ -366,7 +375,7 @@ class MSTeamsController @Inject() (
     for {
       maybeProfile <- info.maybeTenantId.map(id => dataService.msTeamsBotProfiles.find(id)).getOrElse(Future.successful(None))
       _ <- maybeProfile.map { profile =>
-        maybePermissionResultFor(info, profile).flatMap { maybeResult =>
+        maybeActionPermissionResultFor(info, profile).flatMap { maybeResult =>
           maybeResult.map(r => Future.successful({})).getOrElse {
             processMessageEventsFor(info, profile)
           }

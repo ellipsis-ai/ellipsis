@@ -1,6 +1,7 @@
 package json
 
 import ai.x.play.json.Jsonx
+import json.slack.dialogs.{SlackDialogInput, SlackDialogSelectInput, SlackDialogSelectOption, SlackDialogTextInput}
 import json.web.settings.IntegrationListConfig
 import models.accounts.slack.SlackUserTeamIds
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -226,5 +227,13 @@ object Formatting {
   lazy implicit val usageReportConfigFormat = Json.format[UsageReportConfig]
   lazy implicit val skillManifestItemDataFormat = Json.format[SkillManifestItemData]
   lazy implicit val skillManifestConfigFormat = Json.format[SkillManifestConfig]
+
+  lazy implicit val dialogState = Json.format[DialogState]
+  lazy implicit val slackDialogTextInputWrite = Json.writes[SlackDialogTextInput]
+  lazy implicit val slackDialogSelectOption = Json.writes[SlackDialogSelectOption]
+  lazy implicit val slackDialogSelectInputWrite = Json.writes[SlackDialogSelectInput]
+  lazy implicit val slackDialogInputWrite = Json.writes[SlackDialogInput]
+  lazy implicit val slackDialogParamsWrite = Json.writes[SlackDialogParams]
+
 }
 

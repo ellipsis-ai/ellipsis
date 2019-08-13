@@ -9,10 +9,12 @@ import models.accounts.oauth1application.OAuth1Application
 import models.accounts.oauth2application.OAuth2Application
 import models.accounts.user.User
 import models.behaviors.ResultType.ResultType
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Normal, Private}
 import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
 import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.dialogs.Dialog
 import models.behaviors.events._
 import models.behaviors.templates.TemplateApplier
 import models.team.Team
@@ -30,7 +32,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, SimpleText, ActionAcknowledgment, TextWithActions, ConversationPrompt, NoResponse, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady, AdminSkillErrorNotification = Value
+  val Success, SimpleText, ActionAcknowledgment, TextWithActions, ConversationPrompt, NoResponse, Dialog, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady, AdminSkillErrorNotification = Value
 }
 
 trait WithActionArgs {
@@ -53,7 +55,8 @@ case class SkillCodeActionChoice(
                                    allowOthers: Option[Boolean],
                                    allowMultipleSelections: Option[Boolean],
                                    quiet: Option[Boolean],
-                                   skillId: Option[String]
+                                   skillId: Option[String],
+                                   useDialog: Option[Boolean]
                                ) extends WithActionArgs {
   def toActionChoiceWith(user: User, behaviorVersion: BehaviorVersion): ActionChoice = {
     ActionChoice(
@@ -65,7 +68,8 @@ case class SkillCodeActionChoice(
       user.id,
       behaviorVersion.id,
       quiet,
-      skillId
+      skillId,
+      useDialog
     )
   }
 }
@@ -79,7 +83,8 @@ case class ActionChoice(
                          userId: String,
                          originatingBehaviorVersionId: String,
                          quiet: Option[Boolean],
-                         skillId: Option[String]
+                         skillId: Option[String],
+                         useDialog: Option[Boolean]
                        ) extends WithActionArgs {
 
   val areOthersAllowed: Boolean = allowOthers.contains(true)
@@ -377,6 +382,26 @@ case class SuccessResult(
       Future.successful(false)
     }
   }
+}
+
+case class DialogResult(
+                         event: Event,
+                         dialog: Dialog,
+                         behaviorVersion: BehaviorVersion,
+                         parametersWithValues: Seq[ParameterWithValue],
+                         developerContext: DeveloperContext
+                       ) extends BotResult {
+  val resultType = ResultType.Dialog
+
+  override val shouldSend: Boolean = false
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+
+  def text: String = "✋ Time to have a dialog…"
+
+  val maybeConversation = None
+
+  override val responseType: BehaviorResponseType = behaviorVersion.responseType
 }
 
 case class SimpleTextResult(

@@ -7,7 +7,7 @@ import models.accounts.linkedaccount.LinkedAccount
 import models.accounts.user.User
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events._
-import models.behaviors.events.slack.SlackMessageEvent
+import models.behaviors.events.slack.{SlackMessage, SlackMessageEvent}
 import models.behaviors.{BotResult, SimpleTextResult}
 import models.team.Team
 import play.api.Logger
@@ -58,6 +58,36 @@ trait SlackBotProfileService {
   def maybeNameFor(botProfile: SlackBotProfile): Future[Option[String]]
 
   def toggleMentionShortcut(botProfile: SlackBotProfile, enableShortcut: Boolean): Future[Option[Boolean]]
+
+  def syntheticMessageEvent(
+                             botProfile: SlackBotProfile,
+                             channelId: String,
+                             originalMessageTs: String,
+                             maybeThreadTs: Option[String],
+                             userId: String,
+                             maybeOriginalEventType: Option[EventType],
+                             isEphemeral: Boolean,
+                             maybeResponseUrl: Option[String],
+                             beQuiet: Boolean
+                           ): SlackMessageEvent = {
+    SlackMessageEvent(
+      SlackEventContext(
+        botProfile,
+        channelId,
+        maybeThreadTs,
+        userId
+      ),
+      SlackMessage.blank,
+      None,
+      maybeThreadTs.orElse(Some(originalMessageTs)),
+      maybeOriginalEventType,
+      maybeScheduled = None,
+      isUninterruptedConversation = false,
+      isEphemeral,
+      maybeResponseUrl,
+      beQuiet
+    )
+  }
 
   def sendResultWithNewEvent(
     description: String,
