@@ -97,6 +97,7 @@ case class BehaviorVersion(
                  configuration: Configuration,
                  event: Event,
                  maybeConversation: Option[Conversation],
+                 isForCopilot: Boolean,
                  developerContext: DeveloperContext
                ): BotResult = {
     val bytes = payload.array
@@ -115,6 +116,7 @@ case class BehaviorVersion(
         maybeResponseTemplate,
         logResultOption,
         responseType,
+        isForCopilot,
         developerContext,
         dataService
       )

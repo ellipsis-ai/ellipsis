@@ -107,7 +107,7 @@ case class BehaviorResponse(
     val startTime = OffsetDateTime.now
     for {
       user <- event.ensureUserAction(dataService)
-      initialResult <- dataService.behaviorVersions.resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation)
+      initialResult <- dataService.behaviorVersions.resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation, maybeMessageListener.exists(_.isForCopilot))
       result <- {
         services.dataService.parentConversations.maybeForAction(maybeConversation).flatMap { maybeParent =>
           maybeParent.map { p =>

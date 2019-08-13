@@ -42,7 +42,7 @@ case class InvocationTester(
         }.toMap
         for {
           parametersWithValues <- dataService.behaviorResponses.parametersWithValuesFor(event, behaviorVersion, invocationParamValues, None)
-          result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event, None)
+          result <- dataService.behaviorVersions.resultFor(behaviorVersion, parametersWithValues, event, None, isForCopilot = false)
         } yield InvocationTestReport(behaviorVersion, Some(result), Seq(), Seq())
       } else {
         Future.successful(InvocationTestReport(behaviorVersion, None, missingParams, missingSimpleTokens))

@@ -237,6 +237,7 @@ class AWSLambdaServiceImpl @Inject() (
                     environmentVariables: Seq[EnvironmentVariable],
                     event: Event,
                     maybeConversation: Option[Conversation],
+                    isForCopilot: Boolean,
                     defaultServices: DefaultServices
                   )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
@@ -274,6 +275,7 @@ class AWSLambdaServiceImpl @Inject() (
             behaviorVersion.maybeResponseTemplate,
             None,
             behaviorVersion.responseType,
+            isForCopilot,
             developerContext,
             dataService
           ))
@@ -296,6 +298,7 @@ class AWSLambdaServiceImpl @Inject() (
                 configuration,
                 event,
                 maybeConversation,
+                isForCopilot,
                 developerContext
               )
             },
