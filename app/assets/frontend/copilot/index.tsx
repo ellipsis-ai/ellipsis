@@ -61,15 +61,15 @@ class Copilot extends React.Component<Props, State> {
     return (
       <div>
         <h2>Your bot said:</h2>
-        {this.getResults().map(this.renderResult)}
+        {this.getResults().map((ea, i) => this.renderResult(ea, i))}
       </div>
     );
   }
 
-  renderResult(result: Result) {
+  renderResult(result: Result, index: number) {
     return (
-      <div>
-        <span>{result.resultText} at {new Date(Date.parse(result.createdAt)).toISOString()}</span>
+      <div key={`result-${index}`}>
+        <span >{result.resultText} at {new Date(Date.parse(result.createdAt)).toISOString()}</span>
       </div>
     )
   }
