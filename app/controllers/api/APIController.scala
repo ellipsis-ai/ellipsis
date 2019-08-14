@@ -190,6 +190,7 @@ class APIController @Inject() (
       "medium" -> nonEmptyText,
       "channel" -> nonEmptyText,
       "thread" -> optional(nonEmptyText),
+      "copilot" -> optional(boolean),
       "token" -> nonEmptyText
     )(AddMessageListenerInfo.apply)(AddMessageListenerInfo.unapply)
   )
