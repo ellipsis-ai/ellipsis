@@ -113,7 +113,13 @@ class Copilot extends React.Component<Props, State> {
       return (
         <Collapsible revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
           <div className="fade-in border mvl bg-white">
-            <div className="border-bottom pam bg-blue-lighter type-xs type-blue-faded">{Formatter.formatTimestampRelativeCalendar(result.createdAt)}</div>
+            <div className="border-bottom border-light pam bg-light type-s type-weak">
+              <div>
+                <b>{result.maybeUserIdForContext || "Unknown user"}</b>
+                <span> · {Formatter.formatTimestampRelativeCalendar(result.createdAt)}</span>
+              </div>
+              <div className="border-left-thick border-gray pls">{result.messageText}</div>
+            </div>
             <div className="ptm phm">
               <ReactMarkdown source={result.resultText} />
             </div>
