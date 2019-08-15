@@ -8,6 +8,9 @@ import akka.stream.scaladsl.{FileIO, Source}
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.{Inject, Singleton}
 import json.Formatting._
+import json.SlackDialogParams
+import json.slack.dialogs.SlackDialogInput
+import models.behaviors.dialogs.Dialog
 import models.behaviors.events.slack.SlackMessage
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
@@ -429,6 +432,40 @@ case class SlackApiClient(
       map { r =>
         extract[JsValue](r, "logins")
       }
+  }
+
+  case class ErrorMessages(messages: Seq[String])
+  case class DialogOpenResponse(ok: Boolean, error: Option[String], response_metadata: Option[ErrorMessages])
+  implicit val errorMessagesRead = Json.reads[ErrorMessages]
+  implicit val dialogOpenResponse = Json.reads[DialogOpenResponse]
+
+  def openDialog(dialog: Dialog, inputs: Seq[SlackDialogInput]) = {
+    val params = Map(
+      "dialog" -> Json.stringify(Json.toJson(SlackDialogParams(
+        dialog.maybeTitle.getOrElse("ℹ️"),
+        dialog.behaviorVersion.id,
+        inputs,
+        "Continue",
+        notify_on_cancel = true,
+        Json.stringify(Json.toJson(dialog.state))
+      ))),
+      "trigger_id" -> dialog.dialogInfo.triggerId
+    )
+    postResponseFor("dialog.open", params).map { r =>
+      val json = responseToJson(r)
+      val dialogResponse = json.as[DialogOpenResponse]
+      if (!dialogResponse.ok) {
+        Logger.error(
+          s"""Error opening new Slack dialog: ${dialogResponse.error.getOrElse("(no error provided)")}
+             |Error messages provided: ${dialogResponse.response_metadata.map(_.messages.mkString("\n- ")).getOrElse("(no messages provided)")}
+             |""".stripMargin
+        )
+        dialogResponse.error.map(error => throw SlackApiError(error)).orElse {
+          throw MalformedResponseException("Expected error message in non-ok response while opening dialog")
+        }
+      }
+      dialogResponse.ok
+    }
   }
 
 }

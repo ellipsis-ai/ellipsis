@@ -69,11 +69,23 @@ class BehaviorResponseServiceImpl @Inject() (
                       maybeActivatedTrigger: Option[Trigger],
                       maybeConversation: Option[Conversation],
                       maybeNewParent: Option[NewParentConversation],
+                      maybeDialog: Option[DialogInfo],
                       userExpectsResponse: Boolean,
                       maybeMessageListener: Option[MessageListener]
                     ): DBIO[BehaviorResponse] = {
     parametersWithValuesForAction(event, behaviorVersion, paramValues, maybeConversation).map { paramsWithValues =>
-      BehaviorResponse(event, behaviorVersion, maybeConversation, paramsWithValues, maybeActivatedTrigger, maybeNewParent, userExpectsResponse, maybeMessageListener, services)
+      BehaviorResponse(
+        event,
+        behaviorVersion,
+        maybeConversation,
+        paramsWithValues,
+        maybeActivatedTrigger,
+        maybeNewParent,
+        maybeDialog,
+        userExpectsResponse,
+        maybeMessageListener,
+        services
+      )
     }
   }
 
@@ -84,10 +96,21 @@ class BehaviorResponseServiceImpl @Inject() (
                 maybeActivatedTrigger: Option[Trigger],
                 maybeConversation: Option[Conversation],
                 maybeNewParent: Option[NewParentConversation],
+                maybeDialog: Option[DialogInfo],
                 userExpectsResponse: Boolean,
                 maybeMessageListener: Option[MessageListener]
               ): Future[BehaviorResponse] = {
-    dataService.run(buildForAction(event, behaviorVersion, paramValues, maybeActivatedTrigger, maybeConversation, maybeNewParent, userExpectsResponse, maybeMessageListener))
+    dataService.run(buildForAction(
+      event,
+      behaviorVersion,
+      paramValues,
+      maybeActivatedTrigger,
+      maybeConversation,
+      maybeNewParent,
+      maybeDialog,
+      userExpectsResponse,
+      maybeMessageListener
+    ))
   }
 
   def allFor(
