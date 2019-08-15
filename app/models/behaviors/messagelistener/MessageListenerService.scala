@@ -29,4 +29,13 @@ trait MessageListenerService {
 
   def allForUser(user: User): Future[Seq[MessageListener]]
 
+  def disableFor(
+                  behavior: Behavior,
+                  user: User,
+                  medium: String,
+                  channel: String,
+                  maybeThreadId: Option[String],
+                  isForCopilot: Boolean
+                ): Future[Seq[MessageListener]]
+
 }

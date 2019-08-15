@@ -193,6 +193,10 @@ trait ApiMethodContext extends InjectedController with I18nSupport {
                           info: AddMessageListenerInfo
                         )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("add message listener", Json.toJson(info))
 
+  def disableMessageListener(
+                              info: DisableMessageListenerInfo
+                            )(implicit request: Request[AnyContent]): Future[Result] = notSupportedResult("disable message listener", Json.toJson(info))
+
   def printEventCreationError(): Unit
 
   private def contentDispositionForContentType(contentType: String): String = {

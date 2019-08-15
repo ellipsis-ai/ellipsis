@@ -59,4 +59,22 @@ object MessageListenerQueries {
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
+  def uncompiledAllForUserBehaviorQuery(
+                                         behaviorId: Rep[String],
+                                         userId: Rep[String],
+                                         medium: Rep[String],
+                                         channel: Rep[String],
+                                         maybeThreadId: Rep[Option[String]],
+                                         isForCopilot: Rep[Boolean]
+                                       ) = {
+    allWithUser.
+      filter { case((listener, _), _) => listener.userId === userId }.
+      filter { case((listener, _), _) => listener.behaviorId === behaviorId }.
+      filter { case((listener, _), _) => listener.medium === medium }.
+      filter { case((listener, _), _) => listener.channel === channel }.
+      filter { case((listener, _), _) => (maybeThreadId.isEmpty && listener.maybeThreadId.isEmpty) || listener.maybeThreadId === maybeThreadId }.
+      filter { case((listener, _), _) => listener.isForCopilot === isForCopilot }
+  }
+
+  val allForUserBehaviorQuery = Compiled(uncompiledAllForUserBehaviorQuery _)
 }

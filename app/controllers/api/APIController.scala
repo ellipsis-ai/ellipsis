@@ -213,6 +213,34 @@ class APIController @Inject() (
     )
   }
 
+  private val disableMessageListenerForm = Form(
+    mapping(
+      "actionName" -> nonEmptyText,
+      "userId" -> nonEmptyText,
+      "medium" -> nonEmptyText,
+      "channel" -> nonEmptyText,
+      "thread" -> optional(nonEmptyText),
+      "copilot" -> optional(boolean),
+      "token" -> nonEmptyText
+    )(DisableMessageListenerInfo.apply)(DisableMessageListenerInfo.unapply)
+  )
+
+  def disableMessageListener = Action.async { implicit request =>
+    disableMessageListenerForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future.successful(responder.resultForFormErrors(formWithErrors))
+      },
+      info => {
+        (for {
+          context <- ApiMethodContextBuilder.createFor(info.token, services, responder)
+          result <- context.disableMessageListener(info)
+        } yield result).recover {
+          case e: InvalidTokenException => responder.invalidTokenRequest(info)
+        }
+      }
+    )
+  }
+
   private val postMessageForm = Form(
     mapping(
       "message" -> nonEmptyText,
