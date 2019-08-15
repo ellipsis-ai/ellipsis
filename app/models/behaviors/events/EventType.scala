@@ -13,7 +13,8 @@ object EventType extends Enum[EventType] {
   case object test extends EventType
   case object chat extends EventType
   case object web extends EventType
+  case object dialog extends EventType
 
-  val values = List(scheduled, api, externalApi, actionChoice, nextAction, test, chat, web)
+  val values = List(scheduled, api, externalApi, actionChoice, nextAction, test, chat, web, dialog)
   def maybeFrom(maybeString: Option[String]): Option[EventType] = maybeString.flatMap(find)
 }

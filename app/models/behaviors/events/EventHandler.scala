@@ -46,7 +46,7 @@ class EventHandler @Inject() (
         eventualResults
       }
       results <- {
-        if (behaviorResults.isEmpty && event.isResponseExpected) {
+        if (behaviorResults.filter(_.shouldSend).isEmpty && event.isResponseExpected) {
           event.noExactMatchResult(services).map { noMatchResult =>
             Seq(noMatchResult)
           }

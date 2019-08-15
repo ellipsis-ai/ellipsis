@@ -44,6 +44,7 @@ trait MessageEvent extends Event {
                 None,
                 None,
                 None,
+                None,
                 userExpectsResponse = false,
                 Some(ea)
               ).map(Some(_))
@@ -61,6 +62,7 @@ trait MessageEvent extends Event {
             trigger.behaviorVersion,
             trigger.invocationParamsFor(this, params),
             Some(trigger),
+            None,
             None,
             None,
             userExpectsResponse = true,

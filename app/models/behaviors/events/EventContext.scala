@@ -3,7 +3,8 @@ package models.behaviors.events
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.LoginInfo
 import json.Formatting._
-import json.{SlackUserData, UserData}
+import json.slack.dialogs.SlackDialogInput
+import json.{DialogState, SlackUserData, UserData}
 import models.accounts.{MSTeamsContext, SlackContext}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
@@ -11,6 +12,7 @@ import models.accounts.user.User
 import models.behaviors._
 import models.behaviors.behaviorversion.{BehaviorResponseType, BehaviorVersion, Private}
 import models.behaviors.conversations.conversation.Conversation
+import models.behaviors.dialogs.Dialog
 import models.behaviors.ellipsisobject.{BotInfo, Channel}
 import models.behaviors.events.ms_teams._
 import models.behaviors.events.slack._
@@ -96,6 +98,22 @@ sealed trait EventContext {
                    developerContext: DeveloperContext,
                    services: DefaultServices
                  )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Message]]
+
+  def maybeOpenDialog(
+                  event: Event,
+                  dialog: Dialog,
+                  developerContext: DeveloperContext,
+                  services: DefaultServices
+                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]]
+
+  def stateForDialog(event: Event, parametersWithValues: Seq[ParameterWithValue]): DialogState = {
+    val arguments = parametersWithValues.flatMap { p =>
+      p.maybeValue.map { value =>
+        (p.parameter.input.name, value.text)
+      }
+    }.toMap
+    DialogState(event.maybeMessageId, maybeThreadId, arguments)
+  }
 
   def newRunEventFor(
                    botResult: BotResult,
@@ -344,6 +362,25 @@ case class SlackEventContext(
     services.cacheService.getSlackPermalinkForMessage(key, maybePermalinkFunctionFor(key, services))
   }
 
+  val DIALOG_INPUT_MAX = 10
+
+  def maybeOpenDialog(
+                       event: Event,
+                       dialog: Dialog,
+                       developerContext: DeveloperContext,
+                       services: DefaultServices
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]] = {
+    val client = services.slackApiService.clientFor(profile)
+    val inputs: Seq[SlackDialogInput] = dialog.parametersWithValues.
+      filter(_.maybeValue.isEmpty).
+      flatMap(ea => SlackDialogInput.maybeFromInput(ea.parameter.input))
+    if (inputs.length > 1) {
+      client.openDialog(dialog, inputs.slice(0, DIALOG_INPUT_MAX)).map(Some(_))
+    } else {
+      Future.successful(None)
+    }
+  }
+
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
                      (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
     maybeMessageTs.map { messageTs =>
@@ -586,6 +623,16 @@ case class MSTeamsEventContext(
     )
   }
 
+  def maybeOpenDialog(
+                  event: Event,
+                  dialog: Dialog,
+                  developerContext: DeveloperContext,
+                  services: DefaultServices
+                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]] = {
+    // TODO: Can MS Teams support dialogs?
+    Future.successful(None)
+  }
+
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
                      (implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[Seq[BotResult]] = {
     MSTeamsMessageReactionHandler.handle(services.msTeamsApiService.profileClientFor(profile), eventualResults, info)
@@ -726,6 +773,15 @@ case class TestEventContext(
       nextAction.argumentsMap,
       maybeScheduled = None
     )
+  }
+
+  def maybeOpenDialog(
+                       event: Event,
+                       dialog: Dialog,
+                       developerContext: DeveloperContext,
+                       services: DefaultServices
+                     )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[Boolean]] = {
+    Future.successful(None)
   }
 
   def reactionHandler(eventualResults: Future[Seq[BotResult]], maybeMessageTs: Option[String], services: DefaultServices)
