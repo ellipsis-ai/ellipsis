@@ -3,6 +3,9 @@ package json
 import java.time.OffsetDateTime
 
 import models.behaviors.invocationlogentry.InvocationLogEntry
+import services.DefaultServices
+
+import scala.concurrent.{ExecutionContext, Future}
 
 case class InvocationLogEntryData(
                                    id: String,
@@ -15,7 +18,8 @@ case class InvocationLogEntryData(
                                    maybeUserIdForContext: Option[String],
                                    maybeOriginalEventType: Option[String],
                                    runtimeInMilliseconds: Long,
-                                   createdAt: OffsetDateTime
+                                   createdAt: OffsetDateTime,
+                                   maybeUserData: Option[UserData]
                                  )
 
 object InvocationLogEntryData {
@@ -31,7 +35,16 @@ object InvocationLogEntryData {
       entry.maybeUserIdForContext,
       entry.maybeOriginalEventType.map(_.toString),
       entry.runtimeInMilliseconds,
-      entry.createdAt
-    )
+      entry.createdAt,
+      None)
+  }
+
+  def fromEntryWithUserData(entry: InvocationLogEntry, services: DefaultServices)
+                           (implicit ec: ExecutionContext): Future[InvocationLogEntryData] = {
+    for {
+      userData <- services.dataService.users.userDataFor(entry.user, entry.behaviorVersion.team)
+    } yield {
+      InvocationLogEntryData.from(entry).copy(maybeUserData = Some(userData))
+    }
   }
 }

@@ -23,9 +23,10 @@ class CopilotController @Inject()(
                                     val configuration: Configuration,
                                     val services: DefaultServices,
                                     val ws: WSClient,
-                                    val assetsProvider: Provider[RemoteAssets],
+                                    val assetsProvider: Provider[RemoteAssets]
+                                 )(
                                     implicit val actorSystem: ActorSystem,
-                                    implicit val ec: ExecutionContext
+                                    implicit val executor: ExecutionContext
                                   ) extends ReAuthable {
 
   val dataService: DataService = services.dataService
@@ -79,9 +80,9 @@ class CopilotController @Inject()(
       logEntries <- Future.sequence(listeners.map { ea =>
         dataService.invocationLogEntries.allForMessageListener(ea, since)
       }).map(_.flatten)
+      resultsData <- Future.sequence(logEntries.map(ea => InvocationLogEntryData.fromEntryWithUserData(ea, services))).map(_.sortBy(_.createdAt))
     } yield {
-      val resultsData = ResultsData(logEntries.map(InvocationLogEntryData.from).sortBy(_.createdAt))
-      Ok(Json.toJson(resultsData))
+      Ok(Json.toJson(ResultsData(resultsData)))
     }
   }
 

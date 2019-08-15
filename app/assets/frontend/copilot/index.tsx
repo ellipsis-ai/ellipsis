@@ -5,8 +5,9 @@ import {DataRequest} from "../lib/data_request";
 import Formatter, {Timestamp} from "../lib/formatter";
 import Collapsible from "../shared_ui/collapsible";
 import * as moment from 'moment';
+import User, {UserJson} from "../models/user";
 
-interface Result {
+interface ResultJson {
   id: string
   messageText: string
   resultType: string
@@ -14,10 +15,15 @@ interface Result {
   createdAt: Timestamp
   maybeChannel: Option<string>
   maybeUserIdForContext: Option<string>
+  maybeUserData: Option<UserJson>
+}
+
+interface Result extends ResultJson {
+  maybeUserData: Option<User>
 }
 
 type ResultsData = {
-  results: Result[]
+  results: ResultJson[]
 }
 
 interface Props {
@@ -72,8 +78,11 @@ class Copilot extends React.Component<Props, State> {
   checkForUpdates(): void {
     DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.getLastResultTime()).url)
       .then((json: ResultsData) => {
+        const results = json.results.map((ea) => Object.assign({}, ea, {
+          maybeUserData: ea.maybeUserData ? User.fromJson(ea.maybeUserData) : null
+        }));
         this.setState({
-          results: json.results
+          results: results
         });
         this.checkForResultsLater();
       });
@@ -115,7 +124,7 @@ class Copilot extends React.Component<Props, State> {
           <div className="fade-in border mvl bg-white">
             <div className="border-bottom border-light pam bg-light type-s type-weak">
               <div>
-                <b>{result.maybeUserIdForContext || "Unknown user"}</b>
+                <b>{result.maybeUserData ? result.maybeUserData.formattedFullNameOrUserName() : "(Unknown user)"}</b>
                 <span> · {Formatter.formatTimestampRelativeCalendar(result.createdAt)}</span>
               </div>
               <div className="border-left-thick border-gray pls">{result.messageText}</div>
