@@ -37,6 +37,7 @@
     "prop-types": "^15.6.2",
     "react": "^16.6.3",
     "react-dom": "^16.6.3",
+    "react-markdown": "^4.1.0",
     "react-monaco-editor": "^0.21.0",
     "style-loader": "^0.23.0",
     "ts-jest": "^24.0.0",

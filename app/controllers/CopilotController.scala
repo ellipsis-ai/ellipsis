@@ -80,20 +80,7 @@ class CopilotController @Inject()(
         dataService.invocationLogEntries.allForMessageListener(ea, since)
       }).map(_.flatten)
     } yield {
-      val resultsData = ResultsData(logEntries.map { ea =>
-        InvocationLogEntryData(
-          ea.behaviorVersion.behavior.id,
-          ea.resultType,
-          ea.messageText,
-          ea.resultText,
-          ea.context,
-          ea.maybeChannel,
-          ea.maybeUserIdForContext,
-          ea.maybeOriginalEventType.map(_.toString),
-          ea.runtimeInMilliseconds,
-          ea.createdAt
-        )
-      }.sortBy(_.createdAt))
+      val resultsData = ResultsData(logEntries.map(InvocationLogEntryData.from).sortBy(_.createdAt))
       Ok(Json.toJson(resultsData))
     }
   }
