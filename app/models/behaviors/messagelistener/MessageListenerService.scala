@@ -36,6 +36,6 @@ trait MessageListenerService {
                   channel: String,
                   maybeThreadId: Option[String],
                   isForCopilot: Boolean
-                ): Future[Seq[MessageListener]]
+                ): Future[Int]
 
 }

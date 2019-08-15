@@ -395,7 +395,7 @@ case class SlackApiMethodContext(
             isForCopilot = info.isForCoPilot.contains(true)
           )
         } yield {
-          Ok(Json.toJson(updatedListeners.map(_.id)))
+          Ok(Json.toJson(updatedListeners))
         }
       }).getOrElse {
         Future.successful(responder.notFound(APIErrorData(s"Couldn't disable listener for action `${info.actionName}`", Some("actionName")), Json.toJson(info)))

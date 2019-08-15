@@ -127,22 +127,6 @@ class MessageListenerServiceImpl @Inject() (
     dataService.run(allForUserAction(user))
   }
 
-  def disableForAction(
-                        behavior: Behavior,
-                        user: User,
-                        medium: String,
-                        channel: String,
-                        maybeThreadId: Option[String],
-                        isForCopilot: Boolean
-                      ): DBIO[Seq[MessageListener]] = {
-    val query = allForUserBehaviorQuery(behavior.id, user.id, medium, channel, maybeThreadId, isForCopilot)
-    query.result.flatMap { result =>
-      DBIO.sequence(result.map { existing =>
-        val updated = tuple2Listener(existing).copy(isEnabled = false)
-        all.filter(_.id === updated.id).update(updated.toRaw).map { _ => updated }
-      })
-    }
-  }
 
   def disableFor(
                   behavior: Behavior,
@@ -151,8 +135,8 @@ class MessageListenerServiceImpl @Inject() (
                   channel: String,
                   maybeThreadId: Option[String],
                   isForCopilot: Boolean
-                ): Future[Seq[MessageListener]] = {
-    dataService.run(disableForAction(behavior, user, medium, channel, maybeThreadId, isForCopilot))
+                ): Future[Int] = {
+    dataService.run(isEnabledForUserBehavior(behavior.id, user.id, medium, channel, maybeThreadId, isForCopilot).update(false))
   }
 
 }
