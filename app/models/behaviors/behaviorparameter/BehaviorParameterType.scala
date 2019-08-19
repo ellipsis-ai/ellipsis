@@ -654,7 +654,8 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
         None,
         context.maybeConversation.map(c => NewParentConversation(c, context.parameter)),
         None,
-        userExpectsResponse = true
+        userExpectsResponse = true,
+        maybeMessageListener = None
       )
       result <- DBIO.from(behaviorResponse.result)
     } yield result

@@ -108,6 +108,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
             responseType = Normal,
+            isForCopilot = false,
             developerContext = DeveloperContext.default,
             dataService
           )
@@ -142,6 +143,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
             responseType = Normal,
+            isForCopilot = false,
             developerContext = DeveloperContext.default,
             dataService
           )
@@ -220,6 +222,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
             responseType = Normal,
+            isForCopilot = false,
             developerContext = DeveloperContext.default,
             dataService
           )
@@ -269,6 +272,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
             maybeResponseTemplate = Some(responseText),
             maybeLogResult = None,
             responseType = Normal,
+            isForCopilot = false,
             developerContext = DeveloperContext.default,
             dataService
           )

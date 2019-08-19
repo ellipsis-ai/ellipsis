@@ -8,6 +8,7 @@ import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.{BotResult, ParameterWithValue}
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.events.{Event, EventType}
+import models.behaviors.messagelistener.MessageListener
 import models.team.Team
 import slick.dbio.DBIO
 
@@ -35,6 +36,8 @@ trait InvocationLogEntryService {
 
   def lastForEachGroupForTeamAction(team: Team): DBIO[Seq[BehaviorGroupInvocationTimestamp]]
 
+  def allForMessageListener(messageListener: MessageListener, since: OffsetDateTime): Future[Seq[InvocationLogEntry]]
+
   def createForAction(
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],
@@ -42,7 +45,8 @@ trait InvocationLogEntryService {
                        event: Event,
                        maybeUserIdForContext: Option[String],
                        user: User,
-                       runtimeInMilliseconds: Long
+                       runtimeInMilliseconds: Long,
+                       maybeMessageListener: Option[MessageListener]
                      ): DBIO[InvocationLogEntry]
 
   def lastInvocationDateForTeamAction(team: Team): DBIO[Option[OffsetDateTime]]

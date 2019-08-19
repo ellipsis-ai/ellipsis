@@ -16,7 +16,8 @@ trait MessageListenerService {
                  team: Team,
                  medium: String,
                  channel: String,
-                 maybeThreadId: Option[String]
+                 maybeThreadId: Option[String],
+                 isForCopilot: Boolean
                ): Future[MessageListener]
 
   def allFor(
@@ -25,5 +26,16 @@ trait MessageListenerService {
               maybeChannel: Option[String],
               context: String
             ): Future[Seq[MessageListener]]
+
+  def allForUser(user: User): Future[Seq[MessageListener]]
+
+  def disableFor(
+                  behavior: Behavior,
+                  user: User,
+                  medium: String,
+                  channel: String,
+                  maybeThreadId: Option[String],
+                  isForCopilot: Boolean
+                ): Future[Int]
 
 }

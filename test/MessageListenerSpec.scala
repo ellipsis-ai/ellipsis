@@ -45,7 +45,7 @@ class MessageListenerSpec extends DBSpec {
 
         val behaviorVersion = runNow(dataService.behaviorVersions.allForGroupVersion(groupVersion)).head
 
-        runNow(dataService.messageListeners.createFor(behaviorVersion.behavior, Map(), user, team, event.eventContext.name, channel, None))
+        runNow(dataService.messageListeners.createFor(behaviorVersion.behavior, Map(), user, team, event.eventContext.name, channel, None, isForCopilot = false))
 
         val responses = runNow(event.allBehaviorResponsesFor(Some(team), None, services))
 

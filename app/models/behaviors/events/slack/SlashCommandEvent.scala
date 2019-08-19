@@ -64,7 +64,8 @@ case class SlashCommandEvent(
             None,
             None,
             None,
-            userExpectsResponse = true
+            userExpectsResponse = true,
+            maybeMessageListener = None
           )
         } yield response
       })

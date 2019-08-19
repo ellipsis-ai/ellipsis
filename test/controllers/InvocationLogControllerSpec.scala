@@ -50,6 +50,7 @@ class InvocationLogControllerSpec extends PlaySpec with MockitoSugar {
       None,
       user,
       1000,
+      None,
       now.minusHours(1)
     )
     Seq(

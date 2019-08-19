@@ -434,14 +434,15 @@ class BehaviorVersionServiceImpl @Inject() (
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],
                        event: Event,
-                       maybeConversation: Option[Conversation]
+                       maybeConversation: Option[Conversation],
+                       isForCopilot: Boolean
                      )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = {
     for {
       teamEnvVars <- dataService.teamEnvironmentVariables.allForAction(behaviorVersion.team)
       result <- maybeNotReadyResultForAction(behaviorVersion, event).flatMap { maybeResult =>
         maybeResult.map(DBIO.successful).getOrElse {
           lambdaService
-            .invokeAction(behaviorVersion, parametersWithValues, teamEnvVars, event, maybeConversation, defaultServices)
+            .invokeAction(behaviorVersion, parametersWithValues, teamEnvVars, event, maybeConversation, isForCopilot, defaultServices)
         }
       }
     } yield result
@@ -451,9 +452,10 @@ class BehaviorVersionServiceImpl @Inject() (
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  event: Event,
-                 maybeConversation: Option[Conversation]
+                 maybeConversation: Option[Conversation],
+                 isForCopilot: Boolean
                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
-    dataService.run(resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation))
+    dataService.run(resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation, isForCopilot))
   }
 
 }

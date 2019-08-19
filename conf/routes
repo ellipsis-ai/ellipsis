@@ -53,6 +53,9 @@ POST        /linked_github_repos                      @controllers.BehaviorEdito
 POST        /deploy                                   @controllers.BehaviorEditorController.deploy
 GET         /behavior_test_results/:groupId           @controllers.BehaviorEditorController.testResults(groupId: String)
 
+GET         /copilot                                  @controllers.CopilotController.index(teamId: Option[String] ?= None)
+GET         /copilot/results/:when                    @controllers.CopilotController.resultsSince(when: String, teamId: Option[String] ?= None)
+
 GET         /skill/:groupId/schedules                 @controllers.BehaviorGroupConfigController.schedules(groupId: String)
 
 POST        /reset_saved_answer_for_user              @controllers.SavedAnswerController.resetForUser
@@ -196,6 +199,8 @@ POST        /api/v1/upload_file                       @controllers.api.APIContro
 POST        /api/v1/upload_file_content               @controllers.api.APIController.uploadFileContent
 #NOCSRF
 POST        /api/v1/add_message_listener              @controllers.api.APIController.addMessageListener
+#NOCSRF
+POST        /api/v1/disable_message_listener          @controllers.api.APIController.disableMessageListener
 #NOCSRF
 POST        /api/v1/delete_saved_answers              @controllers.api.APIController.deleteSavedAnswers
 #NOCSRF

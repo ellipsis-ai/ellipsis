@@ -67,7 +67,9 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar {
           None,
           None,
           None,
-          userExpectsResponse = true)
+          userExpectsResponse = true,
+          None
+        )
         ).thenReturn(
           Future.successful(BehaviorResponse(
             event,
@@ -78,6 +80,7 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar {
             None,
             None,
             userExpectsResponse = true,
+            None,
             services
           ))
         )

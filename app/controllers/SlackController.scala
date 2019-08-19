@@ -125,7 +125,8 @@ class SlackController @Inject() (
             None,
             None,
             maybeDialogInfo,
-            userExpectsResponse = true
+            userExpectsResponse = true,
+            maybeMessageListener = None
           ).map { response =>
             Some(response)
           }

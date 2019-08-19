@@ -362,13 +362,43 @@ case class SlackApiMethodContext(
             team,
             info.medium,
             info.channel,
-            info.threadId
+            info.threadId,
+            isForCopilot = info.isForCoPilot.contains(true)
           )
         } yield {
           Ok(listener.id)
         }
       }).getOrElse {
         Future.successful(responder.notFound(APIErrorData(s"Couldn't add listener for action `${info.actionName}`", Some("actionName")), Json.toJson(info)))
+      }
+    } yield result
+  }
+
+  override def disableMessageListener(
+                                       info: DisableMessageListenerInfo
+                                     )(implicit request: Request[AnyContent]): Future[Result] = {
+    for {
+      maybeOriginatingBehaviorVersion <- maybeOriginatingBehaviorVersion
+      maybeBehaviorVersion <- maybeBehaviorVersionFor(info.actionName, maybeOriginatingBehaviorVersion)
+      result <- (for {
+        behaviorVersion <- maybeBehaviorVersion
+        _ <- maybeTeam
+      } yield {
+        for {
+          user <- dataService.users.ensureUserFor(slackProfile.loginInfo, Seq(), behaviorVersion.team.id)
+          updatedListeners <- dataService.messageListeners.disableFor(
+            behaviorVersion.behavior,
+            user,
+            info.medium,
+            info.channel,
+            info.threadId,
+            isForCopilot = info.isForCoPilot.contains(true)
+          )
+        } yield {
+          Ok(Json.toJson(updatedListeners))
+        }
+      }).getOrElse {
+        Future.successful(responder.notFound(APIErrorData(s"Couldn't disable listener for action `${info.actionName}`", Some("actionName")), Json.toJson(info)))
       }
     } yield result
   }

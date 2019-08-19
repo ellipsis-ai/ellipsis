@@ -11,6 +11,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.dialogs.Dialog
 import models.behaviors.events.Event
+import models.behaviors.messagelistener.MessageListener
 import models.behaviors.triggers.Trigger
 import play.api.Logger
 import play.api.libs.json.{JsString, JsValue}
@@ -45,6 +46,7 @@ case class BehaviorResponse(
                              maybeNewParent: Option[NewParentConversation],
                              maybeDialog: Option[DialogInfo],
                              userExpectsResponse: Boolean,
+                             maybeMessageListener: Option[MessageListener],
                              services: DefaultServices
                              ) {
 
@@ -107,7 +109,7 @@ case class BehaviorResponse(
     val startTime = OffsetDateTime.now
     for {
       user <- event.ensureUserAction(dataService)
-      initialResult <- dataService.behaviorVersions.resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation)
+      initialResult <- dataService.behaviorVersions.resultForAction(behaviorVersion, parametersWithValues, event, maybeConversation, maybeMessageListener.exists(_.isForCopilot))
       result <- {
         services.dataService.parentConversations.maybeForAction(maybeConversation).flatMap { maybeParent =>
           maybeParent.map { p =>
@@ -125,7 +127,8 @@ case class BehaviorResponse(
           event,
           Some(event.eventContext.userIdForContext),
           user,
-          runtimeInMilliseconds
+          runtimeInMilliseconds,
+          maybeMessageListener
         )
       }
       _ <- DBIO.from(notifyAdminsIfNec(result))

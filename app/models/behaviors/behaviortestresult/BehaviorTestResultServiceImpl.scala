@@ -43,7 +43,7 @@ class BehaviorTestResultServiceImpl @Inject() (
                              (implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BehaviorTestResult] = {
     val author = behaviorVersion.groupVersion.maybeAuthor.get
     val event = TestMessageEvent(TestEventContext(author, behaviorVersion.team), "", includesBotMention = true, maybeScheduled = None)
-    DBIO.from(dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), event, None)).flatMap { result =>
+    DBIO.from(dataService.behaviorVersions.resultFor(behaviorVersion, Seq(), event, None, isForCopilot = false)).flatMap { result =>
       val outputText = result.fullText ++ result.maybeLog.map(l => s"\n\n$l").getOrElse("")
       val newInstance = BehaviorTestResult(
         IDs.next,

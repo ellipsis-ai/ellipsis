@@ -13,6 +13,7 @@ object Formatting {
   implicit val unscheduleActionInfoWrites = Json.writes[UnscheduleActionInfo]
 
   implicit val addMessageListenerInfoWrites = Json.writes[AddMessageListenerInfo]
+  implicit val disableMessageListenerInfoFormat = Json.format[DisableMessageListenerInfo]
 
   implicit val scheduleActionResultFormat = Json.format[ScheduleActionResult]
   implicit val scheduleResultFormat = Json.format[ScheduleResult]

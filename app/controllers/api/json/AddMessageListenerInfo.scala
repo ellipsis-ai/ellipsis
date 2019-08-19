@@ -7,6 +7,7 @@ case class AddMessageListenerInfo(
                                    medium: String,
                                    channel: String,
                                    threadId: Option[String],
+                                   isForCoPilot: Option[Boolean],
                                    token: String
                                  ) extends ApiMethodInfo {
   val argumentsMap: Map[String, String] = {

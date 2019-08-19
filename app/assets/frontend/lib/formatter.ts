@@ -65,6 +65,10 @@ const Formatter = {
       }
     },
 
+    formatTimestampRelativeCalendar: function(timestamp: Timestamp): string {
+      return moment(timestamp).calendar();
+    },
+
     formatTimestampShort: function(timestamp: Timestamp): string {
       return moment(timestamp).format('ll, LT');
     },

@@ -87,20 +87,7 @@ class VisibilityAPIController @Inject() (
       }.getOrElse(Future.successful(Seq()))
     } yield {
       if (isAdmin) {
-        val data = entries.map { ea =>
-          InvocationLogEntryData(
-            ea.behaviorVersion.behavior.id,
-            ea.resultType,
-            ea.messageText,
-            ea.resultText,
-            ea.context,
-            ea.maybeChannel,
-            ea.maybeUserIdForContext,
-            ea.maybeOriginalEventType.map(_.toString),
-            ea.runtimeInMilliseconds,
-            ea.createdAt
-          )
-        }
+        val data = entries.map(InvocationLogEntryData.from)
         Ok(Json.toJson(data))
       } else {
         NotFound("")
@@ -127,20 +114,7 @@ class VisibilityAPIController @Inject() (
       }.getOrElse(Future.successful(Seq()))
     } yield {
       if (isAdmin) {
-        val data = entries.map { ea =>
-          InvocationLogEntryData(
-            ea.behaviorVersion.behavior.id,
-            ea.resultType,
-            ea.messageText,
-            ea.resultText,
-            ea.context,
-            ea.maybeChannel,
-            ea.maybeUserIdForContext,
-            ea.maybeOriginalEventType.map(_.toString),
-            ea.runtimeInMilliseconds,
-            ea.createdAt
-          )
-        }
+        val data = entries.map(InvocationLogEntryData.from)
         Ok(Json.toJson(data))
       } else {
         NotFound("")

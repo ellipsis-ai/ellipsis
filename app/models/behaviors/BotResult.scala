@@ -213,6 +213,7 @@ sealed trait BotResult {
   def maybeLog: Option[String] = None
   def maybeLogFile: Option[UploadFileSpec] = None
   lazy val executionInfo: ExecutionInfo = ExecutionInfo.empty
+  val isForCopilot: Boolean = false
 
   def shouldIncludeLogs: Boolean = {
     developerContext.isInDevMode || developerContext.isInInvocationTester
@@ -287,7 +288,7 @@ sealed trait BotResult {
 
   def beforeSend(): Unit = {}
 
-  val shouldSend: Boolean = true
+  val shouldSend: Boolean = !isForCopilot
 
   def attachments: Seq[MessageAttachment] = {
     executionInfo.errors.map { error =>
@@ -351,6 +352,7 @@ case class SuccessResult(
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
                           override val responseType: BehaviorResponseType,
+                          override val isForCopilot: Boolean,
                           developerContext: DeveloperContext,
                           dataService: DataService
                         ) extends BotResultWithLogResult {

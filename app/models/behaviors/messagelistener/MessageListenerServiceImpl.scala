@@ -23,6 +23,8 @@ case class RawMessageListener(
                               channel: String,
                               maybeThreadId: Option[String],
                               userId: String,
+                              isForCopilot: Boolean,
+                              isEnabled: Boolean,
                               createdAt: OffsetDateTime
                           )
 
@@ -35,10 +37,12 @@ class MessageListenersTable(tag: Tag) extends Table[RawMessageListener](tag, "me
   def channel = column[String]("channel")
   def maybeThreadId = column[Option[String]]("thread")
   def userId = column[String]("user_id")
+  def isForCopilot = column[Boolean]("is_for_copilot")
+  def isEnabled = column[Boolean]("is_enabled")
   def createdAt = column[OffsetDateTime]("created_at")
 
   def * =
-    (id, behaviorId, arguments, medium, channel, maybeThreadId, userId, createdAt) <> ((RawMessageListener.apply _).tupled, RawMessageListener.unapply _)
+    (id, behaviorId, arguments, medium, channel, maybeThreadId, userId, isForCopilot, isEnabled, createdAt) <> ((RawMessageListener.apply _).tupled, RawMessageListener.unapply _)
 }
 
 class MessageListenerServiceImpl @Inject() (
@@ -57,7 +61,8 @@ class MessageListenerServiceImpl @Inject() (
                        team: Team,
                        medium: String,
                        channel: String,
-                       maybeThreadId: Option[String]
+                       maybeThreadId: Option[String],
+                       isForCopilot: Boolean
                      ): DBIO[MessageListener] = {
     val newInstance = MessageListener(
       IDs.next,
@@ -67,6 +72,8 @@ class MessageListenerServiceImpl @Inject() (
       channel,
       maybeThreadId,
       user,
+      isForCopilot,
+      isEnabled = true,
       OffsetDateTime.now
     )
     (all += newInstance.toRaw).map(_ => newInstance)
@@ -79,9 +86,10 @@ class MessageListenerServiceImpl @Inject() (
                  team: Team,
                  medium: String,
                  channel: String,
-                 maybeThreadId: Option[String]
+                 maybeThreadId: Option[String],
+                 isForCopilot: Boolean
                ): Future[MessageListener] = {
-    dataService.run(createForAction(behavior, arguments, user, team, medium, channel, maybeThreadId))
+    dataService.run(createForAction(behavior, arguments, user, team, medium, channel, maybeThreadId, isForCopilot))
   }
 
   def allForAction(
@@ -108,4 +116,27 @@ class MessageListenerServiceImpl @Inject() (
             ): Future[Seq[MessageListener]] = {
     dataService.run(allForAction(event, maybeTeam, maybeChannel, context))
   }
+
+  def allForUserAction(user: User): DBIO[Seq[MessageListener]] = {
+    allForUserQuery(user.id).result.map { r =>
+      r.map(tuple2Listener)
+    }
+  }
+
+  def allForUser(user: User): Future[Seq[MessageListener]] = {
+    dataService.run(allForUserAction(user))
+  }
+
+
+  def disableFor(
+                  behavior: Behavior,
+                  user: User,
+                  medium: String,
+                  channel: String,
+                  maybeThreadId: Option[String],
+                  isForCopilot: Boolean
+                ): Future[Int] = {
+    dataService.run(isEnabledForUserBehavior(behavior.id, user.id, medium, channel, maybeThreadId, isForCopilot).update(false))
+  }
+
 }

@@ -14,6 +14,7 @@ import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.behaviorgroup.BehaviorGroup
 import models.behaviors.events.{Event, EventType}
+import models.behaviors.messagelistener.MessageListener
 import play.api.libs.json.{JsNull, JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,6 +33,7 @@ case class RawInvocationLogEntry(
                                   maybeUserIdForContext: Option[String],
                                   userId: String,
                                   runtimeInMilliseconds: Long,
+                                  maybeMessageListenerId: Option[String],
                                   createdAt: OffsetDateTime
                                 )
 
@@ -50,9 +52,10 @@ class InvocationLogEntriesTable(tag: Tag) extends Table[RawInvocationLogEntry](t
   def maybeUserIdForContext = column[Option[String]]("user_id_for_context")
   def userId = column[String]("user_id")
   def runtimeInMilliseconds = column[Long]("runtime_in_milliseconds")
+  def maybeMessageListenerId = column[Option[String]]("message_listener_id")
   def createdAt = column[OffsetDateTime]("created_at")
 
-  def * = (id, behaviorVersionId, resultType, maybeEventType, maybeOriginalEventType, messageText, paramValues, resultText, context, maybeChannel, maybeUserIdForContext, userId, runtimeInMilliseconds, createdAt) <>
+  def * = (id, behaviorVersionId, resultType, maybeEventType, maybeOriginalEventType, messageText, paramValues, resultText, context, maybeChannel, maybeUserIdForContext, userId, runtimeInMilliseconds, maybeMessageListenerId, createdAt) <>
     ((RawInvocationLogEntry.apply _).tupled, RawInvocationLogEntry.unapply _)
 }
 
@@ -121,6 +124,13 @@ class InvocationLogEntryServiceImpl @Inject() (
     lastForEachGroupForTeamQuery(team.id).result.map(r => r.map(ea => BehaviorGroupInvocationTimestamp(ea._1, ea._2)))
   }
 
+  def allForMessageListener(messageListener: MessageListener, since: OffsetDateTime): Future[Seq[InvocationLogEntry]] = {
+    val action = allForMessageListenerQuery(messageListener.id, since: OffsetDateTime).result.map { r =>
+      r.map(tuple2Entry)
+    }
+    dataService.run(action)
+  }
+
   def createForAction(
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],
@@ -128,7 +138,8 @@ class InvocationLogEntryServiceImpl @Inject() (
                        event: Event,
                        maybeUserIdForContext: Option[String],
                        user: User,
-                       runtimeInMilliseconds: Long
+                       runtimeInMilliseconds: Long,
+                       maybeMessageListener: Option[MessageListener]
                      ): DBIO[InvocationLogEntry] = {
     val raw =
       RawInvocationLogEntry(
@@ -147,6 +158,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         maybeUserIdForContext,
         user.id,
         runtimeInMilliseconds,
+        maybeMessageListener.map(_.id),
         OffsetDateTime.now
       )
 
@@ -165,6 +177,7 @@ class InvocationLogEntryServiceImpl @Inject() (
         raw.maybeUserIdForContext,
         user,
         raw.runtimeInMilliseconds,
+        raw.maybeMessageListenerId,
         raw.createdAt
       )
     }

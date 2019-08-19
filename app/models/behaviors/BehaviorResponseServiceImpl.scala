@@ -8,6 +8,7 @@ import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.events.Event
+import models.behaviors.messagelistener.MessageListener
 import models.behaviors.triggers.Trigger
 import models.team.Team
 import services._
@@ -69,7 +70,8 @@ class BehaviorResponseServiceImpl @Inject() (
                       maybeConversation: Option[Conversation],
                       maybeNewParent: Option[NewParentConversation],
                       maybeDialog: Option[DialogInfo],
-                      userExpectsResponse: Boolean
+                      userExpectsResponse: Boolean,
+                      maybeMessageListener: Option[MessageListener]
                     ): DBIO[BehaviorResponse] = {
     parametersWithValuesForAction(event, behaviorVersion, paramValues, maybeConversation).map { paramsWithValues =>
       BehaviorResponse(
@@ -81,6 +83,7 @@ class BehaviorResponseServiceImpl @Inject() (
         maybeNewParent,
         maybeDialog,
         userExpectsResponse,
+        maybeMessageListener,
         services
       )
     }
@@ -94,7 +97,8 @@ class BehaviorResponseServiceImpl @Inject() (
                 maybeConversation: Option[Conversation],
                 maybeNewParent: Option[NewParentConversation],
                 maybeDialog: Option[DialogInfo],
-                userExpectsResponse: Boolean
+                userExpectsResponse: Boolean,
+                maybeMessageListener: Option[MessageListener]
               ): Future[BehaviorResponse] = {
     dataService.run(buildForAction(
       event,
@@ -104,7 +108,8 @@ class BehaviorResponseServiceImpl @Inject() (
       maybeConversation,
       maybeNewParent,
       maybeDialog,
-      userExpectsResponse
+      userExpectsResponse,
+      maybeMessageListener
     ))
   }
 

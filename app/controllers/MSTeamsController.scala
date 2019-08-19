@@ -262,7 +262,8 @@ class MSTeamsController @Inject() (
                 None,
                 None,
                 None,
-                userExpectsResponse = true
+                userExpectsResponse = true,
+                maybeMessageListener = None
               ).map(Some(_))
             }.getOrElse(Future.successful(None))
             maybeResult <- maybeResponse.map { response =>

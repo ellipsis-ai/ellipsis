@@ -79,14 +79,16 @@ trait BehaviorVersionService {
                        behaviorVersion: BehaviorVersion,
                        parametersWithValues: Seq[ParameterWithValue],
                        event: Event,
-                       maybeConversation: Option[Conversation]
+                       maybeConversation: Option[Conversation],
+                       isForCopilot: Boolean
                      )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult]
 
   def resultFor(
                  behaviorVersion: BehaviorVersion,
                  parametersWithValues: Seq[ParameterWithValue],
                  event: Event,
-                 maybeConversation: Option[Conversation]
+                 maybeConversation: Option[Conversation],
+                 isForCopilot: Boolean
                )(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult]
 
   def unlearn(behaviorVersion: BehaviorVersion): Future[Unit]

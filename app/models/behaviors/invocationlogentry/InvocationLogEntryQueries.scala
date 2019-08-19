@@ -33,6 +33,7 @@ object InvocationLogEntryQueries {
       raw.maybeUserIdForContext,
       user,
       raw.runtimeInMilliseconds,
+      raw.maybeMessageListenerId,
       raw.createdAt
     )
   }
@@ -135,4 +136,9 @@ object InvocationLogEntryQueries {
   }
 
   val lastForEachGroupForTeamQuery = Compiled(uncompiledLastForEachGroupForTeamQuery _)
+
+  def uncompiledAllForMessageListenerQuery(messageListenerId: Rep[String], since: Rep[OffsetDateTime]) = {
+    allWithVersion.filter { case((entry, _), _) => entry.maybeMessageListenerId === messageListenerId && entry.createdAt > since }
+  }
+  val allForMessageListenerQuery = Compiled(uncompiledAllForMessageListenerQuery _)
 }

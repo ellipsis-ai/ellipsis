@@ -164,7 +164,7 @@ case class DisplayHelpBehavior(
         behaviorVersions.filterNot(_.isDataType).find(ea => BehaviorVersion.nameIsHelpAction(ea.maybeName))
       }
       maybeResponse <- maybeBehaviorVersion.map { behaviorVersion =>
-        dataService.behaviorResponses.buildFor(event, behaviorVersion, Map(), None, None, None, None, userExpectsResponse = true).map(Some(_))
+        dataService.behaviorResponses.buildFor(event, behaviorVersion, Map(), None, None, None, None, userExpectsResponse = true, maybeMessageListener = None).map(Some(_))
       }.getOrElse(Future.successful(None))
       maybeResult <- maybeResponse.map { response =>
         response.result.map {

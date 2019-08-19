@@ -123,7 +123,8 @@ case class InvokeBehaviorConversation(
           Some(this),
           None,
           None,
-          userExpectsResponse = true
+          userExpectsResponse = true,
+          maybeMessageListener = None
         ).flatMap { br =>
           br.resultForFilledOutAction
         }

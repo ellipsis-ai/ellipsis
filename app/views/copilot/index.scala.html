@@ -1,0 +1,14 @@
+@(
+    config: ViewConfig,
+    dataRoute: Call
+)(implicit messages: Messages, r: RequestHeader)
+
+@page.main("Copilot", config, Seq()) {
+  <div id="content" class="content flex-row-cascade">
+    <div id="copilot" class="flex-row-cascade"></div>
+
+    <script src='@config.assets.getWebpackBundle("vendor.js")'></script>
+    <script src="@dataRoute"></script>
+    <script src='@config.assets.getWebpackBundle("copilot.js")'></script>
+  </div>
+}

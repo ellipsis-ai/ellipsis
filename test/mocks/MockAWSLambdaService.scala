@@ -40,6 +40,7 @@ class MockAWSLambdaService @Inject() (
       maybeResponseTemplate = None,
       maybeLogResult = None,
       responseType = Normal,
+      isForCopilot = false,
       DeveloperContext.default,
       dataService
     )
@@ -68,6 +69,7 @@ class MockAWSLambdaService @Inject() (
                        environmentVariables: Seq[EnvironmentVariable],
                        event: Event,
                        maybeConversation: Option[Conversation],
+                       isForCopilot: Boolean,
                        defaultServices: DefaultServices
                      )(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[BotResult] = DBIO.successful(resultFor(event, maybeConversation))
 
