@@ -7,6 +7,9 @@ import Collapsible from "../shared_ui/collapsible";
 import * as moment from 'moment';
 import User, {UserJson} from "../models/user";
 import {PageRequiredProps} from "../shared_ui/page";
+import Button from "../form/button";
+import DynamicLabelButton from "../form/dynamic_label_button";
+import SVGCheckmark from "../svg/checkmark";
 
 interface ResultJson {
   id: string
@@ -27,16 +30,20 @@ type ResultsData = {
   results: ResultJson[]
 }
 
-type Props = PageRequiredProps
+type Props = PageRequiredProps & {
+  csrfToken: string
+}
 
-interface HasRenderedMap {
+interface ResultMap {
   [id: string]: Option<boolean>
 }
 
 interface State {
-  lastResultTime: Option<Timestamp>,
+  lastResultTime: Option<Timestamp>
   results: Result[]
-  hasRendered: HasRenderedMap
+  hasRendered: ResultMap
+  sendingResults: ResultMap
+  sentResults: ResultMap
 }
 
 class Copilot extends React.Component<Props, State> {
@@ -48,7 +55,9 @@ class Copilot extends React.Component<Props, State> {
     this.state = {
       lastResultTime: null,
       results: [],
-      hasRendered: {}
+      hasRendered: {},
+      sendingResults: {},
+      sentResults: {}
     };
   }
 
@@ -57,7 +66,7 @@ class Copilot extends React.Component<Props, State> {
   }
 
   componentDidUpdate(): void {
-    const hasRendered: HasRenderedMap = {};
+    const hasRendered: ResultMap = {};
     this.state.results.forEach((result) => {
       if (!this.state.hasRendered[result.id]) {
         hasRendered[result.id] = true;
@@ -130,8 +139,39 @@ class Copilot extends React.Component<Props, State> {
     }
   }
 
+  isSendingResult(result: Result): boolean {
+    return Boolean(this.state.sendingResults[result.id]);
+  }
+
+  hasSentResult(result: Result): boolean {
+    return Boolean(this.state.sentResults[result.id]);
+  }
+
+  sendResult(result: Result) {
+    const url = jsRoutes.controllers.CopilotController.sendToChannel(result.id).url;
+    const isSending: ResultMap = {};
+    const isSent: ResultMap = {};
+    isSending[result.id] = true;
+    isSent[result.id] = false;
+    this.setState({
+      sendingResults: Object.assign({}, this.state.sendingResults, isSending),
+      sentResults: Object.assign({}, this.state.sentResults, isSent)
+    }, () => {
+      DataRequest.jsonPost(url, {}, this.props.csrfToken).then((response) => {
+        isSending[result.id] = false;
+        isSent[result.id] = true;
+        this.setState({
+          sendingResults: Object.assign({}, this.state.sendingResults, isSending),
+          sentResults: Object.assign({}, this.state.sentResults, isSent)
+        });
+      });
+    });
+  }
+
   renderResult(result: Result) {
     if (result.resultText) {
+      const isSending = this.isSendingResult(result);
+      const hasSent = this.hasSentResult(result);
       return (
         <Collapsible revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
           <div className="fade-in border mvl bg-white">
@@ -144,6 +184,26 @@ class Copilot extends React.Component<Props, State> {
             </div>
             <div className="ptm phm">
               <ReactMarkdown source={result.resultText} />
+            </div>
+            <div className="border-top border-light pam bg-lightest">
+              <DynamicLabelButton
+                className="button-s mrs"
+                onClick={this.sendResult.bind(this, result)}
+                disabledWhen={isSending}
+                labels={[{
+                  text: "Send to chat",
+                  displayWhen: !isSending
+                }, {
+                  text: "Sending…",
+                  displayWhen: isSending
+                }]}
+              />
+              {hasSent ? (
+                <div className="align-button align-button-s height-l type-green">
+                  <SVGCheckmark />
+                  <div className="display-inline-block align-t mlxs">Sent</div>
+                </div>
+              ) : null}
             </div>
           </div>
         </Collapsible>

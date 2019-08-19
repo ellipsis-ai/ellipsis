@@ -9,10 +9,19 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import json.{InvocationLogEntryData, MessageListenerData}
 import json.Formatting._
+import models.accounts.slack.botprofile.SlackBotProfile
+import models.accounts.{BotContext, BotProfile, MSTeamsContext, SlackContext}
+import models.accounts.user.User
+import models.behaviors.behaviorversion.Normal
+import models.behaviors.SimpleTextResult
+import models.behaviors.invocationlogentry.InvocationLogEntry
+import models.behaviors.messagelistener.MessageListener
 import models.silhouette.EllipsisEnv
-import play.api.Configuration
+import models.team.Team
+import play.api.{Configuration, Logger}
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
+import play.api.mvc.{AnyContent, Request}
 import play.filters.csrf.CSRF
 import services.{DataService, DefaultServices}
 
@@ -87,6 +96,75 @@ class CopilotController @Inject()(
       resultsData <- Future.sequence(logEntries.map(ea => InvocationLogEntryData.fromEntryWithUserData(ea, services))).map(_.sortBy(_.createdAt))
     } yield {
       Ok(Json.toJson(ResultsData(resultsData)))
+    }
+  }
+
+  def sendToChannel(invocationId: String) = silhouette.SecuredAction.async { implicit request =>
+    val user = request.identity
+    for {
+      maybeInvocationEntry <- dataService.invocationLogEntries.findWithoutAccessCheck(invocationId)
+      maybeListener <- maybeInvocationEntry.flatMap(_.maybeMessageListenerId.map { listenerId =>
+        dataService.messageListeners.find(listenerId)
+      }).getOrElse(Future.successful(None))
+      maybeTeamAccess <- maybeInvocationEntry.map { entry =>
+        dataService.users.teamAccessFor(user, Some(entry.behaviorVersion.team.id)).map(Some(_))
+      }.getOrElse(Future.successful(None))
+      result <- (for {
+        entry <- maybeInvocationEntry
+        listener <- maybeListener
+        teamAccess <- maybeTeamAccess
+        team <- teamAccess.maybeTargetTeam
+      } yield {
+        sendToChatFor(user, team, entry, listener)
+      }).getOrElse {
+        Future.successful(NotFound("Entry not found"))
+      }
+    } yield result
+  }
+
+  def sendToChatFor(user: User, team: Team, entry: InvocationLogEntry, listener: MessageListener)(implicit request: Request[AnyContent]) = {
+    for {
+      userData <- dataService.users.userDataFor(user, team)
+      botProfiles <- BotContext.maybeContextFor(entry.context) match {
+        case Some(SlackContext) => dataService.slackBotProfiles.allFor(team)
+        case Some(MSTeamsContext) => dataService.msTeamsBotProfiles.allFor(team.id)
+        case _ => Future.successful(Seq.empty[BotProfile])
+      }
+      resultTextToSend <- Future.successful {
+        s"""${userData.fullName.getOrElse("Someone")} asked me to send a response to:
+           |
+           |> ${entry.messageText}
+           |
+           |${entry.resultText}
+           |""".stripMargin
+      }
+      maybeDidSend <- botProfiles.headOption.map {
+        case slackBotProfile: SlackBotProfile => dataService.slackBotProfiles.sendResultWithNewEvent(
+          "Copilot result sent to chat",
+          (event) => {
+            Future.successful(Some(SimpleTextResult(event, None, resultTextToSend, Normal)))
+          },
+          slackBotProfile,
+          entry.maybeChannel.getOrElse("Oops"),
+          user.id,
+          entry.createdAt.toString,
+          entry.maybeOriginalEventType,
+          maybeThreadTs = listener.maybeThreadId,
+          isEphemeral = false,
+          maybeResponseUrl = None,
+          beQuiet = false
+        )
+        case o => {
+          Logger.error(s"Sending a copilot result to chat has not been implemented for ${o}")
+          Future.successful(None)
+        }
+      }.getOrElse(Future.successful(None))
+    } yield {
+      maybeDidSend.map { ts =>
+        Ok(Json.toJson(ts))
+      }.getOrElse {
+        BadRequest("Channel not found")
+      }
     }
   }
 

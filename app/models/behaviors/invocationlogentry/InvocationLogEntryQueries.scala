@@ -38,6 +38,12 @@ object InvocationLogEntryQueries {
     )
   }
 
+  def uncompiledFindQuery(id: Rep[String]) = {
+    allWithVersion.filter { case ((entry, _), _) => entry.id === id }
+  }
+
+  val findQuery = Compiled(uncompiledFindQuery _)
+
   def uncompiledCountsForDateQuery(date: Rep[OffsetDateTime]) = {
     allWithVersion.
       filter { case((entry, _), _) => entry.createdAt.trunc("day") === date }.
