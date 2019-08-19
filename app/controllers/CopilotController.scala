@@ -42,9 +42,13 @@ class CopilotController @Inject()(
         for {
           teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
         } yield {
-          Ok(views.js.shared.webpackLoader(
-            viewConfig(None), "CopilotConfig", "copilot", Json.toJson(CopilotConfig("copilot", CSRF.getToken(request).map(_.value)))
-          ))
+          teamAccess.maybeTargetTeam.map { _ =>
+            Ok(views.js.shared.webpackLoader(
+              viewConfig(None), "CopilotConfig", "copilot", Json.toJson(CopilotConfig("copilot", CSRF.getToken(request).map(_.value)))
+            ))
+          }.getOrElse {
+            NotFound("Team not found")
+          }
         }
       }
       case Accepts.Html() => {

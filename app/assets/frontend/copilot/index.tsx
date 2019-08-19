@@ -112,9 +112,22 @@ class Copilot extends React.Component<Props, State> {
     return (
       <div className="container container-narrow">
         <h2>Your bot said:</h2>
-        {this.getResults().map(this.renderResult)}
+        {this.renderResults()}
       </div>
     );
+  }
+
+  renderResults() {
+    const results = this.getResults();
+    if (results.length > 0) {
+      return results.map(this.renderResult)
+    } else {
+      return (
+        <div className="type-disabled">
+          <i>There are no results.</i>
+        </div>
+      )
+    }
   }
 
   renderResult(result: Result) {
