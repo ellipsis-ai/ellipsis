@@ -6,6 +6,7 @@ import Formatter, {Timestamp} from "../lib/formatter";
 import Collapsible from "../shared_ui/collapsible";
 import * as moment from 'moment';
 import User, {UserJson} from "../models/user";
+import {PageRequiredProps} from "../shared_ui/page";
 
 interface ResultJson {
   id: string
@@ -26,9 +27,7 @@ type ResultsData = {
   results: ResultJson[]
 }
 
-interface Props {
-
-}
+type Props = PageRequiredProps
 
 interface HasRenderedMap {
   [id: string]: Option<boolean>
@@ -111,8 +110,9 @@ class Copilot extends React.Component<Props, State> {
   render() {
     return (
       <div className="container container-narrow">
-        <h2>Your bot said:</h2>
+        <h3>Copilot results:</h3>
         {this.renderResults()}
+        {this.props.onRenderFooter()}
       </div>
     );
   }
