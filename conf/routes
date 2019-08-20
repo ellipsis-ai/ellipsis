@@ -53,9 +53,9 @@ POST        /linked_github_repos                      @controllers.BehaviorEdito
 POST        /deploy                                   @controllers.BehaviorEditorController.deploy
 GET         /behavior_test_results/:groupId           @controllers.BehaviorEditorController.testResults(groupId: String)
 
-GET         /copilot                                  @controllers.CopilotController.index(teamId: Option[String] ?= None)
-GET         /copilot/results/:when                    @controllers.CopilotController.resultsSince(when: String, teamId: Option[String] ?= None)
-POST        /copilot/send_to_channel/:invocationId    @controllers.CopilotController.sendToChannel(invocationId: String)
+GET         /copilot/:listenerId                      @controllers.CopilotController.index(listenerId: String, teamId: Option[String] ?= None)
+GET         /copilot/:listenerId/results/:when        @controllers.CopilotController.resultsSince(listenerId: String, when: String, teamId: Option[String] ?= None)
+POST        /copilot/send_to_channel/:invocationId    @controllers.CopilotController.sendToChannel(invocationId: String, teamId: Option[String] ?= None)
 
 GET         /skill/:groupId/schedules                 @controllers.BehaviorGroupConfigController.schedules(groupId: String)
 

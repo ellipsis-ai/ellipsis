@@ -48,7 +48,7 @@ declare var jsRoutes: {
       versionInfoFor: (groupId: string) => JsRoute
     },
     CopilotController: {
-      resultsSince: (when: string) => JsRoute,
+      resultsSince: (listenerId: string, when: string) => JsRoute,
       sendToChannel: (invocationId: String) => JsRoute
     },
     BehaviorGroupConfigController: {

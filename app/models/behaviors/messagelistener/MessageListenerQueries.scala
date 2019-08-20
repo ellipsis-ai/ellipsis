@@ -42,11 +42,17 @@ object MessageListenerQueries {
     )
   }
 
-  def uncompiledFindQuery(id: Rep[String]) = {
+  def uncompiledFindWithoutAccessCheckQuery(id: Rep[String]) = {
     allWithUser.filter { case((listener, _), _) => listener.id === id }
   }
 
-  val findQuery = Compiled(uncompiledFindQuery _)
+  val findWithoutAccessCheckQuery = Compiled(uncompiledFindWithoutAccessCheckQuery _)
+
+  def uncompiledFindForUserQuery(id: Rep[String], userId: Rep[String]) = {
+    uncompiledFindWithoutAccessCheckQuery(id).filter { case((listener, _), _) => listener.userId === userId }
+  }
+
+  val findForUserQuery = Compiled(uncompiledFindForUserQuery _)
 
   def uncompiledAllForUserQuery(userId: Rep[String]) = {
     allWithUser.filter { case((listener, _), user) => user.id === userId && listener.isForCopilot }
