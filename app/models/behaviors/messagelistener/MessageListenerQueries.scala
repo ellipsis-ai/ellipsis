@@ -1,5 +1,7 @@
 package models.behaviors.messagelistener
 
+import java.time.OffsetDateTime
+
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.{User, UserQueries, UsersTable}
 import models.behaviors.behavior.BehaviorQueries
@@ -35,7 +37,8 @@ object MessageListenerQueries {
       user,
       raw.isForCopilot,
       raw.isEnabled,
-      raw.createdAt
+      raw.createdAt,
+      raw.maybeLastQueriedForCopilotAt
     )
   }
 
@@ -85,4 +88,18 @@ object MessageListenerQueries {
   }
 
   val isEnabledForUserBehavior = Compiled(uncompiledIsEnabledForUserBehavior _)
+
+  def uncompiledNoteCopilotActivityQuery(id: Rep[String]) = {
+    all.filter(_.id === id).map(_.maybeLastQueriedForCopilotAt)
+  }
+  val noteCopilotActivityQuery = Compiled(uncompiledNoteCopilotActivityQuery _)
+
+  def uncompiledIdleCopilotListenersQuery(idleCutoff: Rep[OffsetDateTime]) = {
+    all.
+      filter(_.isForCopilot).
+      filter(_.isEnabled).
+      filter(ea => ea.maybeLastQueriedForCopilotAt.isDefined && ea.maybeLastQueriedForCopilotAt < idleCutoff).
+      map(_.isEnabled)
+  }
+  val idleCopilotListenersQuery = Compiled(uncompiledIdleCopilotListenersQuery _)
 }

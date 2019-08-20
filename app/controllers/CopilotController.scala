@@ -90,6 +90,7 @@ class CopilotController @Inject()(
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       listeners <- dataService.messageListeners.allForUser(user)
       listenerData <- Future.sequence(listeners.map(ea => MessageListenerData.from(ea, teamAccess, dataService)))
+      _ <- Future.sequence(listeners.map(ea => dataService.messageListeners.noteCopilotActivity(ea)))
       logEntries <- Future.sequence(listeners.map { ea =>
         dataService.invocationLogEntries.allForMessageListener(ea, since)
       }).map(_.flatten)
