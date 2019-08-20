@@ -128,11 +128,15 @@ class CopilotController @Inject()(
       userData <- dataService.users.userDataFor(user, team)
       maybeBotProfile <- BotContext.maybeContextFor(entry.context) match {
         case Some(SlackContext) => dataService.slackBotProfiles.maybeFirstFor(team, user)
-        case Some(MSTeamsContext) => dataService.msTeamsBotProfiles.allFor(team.id).map(_.headOption)
-        case _ => Future.successful(None)
+// Todo: Implement MS Teams copilot functionality
+//        case Some(MSTeamsContext) => dataService.msTeamsBotProfiles.allFor(team.id).map(_.headOption)
+        case _ => {
+          Logger.error(s"Sending to chat not implemented for ${entry.context}")
+          Future.successful(None)
+        }
       }
       resultTextToSend <- Future.successful {
-        s"""${userData.fullName.getOrElse("Someone")} asked me to send a response to:
+        s"""${userData.formattedLink.getOrElse("Someone")} asked me to send a response to:
            |
            |> ${entry.messageText}
            |
@@ -158,10 +162,7 @@ class CopilotController @Inject()(
             services.slackApiService.clientFor(slackBotProfile).permalinkFor(channel, ts)
           }.getOrElse(Future.successful(None))
         } yield maybePermalink
-        case o => {
-          Logger.error(s"Sending a copilot result to chat has not been implemented for ${o}")
-          Future.successful(None)
-        }
+        case _ => Future.successful(None)
       }.getOrElse(Future.successful(None))
     } yield {
       maybePermalink.map { permalink =>
