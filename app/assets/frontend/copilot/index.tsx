@@ -30,7 +30,8 @@ type ResultsData = {
 }
 
 type Props = PageRequiredProps & {
-  csrfToken: string
+  csrfToken: string,
+  listenerId: string
 }
 
 interface ResultDetails {
@@ -100,7 +101,7 @@ class Copilot extends React.Component<Props, State> {
   }
 
   checkForUpdates(): void {
-    DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.getLastResultTime()).url)
+    DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listenerId, this.getLastResultTime()).url)
       .then((json: ResultsData) => {
         const results = json.results.map((ea) => Object.assign({}, ea, {
           maybeUserData: ea.maybeUserData ? User.fromJson(ea.maybeUserData) : null
