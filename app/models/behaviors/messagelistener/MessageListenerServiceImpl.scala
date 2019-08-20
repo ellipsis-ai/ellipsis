@@ -10,7 +10,7 @@ import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
 import models.team.Team
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, Json}
 import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -68,7 +68,7 @@ class MessageListenerServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def createForAction(
+  def ensureForAction(
                        behavior: Behavior,
                        arguments: Map[String, String],
                        user: User,
@@ -78,20 +78,28 @@ class MessageListenerServiceImpl @Inject() (
                        maybeThreadId: Option[String],
                        isForCopilot: Boolean
                      ): DBIO[MessageListener] = {
-    val newInstance = MessageListener(
-      IDs.next,
-      behavior,
-      arguments,
-      medium,
-      channel,
-      maybeThreadId,
-      user,
-      isForCopilot,
-      isEnabled = true,
-      OffsetDateTime.now,
-      maybeLastCopilotActivityAt = None
-    )
-    (all += newInstance.toRaw).map(_ => newInstance)
+    findForEnsureQuery(behavior.id, Json.toJson(arguments), user.id, medium, channel, maybeThreadId, isForCopilot).result.flatMap { r =>
+      r.headOption.map(tuple2Listener).map { existing =>
+        all.map(_.isEnabled).update(true).map { _ =>
+          existing.copy(isEnabled = true)
+        }
+      }.getOrElse {
+        val newInstance = MessageListener(
+          IDs.next,
+          behavior,
+          arguments,
+          medium,
+          channel,
+          maybeThreadId,
+          user,
+          isForCopilot,
+          isEnabled = true,
+          OffsetDateTime.now,
+          maybeLastCopilotActivityAt = None
+        )
+        (all += newInstance.toRaw).map(_ => newInstance)
+      }
+    }
   }
 
   def noteCopilotActivityAction(listener: MessageListener): DBIO[Unit] = {
@@ -111,7 +119,7 @@ class MessageListenerServiceImpl @Inject() (
     dataService.run(action)
   }
 
-  def createFor(
+  def ensureFor(
                  behavior: Behavior,
                  arguments: Map[String, String],
                  user: User,
@@ -121,7 +129,7 @@ class MessageListenerServiceImpl @Inject() (
                  maybeThreadId: Option[String],
                  isForCopilot: Boolean
                ): Future[MessageListener] = {
-    dataService.run(createForAction(behavior, arguments, user, team, medium, channel, maybeThreadId, isForCopilot))
+    dataService.run(ensureForAction(behavior, arguments, user, team, medium, channel, maybeThreadId, isForCopilot))
   }
 
   def allForAction(
