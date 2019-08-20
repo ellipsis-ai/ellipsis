@@ -33,8 +33,6 @@ trait MessageListenerService {
               context: String
             ): Future[Seq[MessageListener]]
 
-  def allForUser(user: User): Future[Seq[MessageListener]]
-
   def disableFor(
                   behavior: Behavior,
                   user: User,

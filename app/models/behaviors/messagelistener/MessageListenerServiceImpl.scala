@@ -96,7 +96,7 @@ class MessageListenerServiceImpl @Inject() (
 
   def noteCopilotActivityAction(listener: MessageListener): DBIO[Unit] = {
     if (listener.isForCopilot) {
-      noteCopilotActivityQuery(listener.id).update(Some(OffsetDateTime.now)).map(_ => {})
+      noteCopilotActivityQuery(listener.id).update(true, Some(OffsetDateTime.now)).map(_ => {})
     } else {
       DBIO.successful({})
     }
@@ -148,17 +148,6 @@ class MessageListenerServiceImpl @Inject() (
             ): Future[Seq[MessageListener]] = {
     dataService.run(allForAction(event, maybeTeam, maybeChannel, context))
   }
-
-  def allForUserAction(user: User): DBIO[Seq[MessageListener]] = {
-    allForUserQuery(user.id).result.map { r =>
-      r.map(tuple2Listener)
-    }
-  }
-
-  def allForUser(user: User): Future[Seq[MessageListener]] = {
-    dataService.run(allForUserAction(user))
-  }
-
 
   def disableFor(
                   behavior: Behavior,
