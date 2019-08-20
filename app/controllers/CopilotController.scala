@@ -50,7 +50,7 @@ class CopilotController @Inject()(
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybeListener <- dataService.messageListeners.find(listenerId, teamAccess)
       maybeListenerData <- maybeListener.map { listener =>
-        MessageListenerData.from(listener, teamAccess, dataService).map(Some(_))
+        MessageListenerData.from(listener, teamAccess, services).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield {
       render {

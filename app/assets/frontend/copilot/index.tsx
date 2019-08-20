@@ -25,14 +25,19 @@ interface Result extends ResultJson {
   maybeUserData: Option<User>
 }
 
+export interface Listener {
+  id: string
+  channelId: string
+  channelName: Option<string>
+}
+
 type ResultsData = {
   results: ResultJson[]
 }
 
 type Props = PageRequiredProps & {
   csrfToken: string
-  channelName: string
-  listenerId: string
+  listener: Listener
 }
 
 interface ResultDetails {
@@ -102,7 +107,7 @@ class Copilot extends React.Component<Props, State> {
   }
 
   checkForUpdates(): void {
-    DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listenerId, this.getLastResultTime()).url)
+    DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listener.id, this.getLastResultTime()).url)
       .then((json: ResultsData) => {
         const results = json.results.map((ea) => Object.assign({}, ea, {
           maybeUserData: ea.maybeUserData ? User.fromJson(ea.maybeUserData) : null
@@ -134,12 +139,31 @@ class Copilot extends React.Component<Props, State> {
     this.resultsTimer = setTimeout(this.checkForUpdates, overrideDuration || 2000);
   }
 
+  getChannelName() {
+    const channelName = this.props.listener.channelName;
+    if (channelName) {
+      return (
+        <span>
+          <span className="type-weak">#</span>
+          <span>{channelName}</span>
+        </span>
+      );
+    } else {
+      return (
+        <span>
+          <span>unknown channel </span>
+          <span className="type-disabled">(ID {this.props.listener.channelId})</span>
+        </span>
+      );
+    }
+  }
+
   render() {
     return (
       <div className="pvxl">
         {this.props.onRenderHeader(
           <div className="container container-narrow bg-white-translucent">
-            <h4>Copilot for {this.props.channelName}:</h4>
+            <h5 className="mvn pvm">Copilot for {this.getChannelName()}:</h5>
           </div>
         )}
         {this.renderResults()}
