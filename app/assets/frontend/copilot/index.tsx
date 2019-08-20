@@ -51,6 +51,7 @@ interface ResultMap {
 }
 
 interface State {
+  loadingResults: boolean
   lastResultTime: Option<Timestamp>
   results: Result[]
   resultDetails: ResultMap
@@ -65,12 +66,13 @@ class Copilot extends React.Component<Props, State> {
     this.state = {
       lastResultTime: null,
       results: [],
-      resultDetails: {}
+      resultDetails: {},
+      loadingResults: true
     };
   }
 
   componentDidMount(): void {
-    this.checkForResultsLater();
+    this.checkForResultsLater(0);
   }
 
   componentDidUpdate(): void {
@@ -113,7 +115,8 @@ class Copilot extends React.Component<Props, State> {
           maybeUserData: ea.maybeUserData ? User.fromJson(ea.maybeUserData) : null
         }));
         this.setState({
-          results: results
+          results: results,
+          loadingResults: false
         });
         this.checkForResultsLater();
       });
@@ -159,6 +162,7 @@ class Copilot extends React.Component<Props, State> {
   }
 
   render() {
+    const results = this.getResults();
     return (
       <div className="pvxl">
         {this.props.onRenderHeader(
@@ -166,23 +170,26 @@ class Copilot extends React.Component<Props, State> {
             <h5 className="mvn pvm">Copilot for {this.getChannelName()}:</h5>
           </div>
         )}
-        {this.renderResults()}
+        <div className="container container-narrow">
+          {this.renderResults(results)}
+        </div>
         {this.props.onRenderFooter()}
       </div>
     );
   }
 
-  renderResults() {
-    const results = this.getResults();
-    return (
-      <div className="container container-narrow">
-        {results.length > 0 ? (
-          results.map(this.renderResult)
-        ) : (
-          <i className="type-disabled">There are no results.</i>
-        )}
-      </div>
-    );
+  renderResults(results: Array<Result>) {
+    if (results.length > 0) {
+      return results.map(this.renderResult);
+    } else if (this.state.loadingResults) {
+      return (
+        <div className="pulse type-italic type-disabled">Loading…</div>
+      );
+    } else {
+      return (
+        <div className="type-italic type-disabled">There are no copilot results for this channel.</div>
+      );
+    }
   }
 
   sendResult(result: Result) {
