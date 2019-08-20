@@ -21,7 +21,7 @@ import models.team.Team
 import play.api.{Configuration, Logger}
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
-import play.api.mvc.{AnyContent, Request}
+import play.api.mvc.{AnyContent, Request, Result}
 import play.filters.csrf.CSRF
 import services.{DataService, DefaultServices}
 
@@ -122,7 +122,8 @@ class CopilotController @Inject()(
     } yield result
   }
 
-  def sendToChatFor(user: User, team: Team, entry: InvocationLogEntry, listener: MessageListener)(implicit request: Request[AnyContent]) = {
+  private def sendToChatFor(user: User, team: Team, entry: InvocationLogEntry, listener: MessageListener)
+                           (implicit request: Request[AnyContent]): Future[Result] = {
     val channel = listener.channel
     for {
       userData <- dataService.users.userDataFor(user, team)
