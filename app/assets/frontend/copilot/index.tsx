@@ -31,6 +31,7 @@ type ResultsData = {
 
 type Props = PageRequiredProps & {
   csrfToken: string
+  channelName: string
 }
 
 interface ResultDetails {
@@ -134,8 +135,12 @@ class Copilot extends React.Component<Props, State> {
 
   render() {
     return (
-      <div className="container container-narrow">
-        <h3>Copilot results:</h3>
+      <div className="pvxl">
+        {this.props.onRenderHeader(
+          <div className="container container-narrow bg-white-translucent">
+            <h4>Copilot for {this.props.channelName}:</h4>
+          </div>
+        )}
         {this.renderResults()}
         {this.props.onRenderFooter()}
       </div>
@@ -144,15 +149,15 @@ class Copilot extends React.Component<Props, State> {
 
   renderResults() {
     const results = this.getResults();
-    if (results.length > 0) {
-      return results.map(this.renderResult)
-    } else {
-      return (
-        <div className="type-disabled">
-          <i>There are no results.</i>
-        </div>
-      )
-    }
+    return (
+      <div className="container container-narrow">
+        {results.length > 0 ? (
+          results.map(this.renderResult)
+        ) : (
+          <i className="type-disabled">There are no results.</i>
+        )}
+      </div>
+    );
   }
 
   sendResult(result: Result) {
@@ -186,7 +191,7 @@ class Copilot extends React.Component<Props, State> {
       const hasSentPermalink = this.hasSentPermalink(result);
       return (
         <Collapsible revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
-          <div className="fade-in border mvl bg-white">
+          <div className="fade-in border mbxl bg-white">
             <div className="border-bottom border-light pam bg-light type-s type-weak">
               <div>
                 <b>{result.maybeUserData ? result.maybeUserData.formattedFullNameOrUserName() : "(Unknown user)"}</b>
@@ -197,7 +202,7 @@ class Copilot extends React.Component<Props, State> {
             <div className="ptm phm">
               <ReactMarkdown source={result.resultText} />
             </div>
-            <div className="border-top border-light pam bg-lightest">
+            <div className="pbm phm">
               <DynamicLabelButton
                 className="button-s mrm"
                 onClick={this.sendResult.bind(this, result)}
