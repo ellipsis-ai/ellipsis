@@ -95,7 +95,7 @@ class CopilotController @Inject()(
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybeListener <- dataService.messageListeners.find(listenerId, teamAccess)
       _ <- maybeListener.map { listener =>
-        dataService.messageListeners.noteCopilotActivity(listener))
+        dataService.messageListeners.noteCopilotActivity(listener)
       }.getOrElse(Future.successful({}))
       logEntries <- maybeListener.map { listener =>
         dataService.invocationLogEntries.allForMessageListener(listener, since)

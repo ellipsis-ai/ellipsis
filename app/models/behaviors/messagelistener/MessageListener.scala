@@ -19,7 +19,7 @@ case class MessageListener(
                             isForCopilot: Boolean,
                             isEnabled: Boolean,
                             createdAt: OffsetDateTime,
-                            maybeLastQueriedForCopilotAt: Option[OffsetDateTime]
+                            maybeLastCopilotActivityAt: Option[OffsetDateTime]
                             ) {
   def invocationParamsFor(params: Seq[BehaviorParameter], message: String): Map[String, String] = {
     params.flatMap { ea =>
@@ -41,7 +41,7 @@ case class MessageListener(
       isForCopilot,
       isEnabled,
       createdAt,
-      maybeLastQueriedForCopilotAt
+      maybeLastCopilotActivityAt
     )
   }
 }

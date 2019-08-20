@@ -2,9 +2,9 @@
 
 BEGIN;
 
-ALTER TABLE message_listeners ADD COLUMN last_queried_for_copilot_at TIMESTAMPTZ;
+ALTER TABLE message_listeners ADD COLUMN last_copilot_activity_at TIMESTAMPTZ;
 
-CREATE INDEX message_listeners_last_queried_for_copilot_at_index ON message_listeners(last_queried_for_copilot_at);
+CREATE INDEX message_listeners_last_copilot_activity_at_index ON message_listeners(last_copilot_activity_at);
 
 COMMIT;
 
@@ -12,8 +12,8 @@ COMMIT;
 
 BEGIN;
 
-DROP INDEX IF EXISTS message_listeners_last_queried_for_copilot_at_index;
+DROP INDEX IF EXISTS message_listeners_last_copilot_activity_at_index;
 
-ALTER TABLE message_listeners DROP COLUMN last_queried_for_copilot_at;
+ALTER TABLE message_listeners DROP COLUMN last_copilot_activity_at;
 
 COMMIT;

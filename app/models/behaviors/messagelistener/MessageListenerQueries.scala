@@ -38,7 +38,7 @@ object MessageListenerQueries {
       raw.isForCopilot,
       raw.isEnabled,
       raw.createdAt,
-      raw.maybeLastQueriedForCopilotAt
+      raw.maybeLastCopilotActivityAt
     )
   }
 
@@ -96,7 +96,7 @@ object MessageListenerQueries {
   val isEnabledForUserBehavior = Compiled(uncompiledIsEnabledForUserBehavior _)
 
   def uncompiledNoteCopilotActivityQuery(id: Rep[String]) = {
-    all.filter(_.id === id).map(_.maybeLastQueriedForCopilotAt)
+    all.filter(_.id === id).map(_.maybeLastCopilotActivityAt)
   }
   val noteCopilotActivityQuery = Compiled(uncompiledNoteCopilotActivityQuery _)
 
@@ -104,7 +104,7 @@ object MessageListenerQueries {
     all.
       filter(_.isForCopilot).
       filter(_.isEnabled).
-      filter(ea => ea.maybeLastQueriedForCopilotAt.isDefined && ea.maybeLastQueriedForCopilotAt < idleCutoff).
+      filter(ea => ea.maybeLastCopilotActivityAt.isDefined && ea.maybeLastCopilotActivityAt < idleCutoff).
       map(_.isEnabled)
   }
   val idleCopilotListenersQuery = Compiled(uncompiledIdleCopilotListenersQuery _)
