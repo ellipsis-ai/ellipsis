@@ -16,16 +16,17 @@ import services.DataService
 import scala.concurrent.{ExecutionContext, Future}
 
 case class RawMessageListener(
-                              id: String,
-                              behaviorId: String,
-                              arguments: JsValue,
-                              medium: String,
-                              channel: String,
-                              maybeThreadId: Option[String],
-                              userId: String,
-                              isForCopilot: Boolean,
-                              isEnabled: Boolean,
-                              createdAt: OffsetDateTime
+                               id: String,
+                               behaviorId: String,
+                               arguments: JsValue,
+                               medium: String,
+                               channel: String,
+                               maybeThreadId: Option[String],
+                               userId: String,
+                               isForCopilot: Boolean,
+                               isEnabled: Boolean,
+                               createdAt: OffsetDateTime,
+                               maybeLastCopilotActivityAt: Option[OffsetDateTime]
                           )
 
 class MessageListenersTable(tag: Tag) extends Table[RawMessageListener](tag, "message_listeners") {
@@ -40,9 +41,10 @@ class MessageListenersTable(tag: Tag) extends Table[RawMessageListener](tag, "me
   def isForCopilot = column[Boolean]("is_for_copilot")
   def isEnabled = column[Boolean]("is_enabled")
   def createdAt = column[OffsetDateTime]("created_at")
+  def maybeLastCopilotActivityAt = column[Option[OffsetDateTime]]("last_copilot_activity_at")
 
   def * =
-    (id, behaviorId, arguments, medium, channel, maybeThreadId, userId, isForCopilot, isEnabled, createdAt) <> ((RawMessageListener.apply _).tupled, RawMessageListener.unapply _)
+    (id, behaviorId, arguments, medium, channel, maybeThreadId, userId, isForCopilot, isEnabled, createdAt, maybeLastCopilotActivityAt) <> ((RawMessageListener.apply _).tupled, RawMessageListener.unapply _)
 }
 
 class MessageListenerServiceImpl @Inject() (
@@ -86,9 +88,27 @@ class MessageListenerServiceImpl @Inject() (
       user,
       isForCopilot,
       isEnabled = true,
-      OffsetDateTime.now
+      OffsetDateTime.now,
+      maybeLastCopilotActivityAt = None
     )
     (all += newInstance.toRaw).map(_ => newInstance)
+  }
+
+  def noteCopilotActivityAction(listener: MessageListener): DBIO[Unit] = {
+    if (listener.isForCopilot) {
+      noteCopilotActivityQuery(listener.id).update(true, Some(OffsetDateTime.now)).map(_ => {})
+    } else {
+      DBIO.successful({})
+    }
+  }
+
+  def noteCopilotActivity(listener: MessageListener): Future[Unit] = {
+    dataService.run(noteCopilotActivityAction(listener))
+  }
+
+  def disableIdleListeners: Future[Unit] = {
+    val action = idleCopilotListenersQuery(OffsetDateTime.now.minusHours(1)).update(false).map(_ => {})
+    dataService.run(action)
   }
 
   def createFor(
@@ -128,17 +148,6 @@ class MessageListenerServiceImpl @Inject() (
             ): Future[Seq[MessageListener]] = {
     dataService.run(allForAction(event, maybeTeam, maybeChannel, context))
   }
-
-  def allForUserAction(user: User): DBIO[Seq[MessageListener]] = {
-    allForUserQuery(user.id).result.map { r =>
-      r.map(tuple2Listener)
-    }
-  }
-
-  def allForUser(user: User): Future[Seq[MessageListener]] = {
-    dataService.run(allForUserAction(user))
-  }
-
 
   def disableFor(
                   behavior: Behavior,

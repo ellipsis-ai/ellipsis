@@ -22,14 +22,16 @@ trait MessageListenerService {
                  isForCopilot: Boolean
                ): Future[MessageListener]
 
+  def noteCopilotActivity(listener: MessageListener): Future[Unit]
+
+  def disableIdleListeners: Future[Unit]
+
   def allFor(
               event: MessageEvent,
               maybeTeam: Option[Team],
               maybeChannel: Option[String],
               context: String
             ): Future[Seq[MessageListener]]
-
-  def allForUser(user: User): Future[Seq[MessageListener]]
 
   def disableFor(
                   behavior: Behavior,

@@ -13,5 +13,6 @@ class ActorModule extends AbstractModule with AkkaGuiceSupport {
     bindActor[CreateFreeChargebeeSubscriptionsActor](CreateFreeChargebeeSubscriptionsActor.name)
     bindActor[ClosePendingInvoicesActor](ClosePendingInvoicesActor.name)
     bindActor[SlackMembershipActor](SlackMembershipActor.name)
+    bindActor[ExpireCopilotListenersActor](ExpireCopilotListenersActor.name)
   }
 }
