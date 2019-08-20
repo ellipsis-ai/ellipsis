@@ -8,7 +8,10 @@ import Page from '../shared_ui/page';
 declare var CopilotConfig: {
   containerId: string,
   csrfToken: string,
-  channelName: string
+  channelName: string,
+  listener: {
+    id: string
+  }
 };
 
 const container = document.getElementById(CopilotConfig.containerId);
@@ -17,7 +20,11 @@ if (container) {
   ReactDOM.render((
     <Page csrfToken={CopilotConfig.csrfToken}
           onRender={(pageProps) => (
-            <Copilot {...pageProps} {...CopilotConfig} />
+            <Copilot {...pageProps}
+              csrfToken={CopilotConfig.csrfToken}
+              listenerId={CopilotConfig.listener.id}
+              channelName={CopilotConfig.channelName}
+            />
           )}
     />
   ), container);
