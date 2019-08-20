@@ -123,12 +123,13 @@ class CopilotController @Inject()(
   }
 
   def sendToChatFor(user: User, team: Team, entry: InvocationLogEntry, listener: MessageListener)(implicit request: Request[AnyContent]) = {
+    val channel = listener.channel
     for {
       userData <- dataService.users.userDataFor(user, team)
-      botProfiles <- BotContext.maybeContextFor(entry.context) match {
-        case Some(SlackContext) => dataService.slackBotProfiles.allFor(team)
-        case Some(MSTeamsContext) => dataService.msTeamsBotProfiles.allFor(team.id)
-        case _ => Future.successful(Seq.empty[BotProfile])
+      maybeBotProfile <- BotContext.maybeContextFor(entry.context) match {
+        case Some(SlackContext) => dataService.slackBotProfiles.maybeFirstFor(team, user)
+        case Some(MSTeamsContext) => dataService.msTeamsBotProfiles.allFor(team.id).map(_.headOption)
+        case _ => Future.successful(None)
       }
       resultTextToSend <- Future.successful {
         s"""${userData.fullName.getOrElse("Someone")} asked me to send a response to:
@@ -138,34 +139,36 @@ class CopilotController @Inject()(
            |${entry.resultText}
            |""".stripMargin
       }
-      maybeDidSend <- botProfiles.headOption.map {
-        case slackBotProfile: SlackBotProfile => dataService.slackBotProfiles.sendResultWithNewEvent(
-          "Copilot result sent to chat",
-          (event) => {
-            Future.successful(Some(SimpleTextResult(event, None, resultTextToSend, Normal)))
-          },
-          slackBotProfile,
-          entry.maybeChannel.getOrElse("Oops"),
-          user.id,
-          entry.createdAt.toString,
-          entry.maybeOriginalEventType,
-          maybeThreadTs = listener.maybeThreadId,
-          isEphemeral = false,
-          maybeResponseUrl = None,
-          beQuiet = false
-        )
+      maybePermalink <- maybeBotProfile.map {
+        case slackBotProfile: SlackBotProfile => for {
+          maybeTs <- dataService.slackBotProfiles.sendResultWithNewEvent(
+            "Copilot result sent to chat",
+            (event) => Future.successful(Some(SimpleTextResult(event, None, resultTextToSend, Normal))),
+            slackBotProfile,
+            channel,
+            user.id,
+            entry.createdAt.toString,
+            entry.maybeOriginalEventType,
+            listener.maybeThreadId,
+            isEphemeral = false,
+            maybeResponseUrl = None,
+            beQuiet = false
+          )
+          maybePermalink <- maybeTs.map { ts =>
+            services.slackApiService.clientFor(slackBotProfile).permalinkFor(channel, ts)
+          }.getOrElse(Future.successful(None))
+        } yield maybePermalink
         case o => {
           Logger.error(s"Sending a copilot result to chat has not been implemented for ${o}")
           Future.successful(None)
         }
       }.getOrElse(Future.successful(None))
     } yield {
-      maybeDidSend.map { ts =>
-        Ok(Json.toJson(ts))
+      maybePermalink.map { permalink =>
+        Ok(Json.toJson(permalink))
       }.getOrElse {
         BadRequest("Channel not found")
       }
     }
   }
-
 }
