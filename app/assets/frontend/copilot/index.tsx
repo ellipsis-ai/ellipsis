@@ -25,13 +25,19 @@ interface Result extends ResultJson {
   maybeUserData: Option<User>
 }
 
+export interface Listener {
+  id: string
+  channelId: string
+  channelName: Option<string>
+}
+
 type ResultsData = {
   results: ResultJson[]
 }
 
 type Props = PageRequiredProps & {
-  csrfToken: string,
-  listenerId: string
+  csrfToken: string
+  listener: Listener
 }
 
 interface ResultDetails {
@@ -45,6 +51,7 @@ interface ResultMap {
 }
 
 interface State {
+  loadingResults: boolean
   lastResultTime: Option<Timestamp>
   results: Result[]
   resultDetails: ResultMap
@@ -59,12 +66,13 @@ class Copilot extends React.Component<Props, State> {
     this.state = {
       lastResultTime: null,
       results: [],
-      resultDetails: {}
+      resultDetails: {},
+      loadingResults: true
     };
   }
 
   componentDidMount(): void {
-    this.checkForResultsLater();
+    this.checkForResultsLater(0);
   }
 
   componentDidUpdate(): void {
@@ -101,13 +109,14 @@ class Copilot extends React.Component<Props, State> {
   }
 
   checkForUpdates(): void {
-    DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listenerId, this.getLastResultTime()).url)
+    DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listener.id, this.getLastResultTime()).url)
       .then((json: ResultsData) => {
         const results = json.results.map((ea) => Object.assign({}, ea, {
           maybeUserData: ea.maybeUserData ? User.fromJson(ea.maybeUserData) : null
         }));
         this.setState({
-          results: results
+          results: results,
+          loadingResults: false
         });
         this.checkForResultsLater();
       });
@@ -133,26 +142,53 @@ class Copilot extends React.Component<Props, State> {
     this.resultsTimer = setTimeout(this.checkForUpdates, overrideDuration || 2000);
   }
 
+  getChannelName() {
+    const channelName = this.props.listener.channelName;
+    if (channelName) {
+      return (
+        <span>
+          <span className="type-weak">#</span>
+          <span>{channelName}</span>
+        </span>
+      );
+    } else {
+      return (
+        <span>
+          <span>unknown channel </span>
+          <span className="type-disabled">(ID {this.props.listener.channelId})</span>
+        </span>
+      );
+    }
+  }
+
   render() {
+    const results = this.getResults();
     return (
-      <div className="container container-narrow">
-        <h3>Copilot results:</h3>
-        {this.renderResults()}
+      <div className="pvxl">
+        {this.props.onRenderHeader(
+          <div className="container container-narrow bg-white-translucent">
+            <h5 className="mvn pvm">Copilot for {this.getChannelName()}:</h5>
+          </div>
+        )}
+        <div className="container container-narrow">
+          {this.renderResults(results)}
+        </div>
         {this.props.onRenderFooter()}
       </div>
     );
   }
 
-  renderResults() {
-    const results = this.getResults();
+  renderResults(results: Array<Result>) {
     if (results.length > 0) {
-      return results.map(this.renderResult)
+      return results.map(this.renderResult);
+    } else if (this.state.loadingResults) {
+      return (
+        <div className="pulse type-italic type-disabled">Loading…</div>
+      );
     } else {
       return (
-        <div className="type-disabled">
-          <i>There are no results.</i>
-        </div>
-      )
+        <div className="type-italic type-disabled">There are no copilot results for this channel.</div>
+      );
     }
   }
 
@@ -187,7 +223,7 @@ class Copilot extends React.Component<Props, State> {
       const hasSentPermalink = this.hasSentPermalink(result);
       return (
         <Collapsible revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
-          <div className="fade-in border mvl bg-white">
+          <div className="fade-in border mbxl bg-white">
             <div className="border-bottom border-light pam bg-light type-s type-weak">
               <div>
                 <b>{result.maybeUserData ? result.maybeUserData.formattedFullNameOrUserName() : "(Unknown user)"}</b>
@@ -198,7 +234,7 @@ class Copilot extends React.Component<Props, State> {
             <div className="ptm phm">
               <ReactMarkdown source={result.resultText} />
             </div>
-            <div className="border-top border-light pam bg-lightest">
+            <div className="pbm phm">
               <DynamicLabelButton
                 className="button-s mrm"
                 onClick={this.sendResult.bind(this, result)}

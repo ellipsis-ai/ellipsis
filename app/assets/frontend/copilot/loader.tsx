@@ -2,18 +2,14 @@ import 'core-js';
 import 'whatwg-fetch';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import Copilot from './index';
+import Copilot, {Listener} from './index';
 import Page from '../shared_ui/page';
 
-type Config = {
+declare var CopilotConfig: {
   containerId: string,
   csrfToken: string,
-  listener: {
-    id: string
-  }
-}
-
-declare var CopilotConfig: Config;
+  listener: Listener
+};
 
 const container = document.getElementById(CopilotConfig.containerId);
 
@@ -21,7 +17,10 @@ if (container) {
   ReactDOM.render((
     <Page csrfToken={CopilotConfig.csrfToken}
           onRender={(pageProps) => (
-            <Copilot {...pageProps} csrfToken={CopilotConfig.csrfToken} listenerId={CopilotConfig.listener.id} />
+            <Copilot {...pageProps}
+              csrfToken={CopilotConfig.csrfToken}
+              listener={CopilotConfig.listener}
+            />
           )}
     />
   ), container);

@@ -4,7 +4,8 @@
   navItems: Seq[NavItem] = Seq(),
   bodyClass: String = "bg-lightest",
   navClass: String = "",
-  hideNav: Boolean = false
+  hideNav: Boolean = false,
+  hideHeader: Boolean = false
 )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
 @navBgColorForPage = @{
@@ -39,11 +40,10 @@
     <link rel="icon" href="/assets/images/favicon-16x16.png" sizes="16x16">
   </head>
   <body class="flex-rows flex-rows-viewport @bodyClass">
-    <header id="main-header" class='@{
-      "position-fixed-top position-z-behind-scrim " +
-        navBgColorForPage
-    }'>
-      @shared.mainNav(config, navItems, hideNav, navClass)
+    <header id="main-header" class='@{s"position-fixed-top position-z-behind-scrim ${navBgColorForPage}"}'>
+      @if(!hideHeader) {
+        @shared.mainNav(config, navItems, hideNav, navClass)
+      }
     </header>
     <script src="@config.assets.getWebpackBundle("global.js")"></script>
     @content

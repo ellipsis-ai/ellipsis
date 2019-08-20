@@ -3,7 +3,7 @@
     dataRoute: Call
 )(implicit messages: Messages, r: RequestHeader)
 
-@page.main("Copilot", config, Seq()) {
+@page.main("Copilot", config, hideHeader = true) {
   <div id="content" class="content flex-row-cascade">
     <div id="copilot" class="flex-row-cascade"></div>
 
