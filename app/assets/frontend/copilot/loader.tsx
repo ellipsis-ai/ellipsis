@@ -7,7 +7,10 @@ import Page from '../shared_ui/page';
 
 type Config = {
   containerId: string,
-  csrfToken: string
+  csrfToken: string,
+  listener: {
+    id: string
+  }
 }
 
 declare var CopilotConfig: Config;
@@ -18,7 +21,7 @@ if (container) {
   ReactDOM.render((
     <Page csrfToken={CopilotConfig.csrfToken}
           onRender={(pageProps) => (
-            <Copilot {...pageProps} csrfToken={CopilotConfig.csrfToken} />
+            <Copilot {...pageProps} csrfToken={CopilotConfig.csrfToken} listenerId={CopilotConfig.listener.id} />
           )}
     />
   ), container);

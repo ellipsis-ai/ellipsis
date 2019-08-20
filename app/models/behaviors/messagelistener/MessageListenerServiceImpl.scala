@@ -6,7 +6,7 @@ import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import javax.inject.Inject
 import models.IDs
-import models.accounts.user.User
+import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
 import models.team.Team
@@ -54,8 +54,13 @@ class MessageListenerServiceImpl @Inject() (
 
   import MessageListenerQueries._
 
-  def find(id: String): Future[Option[MessageListener]] = {
-    val action = findQuery(id).result.headOption.map { r =>
+  def find(id: String, teamAccess: UserTeamAccess): Future[Option[MessageListener]] = {
+    val query = if (teamAccess.isAdminAccess) {
+      findWithoutAccessCheckQuery(id)
+    } else {
+      findForUserQuery(id, teamAccess.user.id)
+    }
+    val action = query.result.headOption.map { r =>
       r.map(tuple2Listener)
     }
     dataService.run(action)
