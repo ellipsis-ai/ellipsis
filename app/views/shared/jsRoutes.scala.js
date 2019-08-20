@@ -41,6 +41,7 @@
   routes.javascript.BehaviorImportExportController.doImport,
   routes.javascript.BehaviorImportExportController.export,
   routes.javascript.CopilotController.resultsSince,
+  routes.javascript.CopilotController.sendToChannel,
   routes.javascript.DashboardController.skillManifest,
   routes.javascript.DashboardController.usage,
   routes.javascript.FeedbackController.send,

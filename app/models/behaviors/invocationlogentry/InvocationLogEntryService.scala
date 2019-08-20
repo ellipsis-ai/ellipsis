@@ -16,6 +16,8 @@ import scala.concurrent.Future
 
 trait InvocationLogEntryService {
 
+  def findWithoutAccessCheck(id: String): Future[Option[InvocationLogEntry]]
+
   def countsForDate(date: OffsetDateTime): Future[Seq[(String, Int)]]
 
   def uniqueInvokingUserCountsForDate(date: OffsetDateTime): Future[Seq[(String, Int)]]

@@ -9,6 +9,8 @@ import scala.concurrent.Future
 
 trait MessageListenerService {
 
+  def find(id: String): Future[Option[MessageListener]]
+
   def createFor(
                  behavior: Behavior,
                  arguments: Map[String, String],

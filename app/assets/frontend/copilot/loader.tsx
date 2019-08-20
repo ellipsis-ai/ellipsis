@@ -18,7 +18,7 @@ if (container) {
   ReactDOM.render((
     <Page csrfToken={CopilotConfig.csrfToken}
           onRender={(pageProps) => (
-            <Copilot {...pageProps} />
+            <Copilot {...pageProps} csrfToken={CopilotConfig.csrfToken} />
           )}
     />
   ), container);

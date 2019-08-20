@@ -39,6 +39,12 @@ object MessageListenerQueries {
     )
   }
 
+  def uncompiledFindQuery(id: Rep[String]) = {
+    allWithUser.filter { case((listener, _), _) => listener.id === id }
+  }
+
+  val findQuery = Compiled(uncompiledFindQuery _)
+
   def uncompiledAllForUserQuery(userId: Rep[String]) = {
     allWithUser.filter { case((listener, _), user) => user.id === userId && listener.isForCopilot }
   }

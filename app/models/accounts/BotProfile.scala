@@ -14,6 +14,10 @@ trait BotProfile {
 
 object BotContext extends Enum[BotContext] {
   val values = List(SlackContext, MSTeamsContext)
+
+  def maybeContextFor(contextString: String): Option[BotContext] = {
+    values.find(_.name == contextString)
+  }
 }
 
 sealed trait BotContext extends BotContext.Value {

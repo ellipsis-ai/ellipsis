@@ -68,6 +68,13 @@ class InvocationLogEntryServiceImpl @Inject() (
 
   import InvocationLogEntryQueries._
 
+  def findWithoutAccessCheck(id: String): Future[Option[InvocationLogEntry]] = {
+    val action = findQuery(id).result.headOption.map { r =>
+      r.map(tuple2Entry)
+    }
+    dataService.run(action)
+  }
+
   def countsForDate(date: OffsetDateTime): Future[Seq[(String, Int)]] = {
     val action = countsForDateQuery(date).result
     dataService.run(action)

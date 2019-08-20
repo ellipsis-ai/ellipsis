@@ -54,6 +54,13 @@ class MessageListenerServiceImpl @Inject() (
 
   import MessageListenerQueries._
 
+  def find(id: String): Future[Option[MessageListener]] = {
+    val action = findQuery(id).result.headOption.map { r =>
+      r.map(tuple2Listener)
+    }
+    dataService.run(action)
+  }
+
   def createForAction(
                        behavior: Behavior,
                        arguments: Map[String, String],

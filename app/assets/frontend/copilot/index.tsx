@@ -7,6 +7,8 @@ import Collapsible from "../shared_ui/collapsible";
 import * as moment from 'moment';
 import User, {UserJson} from "../models/user";
 import {PageRequiredProps} from "../shared_ui/page";
+import DynamicLabelButton from "../form/dynamic_label_button";
+import SVGCheckmark from "../svg/checkmark";
 
 interface ResultJson {
   id: string
@@ -27,16 +29,24 @@ type ResultsData = {
   results: ResultJson[]
 }
 
-type Props = PageRequiredProps
+type Props = PageRequiredProps & {
+  csrfToken: string
+}
 
-interface HasRenderedMap {
-  [id: string]: Option<boolean>
+interface ResultDetails {
+  readonly hasRendered: boolean
+  readonly isSending: boolean
+  readonly hasSentPermalink: Option<string>
+}
+
+interface ResultMap {
+  [id: string]: Option<ResultDetails>
 }
 
 interface State {
-  lastResultTime: Option<Timestamp>,
+  lastResultTime: Option<Timestamp>
   results: Result[]
-  hasRendered: HasRenderedMap
+  resultDetails: ResultMap
 }
 
 class Copilot extends React.Component<Props, State> {
@@ -48,7 +58,7 @@ class Copilot extends React.Component<Props, State> {
     this.state = {
       lastResultTime: null,
       results: [],
-      hasRendered: {}
+      resultDetails: {}
     };
   }
 
@@ -57,21 +67,36 @@ class Copilot extends React.Component<Props, State> {
   }
 
   componentDidUpdate(): void {
-    const hasRendered: HasRenderedMap = {};
+    const resultDetails: ResultMap = {};
     this.state.results.forEach((result) => {
-      if (!this.state.hasRendered[result.id]) {
-        hasRendered[result.id] = true;
+      if (!this.state.resultDetails[result.id]) {
+        resultDetails[result.id] = {
+          hasRendered: true,
+          isSending: false,
+          hasSentPermalink: null
+        };
       }
     });
-    if (Object.keys(hasRendered).length > 0) {
+    if (Object.keys(resultDetails).length > 0) {
       this.setState({
-        hasRendered: Object.assign({}, this.state.hasRendered, hasRendered)
+        resultDetails: Object.assign({}, this.state.resultDetails, resultDetails)
       });
     }
   }
 
   hasRendered(result: Result): boolean {
-    return Boolean(this.state.hasRendered[result.id]);
+    const details = this.state.resultDetails[result.id];
+    return Boolean(details && details.hasRendered);
+  }
+
+  isSendingResult(result: Result): boolean {
+    const details = this.state.resultDetails[result.id];
+    return Boolean(details && details.isSending);
+  }
+
+  hasSentPermalink(result: Result): Option<string> {
+    const details = this.state.resultDetails[result.id];
+    return details ? details.hasSentPermalink : null;
   }
 
   checkForUpdates(): void {
@@ -130,8 +155,35 @@ class Copilot extends React.Component<Props, State> {
     }
   }
 
+  sendResult(result: Result) {
+    const url = jsRoutes.controllers.CopilotController.sendToChannel(result.id).url;
+    const beforeSendDetails: ResultMap = {};
+    beforeSendDetails[result.id] = {
+      hasRendered: true,
+      isSending: true,
+      hasSentPermalink: null
+    };
+    this.setState({
+      resultDetails: Object.assign({}, this.state.resultDetails, beforeSendDetails)
+    }, () => {
+      DataRequest.jsonPost(url, {}, this.props.csrfToken).then((response) => {
+        const afterSendDetails: ResultMap = {};
+        afterSendDetails[result.id] = {
+          hasRendered: true,
+          isSending: false,
+          hasSentPermalink: response
+        };
+        this.setState({
+          resultDetails: Object.assign({}, this.state.resultDetails, afterSendDetails)
+        });
+      });
+    });
+  }
+
   renderResult(result: Result) {
     if (result.resultText) {
+      const isSending = this.isSendingResult(result);
+      const hasSentPermalink = this.hasSentPermalink(result);
       return (
         <Collapsible revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
           <div className="fade-in border mvl bg-white">
@@ -144,6 +196,26 @@ class Copilot extends React.Component<Props, State> {
             </div>
             <div className="ptm phm">
               <ReactMarkdown source={result.resultText} />
+            </div>
+            <div className="border-top border-light pam bg-lightest">
+              <DynamicLabelButton
+                className="button-s mrm"
+                onClick={this.sendResult.bind(this, result)}
+                disabledWhen={isSending}
+                labels={[{
+                  text: "Send to chat",
+                  displayWhen: !isSending
+                }, {
+                  text: "Sending…",
+                  displayWhen: isSending
+                }]}
+              />
+              {hasSentPermalink ? (
+                <div className="align-button align-button-s height-l type-link">
+                  <SVGCheckmark />
+                  <a href={hasSentPermalink} target="chat" className="display-inline-block align-t mlxs">View message</a>
+                </div>
+              ) : null}
             </div>
           </div>
         </Collapsible>

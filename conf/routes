@@ -55,6 +55,7 @@ GET         /behavior_test_results/:groupId           @controllers.BehaviorEdito
 
 GET         /copilot                                  @controllers.CopilotController.index(teamId: Option[String] ?= None)
 GET         /copilot/results/:when                    @controllers.CopilotController.resultsSince(when: String, teamId: Option[String] ?= None)
+POST        /copilot/send_to_channel/:invocationId    @controllers.CopilotController.sendToChannel(invocationId: String)
 
 GET         /skill/:groupId/schedules                 @controllers.BehaviorGroupConfigController.schedules(groupId: String)
 
