@@ -14,9 +14,8 @@ import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.IDs
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.{BotResult, DeveloperContext, ParameterValue, ParameterWithValue, SuccessResult}
+import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
-import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events._
 import models.behaviors.events.slack.{SlackFile, SlackMessage, SlackMessageEvent}
@@ -25,7 +24,7 @@ import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import sangria.schema.Schema
-import services.{AWSLambdaLogResult, DataService}
+import services.DataService
 import services.ms_teams.apiModels.{Application, MSAADUser}
 import services.ms_teams.{ChannelWithTeam, MSTeamsApiService}
 import services.slack.SlackEventService

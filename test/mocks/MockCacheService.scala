@@ -6,7 +6,7 @@ import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.IDs
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.{BotResult, SuccessResult}
+import models.behaviors.BotResult
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.Event
