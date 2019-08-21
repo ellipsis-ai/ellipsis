@@ -3,11 +3,11 @@ package json
 import java.time.OffsetDateTime
 
 import models.accounts.{BotContext, SlackContext}
-import models.accounts.user.{User, UserTeamAccess}
 import models.behaviors.messagelistener.MessageListener
+import models.team.Team
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
-import services.{DataService, DefaultServices}
+import services.DefaultServices
 import utils.SlackChannels
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,19 +27,18 @@ case class MessageListenerData(
 
 object MessageListenerData {
 
-  def from(listener: MessageListener, teamAccess: UserTeamAccess, services: DefaultServices)(implicit ec: ExecutionContext): Future[MessageListenerData] = {
+  def from(listener: MessageListener, team: Team, services: DefaultServices)(implicit ec: ExecutionContext): Future[MessageListenerData] = {
     val dataService = services.dataService
-    val team = teamAccess.maybeTargetTeam.getOrElse(teamAccess.loggedInTeam)
     for {
       maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(listener.behavior)
       maybeBehaviorVersionData <- BehaviorVersionData.maybeFor(listener.behavior.id,
-        teamAccess.user,
+        listener.user,
         dataService,
         maybeBehaviorVersion.map(_.groupVersion),
         None)
       userData <- dataService.users.userDataFor(listener.user, team)
       maybeSlackBotProfile <- BotContext.maybeContextFor(listener.medium).map {
-        case SlackContext => dataService.slackBotProfiles.maybeFirstFor(team, teamAccess.user)
+        case SlackContext => dataService.slackBotProfiles.maybeFirstFor(team, listener.user)
           // Todo: support for MS Teams
         case _ => {
           Logger.error(s"Creating message listener data isn't supported for ${listener.medium}")

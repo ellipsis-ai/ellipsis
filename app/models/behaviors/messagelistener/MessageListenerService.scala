@@ -1,6 +1,6 @@
 package models.behaviors.messagelistener
 
-import models.accounts.user.{User, UserTeamAccess}
+import models.accounts.user.User
 import models.behaviors.behavior.Behavior
 import models.behaviors.events.MessageEvent
 import models.team.Team
@@ -9,7 +9,9 @@ import scala.concurrent.Future
 
 trait MessageListenerService {
 
-  def find(id: String, teamAccess: UserTeamAccess): Future[Option[MessageListener]]
+  def findWithoutAccessCheck(id: String): Future[Option[MessageListener]]
+
+  def find(id: String, user: User): Future[Option[MessageListener]]
 
   def ensureFor(
                  behavior: Behavior,
