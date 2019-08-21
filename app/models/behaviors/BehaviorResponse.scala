@@ -11,6 +11,7 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.dialogs.Dialog
 import models.behaviors.events.Event
+import models.behaviors.invocationlogentry.InvocationLogEntry
 import models.behaviors.messagelistener.MessageListener
 import models.behaviors.triggers.Trigger
 import play.api.Logger
@@ -131,18 +132,20 @@ case class BehaviorResponse(
           maybeMessageListener
         )
       }
-      _ <- result match {
-        case sr: SuccessResult => {
-          if (result.isForCopilot) {
-            DBIO.from(cacheService.cacheSuccessResultForCopilot(invocationLogEntry.id, sr))
-          } else {
-            DBIO.successful({})
-          }
-        }
-        case _ => DBIO.successful({})
-      }
+      _ <- maybeCacheSuccessResultFor(invocationLogEntry, result)
       _ <- DBIO.from(notifyAdminsIfNec(result))
     } yield result
+  }
+
+  private def maybeCacheSuccessResultFor(invocationLogEntry: InvocationLogEntry, result: BotResult): DBIO[Unit] = {
+    (result match {
+      case sr: SuccessResult => Some(sr).filter(_.isForCopilot)
+      case _ => None
+    }).map { sr =>
+      DBIO.from(cacheService.cacheSuccessResultForCopilot(invocationLogEntry.id, sr))
+    }.getOrElse {
+      DBIO.successful({})
+    }
   }
 
   def resultForFilledOut(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {
