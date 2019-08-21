@@ -17,7 +17,7 @@ import models.behaviors.triggers.Trigger
 import play.api.Logger
 import play.api.libs.json.{JsString, JsValue}
 import services._
-import services.caching.CacheService
+import services.caching.{CacheService, SuccessResultData}
 import services.slack.SlackApiError
 import slick.dbio.DBIO
 
@@ -137,12 +137,13 @@ case class BehaviorResponse(
     } yield result
   }
 
-  private def maybeCacheSuccessResultFor(invocationLogEntry: InvocationLogEntry, result: BotResult): DBIO[Unit] = {
+  private def maybeCacheSuccessResultFor(invocationLogEntry: InvocationLogEntry, result: BotResult)
+                                        (implicit ec: ExecutionContext): DBIO[Unit] = {
     (result match {
       case sr: SuccessResult => Some(sr).filter(_.isForCopilot)
       case _ => None
     }).map { sr =>
-      DBIO.from(cacheService.cacheSuccessResultForCopilot(invocationLogEntry.id, sr))
+      DBIO.from(SuccessResultData.cacheSuccessResult(invocationLogEntry, sr, cacheService))
     }.getOrElse {
       DBIO.successful({})
     }

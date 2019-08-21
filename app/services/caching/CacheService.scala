@@ -50,9 +50,9 @@ trait CacheService {
 
   def remove(key: String): Future[Done]
 
-  def cacheSuccessResultForCopilot(key: String, result: SuccessResult): Future[Unit]
+  def cacheSuccessResultDataForCopilot(key: String, resultData: SuccessResultData): Future[Unit]
 
-  def getSuccessResultForCopilot(key: String): Future[Option[SuccessResult]]
+  def getSuccessResultDataForCopilot(key: String): Future[Option[SuccessResultData]]
 
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Future[Unit]
 

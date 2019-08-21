@@ -24,6 +24,7 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.{AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import play.filters.csrf.CSRF
+import services.caching.SuccessResultData
 import services.{DataService, DefaultServices}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -145,7 +146,7 @@ class CopilotController @Inject()(
           Future.successful(None)
         }
       }
-      maybeResult <- services.cacheService.getSuccessResultForCopilot(entry.id)
+      maybeResult <- SuccessResultData.maybeSuccessResultFor(entry, dataService, services.cacheService)
       maybeOriginalPermalink <- maybeResult.map(_.event.maybePermalinkFor(services)).getOrElse(Future.successful(None))
       maybePermalink <- maybeBotProfile.map {
         case slackBotProfile: SlackBotProfile => for {

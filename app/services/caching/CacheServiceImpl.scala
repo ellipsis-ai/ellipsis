@@ -51,35 +51,6 @@ case class SlackMessageEventData(
                                   beQuiet: Boolean
                                 )
 
-case class ParameterWithValueData(
-                                   behaviorParameterId: String,
-                                   invocationName: String,
-                                   maybeValue: Option[ParameterValue]
-                                 )
-
-case class DeveloperContextData(
-                                 maybeBehaviorVersionId: Option[String],
-                                 isForUndeployedBehaviorVersion: Boolean,
-                                 hasUndeployedBehaviorVersionForAuthor: Boolean,
-                                 isInDevMode: Boolean,
-                                 isInInvocationTester: Boolean
-                               )
-
-case class SuccessResultData(
-                              eventKey: String,
-                              behaviorVersionId: String,
-                              maybeConversationId: Option[String],
-                              result: JsValue,
-                              payloadJson: JsValue,
-                              parametersWithValues: Seq[ParameterWithValueData],
-                              invocationJson: JsObject,
-                              maybeResponseTemplate: Option[String],
-                              maybeLogResult: Option[AWSLambdaLogResult],
-                              responseType: String,
-                              isForCopilot: Boolean,
-                              developerContext: DeveloperContextData
-                            )
-
 case class InvokeResultData(
                              statusCode: Int,
                              logResult: String,
@@ -184,94 +155,12 @@ class CacheServiceImpl @Inject() (
     s"successResult-${resultKey}"
   }
 
-  def cacheSuccessResultForCopilot(resultKey: String, result: SuccessResult): Future[Unit] = {
-    val eventKey = IDs.next
-    for {
-      _ <- cacheEvent(eventKey, result.event)
-      _ <- {
-        cache.set(
-          successResultKeyFor(resultKey), toJsonString(
-            SuccessResultData(
-              eventKey,
-              result.behaviorVersion.id,
-              result.maybeConversation.map(_.id),
-              result.result,
-              result.payloadJson,
-              result.parametersWithValues.map { pv =>
-                ParameterWithValueData(pv.parameter.id, pv.invocationName, pv.maybeValue)
-              },
-              result.invocationJson,
-              result.maybeResponseTemplate,
-              result.maybeLogResult,
-              result.responseType.id,
-              result.isForCopilot,
-              DeveloperContextData(
-                result.developerContext.maybeBehaviorVersion.map(_.id),
-                result.developerContext.isForUndeployedBehaviorVersion,
-                result.developerContext.hasUndeployedBehaviorVersionForAuthor,
-                result.developerContext.isInDevMode,
-                result.developerContext.isInInvocationTester
-              )
-            )
-          ), MessageListener.COPILOT_EXPIRY_IN_HOURS.hours)
-      }
-    } yield {}
+  def cacheSuccessResultDataForCopilot(resultKey: String, resultData: SuccessResultData): Future[Unit] = {
+    set(successResultKeyFor(resultKey), toJsonString(resultData), MessageListener.COPILOT_EXPIRY_IN_HOURS.hours)
   }
 
-  def getSuccessResultForCopilot(key: String): Future[Option[SuccessResult]] = {
-    for {
-      maybeResultData <- getJsonReadable[SuccessResultData](successResultKeyFor(key))
-      maybeResult <- maybeResultData.map { resultData =>
-        for {
-          maybeEvent <- getEvent(resultData.eventKey)
-          maybeConversation <- resultData.maybeConversationId.map { convoId =>
-            dataService.conversations.find(convoId)
-          }.getOrElse(Future.successful(None))
-          maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(resultData.behaviorVersionId)
-          behaviorParameters <- maybeBehaviorVersion.map { bv =>
-            dataService.behaviorParameters.allFor(bv)
-          }.getOrElse(Future.successful(Seq.empty))
-          maybeParametersWithValue <- Future.successful {
-            val allMaybeValues = resultData.parametersWithValues.map { pwv =>
-              behaviorParameters.find(ea => ea.id == pwv.behaviorParameterId).map { bp =>
-                ParameterWithValue(bp, pwv.invocationName, pwv.maybeValue)
-              }
-            }
-            Option(allMaybeValues).filter(_.forall(ea => ea.isDefined)).map(_.flatten)
-          }
-        } yield {
-          for {
-            event <- maybeEvent
-            behaviorVersion <- maybeBehaviorVersion
-            parametersWithValues <- maybeParametersWithValue
-            responseType <- BehaviorResponseType.find(resultData.responseType)
-          } yield {
-            val developerContext = DeveloperContext(
-              Some(behaviorVersion),
-              resultData.developerContext.isForUndeployedBehaviorVersion,
-              resultData.developerContext.hasUndeployedBehaviorVersionForAuthor,
-              resultData.developerContext.isInDevMode,
-              resultData.developerContext.isInInvocationTester
-            )
-            SuccessResult(
-              event,
-              behaviorVersion,
-              maybeConversation,
-              resultData.result,
-              resultData.payloadJson,
-              parametersWithValues,
-              resultData.invocationJson,
-              resultData.maybeResponseTemplate,
-              resultData.maybeLogResult,
-              responseType,
-              resultData.isForCopilot,
-              developerContext,
-              dataService
-            )
-          }
-        }
-      }.getOrElse(Future.successful(None))
-    } yield maybeResult
+  def getSuccessResultDataForCopilot(key: String): Future[Option[SuccessResultData]] = {
+    getJsonReadable[SuccessResultData](successResultKeyFor(key))
   }
 
   private def eventKeyFor(eventKey: String): String = {
