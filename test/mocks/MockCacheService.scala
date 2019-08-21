@@ -36,7 +36,7 @@ class MockCacheService extends CacheService with MockitoSugar {
 
   def remove(key: String): Future[Done] = Future.successful(Done)
 
-  def cacheSuccessResult(key: String): Future[Unit] = Future.successful({})
+  def cacheSuccessResultForCopilot(key: String, result: SuccessResult): Future[Unit] = Future.successful({})
 
   def getSuccessResultForCopilot(key: String): Future[Option[SuccessResult]] = Future.successful(None)
 
