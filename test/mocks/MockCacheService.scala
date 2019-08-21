@@ -6,7 +6,7 @@ import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.IDs
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, SuccessResult}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.Event
@@ -35,6 +35,10 @@ class MockCacheService extends CacheService with MockitoSugar {
   def hasKey(key: String): Future[Boolean] = Future.successful(false)
 
   def remove(key: String): Future[Done] = Future.successful(Done)
+
+  def cacheSuccessResult(key: String): Future[Unit] = Future.successful({})
+
+  def getSuccessResult(key: String): Future[Option[SuccessResult]] = Future.successful(None)
 
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Future[Unit] = Future.successful({})
 

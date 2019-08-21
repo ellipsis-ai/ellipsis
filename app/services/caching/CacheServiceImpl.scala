@@ -14,8 +14,9 @@ import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.IDs
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, DeveloperContext, ParameterValue, ParameterWithValue, SuccessResult}
 import models.behaviors.behaviorparameter.ValidValue
+import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events._
 import models.behaviors.events.slack.{SlackFile, SlackMessage, SlackMessageEvent}
@@ -23,7 +24,7 @@ import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import sangria.schema.Schema
-import services.DataService
+import services.{AWSLambdaLogResult, DataService}
 import services.ms_teams.apiModels.{Application, MSAADUser}
 import services.ms_teams.{ChannelWithTeam, MSTeamsApiService}
 import services.slack.SlackEventService
@@ -49,10 +50,39 @@ case class SlackMessageEventData(
                                   beQuiet: Boolean
                                 )
 
+case class ParameterWithValueData(
+                                   behaviorParameterId: String,
+                                   invocationName: String,
+                                   maybeValue: Option[ParameterValue]
+                                 )
+
+case class DeveloperContextData(
+                                 maybeBehaviorVersionId: Option[String],
+                                 isForUndeployedBehaviorVersion: Boolean,
+                                 hasUndeployedBehaviorVersionForAuthor: Boolean,
+                                 isInDevMode: Boolean,
+                                 isInInvocationTester: Boolean
+                               )
+
+case class SuccessResultData(
+                              eventKey: String,
+                              behaviorVersionId: String,
+                              maybeConversationId: Option[String],
+                              result: JsValue,
+                              payloadJson: JsValue,
+                              parametersWithValues: Seq[ParameterWithValueData],
+                              invocationJson: JsObject,
+                              maybeResponseTemplate: Option[String],
+                              maybeLogResult: Option[AWSLambdaLogResult],
+                              responseType: String,
+                              isForCopilot: Boolean,
+                              developerContext: DeveloperContextData
+                            )
+
 case class InvokeResultData(
-                            statusCode: Int,
-                            logResult: String,
-                            payload: Array[Byte]
+                             statusCode: Int,
+                             logResult: String,
+                             payload: Array[Byte]
                            )
 
 @Singleton
@@ -147,6 +177,100 @@ class CacheServiceImpl @Inject() (
 
   def remove(key: String): Future[Done] = {
     cache.remove(key)
+  }
+
+  private def successResultKeyFor(resultKey: String): String = {
+    s"successResult-${resultKey}"
+  }
+
+  def cacheSuccessResult(resultKey: String, result: SuccessResult): Future[Unit] = {
+    val eventKey = IDs.next
+    for {
+      _ <- cacheEvent(eventKey, result.event)
+      _ <- {
+        cache.set(
+          successResultKeyFor(resultKey), toJsonString(
+            SuccessResultData(
+              eventKey,
+              result.behaviorVersion.id,
+              result.maybeConversation.map(_.id),
+              result.result,
+              result.payloadJson,
+              result.parametersWithValues.map { pv =>
+                ParameterWithValueData(pv.parameter.id, pv.invocationName, pv.maybeValue)
+              },
+              result.invocationJson,
+              result.maybeResponseTemplate,
+              result.maybeLogResult,
+              result.responseType.id,
+              result.isForCopilot,
+              DeveloperContextData(
+                result.developerContext.maybeBehaviorVersion.map(_.id),
+                result.developerContext.isForUndeployedBehaviorVersion,
+                result.developerContext.hasUndeployedBehaviorVersionForAuthor,
+                result.developerContext.isInDevMode,
+                result.developerContext.isInInvocationTester
+              )
+            )
+          ))
+      }
+    } yield {}
+  }
+
+  def getSuccessResult(key: String): Future[Option[SuccessResult]] = {
+    for {
+      maybeResultData <- getJsonReadable[SuccessResultData](successResultKeyFor(key))
+      maybeResult <- maybeResultData.map { resultData =>
+        for {
+          maybeEvent <- getEvent(resultData.eventKey)
+          maybeConversation <- resultData.maybeConversationId.map { convoId =>
+            dataService.conversations.find(convoId)
+          }.getOrElse(Future.successful(None))
+          maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheck(resultData.behaviorVersionId)
+          behaviorParameters <- maybeBehaviorVersion.map { bv =>
+            dataService.behaviorParameters.allFor(bv)
+          }.getOrElse(Future.successful(Seq.empty))
+          maybeParametersWithValue <- Future.successful {
+            val allValues = resultData.parametersWithValues.flatMap { pwv =>
+              behaviorParameters.find(ea => ea.id == pwv.behaviorParameterId).map { bp =>
+                ParameterWithValue(bp, pwv.invocationName, pwv.maybeValue)
+              }
+            }
+            Option(allValues).filter(_.length == resultData.parametersWithValues.length)
+          }
+        } yield {
+          for {
+            event <- maybeEvent
+            behaviorVersion <- maybeBehaviorVersion
+            parametersWithValues <- maybeParametersWithValue
+            responseType <- BehaviorResponseType.find(resultData.responseType)
+          } yield {
+            val developerContext = DeveloperContext(
+              Some(behaviorVersion),
+              resultData.developerContext.isForUndeployedBehaviorVersion,
+              resultData.developerContext.hasUndeployedBehaviorVersionForAuthor,
+              resultData.developerContext.isInDevMode,
+              resultData.developerContext.isInInvocationTester
+            )
+            SuccessResult(
+              event,
+              behaviorVersion,
+              maybeConversation,
+              resultData.result,
+              resultData.payloadJson,
+              parametersWithValues,
+              resultData.invocationJson,
+              resultData.maybeResponseTemplate,
+              resultData.maybeLogResult,
+              responseType,
+              resultData.isForCopilot,
+              developerContext,
+              dataService
+            )
+          }
+        }
+      }.getOrElse(Future.successful(None))
+    } yield maybeResult
   }
 
   private def eventKeyFor(eventKey: String): String = {
@@ -281,6 +405,7 @@ class CacheServiceImpl @Inject() (
   }
 
   implicit val slackUserProfileJsonFormat = Json.format[SlackUserProfile]
+
   import services.slack.apiModels.Formatting._
 
   private def fallbackSlackUserCacheKey(slackUserId: String, slackTeamId: String): String = {

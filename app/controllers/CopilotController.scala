@@ -7,13 +7,15 @@ import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import json.{InvocationLogEntryData, MessageListenerData}
+import json.{InvocationLogEntryData, MessageListenerData, UserData}
 import json.Formatting._
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.accounts.user.User
 import models.accounts.{BotContext, SlackContext}
-import models.behaviors.SimpleTextResult
+import models.behaviors.{BotResult, SimpleTextResult, SuccessResult}
 import models.behaviors.behaviorversion.Normal
+import models.behaviors.events.Event
+import models.behaviors.events.slack.SlackMessageEvent
 import models.behaviors.invocationlogentry.InvocationLogEntry
 import models.behaviors.messagelistener.MessageListener
 import models.silhouette.EllipsisEnv
@@ -144,25 +146,19 @@ class CopilotController @Inject()(
           Future.successful(None)
         }
       }
-      resultTextToSend <- Future.successful {
-        s"""${userData.formattedLink.getOrElse("Someone")} asked me to send a response to:
-           |
-           |> ${entry.messageText}
-           |
-           |${entry.resultText}
-           |""".stripMargin
-      }
+      maybeResult <- services.cacheService.getSuccessResult(entry.id).map(_.map(_.copy(isForCopilot = false)))
+      maybeOriginalPermalink <- maybeResult.map(_.event.maybePermalinkFor(services)).getOrElse(Future.successful(None))
       maybePermalink <- maybeBotProfile.map {
         case slackBotProfile: SlackBotProfile => for {
           maybeTs <- dataService.slackBotProfiles.sendResultWithNewEvent(
             "Copilot result sent to chat",
-            (event) => Future.successful(Some(SimpleTextResult(event, None, resultTextToSend, Normal))),
+            (event) => Future.successful(maybeOverrideResultFor(event, userData, entry, maybeResult, maybeOriginalPermalink)),
             slackBotProfile,
             channel,
             user.id,
-            entry.createdAt.toString,
+            maybeResult.flatMap(_.event.maybeMessageId).getOrElse(entry.createdAt.toString),
             entry.maybeOriginalEventType,
-            listener.maybeThreadId,
+            maybeResult.flatMap(_.event.maybeThreadId).orElse(listener.maybeThreadId),
             isEphemeral = false,
             maybeResponseUrl = None,
             beQuiet = false
@@ -179,6 +175,40 @@ class CopilotController @Inject()(
       }.getOrElse {
         BadRequest("Channel not found")
       }
+    }
+  }
+
+  private def maybeOverrideResultFor(
+                                      event: Event,
+                                      userData: UserData,
+                                      entry: InvocationLogEntry,
+                                      maybeResult: Option[SuccessResult],
+                                      maybeOriginalPermalink: Option[String]
+                                    ): Option[BotResult] = {
+    val fallbackOriginal = s"\n> ${entry.messageText.replaceAll("\\n", "\n> ")}"
+    val prefix = (userData.formattedLink.map { name =>
+      maybeOriginalPermalink.map { permalink =>
+        s"$name asked me to send a response to [an earlier message]($permalink):"
+      }.getOrElse {
+        s"$name asked me to send a response to an earlier message: $fallbackOriginal"
+      }
+    }.getOrElse {
+      maybeOriginalPermalink.map { permalink =>
+        s"I’ve been asked to send a response to [an earlier message]($permalink):"
+      }.getOrElse {
+        s"I’ve been asked to send a response to an earlier message: $fallbackOriginal"
+      }
+    }) + "\n\n"
+    maybeResult.map { original =>
+      original.copy(
+        isForCopilot = false,
+        maybeResponseTemplate = original.maybeResponseTemplate.map { rt =>
+          prefix + rt
+        }.orElse(Some(prefix))
+      )
+    }.orElse {
+      val resultText = prefix + entry.resultText
+      Some(SimpleTextResult(event, None, resultText, Normal))
     }
   }
 }

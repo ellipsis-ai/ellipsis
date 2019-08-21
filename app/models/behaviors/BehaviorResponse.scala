@@ -118,7 +118,7 @@ case class BehaviorResponse(
           }.getOrElse(DBIO.successful(initialResult))
         }
       }
-      _ <- {
+      invocationLogEntry <- {
         val runtimeInMilliseconds = OffsetDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
         dataService.invocationLogEntries.createForAction(
           behaviorVersion,
@@ -130,6 +130,17 @@ case class BehaviorResponse(
           runtimeInMilliseconds,
           maybeMessageListener
         )
+      }
+      _ <- {
+        result match {
+          case sr: SuccessResult => {
+            if (result.isForCopilot) {
+              cacheService.cacheSuccessResult(invocationLogEntry.id, sr)
+            }
+          }
+          case _ => {}
+        }
+        DBIO.successful(())
       }
       _ <- DBIO.from(notifyAdminsIfNec(result))
     } yield result

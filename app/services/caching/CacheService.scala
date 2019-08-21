@@ -5,7 +5,7 @@ import com.amazonaws.services.lambda.model.InvokeResult
 import json.{ImmutableBehaviorGroupVersionData, SlackUserData, UserData}
 import models.accounts.ms_teams.botprofile.MSTeamsBotProfile
 import models.accounts.slack.botprofile.SlackBotProfile
-import models.behaviors.BotResult
+import models.behaviors.{BotResult, SuccessResult}
 import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events.Event
@@ -49,6 +49,10 @@ trait CacheService {
   def hasKey(key: String): Future[Boolean]
 
   def remove(key: String): Future[Done]
+
+  def cacheSuccessResult(key: String, result: SuccessResult): Future[Unit]
+
+  def getSuccessResult(key: String): Future[Option[SuccessResult]]
 
   def cacheEvent(key: String, event: Event, expiration: Duration = Duration.Inf): Future[Unit]
 

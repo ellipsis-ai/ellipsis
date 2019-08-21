@@ -43,7 +43,8 @@ type Props = PageRequiredProps & {
 interface ResultDetails {
   readonly hasRendered: boolean
   readonly isSending: boolean
-  readonly hasSentPermalink: Option<string>
+  readonly hasSentPermalink?: string
+  readonly sendError?: string
 }
 
 interface ResultMap {
@@ -81,8 +82,7 @@ class Copilot extends React.Component<Props, State> {
       if (!this.state.resultDetails[result.id]) {
         resultDetails[result.id] = {
           hasRendered: true,
-          isSending: false,
-          hasSentPermalink: null
+          isSending: false
         };
       }
     });
@@ -106,6 +106,11 @@ class Copilot extends React.Component<Props, State> {
   hasSentPermalink(result: Result): Option<string> {
     const details = this.state.resultDetails[result.id];
     return details ? details.hasSentPermalink : null;
+  }
+
+  getSendError(result: Result): Option<string> {
+    const details = this.state.resultDetails[result.id];
+    return details ? details.sendError : null;
   }
 
   checkForUpdates(): void {
@@ -197,8 +202,7 @@ class Copilot extends React.Component<Props, State> {
     const beforeSendDetails: ResultMap = {};
     beforeSendDetails[result.id] = {
       hasRendered: true,
-      isSending: true,
-      hasSentPermalink: null
+      isSending: true
     };
     this.setState({
       resultDetails: Object.assign({}, this.state.resultDetails, beforeSendDetails)
@@ -213,6 +217,16 @@ class Copilot extends React.Component<Props, State> {
         this.setState({
           resultDetails: Object.assign({}, this.state.resultDetails, afterSendDetails)
         });
+      }).catch((err) => {
+        const afterSendDetails: ResultMap = {};
+        afterSendDetails[result.id] = {
+          hasRendered: true,
+          isSending: false,
+          sendError: "An error occurred while trying to send this result"
+        };
+        this.setState({
+          resultDetails: Object.assign({}, this.state.resultDetails, afterSendDetails)
+        });
       });
     });
   }
@@ -221,6 +235,7 @@ class Copilot extends React.Component<Props, State> {
     if (result.resultText) {
       const isSending = this.isSendingResult(result);
       const hasSentPermalink = this.hasSentPermalink(result);
+      const sendError = this.getSendError(result);
       return (
         <Collapsible revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
           <div className="fade-in border mbxl bg-white">
@@ -252,6 +267,9 @@ class Copilot extends React.Component<Props, State> {
                   <SVGCheckmark />
                   <a href={hasSentPermalink} target="chat" className="display-inline-block align-t mlxs">View message</a>
                 </div>
+              ) : null}
+              {sendError ? (
+                <div className="align-button align-button-s type-pink type-bold type-italic type-s">{sendError}</div>
               ) : null}
             </div>
           </div>
