@@ -355,7 +355,7 @@ case class SlackApiMethodContext(
       } yield {
         for {
           user <- dataService.users.ensureUserFor(slackProfile.loginInfo, Seq(), behaviorVersion.team.id)
-          listener <- dataService.messageListeners.createFor(
+          listener <- dataService.messageListeners.ensureFor(
             behaviorVersion.behavior,
             info.argumentsMap,
             user,

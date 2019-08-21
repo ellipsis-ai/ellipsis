@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 import drivers.SlickPostgresDriver.api._
 import models.accounts.user.{User, UserQueries, UsersTable}
 import models.behaviors.behavior.BehaviorQueries
-import play.api.libs.json.{JsObject, JsString}
+import play.api.libs.json.{JsObject, JsString, JsValue}
 
 object MessageListenerQueries {
 
@@ -53,6 +53,26 @@ object MessageListenerQueries {
   }
 
   val findForUserQuery = Compiled(uncompiledFindForUserQuery _)
+
+  def uncompiledFindForEnsureQuery(
+                                    behaviorId: Rep[String],
+                                    arguments: Rep[JsValue],
+                                    userId: Rep[String],
+                                    medium: Rep[String],
+                                    channel: Rep[String],
+                                    maybeThreadId: Rep[Option[String]],
+                                    isForCopilot: Rep[Boolean]
+                                  ) = {
+    allWithUser.
+      filter { case((listener, _), _) => listener.behaviorId === behaviorId }.
+      filter { case((listener, _), _) => listener.arguments === arguments }.
+      filter { case((listener, _), _) => listener.userId === userId }.
+      filter { case((listener, _), _) => listener.medium === medium }.
+      filter { case((listener, _), _) => listener.channel === channel }.
+      filter { case((listener, _), _) => (listener.maybeThreadId.isEmpty && maybeThreadId.isEmpty) || listener.maybeThreadId === maybeThreadId }.
+      filter { case((listener, _), _) => listener.isForCopilot === isForCopilot }
+  }
+  val findForEnsureQuery = Compiled(uncompiledFindForEnsureQuery _)
 
   def uncompiledAllForQuery(
                              teamId: Rep[String],

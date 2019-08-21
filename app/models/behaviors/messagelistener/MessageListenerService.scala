@@ -11,7 +11,7 @@ trait MessageListenerService {
 
   def find(id: String, teamAccess: UserTeamAccess): Future[Option[MessageListener]]
 
-  def createFor(
+  def ensureFor(
                  behavior: Behavior,
                  arguments: Map[String, String],
                  user: User,
