@@ -131,16 +131,15 @@ case class BehaviorResponse(
           maybeMessageListener
         )
       }
-      _ <- {
-        result match {
-          case sr: SuccessResult => {
-            if (result.isForCopilot) {
-              cacheService.cacheSuccessResult(invocationLogEntry.id, sr)
-            }
+      _ <- result match {
+        case sr: SuccessResult => {
+          if (result.isForCopilot) {
+            DBIO.from(cacheService.cacheSuccessResultForCopilot(invocationLogEntry.id, sr))
+          } else {
+            DBIO.successful({})
           }
-          case _ => {}
         }
-        DBIO.successful(())
+        case _ => DBIO.successful({})
       }
       _ <- DBIO.from(notifyAdminsIfNec(result))
     } yield result

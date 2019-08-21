@@ -20,6 +20,7 @@ import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events._
 import models.behaviors.events.slack.{SlackFile, SlackMessage, SlackMessageEvent}
+import models.behaviors.messagelistener.MessageListener
 import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
@@ -183,7 +184,7 @@ class CacheServiceImpl @Inject() (
     s"successResult-${resultKey}"
   }
 
-  def cacheSuccessResult(resultKey: String, result: SuccessResult): Future[Unit] = {
+  def cacheSuccessResultForCopilot(resultKey: String, result: SuccessResult): Future[Unit] = {
     val eventKey = IDs.next
     for {
       _ <- cacheEvent(eventKey, result.event)
@@ -212,12 +213,12 @@ class CacheServiceImpl @Inject() (
                 result.developerContext.isInInvocationTester
               )
             )
-          ))
+          ), MessageListener.COPILOT_EXPIRY_IN_HOURS.hours)
       }
     } yield {}
   }
 
-  def getSuccessResult(key: String): Future[Option[SuccessResult]] = {
+  def getSuccessResultForCopilot(key: String): Future[Option[SuccessResult]] = {
     for {
       maybeResultData <- getJsonReadable[SuccessResultData](successResultKeyFor(key))
       maybeResult <- maybeResultData.map { resultData =>
@@ -231,12 +232,12 @@ class CacheServiceImpl @Inject() (
             dataService.behaviorParameters.allFor(bv)
           }.getOrElse(Future.successful(Seq.empty))
           maybeParametersWithValue <- Future.successful {
-            val allValues = resultData.parametersWithValues.flatMap { pwv =>
+            val allMaybeValues = resultData.parametersWithValues.map { pwv =>
               behaviorParameters.find(ea => ea.id == pwv.behaviorParameterId).map { bp =>
                 ParameterWithValue(bp, pwv.invocationName, pwv.maybeValue)
               }
             }
-            Option(allValues).filter(_.length == resultData.parametersWithValues.length)
+            Option(allMaybeValues).filter(_.forall(ea => ea.isDefined)).map(_.flatten)
           }
         } yield {
           for {

@@ -45,3 +45,7 @@ case class MessageListener(
     )
   }
 }
+
+object MessageListener {
+  val COPILOT_EXPIRY_IN_HOURS = 30
+}

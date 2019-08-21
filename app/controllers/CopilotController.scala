@@ -15,7 +15,6 @@ import models.accounts.{BotContext, SlackContext}
 import models.behaviors.{BotResult, SimpleTextResult, SuccessResult}
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.events.Event
-import models.behaviors.events.slack.SlackMessageEvent
 import models.behaviors.invocationlogentry.InvocationLogEntry
 import models.behaviors.messagelistener.MessageListener
 import models.silhouette.EllipsisEnv
@@ -91,7 +90,7 @@ class CopilotController @Inject()(
     val since = try {
       OffsetDateTime.parse(when)
     } catch {
-      case _: DateTimeParseException => OffsetDateTime.now.minusDays(1)
+      case _: DateTimeParseException => OffsetDateTime.now.minusHours(MessageListener.COPILOT_EXPIRY_IN_HOURS)
     }
     for {
       teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
@@ -146,7 +145,7 @@ class CopilotController @Inject()(
           Future.successful(None)
         }
       }
-      maybeResult <- services.cacheService.getSuccessResult(entry.id).map(_.map(_.copy(isForCopilot = false)))
+      maybeResult <- services.cacheService.getSuccessResultForCopilot(entry.id)
       maybeOriginalPermalink <- maybeResult.map(_.event.maybePermalinkFor(services)).getOrElse(Future.successful(None))
       maybePermalink <- maybeBotProfile.map {
         case slackBotProfile: SlackBotProfile => for {
