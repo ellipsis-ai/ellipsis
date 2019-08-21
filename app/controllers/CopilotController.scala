@@ -149,19 +149,31 @@ class CopilotController @Inject()(
       maybeOriginalPermalink <- maybeResult.map(_.event.maybePermalinkFor(services)).getOrElse(Future.successful(None))
       maybePermalink <- maybeBotProfile.map {
         case slackBotProfile: SlackBotProfile => for {
-          maybeTs <- dataService.slackBotProfiles.sendResultWithNewEvent(
-            "Copilot result sent to chat",
-            (event) => Future.successful(maybeOverrideResultFor(event, userData, entry, maybeResult, maybeOriginalPermalink)),
-            slackBotProfile,
-            channel,
-            user.id,
-            maybeResult.flatMap(_.event.maybeMessageId).getOrElse(entry.createdAt.toString),
-            entry.maybeOriginalEventType,
-            maybeResult.flatMap(_.event.maybeThreadId).orElse(listener.maybeThreadId),
-            isEphemeral = false,
-            maybeResponseUrl = None,
-            beQuiet = false
-          )
+          maybeTs <- userData.userIdForContext.map { slackUserId =>
+            dataService.slackBotProfiles.sendResultWithNewEvent(
+              "Copilot result sent to chat",
+              (event) => Future
+                .successful(maybeOverrideResultFor(event, userData, entry, maybeResult, maybeOriginalPermalink)),
+              slackBotProfile,
+              channel,
+              slackUserId,
+              maybeResult.flatMap(_.event.maybeMessageId).getOrElse(entry.createdAt.toString),
+              entry.maybeOriginalEventType,
+              maybeResult.flatMap(_.event.maybeThreadId).orElse(listener.maybeThreadId),
+              isEphemeral = false,
+              maybeResponseUrl = None,
+              beQuiet = false
+            )
+          }.getOrElse {
+            Logger.error(
+              s"""Tried to send a copilot result but no Slack user ID was found:
+                 | - Ellipsis user ID ${userData.ellipsisUserId} (${userData.toString})
+                 | - Ellipsis team ${team.name} (ID ${team.id})
+                 | - Slack team ID ${slackBotProfile.slackTeamId}
+                 |""".stripMargin
+            )
+            Future.successful(None)
+          }
           maybePermalink <- maybeTs.map { ts =>
             services.slackApiService.clientFor(slackBotProfile).permalinkFor(channel, ts)
           }.getOrElse(Future.successful(None))
