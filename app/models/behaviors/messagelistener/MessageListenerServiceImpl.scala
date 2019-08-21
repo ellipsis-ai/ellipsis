@@ -56,16 +56,24 @@ class MessageListenerServiceImpl @Inject() (
 
   import MessageListenerQueries._
 
-  def find(id: String, teamAccess: UserTeamAccess): Future[Option[MessageListener]] = {
-    val query = if (teamAccess.isAdminAccess) {
-      findWithoutAccessCheckQuery(id)
-    } else {
-      findForUserQuery(id, teamAccess.user.id)
-    }
-    val action = query.result.headOption.map { r =>
+  def findWithoutAccessCheck(id: String): Future[Option[MessageListener]] = {
+    val action = findWithoutAccessCheckQuery(id).result.headOption.map { r =>
       r.map(tuple2Listener)
     }
     dataService.run(action)
+  }
+
+  def find(id: String, user: User): Future[Option[MessageListener]] = {
+    for {
+      maybeListener <- dataService.messageListeners.findWithoutAccessCheck(id)
+      teamAccess <- dataService.users.teamAccessFor(user, maybeListener.map(_.behavior.team.id))
+    } yield {
+      if (teamAccess.isAdminUser) {
+        maybeListener
+      } else {
+        maybeListener.filter(_.behavior.team.id == teamAccess.loggedInTeam)
+      }
+    }
   }
 
   def ensureForAction(

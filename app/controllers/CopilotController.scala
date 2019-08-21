@@ -44,13 +44,13 @@ class CopilotController @Inject()(
 
   implicit lazy val copilotConfigFormat = Json.format[CopilotConfig]
 
-  def index(listenerId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def index(listenerId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      maybeListener <- dataService.messageListeners.find(listenerId, teamAccess)
+      maybeListener <- dataService.messageListeners.find(listenerId, user)
+      teamAccess <- dataService.users.teamAccessFor(user, maybeListener.map(_.behavior.team.id))
       maybeListenerData <- maybeListener.map { listener =>
-        MessageListenerData.from(listener, teamAccess, services).map(Some(_))
+        MessageListenerData.from(listener, teamAccess.loggedInTeam, services).map(Some(_))
       }.getOrElse(Future.successful(None))
     } yield {
       render {
@@ -70,7 +70,7 @@ class CopilotController @Inject()(
         }
         case Accepts.Html() => {
           maybeListenerData.map { _ =>
-            val dataRoute = routes.CopilotController.index(listenerId, maybeTeamId)
+            val dataRoute = routes.CopilotController.index(listenerId)
             Ok(views.html.copilot.index(viewConfig(Some(teamAccess)), dataRoute))
           }.getOrElse {
             NotFound("Copilot not found")
@@ -84,7 +84,7 @@ class CopilotController @Inject()(
 
   implicit lazy val resultsDataFormat = Json.format[ResultsData]
 
-  def resultsSince(listenerId: String, when: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def resultsSince(listenerId: String, when: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     val since = try {
       OffsetDateTime.parse(when)
@@ -92,8 +92,7 @@ class CopilotController @Inject()(
       case _: DateTimeParseException => OffsetDateTime.now.minusDays(1)
     }
     for {
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
-      maybeListener <- dataService.messageListeners.find(listenerId, teamAccess)
+      maybeListener <- dataService.messageListeners.find(listenerId, user)
       _ <- maybeListener.map { listener =>
         dataService.messageListeners.noteCopilotActivity(listener)
       }.getOrElse(Future.successful({}))
@@ -106,13 +105,12 @@ class CopilotController @Inject()(
     }
   }
 
-  def sendToChannel(invocationId: String, maybeTeamId: Option[String]) = silhouette.SecuredAction.async { implicit request =>
+  def sendToChannel(invocationId: String) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
     for {
       maybeInvocationEntry <- dataService.invocationLogEntries.findWithoutAccessCheck(invocationId)
-      teamAccess <- dataService.users.teamAccessFor(user, maybeTeamId)
       maybeListener <- maybeInvocationEntry.flatMap(_.maybeMessageListenerId.map { listenerId =>
-        dataService.messageListeners.find(listenerId, teamAccess)
+        dataService.messageListeners.find(listenerId, user)
       }).getOrElse(Future.successful(None))
       maybeTeamAccess <- maybeInvocationEntry.map { entry =>
         dataService.users.teamAccessFor(user, Some(entry.behaviorVersion.team.id)).map(Some(_))
@@ -120,10 +118,8 @@ class CopilotController @Inject()(
       result <- (for {
         entry <- maybeInvocationEntry
         listener <- maybeListener
-        teamAccess <- maybeTeamAccess
-        team <- teamAccess.maybeTargetTeam
       } yield {
-        sendToChatFor(user, team, entry, listener)
+        sendToChatFor(user, listener.behavior.team, entry, listener)
       }).getOrElse {
         Future.successful(NotFound("Entry not found"))
       }
