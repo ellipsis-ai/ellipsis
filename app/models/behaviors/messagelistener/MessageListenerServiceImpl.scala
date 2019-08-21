@@ -71,7 +71,7 @@ class MessageListenerServiceImpl @Inject() (
       if (teamAccess.isAdminUser) {
         maybeListener
       } else {
-        maybeListener.filter(_.behavior.team.id == teamAccess.loggedInTeam)
+        maybeListener.filter(_.behavior.team.id == teamAccess.loggedInTeam.id)
       }
     }
   }
