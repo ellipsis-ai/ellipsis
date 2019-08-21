@@ -64,7 +64,7 @@ trait SlackBotProfileService {
                              channelId: String,
                              originalMessageTs: String,
                              maybeThreadTs: Option[String],
-                             userId: String,
+                             slackUserId: String,
                              maybeOriginalEventType: Option[EventType],
                              isEphemeral: Boolean,
                              maybeResponseUrl: Option[String],
@@ -75,7 +75,7 @@ trait SlackBotProfileService {
         botProfile,
         channelId,
         maybeThreadTs,
-        userId
+        slackUserId
       ),
       SlackMessage.blank,
       None,
@@ -94,7 +94,7 @@ trait SlackBotProfileService {
     getEventualMaybeResult: SlackMessageEvent => Future[Option[BotResult]],
     botProfile: SlackBotProfile,
     channelId: String,
-    userId: String,
+    slackUserId: String,
     originalMessageTs: String,
     maybeOriginalEventType: Option[EventType],
     maybeThreadTs: Option[String],

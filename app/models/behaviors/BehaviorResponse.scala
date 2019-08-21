@@ -11,12 +11,13 @@ import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
 import models.behaviors.dialogs.Dialog
 import models.behaviors.events.Event
+import models.behaviors.invocationlogentry.InvocationLogEntry
 import models.behaviors.messagelistener.MessageListener
 import models.behaviors.triggers.Trigger
 import play.api.Logger
 import play.api.libs.json.{JsString, JsValue}
 import services._
-import services.caching.CacheService
+import services.caching.{CacheService, SuccessResultData}
 import services.slack.SlackApiError
 import slick.dbio.DBIO
 
@@ -118,7 +119,7 @@ case class BehaviorResponse(
           }.getOrElse(DBIO.successful(initialResult))
         }
       }
-      _ <- {
+      invocationLogEntry <- {
         val runtimeInMilliseconds = OffsetDateTime.now.toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
         dataService.invocationLogEntries.createForAction(
           behaviorVersion,
@@ -131,8 +132,21 @@ case class BehaviorResponse(
           maybeMessageListener
         )
       }
+      _ <- maybeCacheSuccessResultFor(invocationLogEntry, result)
       _ <- DBIO.from(notifyAdminsIfNec(result))
     } yield result
+  }
+
+  private def maybeCacheSuccessResultFor(invocationLogEntry: InvocationLogEntry, result: BotResult)
+                                        (implicit ec: ExecutionContext): DBIO[Unit] = {
+    (result match {
+      case sr: SuccessResult => Some(sr).filter(_.isForCopilot)
+      case _ => None
+    }).map { sr =>
+      DBIO.from(SuccessResultData.cacheSuccessResult(invocationLogEntry, sr, cacheService))
+    }.getOrElse {
+      DBIO.successful({})
+    }
   }
 
   def resultForFilledOut(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[BotResult] = {

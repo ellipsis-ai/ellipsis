@@ -11,7 +11,8 @@ import models.behaviors.behaviortestresult.BehaviorTestResult
 import models.behaviors.events.slack.{SlackFile, SlackMessage}
 import models.behaviors.testing.{InvocationTestReportOutput, ResultOutput}
 import play.api.libs.json._
-import services.caching.SlackMessageEventData
+import services.AWSLambdaLogResult
+import services.caching.{DeveloperContextData, ParameterWithValueData, SlackMessageEventData, SuccessResultData}
 import utils._
 
 object Formatting {
@@ -171,6 +172,12 @@ object Formatting {
 
   lazy implicit val slackMessageEventDataReads = Json.reads[SlackMessageEventData]
   lazy implicit val slackMessageEventDataWrites = Json.writes[SlackMessageEventData]
+
+  lazy implicit val parameterValueFormat = Json.format[ParameterValue]
+  lazy implicit val parameterWithValueDataFormat = Json.format[ParameterWithValueData]
+  lazy implicit val developerContextDataFormat = Json.format[DeveloperContextData]
+  lazy implicit val awsLambdaLogResultFormat = Json.format[AWSLambdaLogResult]
+  lazy implicit val successResultDataFormat = Json.format[SuccessResultData]
 
   lazy implicit val validValueReads = Json.reads[ValidValue]
   lazy implicit val validValueWrites = Json.writes[ValidValue]

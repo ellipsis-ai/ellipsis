@@ -19,6 +19,7 @@ import models.behaviors.behaviorparameter.ValidValue
 import models.behaviors.defaultstorageitem.DefaultStorageItemService
 import models.behaviors.events._
 import models.behaviors.events.slack.{SlackFile, SlackMessage, SlackMessageEvent}
+import models.behaviors.messagelistener.MessageListener
 import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
@@ -50,9 +51,9 @@ case class SlackMessageEventData(
                                 )
 
 case class InvokeResultData(
-                            statusCode: Int,
-                            logResult: String,
-                            payload: Array[Byte]
+                             statusCode: Int,
+                             logResult: String,
+                             payload: Array[Byte]
                            )
 
 @Singleton
@@ -147,6 +148,18 @@ class CacheServiceImpl @Inject() (
 
   def remove(key: String): Future[Done] = {
     cache.remove(key)
+  }
+
+  private def successResultKeyFor(resultKey: String): String = {
+    s"successResult-${resultKey}"
+  }
+
+  def cacheSuccessResultDataForCopilot(resultKey: String, resultData: SuccessResultData): Future[Unit] = {
+    set(successResultKeyFor(resultKey), toJsonString(resultData), MessageListener.COPILOT_EXPIRY_IN_HOURS.hours)
+  }
+
+  def getSuccessResultDataForCopilot(key: String): Future[Option[SuccessResultData]] = {
+    getJsonReadable[SuccessResultData](successResultKeyFor(key))
   }
 
   private def eventKeyFor(eventKey: String): String = {
@@ -281,6 +294,7 @@ class CacheServiceImpl @Inject() (
   }
 
   implicit val slackUserProfileJsonFormat = Json.format[SlackUserProfile]
+
   import services.slack.apiModels.Formatting._
 
   private def fallbackSlackUserCacheKey(slackUserId: String, slackTeamId: String): String = {
