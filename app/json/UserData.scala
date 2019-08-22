@@ -71,7 +71,7 @@ object UserData {
       fullName = Some("Ellipsis Admin"),
       email = None,
       timeZone = None,
-      formattedLink = None
+      formattedLink = Some("Ellipsis Admin")
     )
   }
 
