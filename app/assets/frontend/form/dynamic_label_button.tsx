@@ -2,7 +2,7 @@ import * as React from 'react';
 import autobind from "../lib/autobind";
 
 export interface DynamicLabelButtonLabel {
-  text: string,
+  text: React.ReactChild,
   mobileText?: Option<string>,
   displayWhen: boolean
 }
