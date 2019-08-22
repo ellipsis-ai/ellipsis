@@ -2,7 +2,7 @@
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.visibility-hidden {
+.visibility-hidden, .parent-controlled-visibility {
   visibility: hidden;
   opacity: 0;
 }
@@ -10,4 +10,10 @@
 .visibility-visible {
   visibility: visible;
   opacity: 1;
+}
+
+.visibility-children-visible {
+  .parent-controlled-visibility {
+    .visibility-visible();
+  }
 }

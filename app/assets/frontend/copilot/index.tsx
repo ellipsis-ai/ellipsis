@@ -160,7 +160,7 @@ class Copilot extends React.Component<Props, State> {
     } else {
       return (
         <span>
-          <span>unknown channel </span>
+          <span>Unknown channel </span>
           <span className="color-gray-medium">(ID {this.props.listener.channelId})</span>
         </span>
       );
@@ -170,15 +170,13 @@ class Copilot extends React.Component<Props, State> {
   render() {
     const results = this.getResults();
     return (
-      <div className="">
+      <div>
         {this.props.onRenderHeader(
           <div className="container container-narrow bg-black type-white align-c">
-            <div className="mvn pvm type-label">Copilot for {this.getChannelName()}</div>
+            <div className="mvn pvm type-label">{this.getChannelName()}</div>
           </div>
         )}
-        <div className="">
-          {this.renderResults(results)}
-        </div>
+        {this.renderResults(results)}
         {this.props.onRenderFooter()}
       </div>
     );
@@ -238,38 +236,45 @@ class Copilot extends React.Component<Props, State> {
       const hasSentPermalink = this.hasSentPermalink(result);
       const sendError = this.getSendError(result);
       return (
-        <Collapsible revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
+        <Collapsible animationDuration={0.5} revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
           <div className="border-bottom pbs">
-            <div className="pam bg-light type-s type-weak mtm mhm">
+            <div className="type-weak type-s mtl mhl border-left-thick border-gray pls">
               <div>
                 <b>{result.maybeUserData ? result.maybeUserData.formattedFullNameOrUserName() : "(Unknown user)"}</b>
                 <span> · {Formatter.formatTimestampRelativeCalendar(result.createdAt)}</span>
               </div>
-              <div className="border-left-thick border-gray pls">{result.messageText}</div>
+              <div>{result.messageText}</div>
             </div>
-            <div className="ptm phm">
+            <div className="ptm phl">
               <ReactMarkdown source={result.resultText} />
             </div>
             <div className="pbs columns columns-elastic">
               <div className="column column-shrink plxs">
                 <DynamicLabelButton
-                  className="button-subtle button-symbol"
+                  className="button-subtle button-shrink"
                   onClick={this.sendResult.bind(this, result)}
                   disabledWhen={isSending}
+                  hoverOnClassName={"visibility-children-visible"}
                   labels={[{
                     text: (
-                      <SVGSpeechBubble label={"Send to chat"} />
+                      <span className="display-inline-block height-xl">
+                        <SVGSpeechBubble label={"Send to chat"} />
+                        <span className="mlxs display-inline-block align-t type-s visibility parent-controlled-visibility">Send to chat</span>
+                      </span>
                     ),
                     displayWhen: !isSending
                   }, {
                     text: (
-                      <SVGSpeechBubble label={"Sending…"} />
+                      <span className="display-inline-block height-xl">
+                        <SVGSpeechBubble label={"Sending…"} />
+                        <span className="mlxs display-inline-block align-t type-s">Sending…</span>
+                      </span>
                     ),
                     displayWhen: isSending
                   }]}
                 />
               </div>
-              <div className="column column-expand align-r prm">
+              <div className="column column-expand align-r prl">
                 {hasSentPermalink ? (
                   <div className="align-button height-xl type-s type-link">
                     <SVGCheckmark />
