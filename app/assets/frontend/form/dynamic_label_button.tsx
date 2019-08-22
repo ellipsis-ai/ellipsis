@@ -2,7 +2,7 @@ import * as React from 'react';
 import autobind from "../lib/autobind";
 
 export interface DynamicLabelButtonLabel {
-  text: string,
+  text: React.ReactChild,
   mobileText?: Option<string>,
   displayWhen: boolean
 }
@@ -12,11 +12,14 @@ interface Props {
   className?: Option<string>,
   disabledWhen?: Option<boolean>,
   onClick: () => void,
-  labels: Array<DynamicLabelButtonLabel>
+  labels: Array<DynamicLabelButtonLabel>,
+  hoverOnClassName?: string
+  hoverOffClassName?: string
 }
 
 interface State {
   minWidth: Option<number>
+  hoverClass: string
 }
 
 class DynamicLabelButton extends React.PureComponent<Props, State> {
@@ -27,7 +30,8 @@ class DynamicLabelButton extends React.PureComponent<Props, State> {
       super(props);
       this.buttonLabels = [];
       this.state = {
-        minWidth: null
+        minWidth: null,
+        hoverClass: this.props.hoverOffClassName || ""
       };
       autobind(this);
     }
@@ -93,6 +97,24 @@ class DynamicLabelButton extends React.PureComponent<Props, State> {
       }
     }
 
+    onMouseOver(): void {
+      const newHoverClass = this.props.hoverOnClassName || "";
+      if (this.state.hoverClass !== newHoverClass) {
+        this.setState({
+          hoverClass: newHoverClass
+        });
+      }
+    }
+
+    onMouseOut(): void {
+      const newHoverClass = this.props.hoverOffClassName || "";
+      if (this.state.hoverClass !== newHoverClass) {
+        this.setState({
+          hoverClass: newHoverClass
+        });
+      }
+    }
+
     render() {
       return (
         <button
@@ -101,8 +123,10 @@ class DynamicLabelButton extends React.PureComponent<Props, State> {
           className={this.props.className || ""}
           disabled={this.props.disabledWhen || false}
           onClick={this.onClick}
+          onMouseOver={this.onMouseOver}
+          onMouseOut={this.onMouseOut}
         >
-          <div className="button-labels">
+          <div className={`button-labels ${this.state.hoverClass}`}>
             <div style={this.getPlaceholderStyle()}>&nbsp;</div>
             {this.getLabels()}
           </div>

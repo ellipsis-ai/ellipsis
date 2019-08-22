@@ -9,6 +9,7 @@ import User, {UserJson} from "../models/user";
 import {PageRequiredProps} from "../shared_ui/page";
 import DynamicLabelButton from "../form/dynamic_label_button";
 import SVGCheckmark from "../svg/checkmark";
+import SVGSpeechBubble from "../svg/speech_bubble";
 
 interface ResultJson {
   id: string
@@ -152,15 +153,15 @@ class Copilot extends React.Component<Props, State> {
     if (channelName) {
       return (
         <span>
-          <span className="type-weak">#</span>
+          <span className="color-gray-light">#</span>
           <span>{channelName}</span>
         </span>
       );
     } else {
       return (
         <span>
-          <span>unknown channel </span>
-          <span className="type-disabled">(ID {this.props.listener.channelId})</span>
+          <span>Unknown channel </span>
+          <span className="color-gray-medium">(ID {this.props.listener.channelId})</span>
         </span>
       );
     }
@@ -169,15 +170,13 @@ class Copilot extends React.Component<Props, State> {
   render() {
     const results = this.getResults();
     return (
-      <div className="pvxl">
+      <div>
         {this.props.onRenderHeader(
-          <div className="container container-narrow bg-white-translucent">
-            <h5 className="mvn pvm">Copilot for {this.getChannelName()}:</h5>
+          <div className="container container-narrow bg-black type-white align-c">
+            <div className="mvn pvm type-label">{this.getChannelName()}</div>
           </div>
         )}
-        <div className="container container-narrow">
-          {this.renderResults(results)}
-        </div>
+        {this.renderResults(results)}
         {this.props.onRenderFooter()}
       </div>
     );
@@ -188,11 +187,11 @@ class Copilot extends React.Component<Props, State> {
       return results.map(this.renderResult);
     } else if (this.state.loadingResults) {
       return (
-        <div className="pulse type-italic type-disabled">Loading…</div>
+        <div className="container container-narrow pvxl pulse type-italic type-disabled">Loading…</div>
       );
     } else {
       return (
-        <div className="type-italic type-disabled">There are no copilot results for this channel.</div>
+        <div className="container container-narrow pvxl type-italic type-disabled">There are no copilot results for this channel.</div>
       );
     }
   }
@@ -237,40 +236,55 @@ class Copilot extends React.Component<Props, State> {
       const hasSentPermalink = this.hasSentPermalink(result);
       const sendError = this.getSendError(result);
       return (
-        <Collapsible revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
-          <div className="fade-in border mbxl bg-white">
-            <div className="border-bottom border-light pam bg-light type-s type-weak">
+        <Collapsible animationDuration={0.5} revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
+          <div className="border-bottom pbs">
+            <div className="type-weak type-s mtl mhl border-left-thick border-gray pls">
               <div>
                 <b>{result.maybeUserData ? result.maybeUserData.formattedFullNameOrUserName() : "(Unknown user)"}</b>
                 <span> · {Formatter.formatTimestampRelativeCalendar(result.createdAt)}</span>
               </div>
-              <div className="border-left-thick border-gray pls">{result.messageText}</div>
+              <div>{result.messageText}</div>
             </div>
-            <div className="ptm phm">
+            <div className="ptm phl">
               <ReactMarkdown source={result.resultText} />
             </div>
-            <div className="pbm phm">
-              <DynamicLabelButton
-                className="button-s mrm"
-                onClick={this.sendResult.bind(this, result)}
-                disabledWhen={isSending}
-                labels={[{
-                  text: "Send to chat",
-                  displayWhen: !isSending
-                }, {
-                  text: "Sending…",
-                  displayWhen: isSending
-                }]}
-              />
-              {hasSentPermalink ? (
-                <div className="align-button align-button-s height-l type-link">
-                  <SVGCheckmark />
-                  <a href={hasSentPermalink} target="chat" className="display-inline-block align-t mlxs">View message</a>
-                </div>
-              ) : null}
-              {sendError ? (
-                <div className="align-button align-button-s type-pink type-bold type-italic type-s">{sendError}</div>
-              ) : null}
+            <div className="pbs columns columns-elastic">
+              <div className="column column-shrink plxs">
+                <DynamicLabelButton
+                  className="button-subtle button-shrink"
+                  onClick={this.sendResult.bind(this, result)}
+                  disabledWhen={isSending}
+                  hoverOnClassName={"visibility-children-visible"}
+                  labels={[{
+                    text: (
+                      <span className="display-inline-block height-xl">
+                        <SVGSpeechBubble label={"Send to chat"} />
+                        <span className="mlxs display-inline-block align-t type-s visibility parent-controlled-visibility">Send to chat</span>
+                      </span>
+                    ),
+                    displayWhen: !isSending
+                  }, {
+                    text: (
+                      <span className="display-inline-block height-xl">
+                        <SVGSpeechBubble label={"Sending…"} />
+                        <span className="mlxs display-inline-block align-t type-s">Sending…</span>
+                      </span>
+                    ),
+                    displayWhen: isSending
+                  }]}
+                />
+              </div>
+              <div className="column column-expand align-r prl">
+                {hasSentPermalink ? (
+                  <div className="align-button height-xl type-s type-link">
+                    <SVGCheckmark />
+                    <a href={hasSentPermalink} target="chat" className="display-inline-block align-t mlxs">View message</a>
+                  </div>
+                ) : null}
+                {sendError ? (
+                  <div className="align-button align-button-s type-pink type-bold type-italic type-s">{sendError}</div>
+                ) : null}
+              </div>
             </div>
           </div>
         </Collapsible>
