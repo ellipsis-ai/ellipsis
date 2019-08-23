@@ -121,14 +121,14 @@ class CopilotController @Inject()(
         entry <- maybeInvocationEntry
         listener <- maybeListener
       } yield {
-        sendToChatFor(user, listener.behavior.team, entry, listener)
+        sendToChatFor(user, listener.behavior.team, entry, listener, maybeTeamAccess.exists(_.isAdminAccess))
       }).getOrElse {
         Future.successful(NotFound("Entry not found"))
       }
     } yield result
   }
 
-  private def sendToChatFor(user: User, team: Team, entry: InvocationLogEntry, listener: MessageListener)
+  private def sendToChatFor(user: User, team: Team, entry: InvocationLogEntry, listener: MessageListener, isAdminAccess: Boolean)
                            (implicit request: Request[AnyContent]): Future[Result] = {
     val channel = listener.channel
     for {
@@ -146,30 +146,39 @@ class CopilotController @Inject()(
       maybeOriginalPermalink <- maybeResult.map(_.event.maybePermalinkFor(services)).getOrElse(Future.successful(None))
       maybePermalink <- maybeBotProfile.map {
         case slackBotProfile: SlackBotProfile => for {
-          maybeTs <- userData.userIdForContext.map { slackUserId =>
-            dataService.slackBotProfiles.sendResultWithNewEvent(
-              "Copilot result sent to chat",
-              (event) => Future
-                .successful(maybeOverrideResultFor(event, userData, entry, maybeResult, maybeOriginalPermalink)),
-              slackBotProfile,
-              channel,
-              slackUserId,
-              maybeResult.flatMap(_.event.maybeMessageId).getOrElse(entry.createdAt.toString),
-              entry.maybeOriginalEventType,
-              maybeResult.flatMap(_.event.maybeThreadId).orElse(listener.maybeThreadId),
-              isEphemeral = false,
-              maybeResponseUrl = None,
-              beQuiet = false
-            )
-          }.getOrElse {
-            Logger.error(
-              s"""Tried to send a copilot result but no Slack user ID was found:
-                 | - Ellipsis user ID ${userData.ellipsisUserId} (${userData.toString})
-                 | - Ellipsis team ${team.name} (ID ${team.id})
-                 | - Slack team ID ${slackBotProfile.slackTeamId}
-                 |""".stripMargin
-            )
-            Future.successful(None)
+          maybeTs <- {
+            val maybeSlackUserId = userData.userIdForContext.orElse {
+              if (isAdminAccess) {
+                Some(slackBotProfile.userId)
+              } else {
+                None
+              }
+            }
+            maybeSlackUserId.map { slackUserId =>
+              dataService.slackBotProfiles.sendResultWithNewEvent(
+                "Copilot result sent to chat",
+                (event) => Future
+                  .successful(maybeOverrideResultFor(event, userData, entry, maybeResult, maybeOriginalPermalink)),
+                slackBotProfile,
+                channel,
+                slackUserId,
+                maybeResult.flatMap(_.event.maybeMessageId).getOrElse(entry.createdAt.toString),
+                entry.maybeOriginalEventType,
+                maybeResult.flatMap(_.event.maybeThreadId).orElse(listener.maybeThreadId),
+                isEphemeral = false,
+                maybeResponseUrl = None,
+                beQuiet = false
+              )
+            }.getOrElse {
+              Logger.error(
+                s"""Tried to send a copilot result but no Slack user ID was found:
+                   | - Ellipsis user ID ${userData.ellipsisUserId} (${userData.toString})
+                   | - Ellipsis team ${team.name} (ID ${team.id})
+                   | - Slack team ID ${slackBotProfile.slackTeamId}
+                   |""".stripMargin
+              )
+              Future.successful(None)
+            }
           }
           maybePermalink <- maybeTs.map { ts =>
             services.slackApiService.clientFor(slackBotProfile).permalinkFor(channel, ts)
