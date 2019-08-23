@@ -256,7 +256,11 @@ class SlackController @Inject() (
                                     event: AnyEventInfo,
                                     requestType: String,
                                     eventId: String
-                                ) extends EventRequestInfo with RequestInfo
+                                ) extends EventRequestInfo with RequestInfo {
+    def withTokenMasked: ValidEventRequestInfo = {
+      this.copy(token = "********")
+    }
+  }
 
   private val validEventRequestForm = Form(
     mapping(
@@ -583,16 +587,46 @@ class SlackController @Inject() (
     }
   }
 
-  private def maybeLogRequestBody(endPoint: String, json: JsValue): Unit = {
+  private def summarizeEvent(json: JsValue): String = {
+    json.asOpt[JsObject].map { obj =>
+      val eventType = (obj \ "event" \ "type").asOpt[String].getOrElse("(unknown)")
+      val teamId = (obj \ "team_id").asOpt[String].getOrElse("(unknown)")
+      val userId = (obj \ "event" \ "user").asOpt[String].orElse {
+        (obj \ "event" \ "user" \ "id").asOpt[String]
+      }.getOrElse("(unknown)")
+      val channel = (obj \ "event" \ "channel").asOpt[String].orElse {
+        (obj \ "event" \ "item" \ "channel").asOpt[String]
+      }.getOrElse("(unknown)")
+      s"""Slack "${eventType}" event from user ID ${userId} on team ID ${teamId} in channel ID ${channel}"""
+    }.getOrElse("(unexpected request data)")
+  }
+
+  private def summarizeAction(json: JsValue): String = {
+    json.asOpt[JsObject].map { obj =>
+      val teamId = (obj \ "team" \ "id").asOpt[String].getOrElse("(unknown)")
+      val userId = (obj \ "user" \ "id").asOpt[String].getOrElse("(unknown)")
+      val channel = (obj \ "channel" \ "id").asOpt[String].getOrElse("(unknown)")
+      s"""Slack action from user ID ${userId} on team ID ${teamId} in channel ID ${channel}"""
+    }.getOrElse("(unexpected request data)")
+  }
+
+  sealed trait Endpoint { val name: String }
+  case object EventEndpoint extends Endpoint { val name = "event" }
+  case object ActionEndpoint extends Endpoint { val name = "action" }
+
+  private def maybeLogRequestBody(endPoint: Endpoint, json: JsValue): Unit = {
     if (environment.mode == Mode.Dev) {
-      Logger.info(s"${endPoint} data received from Slack:\n${Json.prettyPrint(json)}")
+      Logger.info(s"${endPoint.name} data received from Slack:\n${Json.prettyPrint(json)}")
     } else {
-      ()
+      endPoint match {
+        case EventEndpoint => Logger.info(summarizeEvent(json))
+        case ActionEndpoint => Logger.info(summarizeAction(json))
+      }
     }
   }
 
   def event = Action { implicit request =>
-    maybeLogRequestBody("Event", request.body.asJson.getOrElse(JsString("(unknown)")))
+    maybeLogRequestBody(EventEndpoint, request.body.asJson.getOrElse(JsString("(unknown)")))
     (maybeChallengeResult orElse maybeEventResult).getOrElse {
       Ok("I don't know what to do with this request but I'm not concerned")
     }
@@ -1390,7 +1424,7 @@ class SlackController @Inject() (
         // TODO: Investigate whether this is safe and/or desirable
         val unescapedPayload = SlackMessage.unescapeSlackHTMLEntities(payload)
         val json = Json.parse(unescapedPayload)
-        maybeLogRequestBody("Action", json)
+        maybeLogRequestBody(ActionEndpoint, json)
 
         maybeSlackActionsTriggeredInfoResult(json).orElse {
           maybeSlackDialogSubmittedInfoResult(json)
