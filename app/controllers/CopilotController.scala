@@ -6,6 +6,7 @@ import java.time.format.DateTimeParseException
 import akka.actor.ActorSystem
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import javax.inject.Inject
 import json.{InvocationLogEntryData, MessageListenerData, UserData}
 import json.Formatting._
@@ -107,29 +108,44 @@ class CopilotController @Inject()(
     }
   }
 
-  def sendToChannel(invocationId: String) = silhouette.SecuredAction.async { implicit request =>
+  case class SendToChannelOptions(text: Option[String])
+
+  private implicit val sendToChannelOptionsRead = Json.reads[SendToChannelOptions]
+
+  def sendToChannel(invocationId: String) = silhouette.SecuredAction(parse.json).async { implicit request =>
     val user = request.identity
-    for {
-      maybeInvocationEntry <- dataService.invocationLogEntries.findWithoutAccessCheck(invocationId)
-      maybeListener <- maybeInvocationEntry.flatMap(_.maybeMessageListenerId.map { listenerId =>
-        dataService.messageListeners.find(listenerId, user)
-      }).getOrElse(Future.successful(None))
-      maybeTeamAccess <- maybeInvocationEntry.map { entry =>
-        dataService.users.teamAccessFor(user, Some(entry.behaviorVersion.team.id)).map(Some(_))
-      }.getOrElse(Future.successful(None))
-      result <- (for {
-        entry <- maybeInvocationEntry
-        listener <- maybeListener
-      } yield {
-        sendToChatFor(user, listener.behavior.team, entry, listener, maybeTeamAccess.exists(_.isAdminAccess))
-      }).getOrElse {
-        Future.successful(NotFound("Entry not found"))
+    request.body.validate[SendToChannelOptions].fold(
+      jsonError => Future.successful(BadRequest(JsError.toJson(jsonError))),
+      options => {
+        for {
+          maybeInvocationEntry <- dataService.invocationLogEntries.findWithoutAccessCheck(invocationId)
+          maybeListener <- maybeInvocationEntry.flatMap(_.maybeMessageListenerId.map { listenerId =>
+            dataService.messageListeners.find(listenerId, user)
+          }).getOrElse(Future.successful(None))
+          maybeTeamAccess <- maybeInvocationEntry.map { entry =>
+            dataService.users.teamAccessFor(user, Some(entry.behaviorVersion.team.id)).map(Some(_))
+          }.getOrElse(Future.successful(None))
+          result <- (for {
+            entry <- maybeInvocationEntry
+            listener <- maybeListener
+          } yield {
+            sendToChatFor(user, listener.behavior.team, entry, listener, maybeTeamAccess.exists(_.isAdminAccess), options)
+          }).getOrElse {
+            Future.successful(NotFound("Entry not found"))
+          }
+        } yield result
       }
-    } yield result
+    )
   }
 
-  private def sendToChatFor(user: User, team: Team, entry: InvocationLogEntry, listener: MessageListener, isAdminAccess: Boolean)
-                           (implicit request: Request[AnyContent]): Future[Result] = {
+  private def sendToChatFor(
+                             user: User,
+                             team: Team,
+                             entry: InvocationLogEntry,
+                             listener: MessageListener,
+                             isAdminAccess: Boolean,
+                             options: SendToChannelOptions
+                           )(implicit request: SecuredRequest[EllipsisEnv, JsValue]): Future[Result] = {
     val channel = listener.channel
     for {
       userData <- dataService.users.userDataFor(user, team)
@@ -157,8 +173,9 @@ class CopilotController @Inject()(
             maybeSlackUserId.map { slackUserId =>
               dataService.slackBotProfiles.sendResultWithNewEvent(
                 "Copilot result sent to chat",
-                (event) => Future
-                  .successful(maybeOverrideResultFor(event, userData, entry, maybeResult, maybeOriginalPermalink)),
+                (event) => Future.successful(
+                  maybeOverrideResultFor(event, userData, entry, maybeResult, maybeOriginalPermalink, options.text)
+                ),
                 slackBotProfile,
                 channel,
                 slackUserId,
@@ -200,7 +217,8 @@ class CopilotController @Inject()(
                                       userData: UserData,
                                       entry: InvocationLogEntry,
                                       maybeResult: Option[SuccessResult],
-                                      maybeOriginalPermalink: Option[String]
+                                      maybeOriginalPermalink: Option[String],
+                                      maybeReplacementText: Option[String]
                                     ): Option[BotResult] = {
     val fallbackOriginal = s"\n> ${entry.messageText.replaceAll("\\n", "\n> ")}"
     val prefix = (userData.formattedLink.map { name =>
@@ -216,16 +234,12 @@ class CopilotController @Inject()(
         s"I’ve been asked to send a response to an earlier message: $fallbackOriginal"
       }
     }) + "\n\n"
-    maybeResult.map { original =>
-      original.copy(
-        isForCopilot = false,
-        maybeResponseTemplate = original.maybeResponseTemplate.map { rt =>
-          prefix + rt
-        }.orElse(Some(prefix))
-      )
-    }.orElse {
-      val resultText = prefix + entry.resultText
-      Some(SimpleTextResult(event, None, resultText, Normal))
-    }
+    val text = prefix + maybeReplacementText.getOrElse(entry.resultText)
+    maybeResult.map(_.copy(
+      isForCopilot = false,
+      maybeResponseTemplate = Some(text)
+    )).orElse(
+      Some(SimpleTextResult(event, None, text, Normal))
+    )
   }
 }
