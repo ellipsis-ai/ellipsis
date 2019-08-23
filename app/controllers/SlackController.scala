@@ -256,11 +256,7 @@ class SlackController @Inject() (
                                     event: AnyEventInfo,
                                     requestType: String,
                                     eventId: String
-                                ) extends EventRequestInfo with RequestInfo {
-    def withTokenMasked: ValidEventRequestInfo = {
-      this.copy(token = "********")
-    }
-  }
+                                ) extends EventRequestInfo with RequestInfo
 
   private val validEventRequestForm = Form(
     mapping(
