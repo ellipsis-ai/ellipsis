@@ -14,7 +14,6 @@ import models.behaviors.events.slack.SlackMessageEvent
 import models.behaviors.events.{Event, EventType}
 import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.triggers.Trigger
-import services.caching.CacheService
 import services.{DataService, DefaultServices}
 import slick.dbio.DBIO
 import utils.SlackMessageReactionHandler
@@ -173,6 +172,8 @@ case class InvokeBehaviorConversation(
 
 }
 
+case class ConflictingConversationException(message: String) extends Exception(message)
+
 object InvokeBehaviorConversation {
 
   val COLLECT_SIMPLE_TOKENS_STATE = "collect_simple_tokens"
@@ -190,8 +191,15 @@ object InvokeBehaviorConversation {
                  maybeActivatedTrigger: Option[Trigger],
                  maybeParent: Option[NewParentConversation],
                  services: DefaultServices
-                 )(implicit ec: ExecutionContext): Future[InvokeBehaviorConversation] = {
+                 )(implicit ec: ExecutionContext, actorSystem: ActorSystem): Future[InvokeBehaviorConversation] = {
     val action = for {
+      _ <- services.dataService.conversations.allOngoingForAction(event.eventContext, None).map { convos =>
+        val conflicting = convos.filter(ea => ea.behaviorVersion == behaviorVersion && ea.maybeTriggerMessage == event.maybeMessageText)
+        if (conflicting.nonEmpty) {
+          println("conflict")
+          throw ConflictingConversationException(s"Already processing `${event.messageText}`")
+        }
+      }
       maybeParent <- maybeParent.map { parent =>
         services.dataService.parentConversations.createAction(parent).map(Some(_))
       }.getOrElse(DBIO.successful(None))
