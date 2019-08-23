@@ -868,8 +868,9 @@ case class ConflictingConversationResult(
   override val shouldInterrupt: Boolean = false
 
   def text: String = {
+    val actionText = event.maybeMessageText.map(_.trim).filter(_.nonEmpty).map(text => s"`$text`").getOrElse("this action")
     s"""
-      |I am already working on a response to `${event.messageText}`. Please hold tight!
+      |I am already working on a response to ${actionText}. Please hold tight!
       |""".stripMargin
   }
 
