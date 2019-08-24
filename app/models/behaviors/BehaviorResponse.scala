@@ -3,12 +3,11 @@ package models.behaviors
 import java.time.OffsetDateTime
 
 import akka.actor.ActorSystem
-import models.accounts.linkedaccount.LinkedAccount
 import models.behaviors.behaviorparameter.{BehaviorParameter, BehaviorParameterContext}
 import models.behaviors.behaviorversion._
-import models.behaviors.conversations.InvokeBehaviorConversation
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.conversations.parentconversation.NewParentConversation
+import models.behaviors.conversations.{ConflictingConversationException, InvokeBehaviorConversation}
 import models.behaviors.dialogs.Dialog
 import models.behaviors.events.Event
 import models.behaviors.invocationlogentry.InvocationLogEntry
@@ -211,7 +210,7 @@ case class BehaviorResponse(
                 ).maybeResult
               }.getOrElse(Future.successful(None))
               notFilledOutResult <- maybeDialogResult.map(Future.successful).getOrElse {
-                for {
+                (for {
                   maybeChannel <- event.maybeChannelToUseFor(behaviorVersion, services)
                   maybeThreadId <- maybeThreadIdToUse
                   convo <- InvokeBehaviorConversation.createFor(
@@ -229,7 +228,13 @@ case class BehaviorResponse(
                     }.getOrElse(Future.successful(Unit))
                   })
                   convoResult <- dataService.run(convo.resultForAction(event, services))
-                } yield convoResult
+                } yield convoResult).recover {
+                  case _: ConflictingConversationException => ConflictingConversationResult(
+                    event,
+                    behaviorVersion,
+                    services.dataService
+                  )
+                }
               }
             } yield notFilledOutResult
           }
