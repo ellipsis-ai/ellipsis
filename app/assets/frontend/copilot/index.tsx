@@ -10,6 +10,8 @@ import {PageRequiredProps} from "../shared_ui/page";
 import DynamicLabelButton from "../form/dynamic_label_button";
 import SVGCheckmark from "../svg/checkmark";
 import SVGSpeechBubble from "../svg/speech_bubble";
+import Textarea from "../form/textarea";
+import Button from "../form/button";
 
 interface ResultJson {
   id: string
@@ -45,7 +47,8 @@ interface ResultDetails {
   readonly hasRendered: boolean
   readonly isSending: boolean
   readonly hasSentPermalink?: string
-  readonly sendError?: string
+  readonly sendError?: Option<string>
+  readonly text?: string
 }
 
 interface ResultMap {
@@ -94,24 +97,54 @@ class Copilot extends React.Component<Props, State> {
     }
   }
 
-  hasRendered(result: Result): boolean {
+  revealEditorFor(result: Result, event: React.MouseEvent): void {
+    if (event.shiftKey) {
+      this.sendResult(result);
+    } else {
+      this.props.onToggleActivePanel(result.id, true);
+    }
+  }
+
+  getTextFor(result: Result): string {
+    const text = this.getResultDetailsPropValue(result, "text");
+    return typeof text === "string" ? text : result.resultText;
+  }
+
+  setTextFor(result: Result, value: string): void {
+    this.setState({
+      resultDetails: this.updateDetailsFor(result, {
+        text: value
+      })
+    });
+  }
+
+  getResultDetailsPropValue<K extends keyof ResultDetails>(result: Result, propValue: K): Option<ResultDetails[K]> {
     const details = this.state.resultDetails[result.id];
-    return Boolean(details && details.hasRendered);
+    return details ? details[propValue] : null;
+  }
+
+  hasRendered(result: Result): boolean {
+    return Boolean(this.getResultDetailsPropValue(result, "hasRendered"));
   }
 
   isSendingResult(result: Result): boolean {
-    const details = this.state.resultDetails[result.id];
-    return Boolean(details && details.isSending);
+    return Boolean(this.getResultDetailsPropValue(result, "isSending"));
   }
 
   hasSentPermalink(result: Result): Option<string> {
-    const details = this.state.resultDetails[result.id];
-    return details ? details.hasSentPermalink : null;
+    return this.getResultDetailsPropValue(result, "hasSentPermalink");
   }
 
   getSendError(result: Result): Option<string> {
-    const details = this.state.resultDetails[result.id];
-    return details ? details.sendError : null;
+    return this.getResultDetailsPropValue(result, "sendError");
+  }
+
+  doneEditing(): void {
+    this.props.onClearActivePanel();
+  }
+
+  cancelChangesFor(result: Result): void {
+    this.setTextFor(result, result.resultText);
   }
 
   checkForUpdates(): void {
@@ -196,35 +229,37 @@ class Copilot extends React.Component<Props, State> {
     }
   }
 
+  updateDetailsFor(result: Result, details: Partial<ResultDetails>): ResultMap {
+    const updated: ResultMap = {};
+    updated[result.id] = Object.assign({}, this.state.resultDetails[result.id], details);
+    return Object.assign({}, this.state.resultDetails, updated);
+  }
+
   sendResult(result: Result) {
     const url = jsRoutes.controllers.CopilotController.sendToChannel(result.id).url;
-    const beforeSendDetails: ResultMap = {};
-    beforeSendDetails[result.id] = {
-      hasRendered: true,
-      isSending: true
-    };
+    this.doneEditing();
     this.setState({
-      resultDetails: Object.assign({}, this.state.resultDetails, beforeSendDetails)
+      resultDetails: this.updateDetailsFor(result, {
+        isSending: true,
+        sendError: null
+      })
     }, () => {
-      DataRequest.jsonPost(url, {}, this.props.csrfToken).then((response) => {
-        const afterSendDetails: ResultMap = {};
-        afterSendDetails[result.id] = {
-          hasRendered: true,
-          isSending: false,
-          hasSentPermalink: response
-        };
+      const text = this.getTextFor(result);
+      DataRequest.jsonPost(url, {
+        text: text === result.resultText ? null : text
+      }, this.props.csrfToken).then((response) => {
         this.setState({
-          resultDetails: Object.assign({}, this.state.resultDetails, afterSendDetails)
+          resultDetails: this.updateDetailsFor(result, {
+            isSending: false,
+            hasSentPermalink: response
+          })
         });
-      }).catch((err) => {
-        const afterSendDetails: ResultMap = {};
-        afterSendDetails[result.id] = {
-          hasRendered: true,
-          isSending: false,
-          sendError: "An error occurred while trying to send this result"
-        };
+      }).catch(() => {
         this.setState({
-          resultDetails: Object.assign({}, this.state.resultDetails, afterSendDetails)
+          resultDetails: this.updateDetailsFor(result, {
+            isSending: false,
+            sendError: "An error occurred while trying to send this result"
+          })
         });
       });
     });
@@ -235,10 +270,30 @@ class Copilot extends React.Component<Props, State> {
       const isSending = this.isSendingResult(result);
       const hasSentPermalink = this.hasSentPermalink(result);
       const sendError = this.getSendError(result);
+      const showEditor = this.props.activePanelName === result.id;
+      const editorText = this.getTextFor(result);
+      const hasChanges = result.resultText !== editorText;
       return (
         <Collapsible animationDuration={0.5} revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
-          <div className="border-bottom pbs">
-            <div className="type-weak type-s mtl mhl border-left-thick border-gray pls">
+          <div className="position-relative border-bottom ptl pbs" onClick={this.revealEditorFor.bind(this, result)}>
+            {showEditor ? (
+              <div className="position-absolute position-top-left position-top-right position-z-front fade-in bg-white phl pvm" onClick={event => event.stopPropagation()}>
+                <h5 className="mtn mbxs">Edit response</h5>
+                <Textarea
+                  className="form-input-borderless form-input-height-auto"
+                  onChange={this.setTextFor.bind(this, result)}
+                  value={editorText}
+                  rows={4}
+                  autoFocus={true}
+                />
+                <div className="mtm">
+                  <Button className="button-s mrm" onClick={this.sendResult.bind(this, result)}>Send</Button>
+                  <Button className="button-s mrm" onClick={this.doneEditing}>Cancel</Button>
+                  <Button className="button-s mrm" onClick={this.cancelChangesFor.bind(this, result)} disabled={!hasChanges}>Undo changes</Button>
+                </div>
+              </div>
+            ) : null}
+            <div className="type-weak type-s mhl border-left-thick border-gray pls">
               <div>
                 <b>{result.maybeUserData ? result.maybeUserData.formattedFullNameOrUserName() : "(Unknown user)"}</b>
                 <span> · {Formatter.formatTimestampRelativeCalendar(result.createdAt)}</span>
@@ -252,7 +307,7 @@ class Copilot extends React.Component<Props, State> {
               <div className="column column-shrink plxs">
                 <DynamicLabelButton
                   className="button-subtle button-shrink"
-                  onClick={this.sendResult.bind(this, result)}
+                  onClick={() => {}}
                   disabledWhen={isSending}
                   hoverOnClassName={"visibility-children-visible"}
                   labels={[{
@@ -278,7 +333,7 @@ class Copilot extends React.Component<Props, State> {
                 {hasSentPermalink ? (
                   <div className="align-button height-xl type-s type-link">
                     <SVGCheckmark />
-                    <a href={hasSentPermalink} target="chat" className="display-inline-block align-t mlxs">View message</a>
+                    <a href={hasSentPermalink} target="chat" className="display-inline-block align-t mlxs" onClick={event => event.stopPropagation()}>View message</a>
                   </div>
                 ) : null}
                 {sendError ? (
