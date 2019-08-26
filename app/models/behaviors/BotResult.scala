@@ -32,7 +32,7 @@ import scala.concurrent.duration._
 
 object ResultType extends Enumeration {
   type ResultType = Value
-  val Success, SimpleText, ActionAcknowledgment, TextWithActions, ConversationPrompt, NoResponse, Dialog, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady, AdminSkillErrorNotification = Value
+  val Success, SimpleText, ActionAcknowledgment, TextWithActions, ConversationPrompt, NoResponse, Dialog, ExecutionError, SyntaxError, NoCallbackTriggered, MissingTeamEnvVar, AWSDown, OAuth2TokenMissing, RequiredApiNotReady, AdminSkillErrorNotification, ConflictingConversation = Value
 }
 
 trait WithActionArgs {
@@ -253,7 +253,7 @@ sealed trait BotResult {
     }
   }
 
-  val interruptionPrompt = {
+  lazy val interruptionPrompt = {
     val action = if (maybeConversation.isDefined) { "ask" } else { "tell" }
     s"You haven't answered my question yet, but I have something new to $action you."
   }
@@ -849,4 +849,29 @@ case class RequiredOAuth2ApiNotReady(
                                       developerContext: DeveloperContext
                                     ) extends BotResult with RequiredApiNotReady {
   val requiredApiName: String = required.api.name
+}
+
+case class ConflictingConversationResult(
+                                          event: Event,
+                                          behaviorVersion: BehaviorVersion,
+                                          dataService: DataService
+                                        ) extends BotResult {
+
+  val resultType = ResultType.ConflictingConversation
+  val responseType: BehaviorResponseType = Normal
+
+  val developerContext: DeveloperContext = DeveloperContext.default
+
+  val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
+  val maybeConversation: Option[Conversation] = None
+
+  override val shouldInterrupt: Boolean = false
+
+  def text: String = {
+    val actionText = event.maybeMessageText.map(_.trim).filter(_.nonEmpty).map(text => s"`$text`").getOrElse("this action")
+    s"""
+      |I am already working on a response to ${actionText}. Please hold tight!
+      |""".stripMargin
+  }
+
 }
