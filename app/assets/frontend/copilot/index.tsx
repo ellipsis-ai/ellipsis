@@ -162,7 +162,7 @@ class Copilot extends React.Component<Props, State> {
   }
 
   getResults(): Result[] {
-    return this.state.results.sort((a, b) => {
+    return this.state.results.filter((ea) => Boolean(ea.resultText)).sort((a, b) => {
       if (moment(a.createdAt).isBefore(b.createdAt)) {
         return 1;
       } else {
@@ -266,14 +266,13 @@ class Copilot extends React.Component<Props, State> {
   }
 
   renderResult(result: Result) {
-    if (result.resultText) {
-      const isSending = this.isSendingResult(result);
-      const hasSentPermalink = this.hasSentPermalink(result);
-      const sendError = this.getSendError(result);
-      const showEditor = this.props.activePanelName === result.id;
-      const editorText = this.getTextFor(result);
-      const hasChanges = result.resultText !== editorText;
-      return (
+    const isSending = this.isSendingResult(result);
+    const hasSentPermalink = this.hasSentPermalink(result);
+    const sendError = this.getSendError(result);
+    const showEditor = this.props.activePanelName === result.id;
+    const editorText = this.getTextFor(result);
+    const hasChanges = result.resultText !== editorText;
+    return (
         <Collapsible animationDuration={0.5} revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
           <div className="position-relative border-bottom ptl pbs" onClick={this.revealEditorFor.bind(this, result)}>
             {showEditor ? (
@@ -343,10 +342,7 @@ class Copilot extends React.Component<Props, State> {
             </div>
           </div>
         </Collapsible>
-      )
-    } else {
-      return null;
-    }
+    );
   }
 
 }
