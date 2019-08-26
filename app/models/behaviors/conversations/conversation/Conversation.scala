@@ -169,9 +169,13 @@ trait Conversation {
 }
 
 object Conversation {
+
+  // Note: see ConversationQueries>notDone if you change the possible states
   val NEW_STATE = "new"
   val PENDING_STATE = "pending"
   val DONE_STATE: String = "done"
+  val COLLECT_SIMPLE_TOKENS_STATE: String = "collect_simple_tokens"
+  val COLLECT_PARAM_VALUES_STATE: String = "collect_param_values"
 
   val SLACK_CONTEXT = SlackContext.toString
   val MS_TEAMS_CONTEXT = MSTeamsContext.toString

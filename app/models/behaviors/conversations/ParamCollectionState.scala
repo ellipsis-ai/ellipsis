@@ -20,7 +20,7 @@ case class ParamCollectionState(
                                  services: DefaultServices
                                ) extends CollectionState {
 
-  val name = InvokeBehaviorConversation.COLLECT_PARAM_VALUES_STATE
+  val name = Conversation.COLLECT_PARAM_VALUES_STATE
 
   val rankedParams = params.sortBy(_.rank)
 

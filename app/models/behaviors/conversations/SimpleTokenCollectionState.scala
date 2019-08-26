@@ -21,7 +21,7 @@ case class SimpleTokenCollectionState(
 
   lazy val dataService = services.dataService
 
-  val name = InvokeBehaviorConversation.COLLECT_SIMPLE_TOKENS_STATE
+  val name = Conversation.COLLECT_SIMPLE_TOKENS_STATE
 
   def maybeNextToCollectAction: DBIO[Option[SimpleTokenApi]] = {
     DBIO.successful(missingTokenApis.headOption)
