@@ -176,11 +176,8 @@ case class ConflictingConversationException(message: String) extends Exception(m
 
 object InvokeBehaviorConversation {
 
-  val COLLECT_SIMPLE_TOKENS_STATE = "collect_simple_tokens"
-  val COLLECT_PARAM_VALUES_STATE = "collect_param_values"
-
   val statesRequiringPrivateMessage = Seq(
-    COLLECT_SIMPLE_TOKENS_STATE
+    Conversation.COLLECT_SIMPLE_TOKENS_STATE
   )
 
   def createFor(
@@ -196,7 +193,6 @@ object InvokeBehaviorConversation {
       _ <- services.dataService.conversations.allOngoingForAction(event.eventContext, None).map { convos =>
         val conflicting = convos.filter(ea => ea.behaviorVersion == behaviorVersion && ea.maybeTriggerMessage == event.maybeMessageText)
         if (conflicting.nonEmpty) {
-          println("conflict")
           throw ConflictingConversationException(s"Already processing `${event.messageText}`")
         }
       }

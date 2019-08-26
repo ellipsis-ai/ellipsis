@@ -47,10 +47,9 @@ object ConversationQueries {
   val findQueryFor = Compiled(uncompiledFindQueryFor _)
 
   def uncompiledAllOngoingQueryFor(userIdForContext: Rep[String], context: Rep[String], teamId: Rep[String]) = {
-    allWithTrigger.
+    uncompiledAllPendingQuery.
       filter { case((convo, _), _) => convo.userIdForContext === userIdForContext }.
       filter { case((convo, _), _) => convo.context === context }.
-      filterNot { case((convo, _), _) => convo.state === Conversation.DONE_STATE }.
       filter { case((_, (_, (b, _))), _) => b._2._1.teamId === teamId }.
       sortBy { case((convo, _), _) => convo.startedAt.desc }
   }
@@ -64,11 +63,17 @@ object ConversationQueries {
   }
   val withThreadIdQuery = Compiled(uncompiledWithThreadIdQuery _)
 
-  def uncompiledAllPendingQuery = {
-    val doneValue: Rep[String] = Conversation.DONE_STATE
-    allWithTrigger.filterNot { case((convo, _), _) => convo.state === doneValue }
+  // doing this instead of <> Conversation.DONE_STATE so db indexes get used
+  def notDone(convo: ConversationsTable) = {
+    convo.state === Conversation.NEW_STATE ||
+      convo.state === Conversation.PENDING_STATE ||
+      convo.state === Conversation.COLLECT_SIMPLE_TOKENS_STATE ||
+      convo.state === Conversation.COLLECT_PARAM_VALUES_STATE
   }
-  def allPendingQuery = Compiled(uncompiledAllPendingQuery)
+
+  def uncompiledAllPendingQuery = {
+    allWithTrigger.filter { case ((convo, _), _) => notDone(convo) }
+  }
 
   def uncompiledAllForegroundQuery = {
     uncompiledAllPendingQuery.filterNot { case((convo, _), _) => convo.maybeThreadId.isDefined }
@@ -77,7 +82,7 @@ object ConversationQueries {
 
   def uncompiledAllOngoingVersionIdsQuery(doneState: Rep[String]) = {
     allWithBehaviorVersion.
-      filterNot { case(convo, _) => convo.state === doneState }.
+      filter { case(convo, _) => notDone(convo) }.
       map { case(_, ((bv, _), _)) => bv.groupVersionId }.
       distinct
   }
