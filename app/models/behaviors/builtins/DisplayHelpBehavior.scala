@@ -6,8 +6,10 @@ import models.behaviors.behaviorversion.{BehaviorVersion, Normal}
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack._
 import models.behaviors.events.{Event, EventContext}
+import models.behaviors.scheduling.scheduledmessage.ScheduledMessage
 import models.behaviors.{BotResult, SuccessResult, TextWithAttachmentsResult}
 import models.help._
+import play.api.Configuration
 import services.caching.CacheService
 import services.{AWSLambdaService, DataService, DefaultServices}
 import utils._
@@ -28,6 +30,7 @@ case class DisplayHelpBehavior(
   val lambdaService: AWSLambdaService = services.lambdaService
   val dataService: DataService = services.dataService
   val cacheService: CacheService = services.cacheService
+  val configuration: Configuration = services.configuration
 
   val eventContext: EventContext = event.eventContext
 
@@ -213,10 +216,19 @@ case class DisplayHelpBehavior(
   }
 
   def skillActionsListResultFor(result: HelpResult, behaviorVersions: Seq[BehaviorVersionData]): BotResult = {
-    val intro = if (isFirstTrigger) {
-      s"Here’s what I know$matchString."
-    } else {
-      "OK, here’s the help you asked for:"
+    val intro = event.maybeScheduled.flatMap {
+      case sm: ScheduledMessage => Some(
+        s"""I was [scheduled to run `${sm.text}`](${sm.editScheduleUrlFor(configuration)}) but there was no matching action.
+           |
+           |Here’s what I know related that might be related:""".stripMargin
+      )
+      case _ => None
+    }.getOrElse {
+      if (isFirstTrigger) {
+        s"Here’s what I know$matchString."
+      } else {
+        "OK, here’s the help you asked for:"
+      }
     }
     val versionsText = result.helpTextFor(behaviorVersions)
     val nameAndDescription = skillNameAndDescriptionFor(result)

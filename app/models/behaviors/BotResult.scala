@@ -460,7 +460,8 @@ case class NoResponseForBehaviorVersionResult(
                                                behaviorVersion: BehaviorVersion,
                                                maybeConversation: Option[Conversation],
                                                payloadJson: JsValue,
-                                               maybeLogResult: Option[AWSLambdaLogResult]
+                                               maybeLogResult: Option[AWSLambdaLogResult],
+                                               override val isForCopilot: Boolean
                                              ) extends BotResultWithLogResult with NoResponseResult {
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)

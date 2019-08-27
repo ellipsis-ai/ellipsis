@@ -46,7 +46,7 @@ class EventHandler @Inject() (
         eventualResults
       }
       results <- {
-        if (behaviorResults.filter(_.shouldSend).isEmpty && event.isResponseExpected) {
+        if (shouldReportNoExactMatch(behaviorResults, event)) {
           event.noExactMatchResult(services).map { noMatchResult =>
             Seq(noMatchResult)
           }
@@ -55,6 +55,12 @@ class EventHandler @Inject() (
         }
       }
     } yield results
+  }
+
+  def shouldReportNoExactMatch(results: Seq[BotResult], event: Event): Boolean = {
+    val sendingResults = results.exists(_.shouldSend)
+    val nonCopilotResults = !results.forall(_.isForCopilot)
+    !sendingResults && event.isResponseExpected || !nonCopilotResults && event.maybeScheduled.isDefined
   }
 
   def cancelConversationResult(event: Event, conversation: Conversation, withMessage: String): Future[BotResult] = {

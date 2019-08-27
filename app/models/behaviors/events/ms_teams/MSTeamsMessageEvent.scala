@@ -91,7 +91,7 @@ case class MSTeamsMessageEvent(
 //    message.userList.map(MessageUserData.fromSlackUserData)
   }
 
-  override val isResponseExpected: Boolean = includesBotMention
+  override val isResponseExpected: Boolean = includesBotMention && maybeScheduled.isEmpty
 
   override def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(user, eventContext.name, maybeChannel, maybeThreadId, ellipsisTeamId).flatMap { maybeConvo =>
