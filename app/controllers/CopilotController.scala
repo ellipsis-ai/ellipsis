@@ -148,7 +148,7 @@ class CopilotController @Inject()(
                            )(implicit request: SecuredRequest[EllipsisEnv, JsValue]): Future[Result] = {
     val channel = listener.channel
     for {
-      userData <- dataService.users.userDataFor(user, team)
+      copilotUserData <- dataService.users.userDataFor(user, team)
       maybeBotProfile <- BotContext.maybeContextFor(entry.context) match {
         case Some(SlackContext) => dataService.slackBotProfiles.maybeFirstFor(team, user)
 // Todo: Implement MS Teams copilot functionality
@@ -159,11 +159,12 @@ class CopilotController @Inject()(
         }
       }
       maybeResult <- SuccessResultData.maybeSuccessResultFor(entry, dataService, services.cacheService)
+      originalAuthorData <- dataService.users.userDataFor(entry.user, team)
       maybeOriginalPermalink <- maybeResult.map(_.event.maybePermalinkFor(services)).getOrElse(Future.successful(None))
       maybePermalink <- maybeBotProfile.map {
         case slackBotProfile: SlackBotProfile => for {
           maybeTs <- {
-            val maybeSlackUserId = userData.userIdForContext.orElse {
+            val maybeSlackUserId = copilotUserData.userIdForContext.orElse {
               if (isAdminAccess) {
                 Some(slackBotProfile.userId)
               } else {
@@ -174,7 +175,7 @@ class CopilotController @Inject()(
               dataService.slackBotProfiles.sendResultWithNewEvent(
                 "Copilot result sent to chat",
                 (event) => Future.successful(
-                  maybeOverrideResultFor(event, userData, entry, maybeResult, maybeOriginalPermalink, options.text)
+                  maybeOverrideResultFor(event, copilotUserData, entry, originalAuthorData, maybeResult, maybeOriginalPermalink, options.text)
                 ),
                 slackBotProfile,
                 channel,
@@ -189,7 +190,7 @@ class CopilotController @Inject()(
             }.getOrElse {
               Logger.error(
                 s"""Tried to send a copilot result but no Slack user ID was found:
-                   | - Ellipsis user ID ${userData.ellipsisUserId} (${userData.toString})
+                   | - Ellipsis user ID ${copilotUserData.ellipsisUserId} (${copilotUserData.toString})
                    | - Ellipsis team ${team.name} (ID ${team.id})
                    | - Slack team ID ${slackBotProfile.slackTeamId}
                    |""".stripMargin
@@ -214,24 +215,26 @@ class CopilotController @Inject()(
 
   private def maybeOverrideResultFor(
                                       event: Event,
-                                      userData: UserData,
+                                      copilotUserData: UserData,
                                       entry: InvocationLogEntry,
+                                      originalAuthorUserData: UserData,
                                       maybeResult: Option[SuccessResult],
                                       maybeOriginalPermalink: Option[String],
                                       maybeReplacementText: Option[String]
                                     ): Option[BotResult] = {
     val fallbackOriginal = s"\n> ${entry.messageText.replaceAll("\\n", "\n> ")}"
-    val prefix = (userData.formattedLink.map { name =>
+    val originalAuthor = originalAuthorUserData.formattedLink.filter(original => !copilotUserData.formattedLink.contains(original)).map(original => s" from ${original}").getOrElse("")
+    val prefix = (copilotUserData.formattedLink.map { name =>
       maybeOriginalPermalink.map { permalink =>
-        s"$name asked me to send a response to [an earlier message]($permalink):"
+        s"$name asked me to send a response to [an earlier message]($permalink)${originalAuthor}:"
       }.getOrElse {
-        s"$name asked me to send a response to an earlier message: $fallbackOriginal"
+        s"$name asked me to send a response to an earlier message${originalAuthor}: $fallbackOriginal"
       }
     }.getOrElse {
       maybeOriginalPermalink.map { permalink =>
-        s"I’ve been asked to send a response to [an earlier message]($permalink):"
+        s"I’ve been asked to send a response to [an earlier message]($permalink)${originalAuthor}:"
       }.getOrElse {
-        s"I’ve been asked to send a response to an earlier message: $fallbackOriginal"
+        s"I’ve been asked to send a response to an earlier message${originalAuthor}: $fallbackOriginal"
       }
     }) + "\n\n"
     val text = prefix + maybeReplacementText.getOrElse(entry.resultText)
