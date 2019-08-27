@@ -299,7 +299,7 @@ class Copilot extends React.Component<Props, State> {
               </div>
               <div>{result.messageText}</div>
             </div>
-            <div className="ptm phl">
+            <div className="ptm mhl border-bottom-hover clickable">
               <ReactMarkdown source={result.resultText} />
             </div>
             <div className="pbs columns columns-elastic">
