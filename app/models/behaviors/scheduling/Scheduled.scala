@@ -51,11 +51,10 @@ trait Scheduled {
     }
   }
 
-  def maybeEditScheduleUrlFor(configuration: Configuration): Option[String] = {
-    configuration.getOptional[String]("application.apiBaseUrl").map { baseUrl =>
-      val path = controllers.routes.ScheduledActionsController.index(Some(id), newSchedule = None, maybeChannel, skillId = None, Some(team.id), forceAdmin = None)
-      baseUrl + path
-    }
+  def editScheduleUrlFor(configuration: Configuration): String = {
+    val baseUrl = configuration.get[String]("application.apiBaseUrl")
+    val path = controllers.routes.ScheduledActionsController.index(Some(id), newSchedule = None, maybeChannel, skillId = None, Some(team.id), forceAdmin = None)
+    baseUrl + path
   }
 
   def isScheduledForDirectMessage: Boolean = {
@@ -105,9 +104,7 @@ trait Scheduled {
     } else {
       recurrence.displayString.trim ++ recipientDetails
     }
-    val scheduleLink = maybeEditScheduleUrlFor(configuration).map { url =>
-      s"_[✎ Edit]($url)_"
-    }.getOrElse("")
+    val scheduleLink = s"_[✎ Edit](${editScheduleUrlFor(configuration)})_"
     displayText(dataService).map { desc =>
       s"""
         |
@@ -260,9 +257,7 @@ trait Scheduled {
       sendResult(result, event, services).recover {
         case c: SlackMessageSenderChannelException => {
           if (slackUserId != profile.userId) {
-            val editLink = maybeEditScheduleUrlFor(services.configuration).map { url =>
-              s"[✎ Edit schedule]($url)"
-            }.getOrElse("")
+            val editLink = s"[✎ Edit schedule](${editScheduleUrlFor(services.configuration)})"
             for {
               scheduledDisplayText <- displayText(services.dataService)
               isAdminUserOnOtherTeam <- maybeUser.map { user =>

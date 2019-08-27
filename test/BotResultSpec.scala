@@ -180,7 +180,7 @@ class BotResultSpec extends PlaySpec with MockitoSugar with DBSpec with SlackCon
         val event: SlackMessageEvent = newEventFor(profile)
 
         val responseText = "response"
-        val result = NoResponseForBehaviorVersionResult(event, mock[BehaviorVersion], None, JsNull, None)
+        val result = NoResponseForBehaviorVersionResult(event, mock[BehaviorVersion], None, JsNull, None, isForCopilot = false)
         val resultTs: String = SlackTimestamp.now
 
         val conversation = newConversationFor(team, user, profile, event)

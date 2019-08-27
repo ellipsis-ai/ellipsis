@@ -76,7 +76,7 @@ case class SlackMessageEvent(
     UserData.allFromSlackUserDataListAction(message.userList, ellipsisTeamId, services)
   }
 
-  override val isResponseExpected: Boolean = includesBotMention
+  override val isResponseExpected: Boolean = includesBotMention && maybeScheduled.isEmpty
 
   override def maybeOngoingConversation(dataService: DataService)(implicit ec: ExecutionContext): Future[Option[Conversation]] = {
     dataService.conversations.findOngoingFor(eventContext.userIdForContext, eventContext.name, maybeChannel, maybeThreadId, ellipsisTeamId).flatMap { maybeConvo =>

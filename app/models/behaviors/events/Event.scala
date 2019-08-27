@@ -67,7 +67,12 @@ trait Event {
       s" in conversation [${convo.id}]"
     }.getOrElse("")
     val sourceText = maybeSource.getOrElse(logTextForResultSource)
-    val logIntro = s"Sending result $sourceText [${messageText}]$channelText$contextUserText$convoText: [${result.fullText}]"
+    val context = s"$sourceText [${messageText}]$channelText$contextUserText$convoText"
+    val logIntro = if (result.shouldSend) {
+      s"${result.resultType.toString} result $context: [${result.fullText}]"
+    } else {
+      s"${result.resultType.toString} result for $context (no response)"
+    }
     s"$logIntro\n${result.filesAsLogText}"
   }
 
