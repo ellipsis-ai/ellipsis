@@ -903,7 +903,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
           cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context)
         } else {
           context.maybeConversation.map { convo =>
-            context.dataService.collectedParameterValues.deleteForAction(context.parameter, convo).flatMap { _ =>
+            context.dataService.collectedParameterValues.deleteForAction(context.parameter.id, convo).flatMap { _ =>
               convo.respondAction(context.event, isReminding = false, context.services)
             }
           }.getOrElse(cancelAndRespondForAction(s"This data type isn't returning any values: ${editLinkFor(context)}", context))
@@ -994,7 +994,7 @@ case class BehaviorBackedDataType(dataTypeConfig: DataTypeConfig) extends Behavi
       for {
         collected <- context.dataService.collectedParameterValues.allForAction(convo)
         _ <- DBIO.sequence(collected.map { ea =>
-          context.dataService.collectedParameterValues.deleteForAction(ea.parameter, convo)
+          context.dataService.collectedParameterValues.deleteForAction(ea.parameterId, convo)
         })
       } yield {}
     }.getOrElse(DBIO.successful({}))

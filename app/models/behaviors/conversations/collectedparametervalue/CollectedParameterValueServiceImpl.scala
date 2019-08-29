@@ -10,15 +10,15 @@ import services.DataService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class RawCollectedParameterValue(parameterId: String, conversationId: String, valueString: String)
+case class CollectedParameterValue(parameterId: String, conversationId: String, valueString: String)
 
-class CollectedParameterValuesTable(tag: Tag) extends Table[RawCollectedParameterValue](tag, "collected_parameter_values") {
+class CollectedParameterValuesTable(tag: Tag) extends Table[CollectedParameterValue](tag, "collected_parameter_values") {
 
   def parameterId = column[String]("parameter_id")
   def conversationId = column[String]("conversation_id")
   def valueString = column[String]("value_string")
 
-  def * = (parameterId, conversationId, valueString) <> ((RawCollectedParameterValue.apply _).tupled, RawCollectedParameterValue.unapply _)
+  def * = (parameterId, conversationId, valueString) <> ((CollectedParameterValue.apply _).tupled, CollectedParameterValue.unapply _)
 }
 
 class CollectedParameterValueServiceImpl @Inject() (
@@ -34,61 +34,34 @@ class CollectedParameterValueServiceImpl @Inject() (
       join(BehaviorParameterQueries.allWithBehaviorVersion).on(_.parameterId === _._1._1.id).
       join(ConversationQueries.allWithTrigger).on(_._1.conversationId === _._1._1.id)
 
-  type TupleType = ((RawCollectedParameterValue, BehaviorParameterQueries.TupleType), ConversationQueries.TupleType)
-
-  def tuple2ParameterValue(tuple: TupleType): CollectedParameterValue = {
-    val param = BehaviorParameterQueries.tuple2Parameter(tuple._1._2)
-    val conversation = ConversationQueries.tuple2Conversation(tuple._2)
-    val valueString = tuple._1._1.valueString
-    CollectedParameterValue(param, conversation, valueString)
-  }
-
   def uncompiledAllForQuery(conversationId: Rep[String]) = {
-    joined.filter { case((value, _), _) => value.conversationId === conversationId }
+    all.filter(_.conversationId === conversationId)
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
   def allForAction(conversation: Conversation): DBIO[Seq[CollectedParameterValue]] = {
-    allForQuery(conversation.id).result.map { r =>
-      r.map(tuple2ParameterValue)
-    }
+    allForQuery(conversation.id).result
   }
 
   def uncompiledFindQuery(parameterId: Rep[String], conversationId: Rep[String]) = {
-    joined.
-      filter { case((collected, _), _) => collected.parameterId === parameterId }.
-      filter { case((collected, _), _) => collected.conversationId === conversationId }
-  }
-  val findQuery = Compiled(uncompiledFindQuery _)
-
-  def findAction(parameter: BehaviorParameter, conversation: Conversation): DBIO[Option[CollectedParameterValue]] = {
-    findQuery(parameter.id, conversation.id).result.map { r =>
-      r.headOption.map(tuple2ParameterValue)
-    }
-  }
-
-  def uncompiledRawFindQuery(parameterId: Rep[String], conversationId: Rep[String]) = {
     all.filter(_.parameterId === parameterId).filter(_.conversationId === conversationId)
   }
-  val rawFindQuery = Compiled(uncompiledRawFindQuery _)
+  val findQuery = Compiled(uncompiledFindQuery _)
 
   def ensureForAction(
                  parameter: BehaviorParameter,
                  conversation: Conversation,
                  valueString: String
                ): DBIO[CollectedParameterValue] = {
-    val raw = RawCollectedParameterValue(parameter.id, conversation.id, valueString)
-    val query = rawFindQuery(raw.parameterId, raw.conversationId)
-    val action = query.result.flatMap { r =>
+    val instance = CollectedParameterValue(parameter.id, conversation.id, valueString)
+    val query = findQuery(instance.parameterId, instance.conversationId)
+    query.result.flatMap { r =>
       r.headOption.map { existing =>
-        query.update(raw)
+        query.update(instance)
       }.getOrElse {
-        all += raw
+        all += instance
       }
-    }
-    action.flatMap { _ =>
-      findAction(parameter, conversation).map(_.get)
-    }
+    }.map(_ => instance)
   }
 
   def ensureFor(
@@ -99,12 +72,12 @@ class CollectedParameterValueServiceImpl @Inject() (
     dataService.run(ensureForAction(parameter, conversation, valueString))
   }
 
-  def deleteForAction(parameter: BehaviorParameter, conversation: Conversation): DBIO[Unit] = {
-    rawFindQuery(parameter.id, conversation.id).delete.map(_ => {})
+  def deleteForAction(parameterId: String, conversation: Conversation): DBIO[Unit] = {
+    findQuery(parameterId, conversation.id).delete.map(_ => {})
   }
 
-  def deleteFor(parameter: BehaviorParameter, conversation: Conversation): Future[Unit] = {
-    dataService.run(deleteForAction(parameter, conversation))
+  def deleteFor(parameterId: String, conversation: Conversation): Future[Unit] = {
+    dataService.run(deleteForAction(parameterId, conversation))
   }
 
   def deleteAll(): Future[Unit] = {
