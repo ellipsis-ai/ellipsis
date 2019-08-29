@@ -26,7 +26,7 @@ case class ParamCollectionState(
 
   def allLeftToCollectAction(conversation: Conversation)(implicit actorSystem: ActorSystem, ec: ExecutionContext): DBIO[Seq[(BehaviorParameter, Option[String])]] = {
     val tuples = rankedParams.map { ea =>
-      (ea, collected.find(_.parameter == ea), savedAnswers.find(_.inputId == ea.input.inputId))
+      (ea, collected.find(_.parameterId == ea.id), savedAnswers.find(_.inputId == ea.input.inputId))
     }
 
     val eventualWithHasValidValue = DBIO.sequence(tuples.map { case(param, maybeCollected, maybeSaved) =>
@@ -56,7 +56,7 @@ case class ParamCollectionState(
 
   def invocationMap: Map[String, String] = {
     rankedParams.zipWithIndex.map { case(ea, i) =>
-      val maybeParamValue = collected.find(_.parameter.id == ea.id).map(_.valueString).orElse {
+      val maybeParamValue = collected.find(_.parameterId == ea.id).map(_.valueString).orElse {
         savedAnswers.find(_.inputId == ea.input.inputId).map(_.valueString)
       }
       (AWSLambdaConstants.invocationParamFor(i), maybeParamValue.getOrElse(""))
@@ -70,7 +70,7 @@ case class ParamCollectionState(
         val context = BehaviorParameterContext(event, Some(conversation), param, services)
         param.paramType.handleCollectedAction(event, this, context)
       }.orElse {
-        collected.reverse.headOption.map(_.parameter).map { lastCollectedParam =>
+        collected.reverse.headOption.map(_.parameterId).flatMap(lastCollectedParamId => params.find(_.id == lastCollectedParamId)).map { lastCollectedParam =>
           val context = BehaviorParameterContext(event, Some(conversation), lastCollectedParam, services)
           lastCollectedParam.paramType.handleCollectedAction(event, this, context)
         }
