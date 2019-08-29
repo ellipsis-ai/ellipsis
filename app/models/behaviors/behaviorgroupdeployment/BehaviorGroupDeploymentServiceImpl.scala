@@ -84,18 +84,7 @@ class BehaviorGroupDeploymentServiceImpl @Inject() (
       triggers <- if (maybeDevModeChannel.nonEmpty) {
         dataService.triggers.allActiveFor(team)
       } else {
-        for {
-          deployments <- mostRecentForTeam(team)
-          groupVersions <- Future.sequence(deployments.map { ea =>
-            dataService.behaviorGroupVersions.findWithoutAccessCheck(ea.groupVersionId)
-          }).map(_.flatten)
-          behaviorVersions <- Future.sequence(groupVersions.map { ea =>
-            dataService.behaviorVersions.allForGroupVersion(ea)
-          }).map(_.flatten)
-          triggers <- Future.sequence(behaviorVersions.map { ea =>
-            dataService.triggers.allFor(ea)
-          }).map(_.flatten)
-        } yield triggers
+        dataService.triggers.allDeployedFor(team)
       }
     } yield triggers
   }

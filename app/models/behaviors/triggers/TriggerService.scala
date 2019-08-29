@@ -12,6 +12,8 @@ trait TriggerService {
 
   def allFor(team: Team): Future[Seq[Trigger]]
 
+  def allDeployedFor(team: Team): Future[Seq[Trigger]]
+
   def allActiveFor(team: Team): Future[Seq[Trigger]]
 
   def allWithExactPattern(pattern: String, teamId: String): Future[Seq[Trigger]]

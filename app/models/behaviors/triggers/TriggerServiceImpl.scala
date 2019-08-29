@@ -56,6 +56,11 @@ class TriggerServiceImpl @Inject()(
     dataService.run(action)
   }
 
+  def allDeployedFor(team: Team): Future[Seq[Trigger]] = {
+    val action = allDeployedForQuery(team.id).result.map(_.map(tuple2Trigger))
+    dataService.run(action)
+  }
+
   def allActiveFor(team: Team): Future[Seq[Trigger]] = {
     val action = allActiveForTeamQuery(team.id).result.map(_.map(tuple2Trigger))
     dataService.run(action)

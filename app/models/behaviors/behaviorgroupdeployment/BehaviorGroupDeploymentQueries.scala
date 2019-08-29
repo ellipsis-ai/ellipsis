@@ -51,7 +51,7 @@ object BehaviorGroupDeploymentQueries {
   }
   val mostRecentBehaviorGroupVersionIdsQuery = Compiled(uncompiledMostRecentBehaviorGroupVersionIdsQuery)
 
-  private def uncompiledMostRecentForTeamQuery(teamId: Rep[String]) = {
+  def uncompiledMostRecentForTeamQuery(teamId: Rep[String]) = {
     uncompiledAllMostRecentQuery.join(BehaviorGroupQueries.all).on(_.groupId === _.id).
       filter { case(_, group) => group.teamId === teamId }.
       map { case(dep, _) => dep }
