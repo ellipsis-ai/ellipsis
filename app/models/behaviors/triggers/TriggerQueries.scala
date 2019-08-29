@@ -1,6 +1,7 @@
 package models.behaviors.triggers
 
 import drivers.SlickPostgresDriver.api._
+import models.behaviors.behaviorgroupdeployment.BehaviorGroupDeploymentQueries
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersionQueries
 import models.behaviors.behaviorversion.BehaviorVersionQueries
 import models.team.TeamsTable
@@ -26,6 +27,13 @@ object TriggerQueries {
     allWithBehaviorVersion.filter { case(trigger, (behaviorVersion, ((behavior, (_, team)), _))) => team.id === teamId}
   }
   val allForTeamQuery = Compiled(uncompiledAllForTeamQuery _)
+
+  def uncompiledAllDeployedForQuery(teamId: Rep[String]) = {
+    allWithBehaviorVersion.
+      join(BehaviorGroupDeploymentQueries.uncompiledMostRecentForTeamQuery(teamId)).on(_._2._1._1.groupVersionId === _.groupVersionId).
+      map { case(messageTrigger, _) => messageTrigger }
+  }
+  val allDeployedForQuery = Compiled(uncompiledAllDeployedForQuery _)
 
   def uncompiledAllActiveForTeamQuery(teamId: Rep[String]) = {
     allWithBehaviorVersion.join(BehaviorGroupVersionQueries.uncompiledAllCurrentQuery).on(_._2._1._1.groupVersionId === _._1._1.id).
