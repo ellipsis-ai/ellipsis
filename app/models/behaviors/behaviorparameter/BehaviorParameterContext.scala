@@ -16,11 +16,11 @@ import scala.concurrent.ExecutionContext
 case class BehaviorParameterContext(
                                      event: Event,
                                      maybeConversation: Option[Conversation],
+                                     behaviorVersion: BehaviorVersion,
                                      parameter: BehaviorParameter,
                                      services: DefaultServices
                                    ) {
 
-  val behaviorVersion: BehaviorVersion = parameter.behaviorVersion
   val dataService: DataService = services.dataService
   val cacheService: CacheService = services.cacheService
 

@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import java.time.{OffsetDateTime, ZoneOffset}
+import java.time.OffsetDateTime
 import java.util.Base64
 
 import akka.actor.ActorSystem
@@ -15,15 +15,10 @@ import com.amazonaws.services.logs.{AWSLogsAsync, AWSLogsAsyncClientBuilder}
 import com.fasterxml.jackson.core.JsonParseException
 import javax.inject.Inject
 import json.BehaviorGroupData
-import json.Formatting._
 import models.behaviors._
 import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
-import models.behaviors.behaviorparameter.{BehaviorParameter, FileType}
+import models.behaviors.behaviorparameter.BehaviorParameter
 import models.behaviors.behaviorversion.BehaviorVersion
-import models.behaviors.config.requiredawsconfig.RequiredAWSConfig
-import models.behaviors.config.requiredoauth1apiconfig.RequiredOAuth1ApiConfig
-import models.behaviors.config.requiredoauth2apiconfig.RequiredOAuth2ApiConfig
-import models.behaviors.config.requiredsimpletokenapi.RequiredSimpleTokenApi
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.ellipsisobject._
 import models.behaviors.events.Event
@@ -40,10 +35,9 @@ import sun.misc.BASE64Decoder
 import utils.{JavaFutureConverter, RequiredModulesInCode}
 
 import scala.collection.JavaConversions.asScalaBuffer
-import scala.concurrent.{ExecutionContext, Future, blocking}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 import scala.reflect.io.Path
-import scala.sys.process._
 import scala.util.{Failure, Success}
 
 class AWSLambdaServiceImpl @Inject() (

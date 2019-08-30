@@ -1,13 +1,13 @@
 package models.behaviors.behaviorparameter
 
 import javax.inject.Inject
-
 import com.google.inject.Provider
 import drivers.SlickPostgresDriver.api._
 import models.IDs
 import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.input.Input
 import services.DataService
+import slick.dbio
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,18 +38,26 @@ class BehaviorParameterServiceImpl @Inject() (
 
   import BehaviorParameterQueries._
 
-  def allForAction(behaviorVersion: BehaviorVersion): DBIO[Seq[BehaviorParameter]] = {
-    allForQuery(behaviorVersion.id).result.map(_.map(tuple2Parameter).sortBy(_.rank))
+  def allForIdAction(behaviorVersionId: String): DBIO[Seq[BehaviorParameter]] = {
+    allForQuery(behaviorVersionId).result.map(_.map(tuple2Parameter).sortBy(_.rank))
+  }
+
+  def allForId(behaviorVersionId: String): Future[Seq[BehaviorParameter]] = {
+    dataService.run(allForIdAction(behaviorVersionId))
+  }
+
+  def allForAction(behaviorVersion: BehaviorVersion): dbio.DBIO[Seq[BehaviorParameter]] = {
+    allForIdAction(behaviorVersion.id)
   }
 
   def allFor(behaviorVersion: BehaviorVersion): Future[Seq[BehaviorParameter]] = {
-    dataService.run(allForAction(behaviorVersion))
+    allForId(behaviorVersion.id)
   }
 
   private def createForAction(input: Input, rank: Int, behaviorVersion: BehaviorVersion): DBIO[BehaviorParameter] = {
     val raw = RawBehaviorParameter(IDs.next, rank, Some(input.inputId), behaviorVersion.id)
     (all += raw).map { _ =>
-      BehaviorParameter(raw.id, raw.rank, input, behaviorVersion)
+      BehaviorParameter(raw.id, raw.rank, input, raw.behaviorVersionId)
     }
   }
 
@@ -67,7 +75,7 @@ class BehaviorParameterServiceImpl @Inject() (
   }
 
   def isFirstForBehaviorVersionAction(parameter: BehaviorParameter): DBIO[Boolean] = {
-    allForAction(parameter.behaviorVersion).map { all =>
+    allForIdAction(parameter.behaviorVersionId).map { all =>
       all.headOption.contains(parameter)
     }
   }

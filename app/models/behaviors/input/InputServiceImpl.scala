@@ -106,7 +106,7 @@ class InputServiceImpl @Inject() (
           maybeParamType.getOrElse(TextType),
           raw.isSavedForTeam,
           raw.isSavedForUser,
-          behaviorGroupVersion
+          raw.behaviorGroupVersionId
         )
       }
     } yield input
@@ -124,7 +124,7 @@ class InputServiceImpl @Inject() (
           paramType = maybeParamType.getOrElse(TextType),
           isSavedForTeam = data.isSavedForTeam,
           isSavedForUser = data.isSavedForUser,
-          behaviorGroupVersion = behaviorGroupVersion
+          behaviorGroupVersionId = behaviorGroupVersion.id
         )
         uncompiledFindRawQuery(existing.id).update(updated.toRaw).map { _ => updated }
       }.getOrElse(createForAction(data, behaviorGroupVersion))

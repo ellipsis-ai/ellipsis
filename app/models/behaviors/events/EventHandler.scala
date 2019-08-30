@@ -1,5 +1,7 @@
 package models.behaviors.events
 
+import java.time.OffsetDateTime
+
 import javax.inject._
 import models.behaviors.behaviorparameter.FetchValidValuesBadResultException
 import models.behaviors.behaviorversion.Normal
