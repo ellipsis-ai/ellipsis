@@ -46,11 +46,11 @@ class BehaviorResponseSpec extends PlaySpec with MockitoSugar {
         val fooParam = BehaviorParameter(
           IDs.next,
           1,
-          Input(IDs.next, IDs.next, None, "foo", None, TextType, false, false, groupVersion),
-          version)
+          Input(IDs.next, IDs.next, None, "foo", None, TextType, false, false, groupVersion.id),
+          version.id)
         val barParam = fooParam.copy(
           id = IDs.next,
-          input = Input(IDs.next, IDs.next, None, "bar", None, TextType, false, false, groupVersion),
+          input = Input(IDs.next, IDs.next, None, "bar", None, TextType, false, false, groupVersion.id),
           rank = 2)
         val params = Seq(fooParam, barParam)
         when(dataService.behaviorParameters.allFor(version)).thenReturn(Future.successful(params))
