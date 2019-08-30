@@ -30,7 +30,7 @@ case class ParamCollectionState(
     }
 
     val eventualWithHasValidValue = DBIO.sequence(tuples.map { case(param, maybeCollected, maybeSaved) =>
-      val paramContext = BehaviorParameterContext(event, Some(conversation), param, services)
+      val paramContext = BehaviorParameterContext(event, Some(conversation), conversation.behaviorVersion, param, services)
       val maybeValue = maybeCollected.map(_.valueString).orElse(maybeSaved.map(_.valueString))
       val eventualHasValidValue = maybeValue.map { valueString =>
         param.paramType.isValidAction(valueString, paramContext)
@@ -67,11 +67,11 @@ case class ParamCollectionState(
     for {
       maybeNextToCollect <- maybeNextToCollectAction(conversation)
       _ <- maybeNextToCollect.map { case(param, maybeValue) =>
-        val context = BehaviorParameterContext(event, Some(conversation), param, services)
+        val context = BehaviorParameterContext(event, Some(conversation), conversation.behaviorVersion, param, services)
         param.paramType.handleCollectedAction(event, this, context)
       }.orElse {
         collected.reverse.headOption.map(_.parameterId).flatMap(lastCollectedParamId => params.find(_.id == lastCollectedParamId)).map { lastCollectedParam =>
-          val context = BehaviorParameterContext(event, Some(conversation), lastCollectedParam, services)
+          val context = BehaviorParameterContext(event, Some(conversation), conversation.behaviorVersion, lastCollectedParam, services)
           lastCollectedParam.paramType.handleCollectedAction(event, this, context)
         }
       }.getOrElse(DBIO.successful({}))
@@ -83,7 +83,7 @@ case class ParamCollectionState(
     for {
       maybeNextToCollect <- maybeNextToCollectAction(conversation)
       result <- maybeNextToCollect.map { case(param, maybeValue) =>
-        val paramContext = BehaviorParameterContext(event, Some(conversation), param, services)
+        val paramContext = BehaviorParameterContext(event, Some(conversation), conversation.behaviorVersion, param, services)
         param.promptResultAction(maybeValue, paramContext, this, isReminding)
       }.getOrElse {
         DBIO.successful(SimpleTextResult(event, Some(conversation), "All done!", conversation.behaviorVersion.responseType))

@@ -8,7 +8,7 @@ object ParentConversationQueries {
 
   val all = TableQuery[ParentConversationsTable]
   val allWithConversation = all.join(ConversationQueries.allWithTrigger).on(_.parentId === _._1._1.id)
-  val allWithParam = allWithConversation.join(BehaviorParameterQueries.allWithBehaviorVersion).on(_._1.paramId === _._1._1.id)
+  val allWithParam = allWithConversation.join(BehaviorParameterQueries.allWithInput).on(_._1.paramId === _._1.id)
 
   type TupleType = ((RawParentConversation, ConversationQueries.TupleType), BehaviorParameterQueries.TupleType)
 

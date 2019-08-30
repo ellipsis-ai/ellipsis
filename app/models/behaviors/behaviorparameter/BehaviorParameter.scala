@@ -2,7 +2,6 @@ package models.behaviors.behaviorparameter
 
 import akka.actor.ActorSystem
 import models.behaviors.BotResult
-import models.behaviors.behaviorversion.BehaviorVersion
 import models.behaviors.conversations.ParamCollectionState
 import models.behaviors.input.Input
 import slick.dbio.DBIO
@@ -13,7 +12,7 @@ case class BehaviorParameter(
                               id: String,
                               rank: Int,
                               input: Input,
-                              behaviorVersion: BehaviorVersion
+                              behaviorVersionId: String
                             ) {
 
   val name = input.name
@@ -32,6 +31,6 @@ case class BehaviorParameter(
   }
 
   def toRaw: RawBehaviorParameter = {
-    RawBehaviorParameter(id, rank, Some(input.id), behaviorVersion.id)
+    RawBehaviorParameter(id, rank, Some(input.id), behaviorVersionId)
   }
 }

@@ -12,7 +12,7 @@ case class Input(
                   paramType: BehaviorParameterType,
                   isSavedForTeam: Boolean,
                   isSavedForUser: Boolean,
-                  behaviorGroupVersion: BehaviorGroupVersion
+                  behaviorGroupVersionId: String
                 ) {
 
   val isSaved = isSavedForTeam || isSavedForUser
@@ -20,6 +20,6 @@ case class Input(
   def question: String = maybeQuestion.getOrElse(s"What is the value for `$name`?")
 
   def toRaw: RawInput = {
-    RawInput(id, inputId, maybeExportId, name, maybeQuestion, paramType.id, isSavedForTeam, isSavedForUser, behaviorGroupVersion.id)
+    RawInput(id, inputId, maybeExportId, name, maybeQuestion, paramType.id, isSavedForTeam, isSavedForUser, behaviorGroupVersionId)
   }
 }

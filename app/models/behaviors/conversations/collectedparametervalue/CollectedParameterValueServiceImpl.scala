@@ -31,7 +31,7 @@ class CollectedParameterValueServiceImpl @Inject() (
   val all = TableQuery[CollectedParameterValuesTable]
   val joined =
     all.
-      join(BehaviorParameterQueries.allWithBehaviorVersion).on(_.parameterId === _._1._1.id).
+      join(BehaviorParameterQueries.allWithInput).on(_.parameterId === _._1.id).
       join(ConversationQueries.allWithTrigger).on(_._1.conversationId === _._1._1.id)
 
   def uncompiledAllForQuery(conversationId: Rep[String]) = {

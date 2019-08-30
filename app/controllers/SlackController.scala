@@ -1283,7 +1283,7 @@ class SlackController @Inject() (
                   Some(response_url),
                   beQuiet = false
                 )
-                val context = BehaviorParameterContext(event, None, bp, services)
+                val context = BehaviorParameterContext(event, None, behaviorVersion, bp, services)
                 bp.paramType.isValidAction(value, context).map { isValid =>
                   if (isValid) {
                     None

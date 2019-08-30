@@ -2,8 +2,7 @@ package services.slack
 
 import akka.actor.ActorSystem
 import javax.inject._
-import json.{SlackUserData, SlackUserProfileData}
-import models.accounts.slack.SlackUserTeamIds
+import json.SlackUserData
 import models.accounts.slack.botprofile.SlackBotProfile
 import models.behaviors.BotResultService
 import models.behaviors.events.{Event, EventHandler}

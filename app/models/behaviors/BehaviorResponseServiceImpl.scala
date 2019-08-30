@@ -38,7 +38,7 @@ class BehaviorResponseServiceImpl @Inject() (
         AWSLambdaConstants.invocationParamFor(i)
       })
       values <- DBIO.sequence(params.zip(invocationNames).map { case(param, invocationName) =>
-        val context = BehaviorParameterContext(event, maybeConversation, param, services)
+        val context = BehaviorParameterContext(event, maybeConversation, behaviorVersion, param, services)
         paramValues.get(invocationName).map { v =>
           for {
             isValid <- param.paramType.isValidAction(v, context)

@@ -113,7 +113,7 @@ case class BehaviorResponse(
       result <- {
         services.dataService.parentConversations.maybeForAction(maybeConversation).flatMap { maybeParent =>
           maybeParent.map { p =>
-            val context = BehaviorParameterContext(event, Some(p.parent), p.param, services)
+            val context = BehaviorParameterContext(event, Some(p.parent), behaviorVersion, p.param, services)
             p.param.paramType.promptResultWithValidValuesResult(initialResult, context)
           }.getOrElse(DBIO.successful(initialResult))
         }

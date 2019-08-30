@@ -1,13 +1,13 @@
 package models.behaviors.events
 
 import javax.inject._
+import models.behaviors._
 import models.behaviors.behaviorparameter.FetchValidValuesBadResultException
 import models.behaviors.behaviorversion.Normal
 import models.behaviors.builtins.{BuiltinBehavior, DisplayHelpBehavior}
 import models.behaviors.conversations.conversation.Conversation
 import models.behaviors.events.MessageActionConstants._
 import models.behaviors.events.slack.SlackMessageEvent
-import models.behaviors._
 import play.api.Logger
 import services.DefaultServices
 import utils.Color
