@@ -1,7 +1,5 @@
 package services.slack
 
-import java.time.OffsetDateTime
-
 import akka.actor.ActorSystem
 import javax.inject._
 import json.SlackUserData
