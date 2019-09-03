@@ -27,18 +27,20 @@ case class MessageListenerData(
 
 object MessageListenerData {
 
-  def from(listener: MessageListener, team: Team, services: DefaultServices)(implicit ec: ExecutionContext): Future[MessageListenerData] = {
+  def from(listener: MessageListener, services: DefaultServices)(implicit ec: ExecutionContext): Future[MessageListenerData] = {
     val dataService = services.dataService
+    val user = listener.user
+    val team = listener.behavior.team
     for {
       maybeBehaviorVersion <- dataService.behaviors.maybeCurrentVersionFor(listener.behavior)
       maybeBehaviorVersionData <- BehaviorVersionData.maybeFor(listener.behavior.id,
-        listener.user,
+        user,
         dataService,
         maybeBehaviorVersion.map(_.groupVersion),
         None)
-      userData <- dataService.users.userDataFor(listener.user, team)
+      userData <- dataService.users.userDataFor(user, team)
       maybeSlackBotProfile <- BotContext.maybeContextFor(listener.medium).map {
-        case SlackContext => dataService.slackBotProfiles.maybeFirstFor(team, listener.user)
+        case SlackContext => dataService.slackBotProfiles.maybeFirstFor(team, user)
           // Todo: support for MS Teams
         case _ => {
           Logger.error(s"Creating message listener data isn't supported for ${listener.medium}")

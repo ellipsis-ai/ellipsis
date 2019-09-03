@@ -30,7 +30,7 @@ interface Result extends ResultJson {
 
 export interface Listener {
   id: string
-  channelId: string
+  channel: string
   channelName: Option<string>
 }
 
@@ -194,7 +194,7 @@ class Copilot extends React.Component<Props, State> {
       return (
         <span>
           <span>Unknown channel </span>
-          <span className="color-gray-medium">(ID {this.props.listener.channelId})</span>
+          <span className="color-gray-medium">(ID {this.props.listener.channel})</span>
         </span>
       );
     }
