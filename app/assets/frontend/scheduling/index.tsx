@@ -69,7 +69,7 @@ type State = {
 type ScheduleGroup = {
   channel: Option<ScheduleChannel>,
   channelName: Option<string>,
-  channelId: string,
+  channelIds: Set<string>,
   excludesBot: boolean,
   isArchived: boolean,
   isMissing: boolean,
@@ -265,7 +265,7 @@ class Scheduling extends React.Component<Props, State> {
       return {
         channel: channel,
         channelName: channelName,
-        channelId: channel ? channel.id : "unknown",
+        channelIds: new Set([(channel ? channel.id : "unknown")]),
         excludesBot: Boolean(channel && !channel.isDm() && !channel.isBotMember),
         isArchived: Boolean(channel && channel.isArchived),
         isMissing: !channel,
@@ -299,6 +299,9 @@ class Scheduling extends React.Component<Props, State> {
           const groupName = channelName || "[unknown]";
           const group = groupsByName[groupName] || this.groupForChannel(channel, channelName);
           group.actions.push(action);
+          if (channel) {
+            group.channelIds.add(channel.id);
+          }
           groupsByName[groupName] = group;
         }
       });
@@ -321,8 +324,12 @@ class Scheduling extends React.Component<Props, State> {
       });
     }
 
-    shouldShowChannel(channelId: string): boolean {
-      return !this.state.filterChannelId || this.state.filterChannelId === channelId;
+    groupMatchesChannelId(group: ScheduleGroup, channelId: string): boolean {
+      return group.channelIds.has(this.state.filterChannelId) || this.keyForGroup(group) === this.state.filterChannelId;
+    }
+
+    shouldShowChannelFor(group: ScheduleGroup): boolean {
+      return !this.state.filterChannelId || this.groupMatchesChannelId(group, this.state.filterChannelId);
     }
 
     changeChannelFilter(channelId: string) {
@@ -457,6 +464,10 @@ class Scheduling extends React.Component<Props, State> {
       })).filter((ea) => Boolean(ea.id));
     }
 
+    keyForGroup(group: ScheduleGroup): string {
+      return Array.from(group.channelIds).join("-") || "unknown";
+    }
+
     renderGroupWarningText(group: ScheduleGroup) {
       if (group.isArchived) {
         return (
@@ -490,8 +501,9 @@ class Scheduling extends React.Component<Props, State> {
     renderGroups(groups: Array<ScheduleGroup>) {
       return groups.map((group, index) => {
         const hasActions = group.actions.length > 0;
+        const key = this.keyForGroup(group);
         return (
-          <Collapsible key={`group-${group.channelId || "unknown"}`} revealWhen={this.shouldShowChannel(group.channelId)}>
+          <Collapsible key={`group-${key}`} revealWhen={this.shouldShowChannelFor(group)}>
             <div className={`columns pvl ${index > 0 ? "border-top border-light" : ""}`}>
               <div className={`column ${
                 this.isForSingleGroup() ? "column-full" : "column-page-sidebar ptm"
@@ -581,6 +593,15 @@ class Scheduling extends React.Component<Props, State> {
       return groups.length > 0 ? this.renderGroups(groups) : this.renderNoSchedules();
     }
 
+    filterChannelSelectValueFor(groups: Array<ScheduleGroup>): string {
+      const group = this.state.filterChannelId ? groups.find((ea) => this.groupMatchesChannelId(ea, this.state.filterChannelId)) : null;
+      if (group) {
+        return this.keyForGroup(group);
+      } else {
+        return "";
+      }
+    }
+
     renderHeader(groups: Array<ScheduleGroup>) {
       return (
         <div className={this.props.isMobile ? "" : "position-fixed"}
@@ -607,11 +628,14 @@ class Scheduling extends React.Component<Props, State> {
                 )}
                 <div className="display-inline-block align-m mbs">
                   <h5 className="display-inline-block mtn mrs">Channel</h5>
-                  <Select value={this.state.filterChannelId} className="form-select-s align-m" onChange={this.changeChannelFilter}>
+                  <Select value={this.filterChannelSelectValueFor(groups)} className="form-select-s align-m" onChange={this.changeChannelFilter}>
                     <option value="">All channels</option>
-                    {groups.map((group) => (
-                      <option key={`filterChannelId-${group.channelId}`} value={group.channelId}>{group.channelName || "Unknown channel"}</option>
-                    ))}
+                    {groups.map((group) => {
+                      const key = this.keyForGroup(group);
+                      return (
+                        <option key={`filterChannelId-${key}`} value={key}>{group.channelName || "Unknown channel"}</option>
+                      );
+                    })}
                   </Select>
                 </div>
               </div>

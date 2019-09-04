@@ -487,7 +487,7 @@ describe('Scheduling', () => {
       }));
       const page = wrapper.page;
       const grouped = page.getScheduleByChannel();
-      expect(grouped.map((ea) => ea.channelId)).toEqual(["channel2", "channel1"]);
+      expect(grouped.map((ea) => ea.channelIds)).toEqual([new Set(["channel2"]), new Set(["channel1"])]);
       expect(grouped[0].actions).toEqual([action2, action4]);
       expect(grouped[1].actions).toEqual([action3, action1]);
     });
