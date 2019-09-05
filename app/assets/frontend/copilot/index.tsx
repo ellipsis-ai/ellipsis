@@ -32,6 +32,8 @@ export interface Listener {
   id: string
   channel: string
   channelName: Option<string>
+  behaviorGroupName: Option<string>
+  behaviorGroupIcon: Option<string>
 }
 
 type ResultsData = {
@@ -40,6 +42,7 @@ type ResultsData = {
 
 type Props = PageRequiredProps & {
   csrfToken: string
+  teamName: string
   listener: Listener
 }
 
@@ -186,7 +189,7 @@ class Copilot extends React.Component<Props, State> {
     if (channelName) {
       return (
         <span>
-          <span className="color-gray-light">#</span>
+          <span className="color-gray-medium">#</span>
           <span>{channelName}</span>
         </span>
       );
@@ -205,8 +208,22 @@ class Copilot extends React.Component<Props, State> {
     return (
       <div>
         {this.props.onRenderHeader(
-          <div className="container container-narrow bg-black type-white align-c">
-            <div className="mvn pvm type-label">{this.getChannelName()}</div>
+          <div className="container container-narrow bg-black type-white pvs">
+            <div>
+              <span className="type-label">
+                <span>{this.getChannelName()} </span>
+                <span className="color-gray-light">({this.props.teamName} Slack) </span>
+              </span>
+              <span className="mhs color-gray-medium">→</span>
+              <span className="type-label">
+                {this.props.listener.behaviorGroupIcon ? (
+                  <span className="mrxs">{this.props.listener.behaviorGroupIcon}</span>
+                ) : null}
+                {this.props.listener.behaviorGroupName ? (
+                  <span>{this.props.listener.behaviorGroupName}</span>
+                ) : null}
+              </span>
+            </div>
           </div>
         )}
         {this.renderResults(results)}
