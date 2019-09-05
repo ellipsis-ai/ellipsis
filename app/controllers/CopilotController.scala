@@ -31,15 +31,15 @@ import services.{DataService, DefaultServices}
 import scala.concurrent.{ExecutionContext, Future}
 
 class CopilotController @Inject()(
-                                   val silhouette: Silhouette[EllipsisEnv],
-                                   val configuration: Configuration,
-                                   val services: DefaultServices,
-                                   val ws: WSClient,
-                                   val assetsProvider: Provider[RemoteAssets]
+                                    val silhouette: Silhouette[EllipsisEnv],
+                                    val configuration: Configuration,
+                                    val services: DefaultServices,
+                                    val ws: WSClient,
+                                    val assetsProvider: Provider[RemoteAssets]
                                  )(
-                                   implicit val actorSystem: ActorSystem,
-                                   implicit val executor: ExecutionContext
-                                 ) extends ReAuthable {
+                                    implicit val actorSystem: ActorSystem,
+                                    implicit val executor: ExecutionContext
+                                  ) extends ReAuthable {
 
   val dataService: DataService = services.dataService
 
@@ -108,8 +108,7 @@ class CopilotController @Inject()(
       logEntries <- maybeListener.map { listener =>
         dataService.invocationLogEntries.allForMessageListener(listener, since)
       }.getOrElse(Future.successful(Seq()))
-      resultsData <- Future.sequence(logEntries.map(ea => InvocationLogEntryData.withData(ea, services)))
-        .map(_.sortBy(_.createdAt))
+      resultsData <- Future.sequence(logEntries.map(ea => InvocationLogEntryData.withData(ea, services))).map(_.sortBy(_.createdAt))
     } yield {
       Ok(Json.toJson(ResultsData(resultsData)))
     }
@@ -136,13 +135,7 @@ class CopilotController @Inject()(
             entry <- maybeInvocationEntry
             listener <- maybeListener
           } yield {
-            sendToChatFor(
-              user,
-              listener.behavior.team,
-              entry,
-              listener,
-              maybeTeamAccess.exists(_.isAdminAccess),
-              options)
+            sendToChatFor(user, listener.behavior.team, entry, listener, maybeTeamAccess.exists(_.isAdminAccess), options)
           }).getOrElse {
             Future.successful(NotFound("Entry not found"))
           }
@@ -164,8 +157,8 @@ class CopilotController @Inject()(
       copilotUserData <- dataService.users.userDataFor(user, team)
       maybeBotProfile <- BotContext.maybeContextFor(entry.context) match {
         case Some(SlackContext) => dataService.slackBotProfiles.maybeFirstFor(team, user)
-        // Todo: Implement MS Teams copilot functionality
-        //        case Some(MSTeamsContext) => dataService.msTeamsBotProfiles.allFor(team.id).map(_.headOption)
+// Todo: Implement MS Teams copilot functionality
+//        case Some(MSTeamsContext) => dataService.msTeamsBotProfiles.allFor(team.id).map(_.headOption)
         case _ => {
           Logger.error(s"Sending to chat not implemented for ${entry.context}")
           Future.successful(None)
@@ -188,14 +181,7 @@ class CopilotController @Inject()(
               dataService.slackBotProfiles.sendResultWithNewEvent(
                 "Copilot result sent to chat",
                 (event) => Future.successful(
-                  maybeOverrideResultFor(
-                    event,
-                    copilotUserData,
-                    entry,
-                    originalAuthorData,
-                    maybeResult,
-                    maybeOriginalPermalink,
-                    options.text)
+                  maybeOverrideResultFor(event, copilotUserData, entry, originalAuthorData, maybeResult, maybeOriginalPermalink, options.text)
                 ),
                 slackBotProfile,
                 channel,
@@ -243,9 +229,7 @@ class CopilotController @Inject()(
                                       maybeReplacementText: Option[String]
                                     ): Option[BotResult] = {
     val fallbackOriginal = s"\n> ${entry.messageText.replaceAll("\\n", "\n> ")}"
-    val originalAuthor = originalAuthorUserData.formattedLink
-      .filter(original => !copilotUserData.formattedLink.contains(original)).map(original => s" from ${original}")
-      .getOrElse("")
+    val originalAuthor = originalAuthorUserData.formattedLink.filter(original => !copilotUserData.formattedLink.contains(original)).map(original => s" from ${original}").getOrElse("")
     val prefix = (copilotUserData.formattedLink.map { name =>
       maybeOriginalPermalink.map { permalink =>
         s"$name asked me to send a response to [an earlier message]($permalink)${originalAuthor}:"
