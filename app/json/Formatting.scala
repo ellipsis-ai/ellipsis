@@ -119,12 +119,6 @@ object Formatting {
 
   lazy implicit val apiTokenListConfigWrites = Json.writes[APITokenListConfig]
 
-  lazy implicit val invocationLogEntryReads = Json.reads[InvocationLogEntryData]
-  lazy implicit val invocationLogEntryWrites = Json.writes[InvocationLogEntryData]
-
-  lazy implicit val invocationLogEntriesByDayReads = Json.reads[InvocationLogsByDayData]
-  lazy implicit val invocationLogEntriesByDayWrites = Json.writes[InvocationLogsByDayData]
-
   lazy implicit val scheduledActionArgumentDataReads = Json.reads[ScheduledActionArgumentData]
   lazy implicit val scheduledActionArgumentDataWrites = Json.writes[ScheduledActionArgumentData]
 
@@ -178,6 +172,14 @@ object Formatting {
   lazy implicit val developerContextDataFormat = Json.format[DeveloperContextData]
   lazy implicit val awsLambdaLogResultFormat = Json.format[AWSLambdaLogResult]
   lazy implicit val successResultDataFormat = Json.format[SuccessResultData]
+
+  lazy implicit val actionArgDataFormat = Json.format[ActionArgData]
+  lazy implicit val actionChoiceDataFormat = Json.format[ActionChoiceData]
+  lazy implicit val invocationLogEntryReads = Json.reads[InvocationLogEntryData]
+  lazy implicit val invocationLogEntryWrites = Json.writes[InvocationLogEntryData]
+
+  lazy implicit val invocationLogEntriesByDayReads = Json.reads[InvocationLogsByDayData]
+  lazy implicit val invocationLogEntriesByDayWrites = Json.writes[InvocationLogsByDayData]
 
   lazy implicit val validValueReads = Json.reads[ValidValue]
   lazy implicit val validValueWrites = Json.writes[ValidValue]

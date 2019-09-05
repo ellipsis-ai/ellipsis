@@ -102,7 +102,7 @@ class CopilotController @Inject()(
       logEntries <- maybeListener.map { listener =>
         dataService.invocationLogEntries.allForMessageListener(listener, since)
       }.getOrElse(Future.successful(Seq()))
-      resultsData <- Future.sequence(logEntries.map(ea => InvocationLogEntryData.fromEntryWithUserData(ea, services))).map(_.sortBy(_.createdAt))
+      resultsData <- Future.sequence(logEntries.map(ea => InvocationLogEntryData.withData(ea, services))).map(_.sortBy(_.createdAt))
     } yield {
       Ok(Json.toJson(ResultsData(resultsData)))
     }
