@@ -4,6 +4,7 @@ import java.time.OffsetDateTime
 
 import models.behaviors.invocationlogentry.InvocationLogEntry
 import services.DefaultServices
+import services.caching.SuccessResultData
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,7 +20,8 @@ case class InvocationLogEntryData(
                                    maybeOriginalEventType: Option[String],
                                    runtimeInMilliseconds: Long,
                                    createdAt: OffsetDateTime,
-                                   maybeUserData: Option[UserData]
+                                   maybeUserData: Option[UserData],
+                                   maybeChoices: Option[Seq[ActionChoiceData]]
                                  )
 
 object InvocationLogEntryData {
@@ -36,15 +38,23 @@ object InvocationLogEntryData {
       entry.maybeOriginalEventType.map(_.toString),
       entry.runtimeInMilliseconds,
       entry.createdAt,
-      None)
+      None,
+      None
+    )
   }
 
-  def fromEntryWithUserData(entry: InvocationLogEntry, services: DefaultServices)
-                           (implicit ec: ExecutionContext): Future[InvocationLogEntryData] = {
+  def withData(entry: InvocationLogEntry, services: DefaultServices)
+              (implicit ec: ExecutionContext): Future[InvocationLogEntryData] = {
     for {
       userData <- services.dataService.users.userDataFor(entry.user, entry.behaviorVersion.team)
+      maybeSuccessResult <- SuccessResultData.maybeSuccessResultFor(entry, services.dataService, services.cacheService)
     } yield {
-      InvocationLogEntryData.from(entry).copy(maybeUserData = Some(userData))
+      InvocationLogEntryData.from(entry).copy(
+        maybeUserData = Some(userData),
+        maybeChoices = maybeSuccessResult.map { successResult =>
+          successResult.actionChoicesFor(entry.user).map(ActionChoiceData.from)
+        }
+      )
     }
   }
 }
