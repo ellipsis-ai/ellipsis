@@ -1,7 +1,5 @@
 package services.caching
 
-import json.ActionChoiceData
-import json.Formatting._
 import models.IDs
 import models.behaviors.behaviorversion.BehaviorResponseType
 import models.behaviors.invocationlogentry.InvocationLogEntry
