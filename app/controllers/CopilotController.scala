@@ -43,7 +43,12 @@ class CopilotController @Inject()(
 
   val dataService: DataService = services.dataService
 
-  case class CopilotConfig(containerId: String, csrfToken: Option[String], listener: MessageListenerData)
+  case class CopilotConfig(
+                            containerId: String,
+                            csrfToken: Option[String],
+                            teamName: String,
+                            listener: MessageListenerData
+                          )
 
   implicit lazy val copilotConfigFormat = Json.format[CopilotConfig]
 
@@ -62,6 +67,7 @@ class CopilotController @Inject()(
             val config = CopilotConfig(
               "copilot",
               CSRF.getToken(request).map(_.value),
+              teamAccess.targetTeamName,
               listenerData
             )
             Ok(views.js.shared.webpackLoader(

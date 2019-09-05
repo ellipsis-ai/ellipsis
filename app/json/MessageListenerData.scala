@@ -14,6 +14,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class MessageListenerData(
                                 id: String,
+                                behaviorGroupName: Option[String],
+                                behaviorGroupIcon: Option[String],
                                 action: Option[BehaviorVersionData],
                                 arguments: JsValue,
                                 medium: String,
@@ -52,16 +54,18 @@ object MessageListenerData {
       }.getOrElse(Future.successful(None))
     } yield {
       MessageListenerData(
-        listener.id,
-        maybeBehaviorVersionData,
-        Json.toJson(listener.arguments),
-        listener.medium,
-        listener.channel,
-        maybeChannelData.flatMap(_.name),
-        listener.maybeThreadId,
-        userData,
-        listener.isForCopilot,
-        listener.createdAt
+        id = listener.id,
+        behaviorGroupName = maybeBehaviorVersion.map(_.groupVersion.name),
+        behaviorGroupIcon = maybeBehaviorVersion.flatMap(_.groupVersion.maybeIcon),
+        action = maybeBehaviorVersionData,
+        arguments = Json.toJson(listener.arguments),
+        medium = listener.medium,
+        channel = listener.channel,
+        channelName = maybeChannelData.flatMap(_.name),
+        maybeThreadId = listener.maybeThreadId,
+        user = userData,
+        isForCopilot = listener.isForCopilot,
+        createdAt = listener.createdAt
       )
     }
   }

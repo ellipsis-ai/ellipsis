@@ -26,6 +26,8 @@ case class UserTeamAccess(
 
   val botName: String = maybeBotName.getOrElse(Team.defaultBotName)
 
+  val targetTeamName: String = maybeTargetTeam.map(_.name).getOrElse(loggedInTeam.name)
+
 }
 
 case class User(
