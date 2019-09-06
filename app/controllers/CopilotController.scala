@@ -47,7 +47,8 @@ class CopilotController @Inject()(
                             containerId: String,
                             csrfToken: Option[String],
                             teamName: String,
-                            listener: MessageListenerData
+                            listener: MessageListenerData,
+                            user: UserData
                           )
 
   implicit lazy val copilotConfigFormat = Json.format[CopilotConfig]
@@ -57,6 +58,7 @@ class CopilotController @Inject()(
     for {
       maybeListener <- dataService.messageListeners.find(listenerId, user)
       teamAccess <- dataService.users.teamAccessFor(user, maybeListener.map(_.behavior.team.id))
+      userData <- dataService.users.userDataFor(user, teamAccess.loggedInTeam)
       maybeListenerData <- maybeListener.map { listener =>
         MessageListenerData.from(listener, services).map(Some(_))
       }.getOrElse(Future.successful(None))
@@ -68,7 +70,8 @@ class CopilotController @Inject()(
               "copilot",
               CSRF.getToken(request).map(_.value),
               teamAccess.targetTeamName,
-              listenerData
+              listenerData,
+              userData
             )
             Ok(views.js.shared.webpackLoader(
               viewConfig(None), "CopilotConfig", "copilot", Json.toJson(config)

@@ -34,6 +34,8 @@ export interface Listener {
   channelName: Option<string>
   behaviorGroupName: Option<string>
   behaviorGroupIcon: Option<string>
+  medium: string
+  mediumDescription: Option<string>
 }
 
 type ResultsData = {
@@ -44,6 +46,7 @@ type Props = PageRequiredProps & {
   csrfToken: string
   teamName: string
   listener: Listener
+  user: User
 }
 
 interface ResultDetails {
@@ -240,19 +243,26 @@ class Copilot extends React.Component<Props, State> {
       <div className="max-width-40">
         {this.props.onRenderHeader(
           <div className="phl bg-black type-white pvs width max-width-40">
-            <div>
+            <div className="type-xs">
               <span className="type-label">
-                <span>{this.getChannelName()} </span>
-                <span className="color-gray-light">({this.props.teamName} Slack) </span>
+                <span className="color-gray-medium">Co-pilot for </span>
+                <span>{this.props.user.formattedFullNameOrUserName()}</span>
               </span>
-              <span className="mhs color-gray-medium">→</span>
-              <span className="type-label">
-                {this.props.listener.behaviorGroupIcon ? (
-                  <span className="mrxs">{this.props.listener.behaviorGroupIcon}</span>
-                ) : null}
-                {this.props.listener.behaviorGroupName ? (
-                  <span>{this.props.listener.behaviorGroupName}</span>
-                ) : null}
+            </div>
+            <div className="type-xs">
+              <span className="display-inline-block type-label">
+                <span className="color-gray-medium">Listening in </span>
+                <span>{this.props.listener.mediumDescription || this.props.listener.medium}</span>
+              </span>
+              <span className="color-gray-medium display-inline-block mhs">·</span>
+              <span className="display-inline-block type-label">
+                <span className="color-gray-medium">Workspace: </span>
+                <span>{this.props.teamName}</span>
+              </span>
+              <span className="color-gray-medium display-inline-block mhs">·</span>
+              <span className="display-inline-block type-label">
+                <span className="color-gray-medium">Channel: </span>
+                {this.getChannelName()}
               </span>
             </div>
           </div>
