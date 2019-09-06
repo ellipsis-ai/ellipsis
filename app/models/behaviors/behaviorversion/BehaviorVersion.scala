@@ -125,11 +125,11 @@ case class BehaviorVersion(
         NoResponseForBehaviorVersionResult(event, this, maybeConversation, json, logResultOption, isForCopilot)
       } else {
         if (json.toString == "null") {
-          NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration, developerContext)
+          NoCallbackTriggeredResult(event, maybeConversation, this, dataService, configuration, isForCopilot, developerContext)
         } else if (isSyntaxError(json)) {
-          SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, developerContext)
+          SyntaxErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, isForCopilot, developerContext)
         } else {
-          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, developerContext)
+          ExecutionErrorResult(event, maybeConversation, this, dataService, configuration, json, logResultOption, isForCopilot, developerContext)
         }
       }
     }

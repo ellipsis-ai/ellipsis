@@ -213,7 +213,7 @@ sealed trait BotResult {
   def maybeLog: Option[String] = None
   def maybeLogFile: Option[UploadFileSpec] = None
   lazy val executionInfo: ExecutionInfo = ExecutionInfo.empty
-  val isForCopilot: Boolean = false
+  val isForCopilot: Boolean
 
   def shouldIncludeLogs: Boolean = {
     developerContext.isInDevMode || developerContext.isInInvocationTester
@@ -315,6 +315,7 @@ sealed trait BotResult {
 trait BotResultWithLogResult extends BotResult {
   val payloadJson: JsValue
   val maybeLogResult: Option[AWSLambdaLogResult]
+  override val isForCopilot: Boolean
 
   private val maybeAuthorLogTextFromJson: Option[String] = {
     val logged = (payloadJson \ "logs").validate[Seq[ExecutionLogData]] match {
@@ -396,6 +397,7 @@ case class DialogResult(
   val resultType = ResultType.Dialog
 
   override val shouldSend: Boolean = false
+  val isForCopilot: Boolean = false
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
@@ -422,6 +424,8 @@ case class SimpleTextResult(
 
   def text: String = simpleText
 
+  val isForCopilot: Boolean = false
+
 }
 
 case class TextWithAttachmentsResult(
@@ -432,6 +436,8 @@ case class TextWithAttachmentsResult(
                                       otherAttachments: Seq[MessageAttachment]
                                     ) extends BotResult {
   val resultType = ResultType.TextWithActions
+
+  val isForCopilot: Boolean = false
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = None
 
@@ -472,6 +478,7 @@ case class NoResponseForBuiltinResult(
                                      ) extends NoResponseResult {
   val maybeConversation: Option[Conversation] = None
   val maybeBehaviorVersion: Option[BehaviorVersion] = None
+  val isForCopilot: Boolean = false
 }
 
 trait WithBehaviorLink {
@@ -499,6 +506,7 @@ case class ExecutionErrorResult(
                                  configuration: Configuration,
                                  payloadJson: JsValue,
                                  maybeLogResult: Option[AWSLambdaLogResult],
+                                 isForCopilot: Boolean,
                                  developerContext: DeveloperContext
                                ) extends BotResultWithLogResult with WithBehaviorLink {
 
@@ -582,6 +590,7 @@ case class SyntaxErrorResult(
                               configuration: Configuration,
                               payloadJson: JsValue,
                               maybeLogResult: Option[AWSLambdaLogResult],
+                              override val isForCopilot: Boolean,
                               developerContext: DeveloperContext
                             ) extends BotResultWithLogResult with WithBehaviorLink {
 
@@ -609,6 +618,7 @@ case class NoCallbackTriggeredResult(
                                       behaviorVersion: BehaviorVersion,
                                       dataService: DataService,
                                       configuration: Configuration,
+                                      override val isForCopilot: Boolean,
                                       developerContext: DeveloperContext
                                     ) extends BotResult with WithBehaviorLink {
 
@@ -630,6 +640,7 @@ case class AdminSkillErrorNotificationResult(
 
   val resultType = ResultType.AdminSkillErrorNotification
   val responseType: BehaviorResponseType = Normal
+  val isForCopilot: Boolean = false
 
   override def shouldIncludeLogs: Boolean = true
 
@@ -685,6 +696,7 @@ case class MissingTeamEnvVarsResult(
                                  developerContext: DeveloperContext
                                ) extends BotResult with WithBehaviorLink {
 
+  val isForCopilot: Boolean = false
 
   val linkToEnvVarConfig: String = {
     val baseUrl = configuration.get[String]("application.apiBaseUrl")
@@ -719,6 +731,8 @@ case class AWSDownResult(
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
+  val isForCopilot: Boolean = false
+
   def text: String = {
     """
       |The Amazon Web Service that Ellipsis relies upon is currently down.
@@ -743,6 +757,8 @@ trait OAuthTokenMissing {
   val cacheService: CacheService
   val apiApplicationId: String
   val apiApplicationName: String
+
+  val isForCopilot: Boolean = false
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
 
@@ -811,6 +827,8 @@ trait RequiredApiNotReady {
   val resultType: ResultType = ResultType.RequiredApiNotReady
   val responseType: BehaviorResponseType = Private
 
+  val isForCopilot: Boolean = false
+
   val behaviorVersion: BehaviorVersion
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
   val dataService: DataService
@@ -860,6 +878,7 @@ case class ConflictingConversationResult(
 
   val resultType = ResultType.ConflictingConversation
   val responseType: BehaviorResponseType = Normal
+  val isForCopilot: Boolean = false
 
   val developerContext: DeveloperContext = DeveloperContext.default
 
