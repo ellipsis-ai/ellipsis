@@ -93,12 +93,16 @@ class CopilotController @Inject()(
 
   implicit lazy val resultsDataFormat = Json.format[ResultsData]
 
-  def resultsSince(listenerId: String, when: String) = silhouette.SecuredAction.async { implicit request =>
+  def resultsSince(listenerId: String, maybeWhen: Option[String]) = silhouette.SecuredAction.async { implicit request =>
     val user = request.identity
-    val since = try {
-      OffsetDateTime.parse(when)
-    } catch {
-      case _: DateTimeParseException => OffsetDateTime.now.minusHours(MessageListener.COPILOT_EXPIRY_IN_HOURS)
+    val since = maybeWhen.flatMap { when =>
+      try {
+        Some(OffsetDateTime.parse(when))
+      } catch {
+        case _: DateTimeParseException => None
+      }
+    }.getOrElse {
+      OffsetDateTime.now.minusHours(MessageListener.COPILOT_EXPIRY_IN_HOURS)
     }
     for {
       maybeListener <- dataService.messageListeners.find(listenerId, user)

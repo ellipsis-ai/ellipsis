@@ -18,7 +18,7 @@ interface ResultJson {
   messageText: string
   resultType: string
   resultText: string
-  createdAt: Timestamp
+  createdAt: string
   maybeChannel: Option<string>
   maybeUserIdForContext: Option<string>
   maybeUserData: Option<UserJson>
@@ -60,7 +60,6 @@ interface ResultMap {
 
 interface State {
   loadingResults: boolean
-  lastResultTime: Option<Timestamp>
   lastUpdated: Option<Timestamp>
   results: Result[]
   resultDetails: ResultMap
@@ -73,7 +72,6 @@ class Copilot extends React.Component<Props, State> {
     super(props);
     autobind(this);
     this.state = {
-      lastResultTime: null,
       lastUpdated: null,
       results: [],
       resultDetails: {},
@@ -156,22 +154,22 @@ class Copilot extends React.Component<Props, State> {
     this.setState({
       loadingResults: true
     });
-    DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listener.id, this.getLastResultTime()).url)
+    DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listener.id, this.getMostRecentResultTime()).url)
       .then((json: ResultsData) => {
         const results = json.results.map((ea) => Object.assign({}, ea, {
           maybeUserData: ea.maybeUserData ? User.fromJson(ea.maybeUserData) : null
         }));
+        const oldResults = this.state.results;
         this.setState({
-          results: results,
+          results: this.state.results.concat(results.filter((newResult) => !oldResults.some((oldResult) => oldResult.id === newResult.id))),
           loadingResults: false,
-          lastResultTime: results.length > 0 ? results[results.length - 1].createdAt : null,
           lastUpdated: (new Date()).toISOString()
         });
         this.checkForResultsLater();
       });
   }
 
-  getResults(): Result[] {
+  getDisplayableResultsSortedDescending(): Result[] {
     return this.state.results.filter((ea) => Boolean(ea.resultText)).sort((a, b) => {
       if (moment(a.createdAt).isBefore(b.createdAt)) {
         return 1;
@@ -181,9 +179,9 @@ class Copilot extends React.Component<Props, State> {
     });
   }
 
-  getLastResultTime(): string {
-    const timestamp = this.state.lastResultTime || Date.now();
-    return Formatter.formatTimestampRelativeCalendar(timestamp);
+  getMostRecentResultTime(): Option<string> {
+    const mostRecentResult = this.getDisplayableResultsSortedDescending()[0];
+    return mostRecentResult ? mostRecentResult.createdAt : null;
   }
 
   checkForResultsLater(overrideDuration?: number): void {
@@ -237,7 +235,7 @@ class Copilot extends React.Component<Props, State> {
   }
 
   render() {
-    const results = this.getResults();
+    const results = this.getDisplayableResultsSortedDescending();
     return (
       <div className="max-width-40">
         {this.props.onRenderHeader(
@@ -271,11 +269,11 @@ class Copilot extends React.Component<Props, State> {
   renderResults(results: Array<Result>) {
     if (results.length > 0) {
       return results.map(this.renderResult);
-    } else if (this.state.loadingResults) {
+    } else if (this.state.loadingResults && !this.state.lastUpdated) {
       return null;
     } else {
       return (
-        <div className="mhl bg-white pvxl type-italic type-disabled">There are no copilot results for this channel.</div>
+        <div className="phl bg-white pvxl type-italic type-disabled">There are no copilot results for this channel.</div>
       );
     }
   }
