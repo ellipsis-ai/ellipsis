@@ -54,7 +54,7 @@ POST        /deploy                                   @controllers.BehaviorEdito
 GET         /behavior_test_results/:groupId           @controllers.BehaviorEditorController.testResults(groupId: String)
 
 GET         /copilot/:listenerId                      @controllers.CopilotController.index(listenerId: String)
-GET         /copilot/:listenerId/results/:when        @controllers.CopilotController.resultsSince(listenerId: String, when: String)
+GET         /copilot/:listenerId/results/             @controllers.CopilotController.resultsSince(listenerId: String, when: Option[String])
 POST        /copilot/send_to_channel/:invocationId    @controllers.CopilotController.sendToChannel(invocationId: String)
 
 GET         /skill/:groupId/schedules                 @controllers.BehaviorGroupConfigController.schedules(groupId: String)
