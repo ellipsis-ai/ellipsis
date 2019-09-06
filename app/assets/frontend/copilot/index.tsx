@@ -34,6 +34,8 @@ export interface Listener {
   channelName: Option<string>
   behaviorGroupName: Option<string>
   behaviorGroupIcon: Option<string>
+  medium: string
+  mediumDescription: Option<string>
 }
 
 type ResultsData = {
@@ -250,7 +252,7 @@ class Copilot extends React.Component<Props, State> {
             <div className="type-xs">
               <span className="display-inline-block type-label">
                 <span className="color-gray-medium">Listening in </span>
-                <span>Slack</span>
+                <span>{this.props.listener.mediumDescription || this.props.listener.medium}</span>
               </span>
               <span className="color-gray-medium display-inline-block mhs">·</span>
               <span className="display-inline-block type-label">
