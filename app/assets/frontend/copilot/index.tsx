@@ -66,6 +66,7 @@ interface State {
   lastUpdated: Option<Timestamp>
   results: Result[]
   resultDetails: ResultMap
+  errorLoadingResults: boolean
 }
 
 class Copilot extends React.Component<Props, State> {
@@ -78,7 +79,8 @@ class Copilot extends React.Component<Props, State> {
       lastUpdated: null,
       results: [],
       resultDetails: {},
-      loadingResults: true
+      loadingResults: true,
+      errorLoadingResults: false
     };
   }
 
@@ -155,7 +157,8 @@ class Copilot extends React.Component<Props, State> {
 
   checkForUpdates(): void {
     this.setState({
-      loadingResults: true
+      loadingResults: true,
+      errorLoadingResults: false
     });
     DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listener.id, this.getMostRecentResultTime()).url)
       .then((json: ResultsData) => {
@@ -169,6 +172,11 @@ class Copilot extends React.Component<Props, State> {
           lastUpdated: (new Date()).toISOString()
         });
         this.checkForResultsLater();
+      }).catch(() => {
+        this.setState({
+          loadingResults: false,
+          errorLoadingResults: true
+        });
       });
   }
 
@@ -218,15 +226,22 @@ class Copilot extends React.Component<Props, State> {
       );
     } else if (this.state.lastUpdated) {
       return (
-        <div className="columns columns-elastic">
+        <div className="columns columns-elastic height-xl">
           <div className="column column-expand">
             Last updated: {Formatter.formatTimestampShort(this.state.lastUpdated)}
           </div>
-          <div className="column column-shrink">
-            <span
-              className={`pulse color-green-medium visibility ${
-                this.state.loadingResults ? "visibility-visible" : "visibility-hidden"
-              }`}>●</span>
+          <div className="column column-shrink display-nowrap">
+            {this.state.loadingResults ? (
+              <span className="pulse color-green-medium">●</span>
+            ) : null}
+            {this.state.errorLoadingResults ? (
+              <div>
+                <Button className="button-s button-subtle button-shrink" onClick={this.checkForUpdates}>
+                  <span className="color-pink-medium type-label">Retry</span>
+                </Button>
+                <span className="color-pink-medium">●</span>
+              </div>
+            ) : null}
           </div>
         </div>
       );
