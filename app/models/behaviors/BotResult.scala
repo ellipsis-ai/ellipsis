@@ -315,7 +315,6 @@ sealed trait BotResult {
 trait BotResultWithLogResult extends BotResult {
   val payloadJson: JsValue
   val maybeLogResult: Option[AWSLambdaLogResult]
-  override val isForCopilot: Boolean
 
   private val maybeAuthorLogTextFromJson: Option[String] = {
     val logged = (payloadJson \ "logs").validate[Seq[ExecutionLogData]] match {
@@ -353,7 +352,7 @@ case class SuccessResult(
                           maybeResponseTemplate: Option[String],
                           maybeLogResult: Option[AWSLambdaLogResult],
                           override val responseType: BehaviorResponseType,
-                          override val isForCopilot: Boolean,
+                          isForCopilot: Boolean,
                           developerContext: DeveloperContext,
                           dataService: DataService
                         ) extends BotResultWithLogResult {
@@ -467,7 +466,7 @@ case class NoResponseForBehaviorVersionResult(
                                                maybeConversation: Option[Conversation],
                                                payloadJson: JsValue,
                                                maybeLogResult: Option[AWSLambdaLogResult],
-                                               override val isForCopilot: Boolean
+                                               isForCopilot: Boolean
                                              ) extends BotResultWithLogResult with NoResponseResult {
 
   val maybeBehaviorVersion: Option[BehaviorVersion] = Some(behaviorVersion)
@@ -590,7 +589,7 @@ case class SyntaxErrorResult(
                               configuration: Configuration,
                               payloadJson: JsValue,
                               maybeLogResult: Option[AWSLambdaLogResult],
-                              override val isForCopilot: Boolean,
+                              isForCopilot: Boolean,
                               developerContext: DeveloperContext
                             ) extends BotResultWithLogResult with WithBehaviorLink {
 
@@ -618,7 +617,7 @@ case class NoCallbackTriggeredResult(
                                       behaviorVersion: BehaviorVersion,
                                       dataService: DataService,
                                       configuration: Configuration,
-                                      override val isForCopilot: Boolean,
+                                      isForCopilot: Boolean,
                                       developerContext: DeveloperContext
                                     ) extends BotResult with WithBehaviorLink {
 
