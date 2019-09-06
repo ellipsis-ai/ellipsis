@@ -9,7 +9,9 @@
 )(content: Html)(implicit messages: Messages, r: RequestHeader)
 
 @navBgColorForPage = @{
-  if (hideNav) {
+  if (hideHeader) {
+    ""
+  } else if (hideNav) {
     "bg-black type-white"
   } else {
     "bg-white-translucent type-black"

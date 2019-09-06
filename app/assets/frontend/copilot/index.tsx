@@ -61,6 +61,7 @@ interface ResultMap {
 interface State {
   loadingResults: boolean
   lastResultTime: Option<Timestamp>
+  lastUpdated: Option<Timestamp>
   results: Result[]
   resultDetails: ResultMap
 }
@@ -73,6 +74,7 @@ class Copilot extends React.Component<Props, State> {
     autobind(this);
     this.state = {
       lastResultTime: null,
+      lastUpdated: null,
       results: [],
       resultDetails: {},
       loadingResults: true
@@ -151,6 +153,9 @@ class Copilot extends React.Component<Props, State> {
   }
 
   checkForUpdates(): void {
+    this.setState({
+      loadingResults: true
+    });
     DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listener.id, this.getLastResultTime()).url)
       .then((json: ResultsData) => {
         const results = json.results.map((ea) => Object.assign({}, ea, {
@@ -158,7 +163,9 @@ class Copilot extends React.Component<Props, State> {
         }));
         this.setState({
           results: results,
-          loadingResults: false
+          loadingResults: false,
+          lastResultTime: results.length > 0 ? results[results.length - 1].createdAt : null,
+          lastUpdated: (new Date()).toISOString()
         });
         this.checkForResultsLater();
       });
@@ -203,12 +210,38 @@ class Copilot extends React.Component<Props, State> {
     }
   }
 
+  renderStatus() {
+    if (this.state.loadingResults && !this.state.lastUpdated) {
+      return (
+        <div className="pulse">Updating…</div>
+      );
+    } else if (this.state.lastUpdated) {
+      return (
+        <div className="columns columns-elastic">
+          <div className="column column-expand">
+            Last updated: {Formatter.formatTimestampShort(this.state.lastUpdated)}
+          </div>
+          <div className="column column-shrink">
+            <span
+              className={`pulse color-green-medium visibility ${
+                this.state.loadingResults ? "visibility-visible" : "visibility-hidden"
+              }`}>●</span>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div>Error during last update</div>
+      );
+    }
+  }
+
   render() {
     const results = this.getResults();
     return (
-      <div>
+      <div className="max-width-40">
         {this.props.onRenderHeader(
-          <div className="container container-narrow bg-black type-white pvs">
+          <div className="phl bg-black type-white pvs width max-width-40">
             <div>
               <span className="type-label">
                 <span>{this.getChannelName()} </span>
@@ -226,6 +259,9 @@ class Copilot extends React.Component<Props, State> {
             </div>
           </div>
         )}
+        <div className="bg-light phl pvs type-s type-weak">
+          {this.renderStatus()}
+        </div>
         {this.renderResults(results)}
         {this.props.onRenderFooter()}
       </div>
@@ -236,12 +272,10 @@ class Copilot extends React.Component<Props, State> {
     if (results.length > 0) {
       return results.map(this.renderResult);
     } else if (this.state.loadingResults) {
-      return (
-        <div className="container container-narrow pvxl pulse type-italic type-disabled">Loading…</div>
-      );
+      return null;
     } else {
       return (
-        <div className="container container-narrow pvxl type-italic type-disabled">There are no copilot results for this channel.</div>
+        <div className="mhl bg-white pvxl type-italic type-disabled">There are no copilot results for this channel.</div>
       );
     }
   }
@@ -282,7 +316,7 @@ class Copilot extends React.Component<Props, State> {
     });
   }
 
-  renderResult(result: Result) {
+  renderResult(result: Result, index: number) {
     const isSending = this.isSendingResult(result);
     const hasSentPermalink = this.hasSentPermalink(result);
     const sendError = this.getSendError(result);
@@ -291,7 +325,7 @@ class Copilot extends React.Component<Props, State> {
     const hasChanges = result.resultText !== editorText;
     return (
         <Collapsible animationDuration={0.5} revealWhen={this.hasRendered(result)} key={`result-${result.id}`}>
-          <div className="position-relative border-bottom ptl pbs" onClick={this.revealEditorFor.bind(this, result)}>
+          <div className="bg-white position-relative border-top ptl pbs" onClick={this.revealEditorFor.bind(this, result)}>
             {showEditor ? (
               <div className="position-absolute position-top-left position-top-right position-z-front fade-in bg-white phl pvm" onClick={event => event.stopPropagation()}>
                 <h5 className="mtn mbxs">Edit response</h5>
@@ -309,10 +343,17 @@ class Copilot extends React.Component<Props, State> {
                 </div>
               </div>
             ) : null}
-            <div className="type-weak type-s mhl border-left-thick border-gray pls">
-              <div>
-                <b>{result.maybeUserData ? result.maybeUserData.formattedFullNameOrUserName() : "(Unknown user)"}</b>
-                <span> · {Formatter.formatTimestampRelativeCalendar(result.createdAt)}</span>
+            <div className="type-weak type-s mll border-left-thick border-gray pls">
+              <div className="columns columns-elastic">
+                <div className="column column-expand">
+                  <b>{result.maybeUserData ? result.maybeUserData.formattedFullNameOrUserName() : "(Unknown user)"}</b>
+                  <span> · {Formatter.formatTimestampRelativeCalendar(result.createdAt)}</span>
+                </div>
+                <div className="column column-shrink">
+                  {index === 0 ? (
+                    <span className="type-label border-radius-left bg-black type-white phxs mls">Latest</span>
+                  ) : null}
+                </div>
               </div>
               <div>{result.messageText}</div>
             </div>
