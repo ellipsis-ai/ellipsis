@@ -154,7 +154,7 @@ class Copilot extends React.Component<Props, State> {
     this.setState({
       loadingResults: true
     });
-    DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listener.id, this.getLastResultTime()).url)
+    DataRequest.jsonGet(jsRoutes.controllers.CopilotController.resultsSince(this.props.listener.id, this.getMostRecentResultTime()).url)
       .then((json: ResultsData) => {
         const results = json.results.map((ea) => Object.assign({}, ea, {
           maybeUserData: ea.maybeUserData ? User.fromJson(ea.maybeUserData) : null
@@ -169,7 +169,7 @@ class Copilot extends React.Component<Props, State> {
       });
   }
 
-  getResults(): Result[] {
+  getDisplayableResultsSortedDescending(): Result[] {
     return this.state.results.filter((ea) => Boolean(ea.resultText)).sort((a, b) => {
       if (moment(a.createdAt).isBefore(b.createdAt)) {
         return 1;
@@ -179,8 +179,8 @@ class Copilot extends React.Component<Props, State> {
     });
   }
 
-  getLastResultTime(): Option<string> {
-    const mostRecentResult = this.getResults()[0];
+  getMostRecentResultTime(): Option<string> {
+    const mostRecentResult = this.getDisplayableResultsSortedDescending()[0];
     return mostRecentResult ? mostRecentResult.createdAt : null;
   }
 
@@ -235,7 +235,7 @@ class Copilot extends React.Component<Props, State> {
   }
 
   render() {
-    const results = this.getResults();
+    const results = this.getDisplayableResultsSortedDescending();
     return (
       <div className="max-width-40">
         {this.props.onRenderHeader(
