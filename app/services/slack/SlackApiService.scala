@@ -26,6 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait InvalidResponseException
 
+case class TooManyRequestsException(ellipsisTeamId: String, slackTeamId: String) extends Exception(s"Slack API said too many requests for Slack team ${slackTeamId} (Ellipsis team ID ${ellipsisTeamId})") with InvalidResponseException
 case class ErrorResponseException(status: Int, statusText: String) extends Exception(s"Slack API returned ${status}: ${statusText}") with InvalidResponseException
 case class MalformedResponseException(message: String) extends Exception(message) with InvalidResponseException
 case class SlackApiError(code: String) extends Exception(code)
@@ -70,6 +71,9 @@ case class SlackApiClient(
              |""".stripMargin
         )
       }
+    } else if (response.status == 429) {
+      Logger.error(s"""Slack API said too many requests to Slack API for team ID ${profile.teamId} with Slack team ID ${profile.slackTeamId}""")
+      throw TooManyRequestsException(profile.slackTeamId, profile.teamId)
     } else {
       Logger.error(
         s"""Received irregular response from Slack API:

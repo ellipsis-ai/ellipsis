@@ -12,6 +12,7 @@ import services.DataService
 import services.caching.{CacheService, SlackUserDataByEmailCacheKey, SlackUserDataCacheKey}
 import services.slack.apiModels.SlackUser
 import slick.dbio.DBIO
+import utils.FutureSequencer
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -48,7 +49,7 @@ class SlackEventServiceImpl @Inject()(
 
   def slackUserDataList(slackUserIds: Set[String], botProfile: SlackBotProfile): Future[Set[SlackUserData]] = {
     val client = clientFor(botProfile)
-    Future.sequence(slackUserIds.map { userId =>
+    FutureSequencer.sequence(slackUserIds.toSeq, { (userId: String) =>
       maybeSlackUserDataFor(userId, client, (e) => {
         Logger.info(
           s"""Slack API reported user not found while trying to convert user IDs to username:
@@ -58,7 +59,7 @@ class SlackEventServiceImpl @Inject()(
           """.stripMargin, e)
         None
       })
-    }).map(_.flatten)
+    }).map(_.flatten.toSet)
   }
 
   private def slackUserDataFromSlackUser(user: SlackUser, client: SlackApiClient): SlackUserData = {

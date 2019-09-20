@@ -81,6 +81,7 @@ class CacheServiceImpl @Inject() (
     defaultCachingSettings.withLfuCacheSettings(shortLivedLfuCacheSettings)
   }
 
+  val slackApiUserInfoExpiry: Duration = 30.seconds
   val slackApiCallExpiry: Duration = 10.seconds
   val msTeamsApiCallExpiry: Duration = 10.seconds
   val defaultStorageSchemaExpiry: Duration = 10.seconds
@@ -281,7 +282,7 @@ class CacheServiceImpl @Inject() (
     dataTypeBotResultsCache.remove(key)
   }
 
-  private val slackUserDataCache: Cache[SlackUserDataCacheKey, Option[SlackUserData]] = LfuCache(cacheSettingsWithTimeToLive(slackApiCallExpiry))
+  private val slackUserDataCache: Cache[SlackUserDataCacheKey, Option[SlackUserData]] = LfuCache(cacheSettingsWithTimeToLive(slackApiUserInfoExpiry))
 
   def getSlackUserData(key: SlackUserDataCacheKey, dataFn: SlackUserDataCacheKey => Future[Option[SlackUserData]]): Future[Option[SlackUserData]] = {
     slackUserDataCache.getOrLoad(key, dataFn)
