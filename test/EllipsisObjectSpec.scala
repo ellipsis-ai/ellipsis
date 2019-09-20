@@ -97,7 +97,7 @@ class EllipsisObjectSpec extends DBSpec {
       setUpMocksFor(event, user, team, services)
       runNow(for {
         userInfo <- DeprecatedUserInfo.buildForAction(event, maybeConversation, services)
-        teamInfo <- DBIO.successful(TeamInfo(team.id, Seq(), Map(), None, None, Some(team.timeZone.toString)))
+        teamInfo <- DBIO.successful(TeamInfo(team.id, Seq(), Map(), None, None, Some(team.timeZone.toString), None))
         eventUser <- EventUser.buildForAction(event, maybeConversation, services)
       } yield {
         val maybeChannelObj = Some(Channel(channel, maybeChannel, Some(s"<@$channel>"), None))

@@ -20,7 +20,8 @@ case class TeamInfo(
                      aws: Map[String, AWSConfigInfo],
                      botName: Option[String],
                      botUserIdForContext: Option[String],
-                     timeZone: Option[String]
+                     timeZone: Option[String],
+                     teamIdForContext: Option[String]
                    )
 
 object TeamInfo {
@@ -57,7 +58,8 @@ object TeamInfo {
         aws,
         maybeBotInfo.map(_.name),
         maybeBotInfo.map(_.userIdForContext),
-        Some(team.timeZone.toString)
+        Some(team.timeZone.toString),
+        maybeBotInfo.map(_.teamIdForContext)
       )
     }
   }
