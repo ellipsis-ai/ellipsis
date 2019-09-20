@@ -59,6 +59,7 @@ class AWSLambdaCodeSpec extends PlaySpec with MockitoSugar {
     Map(),
     None,
     None,
+    None,
     None
   )
   def ellipsisObjectFor(user: User, team: Team) = {
