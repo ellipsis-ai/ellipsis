@@ -176,7 +176,7 @@ case class SlackEventContext(
 
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     botName(services).map { botName =>
-      Some(BotInfo(botName, profile.userId))
+      Some(BotInfo(botName, profile.userId, profile.teamIdForContext))
     }
   }
 
@@ -518,7 +518,7 @@ case class MSTeamsEventContext(
 
   def maybeBotInfo(services: DefaultServices)(implicit actorSystem: ActorSystem, ec: ExecutionContext): Future[Option[BotInfo]] = {
     botName(services).map { botName =>
-      Some(BotInfo(botName, botUserIdForContext))
+      Some(BotInfo(botName, botUserIdForContext, teamIdForContext))
     }
   }
 

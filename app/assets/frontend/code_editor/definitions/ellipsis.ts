@@ -497,6 +497,9 @@ declare namespace ellipsis {
     
     /** The team’s current time zone in tz database format, e.g. \`America/New_York\` */
     timeZone: string
+    
+    /** The team’s ID in the platform used to run the action */
+    teamIdForContext: string
   }
 
   /**
