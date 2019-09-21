@@ -57,9 +57,13 @@ class GraphQLServiceImpl @Inject() (
   }
 
   private def schemaStringFor(groupVersionId: String): Future[String] = {
-    dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersionId).map(_.sortBy(_.id)).flatMap { configs =>
-      buildSchemaStringFor(configs.map(_.behaviorVersion))
-    }
+    for {
+      configs <- dataService.dataTypeConfigs.allUsingDefaultStorageFor(groupVersionId).map(_.sortBy(_.id))
+      behaviorVersions <- Future.sequence(configs.map { ea =>
+        dataService.behaviorVersions.findWithoutAccessCheck(ea.behaviorVersion.id)
+      }).map(_.flatten)
+      schemaString <- buildSchemaStringFor(behaviorVersions)
+    } yield schemaString
   }
 
   private def previewSchemaStringFor(data: BehaviorGroupData): Future[String] = {

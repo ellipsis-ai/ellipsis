@@ -123,7 +123,7 @@ class DefaultStorageItemServiceImpl @Inject() (
     for {
       maybeConfig <- dataService.dataTypeConfigs.findAction(field.configId)
       items <- maybeConfig.map { config =>
-        val behaviorId = config.behaviorVersion.behavior.id
+        val behaviorId = config.behaviorVersion.behaviorId
         for {
           result <- searchByFieldQuery(searchQuery, field.name, behaviorId).result
           items <- DBIO.sequence(result.map(tuple2Item))
@@ -158,11 +158,13 @@ class DefaultStorageItemServiceImpl @Inject() (
   private def fieldValueWithIdsFor(field: DataTypeField, fieldValue: JsValue, team: Team): DBIO[JsValue] = {
     field.fieldType match {
       case t: BuiltInType => DBIO.successful(t.prepareJsValue(fieldValue, team))
-      case t: BehaviorBackedDataType => {
-        fieldsForBehaviorVersionAction(t.behaviorVersion).flatMap { fields =>
-          dataWithFieldIdsFor(fieldValue, fields, team)
-        }
-      }
+      case t: BehaviorBackedDataType => for {
+        maybeBehaviorVersion <- dataService.behaviorVersions.findWithoutAccessCheckAction(t.dataTypeConfig.behaviorVersion.id)
+        fields <- maybeBehaviorVersion.map { behaviorVersion =>
+          fieldsForBehaviorVersionAction(behaviorVersion)
+        }.getOrElse(DBIO.successful(Seq()))
+        data <- dataWithFieldIdsFor(fieldValue, fields, team)
+      } yield data
     }
   }
 
@@ -192,9 +194,12 @@ class DefaultStorageItemServiceImpl @Inject() (
       case t: BuiltInType => DBIO.successful(fieldValue)
       case t: BehaviorBackedDataType => {
         fieldValue match {
-          case id: JsString => findByIdAction(id.value, t.behaviorVersion.groupVersion).map { maybeItem =>
-            maybeItem.map(_.data).getOrElse(id)
-          }
+          case id: JsString => for {
+            maybeGroupVersion <- dataService.behaviorGroupVersions.findWithoutAccessCheckAction(t.dataTypeConfig.behaviorVersion.groupVersionId)
+            maybeItem <- maybeGroupVersion.map { groupVersion =>
+              findByIdAction(id.value, groupVersion)
+            }.getOrElse(DBIO.successful(None))
+          } yield maybeItem.map(_.data).getOrElse(id)
           case _ => DBIO.successful(fieldValue)
         }
       }

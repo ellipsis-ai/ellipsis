@@ -4,6 +4,10 @@ import export.BehaviorGroupExporter
 import models.IDs
 import models.behaviors.behaviorparameter.TextType
 import models.behaviors.datatypefield.{DataTypeFieldForSchema, FieldTypeForSchema}
+import services.DataService
+import slick.dbio.DBIO
+
+import scala.concurrent.ExecutionContext
 
 case class DataTypeFieldData(
                               id: Option[String],
@@ -16,10 +20,12 @@ case class DataTypeFieldData(
 
   val isBuiltin: Boolean = name == "id"
 
-  lazy val fieldTypeForSchema: FieldTypeForSchema = {
-    fieldType.getOrElse {
+  def fieldTypeForSchema(dataService: DataService)(implicit ec: ExecutionContext): DBIO[FieldTypeForSchema] = {
+    fieldType.map(DBIO.successful).getOrElse {
       val paramType = TextType
-      BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(false), Some(paramType.typescriptType))
+      paramType.exportId(dataService).map { exportId =>
+        BehaviorParameterTypeData(Some(paramType.id), Some(exportId), paramType.name, Some(false), Some(paramType.typescriptType))
+      }
     }
   }
 

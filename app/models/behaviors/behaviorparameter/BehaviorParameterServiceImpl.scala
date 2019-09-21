@@ -81,9 +81,13 @@ class BehaviorParameterServiceImpl @Inject() (
   }
 
   def haveSameInterface(behaviorParameter1: BehaviorParameter, behaviorParameter2: BehaviorParameter): Future[Boolean] = {
-    Future.successful(behaviorParameter1.name == behaviorParameter2.name &&
-      behaviorParameter1.paramType.exportId == behaviorParameter2.paramType.exportId
-    )
+    val action = for {
+      paramIExportId <- behaviorParameter1.paramType.exportId(dataService)
+      param2ExportId <- behaviorParameter2.paramType.exportId(dataService)
+    } yield {
+      behaviorParameter1.name == behaviorParameter2.name && paramIExportId == param2ExportId
+    }
+    dataService.run(action)
   }
 
 }
