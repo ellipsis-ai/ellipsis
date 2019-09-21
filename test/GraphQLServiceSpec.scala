@@ -2,10 +2,13 @@ import json._
 import models.IDs
 import models.accounts.user.User
 import models.behaviors.behaviorgroup.BehaviorGroup
+import models.behaviors.behaviorgroupversion.BehaviorGroupVersion
 import models.behaviors.behaviorparameter.{BehaviorParameterType, NumberType, TextType, YesNoType}
+import models.behaviors.datatypeconfig.LoadedDataTypeConfig
 import models.behaviors.defaultstorageitem.{IdPassedForCreationException, NoIdPassedForUpdateException}
 import play.api.libs.json._
 import services.{DataService, GraphQLService, ItemNotFoundError}
+import slick.dbio.DBIO
 import support.DBSpec
 
 class GraphQLServiceSpec extends DBSpec {
@@ -65,6 +68,11 @@ class GraphQLServiceSpec extends DBSpec {
     }
   }
 
+  def loadedDataTypeConfigsFor(groupVersion: BehaviorGroupVersion): Seq[LoadedDataTypeConfig] = {
+    val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(groupVersion))
+    runNow(DBIO.sequence(dataTypeConfigs.map(ea => LoadedDataTypeConfig.fromAction(ea, dataService))))
+  }
+
   "schemaFor" should {
 
     "build a schema" in {
@@ -74,7 +82,7 @@ class GraphQLServiceSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
-        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val dataTypeConfigs = loadedDataTypeConfigsFor(firstVersion)
         val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
 
         val schema = runNow(graphQLService.schemaFor(firstVersion, user))
@@ -176,7 +184,7 @@ class GraphQLServiceSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
-        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val dataTypeConfigs = loadedDataTypeConfigsFor(firstVersion)
         val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
 
         val mutation =
@@ -223,7 +231,7 @@ class GraphQLServiceSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
-        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val dataTypeConfigs = loadedDataTypeConfigsFor(firstVersion)
         val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
         val someType2 = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType2").get
 
@@ -274,7 +282,7 @@ class GraphQLServiceSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
-        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val dataTypeConfigs = loadedDataTypeConfigsFor(firstVersion)
         val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
 
         val createMutation =
@@ -318,7 +326,7 @@ class GraphQLServiceSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
-        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val dataTypeConfigs = loadedDataTypeConfigsFor(firstVersion)
         val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
 
         val createMutation =
@@ -362,7 +370,7 @@ class GraphQLServiceSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
-        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val dataTypeConfigs = loadedDataTypeConfigsFor(firstVersion)
         val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
 
         val createMutation =
@@ -514,7 +522,7 @@ class GraphQLServiceSpec extends DBSpec {
         val group = newSavedBehaviorGroupFor(team)
         val groupData = buildGroupDataFor(group, user)
         val firstVersion = newSavedGroupVersionFor(group, user, Some(groupData))
-        val dataTypeConfigs = runNow(dataService.dataTypeConfigs.allFor(firstVersion))
+        val dataTypeConfigs = loadedDataTypeConfigsFor(firstVersion)
         val someType = dataTypeConfigs.find(_.behaviorVersion.typeName == "SomeType").get
 
         val createMutation =
