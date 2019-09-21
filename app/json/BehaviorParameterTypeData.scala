@@ -24,19 +24,19 @@ case class BehaviorParameterTypeData(
     } yield builtin
   }
 
-  lazy val outputName: String = {
+  def outputName(dataService: DataService)(implicit ec: ExecutionContext): DBIO[String] = {
     maybeBuiltinType.map { builtin =>
-      builtin.outputName
+      builtin.outputName(dataService)
     }.getOrElse {
-      GraphQLHelpers.formatTypeName(name)
+      DBIO.successful(GraphQLHelpers.formatTypeName(name))
     }
   }
 
-  override lazy val inputName: String = {
+  override def inputName(dataService: DataService)(implicit ec: ExecutionContext): DBIO[String] = {
     maybeBuiltinType.map { builtin =>
-      builtin.inputName
+      builtin.inputName(dataService)
     }.getOrElse {
-      outputName ++ "Input"
+      outputName(dataService).map(_ ++ "Input")
     }
   }
 
@@ -49,8 +49,11 @@ case class BehaviorParameterTypeData(
 object BehaviorParameterTypeData {
 
   def fromAction(paramType: BehaviorParameterType, dataService: DataService)(implicit ec: ExecutionContext): DBIO[BehaviorParameterTypeData] = {
-    paramType.needsConfigAction(dataService).map { needsConfig =>
-      BehaviorParameterTypeData(Some(paramType.id), Some(paramType.exportId), paramType.name, Some(needsConfig), Some(paramType.typescriptType))
+    for {
+      needsConfig <- paramType.needsConfigAction(dataService)
+      exportId <- paramType.exportId(dataService)
+    } yield {
+      BehaviorParameterTypeData(Some(paramType.id), Some(exportId), paramType.name, Some(needsConfig), Some(paramType.typescriptType))
     }
   }
 

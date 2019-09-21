@@ -1,8 +1,13 @@
 package models.behaviors.datatypefield
 
+import services.DataService
+import slick.dbio.DBIO
+
+import scala.concurrent.ExecutionContext
+
 trait FieldTypeForSchema {
 
-  val outputName: String
-  lazy val inputName: String = outputName
+  def outputName(dataService: DataService)(implicit ec: ExecutionContext): DBIO[String]
+  def inputName(dataService: DataService)(implicit ec: ExecutionContext): DBIO[String] = outputName(dataService)
 
 }

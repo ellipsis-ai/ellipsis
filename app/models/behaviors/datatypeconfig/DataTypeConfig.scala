@@ -1,11 +1,11 @@
 package models.behaviors.datatypeconfig
 
-import models.behaviors.behaviorversion.BehaviorVersion
+import models.behaviors.behaviorversion.RawBehaviorVersion
 
 case class DataTypeConfig(
                           id: String,
                           maybeUsesCode: Option[Boolean],
-                          behaviorVersion: BehaviorVersion
+                          behaviorVersion: RawBehaviorVersion
                         ) {
 
   def usesCode: Boolean = maybeUsesCode.isEmpty || maybeUsesCode.contains(true)
