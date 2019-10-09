@@ -19,6 +19,7 @@ import models.team.Team
 import play.api.Configuration
 import services._
 import services.caching.CacheService
+import slick.dbio.DBIO
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -154,9 +155,12 @@ class BehaviorVersionServiceImpl @Inject() (
 
   val findQuery = Compiled(uncompiledFindQuery _)
 
+  def findWithoutAccessCheckAction(id: String): DBIO[Option[BehaviorVersion]] = {
+    findQuery(id).result.map(_.headOption.map(tuple2BehaviorVersion))
+  }
+
   def findWithoutAccessCheck(id: String): Future[Option[BehaviorVersion]] = {
-    val action = findQuery(id).result.map(_.headOption.map(tuple2BehaviorVersion))
-    dataService.run(action)
+    dataService.run(findWithoutAccessCheckAction(id))
   }
 
   def find(id: String, user: User): Future[Option[BehaviorVersion]] = {

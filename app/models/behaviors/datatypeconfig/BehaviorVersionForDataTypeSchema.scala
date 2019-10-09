@@ -25,9 +25,10 @@ trait BehaviorVersionForDataTypeSchema {
   def dataTypeFields(dataService: DataService)(implicit ec: ExecutionContext): Future[Seq[DataTypeFieldForSchema]]
 
   def outputFields(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
-    dataTypeFields(dataService).map { fields =>
-      "  " ++ fields.sortBy(_.name).map(_.output).mkString("\n  ")
-    }
+    for {
+      fields <- dataTypeFields(dataService).map(_.sortBy(_.name))
+      outputs <- Future.sequence(fields.map(f => dataService.run(f.output(dataService))))
+    } yield "  " ++ outputs.mkString("\n  ")
   }
 
   def outputFieldNamesAction(dataService: DataService)(implicit ec: ExecutionContext): DBIO[String] = {
@@ -49,9 +50,10 @@ trait BehaviorVersionForDataTypeSchema {
   }
 
   def inputFields(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {
-    dataTypeFields(dataService).map { fields =>
-      "  " ++ fields.sortBy(_.name).map(_.input).mkString("\n  ")
-    }
+    for {
+      fields <- dataTypeFields(dataService).map(_.sortBy(_.name))
+      inputs <- Future.sequence(fields.map(f => dataService.run(f.input(dataService))))
+    } yield "  " ++ inputs.mkString("\n  ")
   }
 
   def input(dataService: DataService)(implicit ec: ExecutionContext): Future[String] = {

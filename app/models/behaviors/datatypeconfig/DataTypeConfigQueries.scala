@@ -1,22 +1,22 @@
 package models.behaviors.datatypeconfig
 
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.behaviorversion.BehaviorVersionQueries
+import models.behaviors.behaviorversion.{BehaviorVersionQueries, RawBehaviorVersion}
 
 object DataTypeConfigQueries {
 
   val all = TableQuery[DataTypeConfigsTable]
-  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.allWithGroupVersion).on(_.behaviorVersionId === _._1._1.id)
+  val allWithBehaviorVersion = all.join(BehaviorVersionQueries.all).on(_.behaviorVersionId === _.id)
 
-  type TupleType = (RawDataTypeConfig, BehaviorVersionQueries.TupleType)
+  type TupleType = (RawDataTypeConfig, RawBehaviorVersion)
 
   def tuple2Config(tuple: TupleType): DataTypeConfig = {
     val raw = tuple._1
-    DataTypeConfig(raw.id, raw.maybeUsesCode, BehaviorVersionQueries.tuple2BehaviorVersion(tuple._2))
+    DataTypeConfig(raw.id, raw.maybeUsesCode, tuple._2)
   }
 
   def uncompiledAllForQuery(groupVersionId: Rep[String]) = {
-    allWithBehaviorVersion.filter { case(_, bv) => bv._1._1.groupVersionId === groupVersionId }
+    allWithBehaviorVersion.filter { case(_, bv) => bv.groupVersionId === groupVersionId }
   }
   val allForQuery = Compiled(uncompiledAllForQuery _)
 
@@ -26,7 +26,7 @@ object DataTypeConfigQueries {
   val allUsingDefaultStorageForQuery = Compiled(uncompiledAllUsingDefaultStorageForQuery _)
 
   def uncompiledMaybeForQuery(behaviorVersionId: Rep[String]) = {
-    allWithBehaviorVersion.filter { case(_, bv) => bv._1._1.id === behaviorVersionId }
+    allWithBehaviorVersion.filter { case(_, bv) => bv.id === behaviorVersionId }
   }
   val maybeForQuery = Compiled(uncompiledMaybeForQuery _)
 

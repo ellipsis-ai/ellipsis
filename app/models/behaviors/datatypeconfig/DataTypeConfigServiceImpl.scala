@@ -75,7 +75,7 @@ class DataTypeConfigServiceImpl @Inject() (
   }
 
   def createForAction(behaviorVersion: BehaviorVersion, data: DataTypeConfigData): DBIO[DataTypeConfig] = {
-    val newInstance = DataTypeConfig(IDs.next, data.usesCode, behaviorVersion)
+    val newInstance = DataTypeConfig(IDs.next, data.usesCode, behaviorVersion.toRaw)
     (all += newInstance.toRaw).map(_ => newInstance)
   }
 

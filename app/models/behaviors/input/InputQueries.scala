@@ -1,14 +1,13 @@
 package models.behaviors.input
 
 import drivers.SlickPostgresDriver.api._
-import models.behaviors.behaviorgroupversion.BehaviorGroupVersionQueries
 import models.behaviors.behaviorparameter.{BehaviorBackedDataType, BehaviorParameterType, TextType}
 import models.behaviors.datatypeconfig.DataTypeConfigQueries
 
 object InputQueries {
 
   val all = TableQuery[InputsTable]
-  val joined = all.joinLeft(DataTypeConfigQueries.allWithBehaviorVersion).on(_.paramType === _._2._1._1.id)
+  val joined = all.joinLeft(DataTypeConfigQueries.allWithBehaviorVersion).on(_.paramType === _._2.id)
 
   type TupleType = (RawInput, Option[DataTypeConfigQueries.TupleType])
 

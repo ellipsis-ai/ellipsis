@@ -1,7 +1,10 @@
 package models.behaviors.datatypefield
 
 import models.behaviors.behaviorparameter.BehaviorParameterType
-import models.behaviors.defaultstorageitem.GraphQLHelpers
+import services.DataService
+import slick.dbio.DBIO
+
+import scala.concurrent.ExecutionContext
 
 case class DataTypeField(
                           id: String,
@@ -14,7 +17,7 @@ case class DataTypeField(
                          ) extends DataTypeFieldForSchema {
 
   lazy val isId: Boolean = name == BehaviorParameterType.ID_PROPERTY
-  lazy val fieldTypeForSchema: FieldTypeForSchema = fieldType
+  def fieldTypeForSchema(dataService: DataService)(implicit ec: ExecutionContext): DBIO[FieldTypeForSchema] = DBIO.successful(fieldType)
 
   def toRaw: RawDataTypeField = {
     RawDataTypeField(id, fieldId, name, fieldType.id, configId, rank, isLabel)
