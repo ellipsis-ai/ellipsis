@@ -410,32 +410,32 @@ class RecurrenceSpec extends PlaySpec {
     }
 
     "expectedNextRunFor returns the provided timestamp if it is valid, in the future, and earlier than the second possible run" in {
-      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
+      val now = dateTimeOf(2019, 10, 9, 16, 0, timeZone)
       val recurrence = Weekly(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, Seq(now.getDayOfWeek), timeOfDay = LocalTime.NOON, timeZone)
 
-      val plus3Weeks = now.withHour(12).withMinute(0).plusWeeks(3)
+      val plus3Weeks = dateTimeOf(2019, 10, 30, 12, 0, timeZone)
       recurrence.expectedNextRunFor(now, Some(plus3Weeks)) mustBe plus3Weeks
 
-      val plus4Weeks = now.withHour(12).withMinute(0).plusWeeks(4)
+      val plus4Weeks = dateTimeOf(2019, 11, 6, 12, 0, timeZone)
       recurrence.expectedNextRunFor(now, Some(plus4Weeks)) mustBe plus4Weeks
     }
 
     "expectedNextRunFor returns the initial timestamp if it is invalid or later than the second possible run" in {
-      val now = OffsetDateTime.now.atZoneSameInstant(timeZone).toOffsetDateTime
+      val now = dateTimeOf(2019, 10, 9, 16, 0, timeZone)
       val recurrence = Weekly(IDs.next, frequency = 5, timesHasRun = 0, maybeTotalTimesToRun = None, Seq(now.getDayOfWeek), timeOfDay = LocalTime.NOON, timeZone)
 
       val initial = recurrence.initialAfter(now)
 
-      val plus7Weeks = now.plusWeeks(7).withHour(12).withMinute(0)
+      val plus7Weeks = dateTimeOf(2019, 11, 27, 12, 0, timeZone)
       recurrence.expectedNextRunFor(now, Some(plus7Weeks)) mustBe initial
 
-      val minus3Weeks = now.minusWeeks(3).withHour(12).withMinute(0)
+      val minus3Weeks = dateTimeOf(2019, 9, 18, 12, 0, timeZone)
       recurrence.expectedNextRunFor(now, Some(minus3Weeks)) mustBe initial
 
-      val wrongTime = now.withHour(23).withMinute(59)
+      val wrongTime = dateTimeOf(2019, 10, 16, 23, 59, timeZone)
       recurrence.expectedNextRunFor(now, Some(wrongTime)) mustBe initial
 
-      val wrongDay = now.plusDays(1).withHour(12).withMinute(0)
+      val wrongDay = dateTimeOf(2019, 10, 17, 12, 0, timeZone)
       recurrence.expectedNextRunFor(now, Some(wrongDay)) mustBe initial
 
       recurrence.expectedNextRunFor(now, None) mustBe initial
