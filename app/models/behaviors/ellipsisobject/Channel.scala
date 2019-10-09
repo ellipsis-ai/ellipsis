@@ -2,7 +2,6 @@ package models.behaviors.ellipsisobject
 
 import json.{SlackUserData, UserData}
 import models.accounts.slack.botprofile.SlackBotProfile
-import play.api.Logger
 import services.DefaultServices
 import slick.dbio.DBIO
 import utils.{FutureSequencer, SlackChannels}
