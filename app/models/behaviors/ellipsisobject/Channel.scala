@@ -4,7 +4,7 @@ import json.{SlackUserData, UserData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import services.DefaultServices
 import slick.dbio.DBIO
-import utils.SlackChannels
+import utils.{FutureSequencer, SlackChannels}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,7 +23,7 @@ object Channel {
     for {
       maybeChannelInfo <- DBIO.from(slackChannels.getInfoFor(channelId))
       memberIds <- DBIO.from(slackChannels.getMembersFor(channelId))
-      memberSlackUsers <- DBIO.from(Future.sequence(memberIds.map(ea => client.getUserInfo(ea)))).map(_.flatten)
+      memberSlackUsers <- DBIO.from(FutureSequencer.sequence(memberIds, (ea: String) => client.getUserInfo(ea))).map(_.flatten)
       memberSlackUserData <- DBIO.successful(memberSlackUsers.map(u => SlackUserData.fromSlackUser(u, botProfile)))
       memberData <- UserData.allFromSlackUserDataListAction(memberSlackUserData.toSet, botProfile.teamId, services)
     } yield{
