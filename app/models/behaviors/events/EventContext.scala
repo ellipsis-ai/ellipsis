@@ -523,7 +523,7 @@ case class MSTeamsEventContext(
   }
 
   def maybeChannelDataForAction(services: DefaultServices)(implicit ec: ExecutionContext): DBIO[Option[Channel]] = {
-    DBIO.successful(Some(Channel(channel, info.channelName, None, None))) // TODO: flesh this out
+    DBIO.successful(Some(Channel(channel, info.channelName, None))) // TODO: flesh this out
   }
 
   def maybeChannelForSendAction(

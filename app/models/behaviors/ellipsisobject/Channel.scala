@@ -1,18 +1,16 @@
 package models.behaviors.ellipsisobject
 
-import json.{SlackUserData, UserData}
 import models.accounts.slack.botprofile.SlackBotProfile
 import services.DefaultServices
 import slick.dbio.DBIO
-import utils.{FutureSequencer, SlackChannels}
+import utils.SlackChannels
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 case class Channel(
                     id: String,
                     name: Option[String],
-                    formattedLink: Option[String],
-                    members: Option[Seq[UserData]]
+                    formattedLink: Option[String]
                   )
 
 object Channel {
@@ -22,16 +20,11 @@ object Channel {
     val slackChannels = SlackChannels(client)
     for {
       maybeChannelInfo <- DBIO.from(slackChannels.getInfoFor(channelId))
-      memberIds <- DBIO.from(slackChannels.getMembersFor(channelId))
-      memberSlackUsers <- DBIO.from(FutureSequencer.sequence(memberIds, (ea: String) => client.getUserInfo(ea))).map(_.flatten)
-      memberSlackUserData <- DBIO.successful(memberSlackUsers.map(u => SlackUserData.fromSlackUser(u, botProfile)))
-      memberData <- UserData.allFromSlackUserDataListAction(memberSlackUserData.toSet, botProfile.teamId, services)
     } yield{
       Channel(
         channelId,
         maybeChannelInfo.flatMap(_.name),
-        Some(s"<#${channelId}>"),
-        Some(memberData.toSeq)
+        Some(s"<#${channelId}>")
       )
     }
   }
