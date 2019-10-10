@@ -100,7 +100,7 @@ class EllipsisObjectSpec extends DBSpec {
         teamInfo <- DBIO.successful(TeamInfo(team.id, Seq(), Map(), None, None, Some(team.timeZone.toString), None))
         eventUser <- EventUser.buildForAction(event, maybeConversation, services)
       } yield {
-        val maybeChannelObj = Some(Channel(channel, maybeChannel, Some(s"<@$channel>"), None))
+        val maybeChannelObj = Some(Channel(channel, maybeChannel, Some(s"<@$channel>")))
         val maybeMessage = Some(MessageObject(messageText, maybeMessageId, maybeChannelObj, maybeThread, usersMentioned = Set(), permalink = maybePermalink, reactionAdded = None))
         val eventInfo = EventInfo.buildFor(event, eventUser, maybeMessage, configuration)
         val token = InvocationToken(IDs.next, user.id, IDs.next, None, None, OffsetDateTime.now)

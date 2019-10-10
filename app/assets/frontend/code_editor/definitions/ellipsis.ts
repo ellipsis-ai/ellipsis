@@ -296,7 +296,6 @@ declare namespace ellipsis {
     id: string
     name?: string
     formattedLink?: string
-    members?: UserData[]
   }
   
   export interface Message {
