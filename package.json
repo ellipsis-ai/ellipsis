@@ -43,7 +43,7 @@
     "ts-jest": "^24.0.0",
     "ts-loader": "^6.0.4",
     "typescript": "^3.3.4000",
-    "urijs": "^1.19.1",
+    "urijs": "^1.19.4",
     "uuid": "3.2.1",
     "webpack": "^4.35.3",
     "webpack-cli": "^3.1.1",
