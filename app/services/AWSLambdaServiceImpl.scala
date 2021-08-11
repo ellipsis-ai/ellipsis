@@ -438,7 +438,7 @@ class AWSLambdaServiceImpl @Inject() (
 
     val isNoCode: Boolean = behaviorVersionsWithParams.forall { case(bv, _) => bv.functionBody.trim.isEmpty }
     val functionName = groupVersion.functionName
-    val runtime = com.amazonaws.services.lambda.model.Runtime.Nodejs810
+    val runtime = com.amazonaws.services.lambda.model.Runtime.Nodejs14X
 
     deleteFunction(functionName).andThen {
       case Failure(t) => Future.successful({})

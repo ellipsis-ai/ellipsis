@@ -115,12 +115,13 @@ case class SlackApiClient(
     }
   }
 
-  val defaultParams: Seq[(String, String)] = Seq(("token", profile.token))
+  val defaultParams: Seq[(String, String)] = Seq()
 
   private def postResponseFor(endpoint: String, params: Map[String, Any]): Future[WSResponse] = {
     ws.
       url(urlFor(endpoint)).
       withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      addHttpHeaders(("Authorization", s"Bearer ${profile.token}")).
       post(preparePostParams(params ++ defaultParams.toMap))
   }
 
@@ -129,6 +130,7 @@ case class SlackApiClient(
     ws.
       url(urlFor(endpoint)).
       withHttpHeaders(HeaderNames.ACCEPT -> MimeTypes.JSON).
+      addHttpHeaders(("Authorization", s"Bearer ${profile.token}")).
       withQueryStringParameters((params ++ defaultParams): _*).
       get
   }

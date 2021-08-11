@@ -43,14 +43,18 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
     if (scopes.isEmpty) {
       throw new UnexpectedResponseException(s"No scopes found in Slack auth response while attempting to build a SlackProfile. ${dumpParamsFromAuthInfo(authInfo)}")
     } else if (scopes.length == 1 && scopes.contains("identity.basic")) {
-      httpLayer.url(urls("identity").format(authInfo.accessToken)).get().flatMap { response =>
+      httpLayer.url(urls("identity")).addHttpHeaders(tokenHeader(authInfo.accessToken)).post("").flatMap { response =>
         profileParser.parseForSignIn(response.json, authInfo)
       }
     } else {
-      httpLayer.url(urls("auth_test").format(authInfo.accessToken)).get().flatMap { response =>
+      httpLayer.url(urls("auth_test")).addHttpHeaders(tokenHeader(authInfo.accessToken)).post("").flatMap { response =>
         profileParser.parseForInstall(response.json, authInfo)
       }
     }
+  }
+
+  protected def tokenHeader(token: String): (String, String) = {
+    ("Authorization", s"Bearer ${token}")
   }
 
   override protected def buildInfo(response: WSResponse): Try[OAuth2Info] = {
@@ -75,7 +79,7 @@ class SlackProvider(protected val httpLayer: HTTPLayer,
   }
 
   def maybeEnterpriseNameFor(authInfo: OAuth2Info): Future[Option[String]] = {
-    httpLayer.url(urls("team").format(authInfo.accessToken)).get().map { response =>
+    httpLayer.url(urls("team")).addHttpHeaders(tokenHeader(authInfo.accessToken)).post("").map { response =>
       (response.json \ "team" \ "enterprise_name").asOpt[String]
     }
   }
@@ -117,10 +121,10 @@ object SlackProvider {
   https://slack.com/api/chat.postMessage?token=TOKEN&channel=%23general&text=Maybe%20because%20that%20was%20previously%20unfurled:%20https%3A%2F%2Fscatterdot.com%2Ftopic%2F9783365fd925712&username=scatterbot&unfurl_media=true&icon_emoji=:red_circle:&unfurl_links=true
    */
   val ID = "slack"
-  val USER_API = "https://slack.com/api/users.info?token=%s&user=%s"
-  val TEAM_API = "https://slack.com/api/team.info?token=%s"
-  val AUTH_TEST_API = "https://slack.com/api/auth.test?token=%s"
-  val IDENTITY_API = "https://slack.com/api/users.identity?token=%s"
+  val USER_API = "https://slack.com/api/users.info?&user=%s"
+  val TEAM_API = "https://slack.com/api/team.info"
+  val AUTH_TEST_API = "https://slack.com/api/auth.test"
+  val IDENTITY_API = "https://slack.com/api/users.identity"
 
   val SpecifiedProfileError = "[Silhouette][%s] Error retrieving profile information. Error message: %s"
 

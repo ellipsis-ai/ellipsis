@@ -1,5 +1,5 @@
-const NODE_JS_VERSION = "8.10";
-const NODE_JS_DOCS_URL = "https://nodejs.org/docs/v8.10.0/api/";
+const NODE_JS_VERSION = "14.x";
+const NODE_JS_DOCS_URL = "https://nodejs.org/dist/latest-v14.x/docs/api/";
 const GRAPHQL_DOCS_URL = "http://graphql.org/learn/";
 const DOCS_URLS = Object.freeze({
   INPUTS: "https://docs.ellipsis.ai/developers/reference/02_actions/02_inputs/",
