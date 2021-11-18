@@ -5,7 +5,7 @@ services:
     ports:
       - "11211:11211"
   postgres:
-    image: postgres:9.6.1
+    image: postgres:9.6.24
     volumes:
       - ~/db/pgdata:/pgdata
       - ./deploy/dev/db/setup_new_db.sql:/docker-entrypoint-initdb.d/setup_new_db.sql
